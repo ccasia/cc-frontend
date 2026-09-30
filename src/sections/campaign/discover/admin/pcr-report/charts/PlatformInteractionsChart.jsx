@@ -8,7 +8,6 @@ import { formatNumber, getMetricValue } from 'src/utils/socialMetricsCalculator'
 
 const PlatformInteractionsChart = ({ filteredInsightsData, filteredSubmissions }) => {
   const platformData = useMemo(() => {
-
     if (!filteredInsightsData || filteredInsightsData.length === 0) {
       return { instagram: 0, tiktok: 0, total: 0 };
     }
@@ -27,9 +26,9 @@ const PlatformInteractionsChart = ({ filteredInsightsData, filteredSubmissions }
 
         const interactions = likes + comments + shares + saved;
 
-        if (submission.platform === 'Instagram') {
+        if (insightData.platform === 'Instagram') {
           instagramInteractions += interactions;
-        } else if (submission.platform === 'TikTok') {
+        } else if (insightData.platform === 'TikTok') {
           tiktokInteractions += interactions;
         }
       }
@@ -40,17 +39,21 @@ const PlatformInteractionsChart = ({ filteredInsightsData, filteredSubmissions }
     return {
       instagram: instagramInteractions,
       tiktok: tiktokInteractions,
-      total
+      total,
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredInsightsData, filteredSubmissions]);
 
   const startAngle = -135;
 
-  const chartData = useMemo(() => [
-    { id: 0, value: platformData.tiktok, label: 'TikTok', color: '#000000' },
-    { id: 1, value: platformData.instagram, label: 'Instagram', color: '#C13584' },
-  ].filter((item) => item.value > 0), [platformData.tiktok, platformData.instagram]);
+  const chartData = useMemo(
+    () =>
+      [
+        { id: 0, value: platformData.tiktok, label: 'TikTok', color: '#000000' },
+        { id: 1, value: platformData.instagram, label: 'Instagram', color: '#C13584' },
+      ].filter((item) => item.value > 0),
+    [platformData.tiktok, platformData.instagram]
+  );
 
   return (
     <Box

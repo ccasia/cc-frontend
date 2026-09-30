@@ -8,7 +8,11 @@ import { getStorage } from 'src/hooks/use-local-storage';
 import axiosInstance from 'src/utils/axios';
 
 import { pcrDraftStorageKey } from './usePcrAutosave';
-import { DEFAULT_SECTION_ORDER, DEFAULT_EDITABLE_CONTENT, DEFAULT_SECTION_VISIBILITY } from '../constants';
+import {
+  DEFAULT_SECTION_ORDER,
+  DEFAULT_EDITABLE_CONTENT,
+  DEFAULT_SECTION_VISIBILITY,
+} from '../utils/constants';
 
 const EMPTY_SECTION_EDIT_STATES = {
   campaignDescription: false,
@@ -41,29 +45,41 @@ function applyLoadedContent(loadedContent, setters, cardOverrides) {
 
   setEditableContent({ ...DEFAULT_EDITABLE_CONTENT, ...loadedContent });
   setSectionOrder(loadedContent.sectionOrder || DEFAULT_SECTION_ORDER);
-  setSectionVisibility({ ...DEFAULT_SECTION_VISIBILITY, ...(loadedContent.sectionVisibility || {}) });
+  setSectionVisibility({
+    ...DEFAULT_SECTION_VISIBILITY,
+    ...(loadedContent.sectionVisibility || {}),
+  });
 
-  setShowEducatorCard(cardOverrides?.showEducatorCard ?? loadedContent.showEducatorCard ?? (
-    hasContent(loadedContent.educatorTitle) || hasContent(loadedContent.educatorContentStyle)
-  ));
-  setShowThirdCard(cardOverrides?.showThirdCard ?? loadedContent.showThirdCard ?? (
-    hasContent(loadedContent.thirdTitle) || hasContent(loadedContent.thirdContentStyle)
-  ));
-  setShowFourthCard(cardOverrides?.showFourthCard ?? loadedContent.showFourthCard ?? (
-    hasContent(loadedContent.fourthTitle) || hasContent(loadedContent.fourthContentStyle)
-  ));
-  setShowFifthCard(cardOverrides?.showFifthCard ?? loadedContent.showFifthCard ?? (
-    hasContent(loadedContent.fifthTitle) || hasContent(loadedContent.fifthContentStyle)
-  ));
+  setShowEducatorCard(
+    cardOverrides?.showEducatorCard ??
+      loadedContent.showEducatorCard ??
+      (hasContent(loadedContent.educatorTitle) || hasContent(loadedContent.educatorContentStyle))
+  );
+  setShowThirdCard(
+    cardOverrides?.showThirdCard ??
+      loadedContent.showThirdCard ??
+      (hasContent(loadedContent.thirdTitle) || hasContent(loadedContent.thirdContentStyle))
+  );
+  setShowFourthCard(
+    cardOverrides?.showFourthCard ??
+      loadedContent.showFourthCard ??
+      (hasContent(loadedContent.fourthTitle) || hasContent(loadedContent.fourthContentStyle))
+  );
+  setShowFifthCard(
+    cardOverrides?.showFifthCard ??
+      loadedContent.showFifthCard ??
+      (hasContent(loadedContent.fifthTitle) || hasContent(loadedContent.fifthContentStyle))
+  );
 }
 
-const isUsableDraft = (draft, campaignId, pcrRevision) => Boolean(
-  draft?.content &&
-  draft.campaignId === campaignId &&
-  Number.isInteger(draft.draftRevision) &&
-  draft.draftRevision > 0 &&
-  draft.basePcrRevision === pcrRevision
-);
+const isUsableDraft = (draft, campaignId, pcrRevision) =>
+  Boolean(
+    draft?.content &&
+    draft.campaignId === campaignId &&
+    Number.isInteger(draft.draftRevision) &&
+    draft.draftRevision > 0 &&
+    draft.basePcrRevision === pcrRevision
+  );
 
 // Choose by ordered draft revision only. savedAt is not a conflict selector.
 const chooseDraft = (localDraft, remoteDraft) => {
@@ -123,7 +139,7 @@ export default function usePcrData({
     setShowThirdCard(false);
     setShowFourthCard(false);
     setShowFifthCard(false);
-    setIsEditMode(false);
+    setIsEditMode(() => ({ type: '', state: false }));
     setSectionEditStates(EMPTY_SECTION_EDIT_STATES);
     resetHistory();
   }, [
@@ -182,7 +198,7 @@ export default function usePcrData({
 
       if (!revision) {
         setLoadError('PCR report could not load.');
-        setIsEditMode(false);
+        setIsEditMode(() => ({ type: '', state: false }));
         return;
       }
 
@@ -203,16 +219,21 @@ export default function usePcrData({
 
       if (generation !== requestGenerationRef.current) return;
 
-      const localDraft = !isClientView && userId && editorSessionId && revision
-        ? getStorage(pcrDraftStorageKey(userId, editorSessionId, campaign.id))
-        : null;
+      const localDraft =
+        !isClientView && userId && editorSessionId && revision
+          ? getStorage(pcrDraftStorageKey(userId, editorSessionId, campaign.id))
+          : null;
       const localIsUsable = isUsableDraft(localDraft, campaign.id, revision);
       const remoteIsUsable = isUsableDraft(remoteDraft, campaign.id, revision);
-      setRestoredRemoteDraft(remoteIsUsable ? {
-        content: remoteDraft.content,
-        draftRevision: remoteDraft.draftRevision,
-        basePcrRevision: remoteDraft.basePcrRevision,
-      } : null);
+      setRestoredRemoteDraft(
+        remoteIsUsable
+          ? {
+              content: remoteDraft.content,
+              draftRevision: remoteDraft.draftRevision,
+              basePcrRevision: remoteDraft.basePcrRevision,
+            }
+          : null
+      );
       const conflictedDraft = [localDraft, remoteDraft]
         .filter((draft) => draft?.content && draft.basePcrRevision !== revision)
         .sort((a, b) => b.draftRevision - a.draftRevision)[0];
@@ -231,7 +252,10 @@ export default function usePcrData({
         onStaleDraft?.(conflict);
       }
 
-      const draft = chooseDraft(localIsUsable ? localDraft : null, remoteIsUsable ? remoteDraft : null);
+      const draft = chooseDraft(
+        localIsUsable ? localDraft : null,
+        remoteIsUsable ? remoteDraft : null
+      );
       if (draft?.content) {
         applyLoadedContent(draft.content, cardSetters, {
           showEducatorCard: draft.content.showEducatorCard,
@@ -252,11 +276,10 @@ export default function usePcrData({
       console.error('Error loading PCR data:', error);
       setLoadError(error?.response?.data?.message || 'PCR report could not load.');
       setPcrRevision(null);
-      setIsEditMode(false);
+      setIsEditMode(() => ({ type: '', state: false }));
     } finally {
       if (generation === requestGenerationRef.current) setIsLoadingPCR(false);
     }
-
   }, [
     bumpHydrationVersion,
     campaign?.id,
@@ -304,6 +327,7 @@ export default function usePcrData({
       showFourthCard,
       showFifthCard,
     };
+
     const savedJson = JSON.stringify(content);
     const draftState = getDraftState?.();
     const body = {
@@ -319,7 +343,7 @@ export default function usePcrData({
       const saved = response.data?.data;
       setPcrRevision(saved?.revision ?? pcrRevision + 1);
       await clearDraft?.(savedJson);
-      setIsEditMode(false);
+      setIsEditMode(() => ({ type: '', state: false }));
       resetHistory();
       setSectionEditStates(EMPTY_SECTION_EDIT_STATES);
       enqueueSnackbar('PCR saved successfully.', { variant: 'success' });
@@ -343,10 +367,13 @@ export default function usePcrData({
         onDraftConflict?.(conflict);
       }
       console.error('Error saving PCR data:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'PCR could not be saved. Your local work was kept.', {
-        variant: 'error',
-        anchorOrigin: { vertical: 'top', horizontal: 'center' },
-      });
+      enqueueSnackbar(
+        error?.response?.data?.message || 'PCR could not be saved. Your local work was kept.',
+        {
+          variant: 'error',
+          anchorOrigin: { vertical: 'top', horizontal: 'center' },
+        }
+      );
       return null;
     } finally {
       setIsSaving(false);
@@ -359,15 +386,20 @@ export default function usePcrData({
       await queryClient.invalidateQueries({ queryKey: ['socialInsightSnapshots', campaign.id] });
       enqueueSnackbar('Analytics updated.', { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(`Failed to refresh insights: ${error.response?.data?.message || error.message}`, {
-        variant: 'error',
-      });
+      enqueueSnackbar(
+        `Failed to refresh insights: ${error.response?.data?.message || error.message}`,
+        {
+          variant: 'error',
+        }
+      );
     }
   };
 
   const handleMarkAsReady = async () => {
     try {
-      const response = await axios.patch(`/api/campaign/${campaign.id}/pcr-ready`, { isPCRReady: true });
+      const response = await axios.patch(`/api/campaign/${campaign.id}/pcr-ready`, {
+        isPCRReady: true,
+      });
       if (response.data.success) {
         setIsPCRReady(true);
         onCampaignUpdate?.({ ...campaign, isPCRReady: true });
@@ -380,7 +412,9 @@ export default function usePcrData({
 
   const handleMarkAsUnready = async () => {
     try {
-      const response = await axios.patch(`/api/campaign/${campaign.id}/pcr-ready`, { isPCRReady: false });
+      const response = await axios.patch(`/api/campaign/${campaign.id}/pcr-ready`, {
+        isPCRReady: false,
+      });
       if (response.data.success) {
         setIsPCRReady(false);
         onCampaignUpdate?.({ ...campaign, isPCRReady: false });

@@ -45,7 +45,7 @@ import {
   DEFAULT_SECTION_ORDER,
   DEFAULT_EDITABLE_CONTENT,
   DEFAULT_SECTION_VISIBILITY,
-} from '../pcr-report/constants';
+} from '../pcr-report/utils/constants';
 import {
   setReportState,
   setEntryToDelete,
@@ -357,8 +357,7 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       await Promise.all([
         refreshInsights(),
         mutateSWR(
-          (key) =>
-            typeof key === 'string' && key.startsWith(`/api/campaign/${campaign.id}/trends/`)
+          (key) => typeof key === 'string' && key.startsWith(`/api/campaign/${campaign.id}/trends/`)
         ),
       ]);
       if (result?.failed > 0) {
@@ -371,10 +370,7 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     } catch (error) {
       const errorData = error?.response?.data || error;
       setRefreshFailures(errorData?.data?.failures || []);
-      enqueueSnackbar(
-        errorData?.message || 'Failed to refresh analytics.',
-        { variant: 'error' }
-      );
+      enqueueSnackbar(errorData?.message || 'Failed to refresh analytics.', { variant: 'error' });
     } finally {
       setIsRefreshing(false);
     }
@@ -385,14 +381,14 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     const requestCampaignGeneration = campaignGenerationRef.current;
     const requestId = generateRequestRef.current + 1;
     generateRequestRef.current = requestId;
-    const isCurrentRequest = () => (
+    const isCurrentRequest = () =>
       mountedRef.current &&
       currentCampaignIdRef.current === requestCampaignId &&
       campaignGenerationRef.current === requestCampaignGeneration &&
-      generateRequestRef.current === requestId
-    );
+      generateRequestRef.current === requestId;
 
-    if (!requestCampaignId || pcrLoadError || reportState !== 'generate' || !isCurrentRequest()) return;
+    if (!requestCampaignId || pcrLoadError || reportState !== 'generate' || !isCurrentRequest())
+      return;
     setReportState('loading');
     let generationSucceeded = false;
 
@@ -461,7 +457,6 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
         enqueueSnackbar(`${data.platform} connected. Use Refresh Data to sync analytics now.`, {
           variant: 'success',
         });
-
       }
     };
 
@@ -557,96 +552,96 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
 
               {/* eslint-disable-next-line no-nested-ternary */}
               {!isClient ? (
-              <Button
-                disabled={isPCRLoading || reportState === 'loading' || Boolean(pcrLoadError)}
-                sx={{
-                  width: '186.07px',
-                  height: '44px',
-                  borderRadius: '8px',
-                  gap: '6px',
-                  padding: '10px 16px 13px 16px',
-                  background:
-                    isPCRLoading || reportState === 'loading'
-                      ? 'linear-gradient(90deg, #B8B8B8 0%, #9E9E9E 100%)'
-                      : 'linear-gradient(90deg, #8A5AFE 0%, #1340FF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
-                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
-                  color: '#FFFFFF',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  textTransform: 'none',
-                  '&:hover': {
+                <Button
+                  disabled={isPCRLoading || reportState === 'loading' || Boolean(pcrLoadError)}
+                  sx={{
+                    width: '186.07px',
+                    height: '44px',
+                    borderRadius: '8px',
+                    gap: '6px',
+                    padding: '10px 16px 13px 16px',
                     background:
                       isPCRLoading || reportState === 'loading'
                         ? 'linear-gradient(90deg, #B8B8B8 0%, #9E9E9E 100%)'
-                        : 'linear-gradient(90deg, #7A4AEE 0%, #0330EF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
-                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                  },
-                  '&:active': {
-                    boxShadow:
-                      isPCRLoading || reportState === 'loading'
-                        ? '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset'
-                        : '0px -1px 0px 0px rgba(0, 0, 0, 0.1) inset',
-                    transform:
-                      isPCRLoading || reportState === 'loading' ? 'none' : 'translateY(1px)',
-                  },
-                  '&:disabled': {
+                        : 'linear-gradient(90deg, #8A5AFE 0%, #1340FF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
                     color: '#FFFFFF',
-                  },
-                }}
-                onClick={async () => {
-                  if (reportState === 'generate') {
-                    await handleGenerateReport();
-                  } else if (reportState === 'view') {
-                    // Show PCR report page
-                    setShowReportPage(true);
-                  }
-                }}
-              >
-                {(isPCRLoading || reportState === 'loading') && (
-                  <CircularProgress
-                    size={16}
-                    sx={{
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    textTransform: 'none',
+                    '&:hover': {
+                      background:
+                        isPCRLoading || reportState === 'loading'
+                          ? 'linear-gradient(90deg, #B8B8B8 0%, #9E9E9E 100%)'
+                          : 'linear-gradient(90deg, #7A4AEE 0%, #0330EF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                      boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                    },
+                    '&:active': {
+                      boxShadow:
+                        isPCRLoading || reportState === 'loading'
+                          ? '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset'
+                          : '0px -1px 0px 0px rgba(0, 0, 0, 0.1) inset',
+                      transform:
+                        isPCRLoading || reportState === 'loading' ? 'none' : 'translateY(1px)',
+                    },
+                    '&:disabled': {
                       color: '#FFFFFF',
-                      mr: 1,
-                    }}
-                  />
-                )}
-                {isPCRLoading && 'Checking Report...'}
-                {!isPCRLoading && pcrLoadError && 'PCR unavailable'}
-                {!isPCRLoading && reportState === 'generate' && 'Generate Report'}
-                {!isPCRLoading && reportState === 'loading' && 'Generating...'}
-                {!isPCRLoading && reportState === 'view' && 'View Report'}
-              </Button>
+                    },
+                  }}
+                  onClick={async () => {
+                    if (reportState === 'generate') {
+                      await handleGenerateReport();
+                    } else if (reportState === 'view') {
+                      // Show PCR report page
+                      setShowReportPage(true);
+                    }
+                  }}
+                >
+                  {(isPCRLoading || reportState === 'loading') && (
+                    <CircularProgress
+                      size={16}
+                      sx={{
+                        color: '#FFFFFF',
+                        mr: 1,
+                      }}
+                    />
+                  )}
+                  {isPCRLoading && 'Checking Report...'}
+                  {!isPCRLoading && pcrLoadError && 'PCR unavailable'}
+                  {!isPCRLoading && reportState === 'generate' && 'Generate Report'}
+                  {!isPCRLoading && reportState === 'loading' && 'Generating...'}
+                  {!isPCRLoading && reportState === 'view' && 'View Report'}
+                </Button>
               ) : campaign?.isPCRReady ? (
-              <Button
-                sx={{
-                  width: '186.07px',
-                  height: '44px',
-                  borderRadius: '8px',
-                  gap: '6px',
-                  padding: '10px 16px 13px 16px',
-                  background:
-                    'linear-gradient(90deg, #8A5AFE 0%, #1340FF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
-                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
-                  color: '#FFFFFF',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  textTransform: 'none',
-                  '&:hover': {
+                <Button
+                  sx={{
+                    width: '186.07px',
+                    height: '44px',
+                    borderRadius: '8px',
+                    gap: '6px',
+                    padding: '10px 16px 13px 16px',
                     background:
-                      'linear-gradient(90deg, #7A4AEE 0%, #0330EF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
-                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                  },
-                  '&:active': {
-                    boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.1) inset',
-                    transform: 'translateY(1px)',
-                  },
-                }}
-                onClick={() => setShowReportPage(true)}
-              >
-                View Report
-                {showReportPage && 'Test'}
-              </Button>
+                      'linear-gradient(90deg, #8A5AFE 0%, #1340FF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.1) inset',
+                    color: '#FFFFFF',
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    textTransform: 'none',
+                    '&:hover': {
+                      background:
+                        'linear-gradient(90deg, #7A4AEE 0%, #0330EF 100%), linear-gradient(0deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6))',
+                      boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
+                    },
+                    '&:active': {
+                      boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.1) inset',
+                      transform: 'translateY(1px)',
+                    },
+                  }}
+                  onClick={() => setShowReportPage(true)}
+                >
+                  View Report
+                  {showReportPage && 'Test'}
+                </Button>
               ) : null}
             </Stack>
           </Box>
@@ -654,7 +649,11 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
           {pcrLoadError && (
             <Alert severity="error" sx={{ mb: 2 }}>
               PCR status could not be checked. Generate is disabled until the report status loads.
-              <Button size="small" onClick={() => setPcrCheckAttempt((value) => value + 1)} sx={{ ml: 1 }}>
+              <Button
+                size="small"
+                onClick={() => setPcrCheckAttempt((value) => value + 1)}
+                sx={{ ml: 1 }}
+              >
                 Retry
               </Button>
             </Alert>
@@ -767,7 +766,8 @@ function getRefreshFailureMessage(failure) {
     ACCOUNT_NOT_CONNECTED: 'Social account is not connected.',
     ACCESS_TOKEN_MISSING: 'Access token is missing. Ask the creator to reconnect their account.',
     TOKEN_EXPIRED: 'Access expired. Ask the creator to reconnect their account.',
-    POST_NOT_ACCESSIBLE: 'Post was deleted, is private, or is not available to the connected account.',
+    POST_NOT_ACCESSIBLE:
+      'Post was deleted, is private, or is not available to the connected account.',
     POST_IDENTIFIER_MISSING: 'The saved post link does not contain a valid post identifier.',
     SNAPSHOT_STORAGE_FAILED: 'Insights were fetched, but the snapshot could not be saved.',
     RATE_LIMITED: 'The platform rate limit was reached. Try again later.',

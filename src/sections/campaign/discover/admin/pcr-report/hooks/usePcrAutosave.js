@@ -3,7 +3,7 @@ import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { setStorage, getStorage, removeStorage } from 'src/hooks/use-local-storage';
 
-import { PCR_DRAFT_STORAGE_PREFIX, PCR_EDITOR_SESSION_STORAGE_PREFIX } from '../constants';
+import { PCR_DRAFT_STORAGE_PREFIX, PCR_EDITOR_SESSION_STORAGE_PREFIX } from '../utils/constants';
 
 const REDIS_DEBOUNCE_MS = 2000;
 const DB_FLUSH_INTERVAL_MS = 120000;
@@ -116,16 +116,26 @@ export default function usePcrAutosave({
       showFifthCard,
     ]
   );
+
   const draftJson = useMemo(() => JSON.stringify(draftPayload), [draftPayload]);
   latestJsonRef.current = draftJson;
 
   const isActive = Boolean(
-    userId && campaignId && editorSessionId && !isClientView && !isLoadingPCR && !isLoadError && pcrRevision && !isAutosaveBlocked
+    userId &&
+    campaignId &&
+    editorSessionId &&
+    !isClientView &&
+    !isLoadingPCR &&
+    !isLoadError &&
+    pcrRevision &&
+    !isAutosaveBlocked
   );
+
   const storageKey = useMemo(
-    () => (userId && editorSessionId && campaignId
-      ? pcrDraftStorageKey(userId, editorSessionId, campaignId)
-      : null),
+    () =>
+      userId && editorSessionId && campaignId
+        ? pcrDraftStorageKey(userId, editorSessionId, campaignId)
+        : null,
     [userId, editorSessionId, campaignId]
   );
 
@@ -159,101 +169,129 @@ export default function usePcrAutosave({
     setConflictDraft(null);
     setIsAutosaveBlocked(false);
     setLastAutosavedAt(null);
+
     if (redisTimerRef.current) clearTimeout(redisTimerRef.current);
+
     redisTimerRef.current = null;
   }, [campaignId, userId, editorSessionId]);
 
-  const registerConflict = useCallback((conflict) => {
-    if (!conflict?.content || (conflict.campaignId && conflict.campaignId !== campaignId)) return;
-    const maxDraftRevision = Math.max(
-      conflict.maxDraftRevision || 0,
-      conflict.draftRevision || 0,
-      conflict.currentDraftRevision || 0,
-    );
-    const retained = {
-      ...conflict,
-      campaignId,
-      maxDraftRevision,
-      json: conflict.json || JSON.stringify(conflict.content),
-    };
-    conflictDraftRef.current = retained;
-    autosaveBlockedRef.current = true;
-    setConflictDraft(retained);
-    setIsAutosaveBlocked(true);
-    retryRef.current = false;
-    queuedEnvelopeRef.current = null;
-    onDraftConflict?.(retained);
-  }, [campaignId, onDraftConflict]);
+  const registerConflict = useCallback(
+    (conflict) => {
+      if (!conflict?.content || (conflict.campaignId && conflict.campaignId !== campaignId)) return;
+
+      const maxDraftRevision = Math.max(
+        conflict.maxDraftRevision || 0,
+        conflict.draftRevision || 0,
+        conflict.currentDraftRevision || 0
+      );
+
+      const retained = {
+        ...conflict,
+        campaignId,
+        maxDraftRevision,
+        json: conflict.json || JSON.stringify(conflict.content),
+      };
+
+      conflictDraftRef.current = retained;
+      autosaveBlockedRef.current = true;
+      setConflictDraft(retained);
+      setIsAutosaveBlocked(true);
+      retryRef.current = false;
+      queuedEnvelopeRef.current = null;
+      onDraftConflict?.(retained);
+    },
+    [campaignId, onDraftConflict]
+  );
 
   useEffect(() => {
     if (initialConflict && !conflictDraftRef.current) registerConflict(initialConflict);
   }, [initialConflict, registerConflict]);
 
-  const startRedisPut = useCallback((envelope) => {
-    if (!envelope || !campaignId || !editorSessionId) return;
+  const startRedisPut = useCallback(
+    (envelope) => {
+      if (!envelope || !campaignId || !editorSessionId) return;
 
-    const generation = campaignGenerationRef.current;
-    inFlightRef.current = { envelope, generation };
+      const generation = campaignGenerationRef.current;
+      inFlightRef.current = { envelope, generation };
 
-    axios.put(`/api/campaign/${campaignId}/pcr/drafts/${editorSessionId}`, {
-      content: envelope.content,
-      draftRevision: envelope.draftRevision,
-      basePcrRevision: envelope.basePcrRevision,
-    }).then((response) => {
-      if (!mountedRef.current || generation !== campaignGenerationRef.current) return;
-
-      const savedRevision = response.data?.data?.draft?.draftRevision ?? envelope.draftRevision;
-      const remoteContent = response.data?.data?.draft?.content;
-      const remoteJson = remoteContent ? JSON.stringify(remoteContent) : null;
-      if (savedRevision >= acceptedDraftRevisionRef.current && remoteJson === envelope.json) {
-        acceptedDraftRevisionRef.current = savedRevision;
-        lastSyncedJsonRef.current = envelope.json;
-        retryRef.current = false;
-      } else {
-        retryRef.current = true;
-      }
-    }).catch((error) => {
-      if (!mountedRef.current || generation !== campaignGenerationRef.current) return;
-      if (isConflict(error)) {
-        retryRef.current = false;
-        registerConflict({
+      axios
+        .put(`/api/campaign/${campaignId}/pcr/drafts/${editorSessionId}`, {
           content: envelope.content,
           draftRevision: envelope.draftRevision,
           basePcrRevision: envelope.basePcrRevision,
-          currentDraftRevision: error.response?.data?.currentDraftRevision,
-          currentPcrRevision: error.response?.data?.currentPcrRevision,
+        })
+        .then((response) => {
+          if (!mountedRef.current || generation !== campaignGenerationRef.current) return;
+
+          const savedRevision = response.data?.data?.draft?.draftRevision ?? envelope.draftRevision;
+          const remoteContent = response.data?.data?.draft?.content;
+          const remoteJson = remoteContent ? JSON.stringify(remoteContent) : null;
+          if (savedRevision >= acceptedDraftRevisionRef.current && remoteJson === envelope.json) {
+            acceptedDraftRevisionRef.current = savedRevision;
+            lastSyncedJsonRef.current = envelope.json;
+            retryRef.current = false;
+          } else {
+            retryRef.current = true;
+          }
+        })
+        .catch((error) => {
+          if (!mountedRef.current || generation !== campaignGenerationRef.current) return;
+          if (isConflict(error)) {
+            retryRef.current = false;
+            registerConflict({
+              content: envelope.content,
+              draftRevision: envelope.draftRevision,
+              basePcrRevision: envelope.basePcrRevision,
+              currentDraftRevision: error.response?.data?.currentDraftRevision,
+              currentPcrRevision: error.response?.data?.currentPcrRevision,
+            });
+          } else {
+            retryRef.current = true;
+          }
+        })
+        .finally(() => {
+          if (!mountedRef.current || generation !== campaignGenerationRef.current) return;
+          inFlightRef.current = null;
+
+          const queued = queuedEnvelopeRef.current;
+          queuedEnvelopeRef.current = null;
+          if (
+            !autosaveBlockedRef.current &&
+            queued &&
+            queued.draftRevision > acceptedDraftRevisionRef.current
+          ) {
+            startRedisPut(queued);
+          }
         });
-      } else {
-        retryRef.current = true;
-      }
-    }).finally(() => {
-      if (!mountedRef.current || generation !== campaignGenerationRef.current) return;
-      inFlightRef.current = null;
+    },
+    [campaignId, editorSessionId, registerConflict]
+  );
 
-      const queued = queuedEnvelopeRef.current;
-      queuedEnvelopeRef.current = null;
-      if (!autosaveBlockedRef.current && queued && queued.draftRevision > acceptedDraftRevisionRef.current) {
-        startRedisPut(queued);
+  const queueRedisPut = useCallback(
+    (envelope, immediate = false) => {
+      if (inFlightRef.current || flushInFlightRef.current) {
+        if (
+          !queuedEnvelopeRef.current ||
+          envelope.draftRevision > queuedEnvelopeRef.current.draftRevision
+        ) {
+          queuedEnvelopeRef.current = envelope;
+        }
+        return;
       }
-    });
-  }, [campaignId, editorSessionId, registerConflict]);
 
-  const queueRedisPut = useCallback((envelope, immediate = false) => {
-    if (inFlightRef.current || flushInFlightRef.current) {
-      if (!queuedEnvelopeRef.current || envelope.draftRevision > queuedEnvelopeRef.current.draftRevision) {
-        queuedEnvelopeRef.current = envelope;
-      }
-      return;
-    }
-
-    if (redisTimerRef.current) clearTimeout(redisTimerRef.current);
-    redisTimerRef.current = setTimeout(() => {
-      redisTimerRef.current = null;
-      if (latestEnvelopeRef.current?.draftRevision === envelope.draftRevision) {
-        startRedisPut(envelope);
-      }
-    }, immediate ? 0 : REDIS_DEBOUNCE_MS);
-  }, [startRedisPut]);
+      if (redisTimerRef.current) clearTimeout(redisTimerRef.current);
+      redisTimerRef.current = setTimeout(
+        () => {
+          redisTimerRef.current = null;
+          if (latestEnvelopeRef.current?.draftRevision === envelope.draftRevision) {
+            startRedisPut(envelope);
+          }
+        },
+        immediate ? 0 : REDIS_DEBOUNCE_MS
+      );
+    },
+    [startRedisPut]
+  );
 
   // The first state after a successful load is the baseline. Later changes
   // receive an increasing revision and are written to localStorage immediately.
@@ -366,7 +404,8 @@ export default function usePcrAutosave({
       if (
         flushedDraftRevisionRef.current >= envelope.draftRevision &&
         flushedPcrRevisionRef.current === envelope.basePcrRevision
-      ) return;
+      )
+        return;
 
       const generation = campaignGenerationRef.current;
       try {
@@ -406,7 +445,11 @@ export default function usePcrAutosave({
           }
         }
       } catch (error) {
-        if (mountedRef.current && generation === campaignGenerationRef.current && isConflict(error)) {
+        if (
+          mountedRef.current &&
+          generation === campaignGenerationRef.current &&
+          isConflict(error)
+        ) {
           registerConflict({
             content: envelope.content,
             draftRevision: envelope.draftRevision,
@@ -420,7 +463,11 @@ export default function usePcrAutosave({
           flushInFlightRef.current = false;
           const queued = queuedEnvelopeRef.current;
           queuedEnvelopeRef.current = null;
-          if (!autosaveBlockedRef.current && queued && queued.draftRevision > acceptedDraftRevisionRef.current) {
+          if (
+            !autosaveBlockedRef.current &&
+            queued &&
+            queued.draftRevision > acceptedDraftRevisionRef.current
+          ) {
             startRedisPut(queued);
           }
         }
@@ -428,7 +475,15 @@ export default function usePcrAutosave({
     }, DB_FLUSH_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
-  }, [campaignId, editorSessionId, isActive, onPcrRevisionUpdate, registerConflict, startRedisPut, storageKey]);
+  }, [
+    campaignId,
+    editorSessionId,
+    isActive,
+    onPcrRevisionUpdate,
+    registerConflict,
+    startRedisPut,
+    storageKey,
+  ]);
 
   const recoverConflict = useCallback(() => {
     const conflict = conflictDraftRef.current;
@@ -466,49 +521,60 @@ export default function usePcrAutosave({
     onRecoverAsCopy?.(conflict.content);
     queueRedisPut(envelope, true);
     return true;
-  }, [campaignId, editorSessionId, onPcrRevisionUpdate, onRecoverAsCopy, pcrRevision, queueRedisPut, storageKey]);
+  }, [
+    campaignId,
+    editorSessionId,
+    onPcrRevisionUpdate,
+    onRecoverAsCopy,
+    pcrRevision,
+    queueRedisPut,
+    storageKey,
+  ]);
 
-  const discardStaleDraft = useCallback(async (staleDraft) => {
-    if (!staleDraft || !campaignId || !editorSessionId) return false;
+  const discardStaleDraft = useCallback(
+    async (staleDraft) => {
+      if (!staleDraft || !campaignId || !editorSessionId) return false;
 
-    if (redisTimerRef.current) clearTimeout(redisTimerRef.current);
-    queuedEnvelopeRef.current = null;
-    retryRef.current = false;
+      if (redisTimerRef.current) clearTimeout(redisTimerRef.current);
+      queuedEnvelopeRef.current = null;
+      retryRef.current = false;
 
-    try {
-      if (staleDraft.draftRevision > 0) {
-        await axios.delete(`/api/campaign/${campaignId}/pcr/drafts/${editorSessionId}`, {
-          params: { expectedDraftRevision: staleDraft.draftRevision },
-        });
+      try {
+        if (staleDraft.draftRevision > 0) {
+          await axios.delete(`/api/campaign/${campaignId}/pcr/drafts/${editorSessionId}`, {
+            params: { expectedDraftRevision: staleDraft.draftRevision },
+          });
+        }
+      } catch (error) {
+        // A newer write from this same session wins. Do not delete it or surface
+        // a stale-session warning to the user.
+        if (isConflict(error)) return false;
+      } finally {
+        if (storageKey) removeStorage(storageKey);
+        const currentJson = latestJsonRef.current;
+        conflictDraftRef.current = null;
+        autosaveBlockedRef.current = false;
+        setConflictDraft(null);
+        setIsAutosaveBlocked(false);
+        initialisedRef.current = true;
+        draftRevisionRef.current = staleDraft.draftRevision || 0;
+        basePcrRevisionRef.current = staleDraft.currentPcrRevision || pcrRevision;
+        acceptedDraftRevisionRef.current = draftRevisionRef.current;
+        flushedDraftRevisionRef.current = draftRevisionRef.current;
+        flushedPcrRevisionRef.current = basePcrRevisionRef.current;
+        lastObservedJsonRef.current = currentJson;
+        lastSyncedJsonRef.current = currentJson;
+        lastFlushedJsonRef.current = currentJson;
+        latestEnvelopeRef.current = null;
+        setLastAutosavedAt(null);
+        onPcrRevisionUpdate?.(basePcrRevisionRef.current);
+        onDiscardConflict?.();
       }
-    } catch (error) {
-      // A newer write from this same session wins. Do not delete it or surface
-      // a stale-session warning to the user.
-      if (isConflict(error)) return false;
-    } finally {
-      if (storageKey) removeStorage(storageKey);
-      const currentJson = latestJsonRef.current;
-      conflictDraftRef.current = null;
-      autosaveBlockedRef.current = false;
-      setConflictDraft(null);
-      setIsAutosaveBlocked(false);
-      initialisedRef.current = true;
-      draftRevisionRef.current = staleDraft.draftRevision || 0;
-      basePcrRevisionRef.current = staleDraft.currentPcrRevision || pcrRevision;
-      acceptedDraftRevisionRef.current = draftRevisionRef.current;
-      flushedDraftRevisionRef.current = draftRevisionRef.current;
-      flushedPcrRevisionRef.current = basePcrRevisionRef.current;
-      lastObservedJsonRef.current = currentJson;
-      lastSyncedJsonRef.current = currentJson;
-      lastFlushedJsonRef.current = currentJson;
-      latestEnvelopeRef.current = null;
-      setLastAutosavedAt(null);
-      onPcrRevisionUpdate?.(basePcrRevisionRef.current);
-      onDiscardConflict?.();
-    }
 
-    return true;
-  }, [campaignId, editorSessionId, onDiscardConflict, onPcrRevisionUpdate, pcrRevision, storageKey]);
+      return true;
+    },
+    [campaignId, editorSessionId, onDiscardConflict, onPcrRevisionUpdate, pcrRevision, storageKey]
+  );
 
   const discardConflict = useCallback(async () => {
     const conflict = conflictDraftRef.current;
@@ -548,7 +614,15 @@ export default function usePcrAutosave({
       }
       return false;
     }
-  }, [campaignId, editorSessionId, onDiscardConflict, onPcrRevisionUpdate, pcrRevision, registerConflict, storageKey]);
+  }, [
+    campaignId,
+    editorSessionId,
+    onDiscardConflict,
+    onPcrRevisionUpdate,
+    pcrRevision,
+    registerConflict,
+    storageKey,
+  ]);
 
   useEffect(() => {
     if (!isActive) return undefined;
@@ -561,47 +635,54 @@ export default function usePcrAutosave({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isActive]);
 
-  const clearDraft = useCallback(async (savedJson) => {
-    const envelope = latestEnvelopeRef.current;
-    if (!campaignId || !editorSessionId) return false;
-    if (savedJson && envelope?.json !== savedJson) return false;
+  const clearDraft = useCallback(
+    async (savedJson) => {
+      const envelope = latestEnvelopeRef.current;
+      if (!campaignId || !editorSessionId) return false;
+      if (savedJson && envelope?.json !== savedJson) return false;
 
-    const expectedDraftRevision = envelope?.draftRevision;
-    if (redisTimerRef.current) clearTimeout(redisTimerRef.current);
-    queuedEnvelopeRef.current = null;
+      const expectedDraftRevision = envelope?.draftRevision;
+      if (redisTimerRef.current) clearTimeout(redisTimerRef.current);
+      queuedEnvelopeRef.current = null;
 
-    try {
-      if (expectedDraftRevision) {
-        await axios.delete(`/api/campaign/${campaignId}/pcr/drafts/${editorSessionId}`, {
-          params: { expectedDraftRevision },
-        });
+      try {
+        if (expectedDraftRevision) {
+          await axios.delete(`/api/campaign/${campaignId}/pcr/drafts/${editorSessionId}`, {
+            params: { expectedDraftRevision },
+          });
+        }
+        if (storageKey && (!savedJson || latestJsonRef.current === savedJson))
+          removeStorage(storageKey);
+        lastSyncedJsonRef.current = latestJsonRef.current;
+        lastFlushedJsonRef.current = latestJsonRef.current;
+        latestEnvelopeRef.current = null;
+        retryRef.current = false;
+        setLastAutosavedAt(null);
+        return true;
+      } catch (error) {
+        if (isConflict(error) && envelope) {
+          registerConflict({
+            content: envelope.content,
+            draftRevision: envelope.draftRevision,
+            basePcrRevision: envelope.basePcrRevision,
+            currentDraftRevision: error.response?.data?.currentDraftRevision,
+            currentPcrRevision: error.response?.data?.currentPcrRevision,
+          });
+        }
+        return false;
       }
-      if (storageKey && (!savedJson || latestJsonRef.current === savedJson)) removeStorage(storageKey);
-      lastSyncedJsonRef.current = latestJsonRef.current;
-      lastFlushedJsonRef.current = latestJsonRef.current;
-      latestEnvelopeRef.current = null;
-      retryRef.current = false;
-      setLastAutosavedAt(null);
-      return true;
-    } catch (error) {
-      if (isConflict(error) && envelope) {
-        registerConflict({
-          content: envelope.content,
-          draftRevision: envelope.draftRevision,
-          basePcrRevision: envelope.basePcrRevision,
-          currentDraftRevision: error.response?.data?.currentDraftRevision,
-          currentPcrRevision: error.response?.data?.currentPcrRevision,
-        });
-      }
-      return false;
-    }
-  }, [campaignId, editorSessionId, registerConflict, storageKey]);
+    },
+    [campaignId, editorSessionId, registerConflict, storageKey]
+  );
 
-  const getDraftState = useCallback(() => ({
-    draftRevision: latestEnvelopeRef.current?.draftRevision ?? draftRevisionRef.current,
-    basePcrRevision: latestEnvelopeRef.current?.basePcrRevision ?? basePcrRevisionRef.current,
-    json: latestEnvelopeRef.current?.json ?? latestJsonRef.current,
-  }), []);
+  const getDraftState = useCallback(
+    () => ({
+      draftRevision: latestEnvelopeRef.current?.draftRevision ?? draftRevisionRef.current,
+      basePcrRevision: latestEnvelopeRef.current?.basePcrRevision ?? basePcrRevisionRef.current,
+      json: latestEnvelopeRef.current?.json ?? latestJsonRef.current,
+    }),
+    []
+  );
 
   return {
     editorSessionId,

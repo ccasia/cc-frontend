@@ -3,13 +3,23 @@ import axios from 'axios';
 // eslint-disable-next-line new-cap
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
-import { CSS } from '@dnd-kit/utilities';
-import { enqueueSnackbar } from 'notistack';
 import EmojiPicker from 'emoji-picker-react';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
-import { useSensor, DndContext, useSensors, closestCenter, PointerSensor, KeyboardSensor } from '@dnd-kit/core';
-import { arrayMove, useSortable, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import {
+  useSensor,
+  DndContext,
+  useSensors,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 import { alpha } from '@mui/material/styles';
 import SendIcon from '@mui/icons-material/Send';
@@ -17,7 +27,22 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
-import { Box, Grid, Link, Alert, Button, Avatar, Dialog, Popover, TextField, Typography, IconButton, DialogTitle, DialogContent, InputAdornment, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Link,
+  Button,
+  Avatar,
+  Dialog,
+  Popover,
+  TextField,
+  Typography,
+  IconButton,
+  DialogTitle,
+  DialogContent,
+  InputAdornment,
+  CircularProgress,
+} from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
@@ -36,24 +61,38 @@ import { HEADER } from 'src/layouts/config-layout';
 
 import Iconify from 'src/components/iconify';
 
+import useAiAnalytic, {
+  formatAnalyticData,
+} from 'src/sections/campaign/discover/admin/pcr-report/hooks/useAiAnalytic';
+
+import Error from './components/Error';
+import Overlay from './components/Overlay';
 import usePcrData from './hooks/usePcrData';
 import usePcrExport from './hooks/usePcrExport';
 import usePcrHistory from './hooks/usePcrHistory';
+import SectionHeader from './components/SectionHeader';
 import PersonaCardEdit from './charts/StrategiesCardEdit';
+import SortableSection from './components/SortableSection';
 import TopEngagementCard from './charts/TopEngagementCard';
 import PersonaCardDisplay from './charts/StrategiesDisplay';
+import AddSectionButtons from './components/AddSectionButtons';
 import TopCreatorViewsChart from './charts/TopCreatorViewsChart';
+import { sanitizeReportHtml } from './utils/sanitize-report-html';
 import EngagementRateHeatmap from './charts/EngagementRateHeatmap';
 import TopCreatorViews48HChart from './charts/TopCreatorViews48HChart';
 import CreatorStrategyChartEdit from './charts/CreatorStrategyChartEdit';
 import PlatformInteractionsChart from './charts/PlatformInteractionsChart';
+import EditableDescriptionField from './components/EditableDescriptionField';
 import usePcrAutosave, { getPcrEditorSessionId } from './hooks/usePcrAutosave';
 import CreatorStrategyChartDisplay from './charts/CreatorStrategyChartDisplay';
+import { usePcrStore, setCampaignId, setIsEditMode } from './store/usePcrStore';
 import {
   DEFAULT_SECTION_ORDER,
   DEFAULT_EDITABLE_CONTENT,
   DEFAULT_SECTION_VISIBILITY,
-} from './constants';
+} from './utils/constants';
+import CustomEmojiPicker from './components/CustomEmojiPicker';
+import ReportReviewModal from './dialog/ReportReviewModal';
 
 const getImprovedInsightBgColor = (index) => {
   if (index === 0) return '#1340FFD9';
@@ -104,302 +143,6 @@ const handlePlainTextPaste = (e) => {
   }
 };
 
-const SortableSection = ({ id, children, isEditMode }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id,
-    disabled: !isEditMode,
-  });
-
-  const style = {
-    transform: isDragging
-      ? `${CSS.Transform.toString(transform)} scale(0.95)`
-      : CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.8 : 1,
-    zIndex: isDragging ? 1000 : 'auto',
-  };
-
-  const handlePointerDown = (e) => {
-    const { target } = e;
-    const tagName = target.tagName.toLowerCase();
-    if (
-      tagName === 'button' ||
-      tagName === 'input' ||
-      tagName === 'textarea' ||
-      tagName === 'a' ||
-      target.closest('button') ||
-      target.closest('input') ||
-      target.closest('textarea') ||
-      target.closest('a') ||
-      target.contentEditable === 'true' ||
-      target.closest('[contenteditable="true"]') ||
-      target.onclick ||
-      target.closest('[onclick]') ||
-      window.getComputedStyle(target).cursor === 'pointer'
-    ) {
-      e.stopPropagation();
-      return;
-    }
-
-    // Allow drag for other elements
-    if (listeners?.onPointerDown) {
-      listeners.onPointerDown(e);
-    }
-  };
-
-  return (
-    <Box
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      onPointerDown={isEditMode ? handlePointerDown : undefined}
-      sx={{
-        cursor: isEditMode ? 'grab' : 'default',
-        '&:active': {
-          cursor: isEditMode ? 'grabbing' : 'default',
-        },
-        '& button, & input, & textarea, & a, & [contenteditable="true"]': {
-          cursor: 'pointer !important',
-        },
-        '& input, & textarea': {
-          cursor: 'text !important',
-        },
-      }}
-    >
-      {children}
-    </Box>
-  );
-};
-
-SortableSection.propTypes = {
-  id: PropTypes.string.isRequired,
-  children: PropTypes.node.isRequired,
-  isEditMode: PropTypes.bool.isRequired,
-};
-
-// Formatted Text Field Component
-const FormattedTextField = ({ value, onChange, placeholder, rows = 3, sx = {} }) => {
-  const editorRef = useRef(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Initialize content only once
-  useEffect(() => {
-    if (editorRef.current && !isInitialized) {
-      editorRef.current.innerHTML = value || '';
-      setIsInitialized(true);
-    }
-  }, [value, isInitialized]);
-
-  const applyFormat = (formatType) => {
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
-
-    const range = selection.getRangeAt(0);
-    const selectedText = range.toString();
-
-    if (!selectedText) return;
-
-    // Save the current selection
-    const { startContainer } = range;
-    const { startOffset } = range;
-    const { endContainer } = range;
-    const { endOffset } = range;
-
-    try {
-      // Use execCommand for better browser compatibility
-      // Even though deprecated, it still works reliably across browsers
-      let command;
-      if (formatType === 'bold') {
-        command = 'bold';
-      } else if (formatType === 'italic') {
-        command = 'italic';
-      } else if (formatType === 'underline') {
-        command = 'underline';
-      }
-
-      // Focus the editor first
-      if (editorRef.current) {
-        editorRef.current.focus();
-      }
-
-      // Restore selection
-      const newRange = document.createRange();
-      newRange.setStart(startContainer, startOffset);
-      newRange.setEnd(endContainer, endOffset);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
-
-      // Apply formatting
-      document.execCommand(command, false, null);
-
-      // Update the value
-      if (editorRef.current) {
-        onChange({ target: { value: editorRef.current.innerHTML } });
-      }
-
-      // Keep selection for potential additional formatting
-      setTimeout(() => {
-        if (editorRef.current) {
-          editorRef.current.focus();
-        }
-      }, 0);
-    } catch (error) {
-      console.error('Error applying format:', error);
-
-      // Fallback to manual DOM manipulation
-      let formattedElement;
-      if (formatType === 'bold') {
-        formattedElement = document.createElement('strong');
-      } else if (formatType === 'italic') {
-        formattedElement = document.createElement('em');
-      } else if (formatType === 'underline') {
-        formattedElement = document.createElement('u');
-      }
-
-      formattedElement.textContent = selectedText;
-      range.deleteContents();
-      range.insertNode(formattedElement);
-
-      // Move cursor after the inserted element
-      const newRange = document.createRange();
-      newRange.setStartAfter(formattedElement);
-      newRange.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(newRange);
-
-      // Update the value
-      if (editorRef.current) {
-        onChange({ target: { value: editorRef.current.innerHTML } });
-      }
-    }
-  };
-
-  const handleInput = (e) => {
-    onChange({ target: { value: e.currentTarget.innerHTML } });
-  };
-
-  const handleKeyDown = (e) => {
-    // Check for Cmd (Mac) or Ctrl (Windows/Linux)
-    const isMod = e.metaKey || e.ctrlKey;
-
-    if (isMod) {
-      if (e.key === 'b' || e.key === 'B') {
-        e.preventDefault();
-        applyFormat('bold');
-      } else if (e.key === 'i' || e.key === 'I') {
-        e.preventDefault();
-        applyFormat('italic');
-      } else if (e.key === 'u' || e.key === 'U') {
-        e.preventDefault();
-        applyFormat('underline');
-      }
-    }
-  };
-
-  return (
-    <Box sx={{ position: 'relative' }}>
-      {/* Formatting Toolbar */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 8,
-          right: 8,
-          zIndex: 2,
-          display: 'flex',
-          gap: 0.5,
-          bgcolor: 'rgba(255, 255, 255, 0.9)',
-          borderRadius: '4px',
-          padding: '2px',
-        }}
-      >
-        <IconButton
-          size="small"
-          onClick={() => applyFormat('bold')}
-          sx={{ width: 24, height: 24, color: '#636366' }}
-        >
-          <FormatBoldIcon sx={{ fontSize: 16 }} />
-        </IconButton>
-        <IconButton
-          size="small"
-          onClick={() => applyFormat('italic')}
-          sx={{ width: 24, height: 24, color: '#636366' }}
-        >
-          <FormatItalicIcon sx={{ fontSize: 16 }} />
-        </IconButton>
-        <IconButton
-          size="small"
-          onClick={() => applyFormat('underline')}
-          sx={{ width: 24, height: 24, color: '#636366' }}
-        >
-          <FormatUnderlinedIcon sx={{ fontSize: 16 }} />
-        </IconButton>
-      </Box>
-
-      {/* Editable Content */}
-      <Box
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleInput}
-        onKeyDown={handleKeyDown}
-        sx={{
-          minHeight: `${rows * 24}px`,
-          padding: '12px',
-          paddingTop: '40px',
-          paddingRight: '100px',
-          borderRadius: '8px',
-          border: '1px solid #E5E7EB',
-          outline: 'none',
-          fontFamily: 'Aileron',
-          fontWeight: 400,
-          fontSize: '20px',
-          lineHeight: '24px',
-          color: '#231F20',
-          bgcolor: '#F3F4F6',
-          whiteSpace: 'pre-wrap',
-          wordWrap: 'break-word',
-          overflowWrap: 'break-word',
-          '&:focus': {
-            borderColor: '#1340FF',
-          },
-          '&:empty:before': {
-            content: `"${placeholder}"`,
-            color: '#9CA3AF',
-          },
-          '& strong': {
-            fontWeight: 700,
-            fontFamily: 'Aileron',
-          },
-          '& em': {
-            fontStyle: 'italic',
-            fontFamily: 'Aileron',
-          },
-          '& u': {
-            textDecoration: 'underline',
-            fontFamily: 'Aileron',
-          },
-          ...sx,
-        }}
-      />
-    </Box>
-  );
-};
-
-FormattedTextField.propTypes = {
-  value: PropTypes.string,
-  onChange: PropTypes.func.isRequired,
-  placeholder: PropTypes.string,
-  rows: PropTypes.number,
-  sx: PropTypes.object,
-};
-
 // Resolve tier for PCR Creator Tiers table (matches agreements / pitches fallback chain)
 const getTierForShortlisted = (shortlisted, campaign) => {
   if (!shortlisted) return null;
@@ -422,6 +165,7 @@ const getTierForShortlisted = (shortlisted, campaign) => {
 
 const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdate }) => {
   const { user } = useAuthContext();
+  const isEditMode = usePcrStore((state) => state.isEditMode);
   // Helper function to format campaign period (matching campaign detail view format)
   const formatCampaignPeriod = () => {
     const startDate = campaign?.startDate || campaign?.campaignBrief?.startDate;
@@ -440,7 +184,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   };
 
   // Edit mode state
-  const [isEditMode, setIsEditMode] = useState(false);
+  // const [isEditMode, setIsEditMode] = useState(false);
+  // const [isEditMode, setIsEditMode] = useState({ type: '', state: false });
   const shouldReduceMotion = useReducedMotion();
 
   // Bumped once when an autosave draft is restored. It feeds the `key` of every
@@ -451,7 +196,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   const bumpHydrationVersion = useCallback(() => setHydrationVersion((v) => v + 1), []);
 
   // When client view, always show read-only (no editing)
-  const effectiveEditMode = isClientView ? false : isEditMode;
+  const effectiveEditMode = isClientView ? false : isEditMode.state;
 
   // Individual section edit states
   const [sectionEditStates, setSectionEditStates] = useState({
@@ -503,18 +248,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   // Show fifth persona card state
   const [showFifthCard, setShowFifthCard] = useState(false);
 
-  // Persona cards array state
-  const [personaCards, setPersonaCards] = useState([
-    {
-      id: 1,
-      title: 'The Comic',
-      emoji: '🎭',
-      contentStyle: '',
-      whyWork: '',
-      creatorCount: '1',
-    }
-  ]);
-
   const [editableContent, setEditableContent] = useState(DEFAULT_EDITABLE_CONTENT);
 
   // Emoji picker state
@@ -551,7 +284,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     const sentinel = toolbarSentinelRef.current;
     const scrollContainer = sentinel?.closest('main');
 
-    if (!sentinel || !scrollContainer || typeof IntersectionObserver === 'undefined') return undefined;
+    if (!sentinel || !scrollContainer || typeof IntersectionObserver === 'undefined')
+      return undefined;
 
     updateFloatingToolbarBounds();
     const headerOffset = window.matchMedia('(min-width: 1200px)').matches
@@ -589,7 +323,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   );
 
   // Fetch manual creator entries
-  const { data: manualEntriesData, mutate: mutateManualEntries } = useSWR(
+  const { data: manualEntriesData } = useSWR(
     campaignId ? `/api/campaign/${campaignId}/manual-creators` : null,
     async (url) => {
       const response = await axios.get(url);
@@ -614,11 +348,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   } = useSocialInsights(postingSubmissions, campaignId);
 
   // Fetch post engagement snapshots (Day 7, 15, 30 ER tracking)
-  const {
-    snapshots: postSnapshots,
-    loading: loadingSnapshots,
-    error: snapshotsError
-  } = usePostEngagementSnapshots(campaignId);
+  const { snapshots: postSnapshots } = usePostEngagementSnapshots(campaignId);
 
   const manualInsightsData = useMemo(() => {
     const transformed = manualEntries.map((entry) => ({
@@ -690,9 +420,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     });
 
     approvedAgreements.forEach((sub) => {
-      const agreementUserId = sub.userId ||
-        sub.creatorId ||
-        (typeof sub.user === 'string' ? sub.user : sub.user?.id);
+      const agreementUserId =
+        sub.userId || sub.creatorId || (typeof sub.user === 'string' ? sub.user : sub.user?.id);
 
       if (agreementUserId) {
         uniqueCreatorIds.add(agreementUserId);
@@ -703,7 +432,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   }, [campaign?.submission]);
 
   const summaryStats = useMemo(() => {
-
     if (filteredInsightsData.length === 0) {
       return {
         totalViews: 0,
@@ -721,20 +449,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     return stats;
   }, [filteredInsightsData]);
 
-  const { data: heatmapApiData, isLoading: heatmapLoading, error: heatmapError } = useSWR(
-    campaign?.id ? `/api/campaign/${campaign.id}/trends/engagement-heatmap?platform=All&weeks=6` : null,
-    async (url) => {
-      const response = await axios.get(url);
-      return response.data.data;
-    },
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      shouldRetryOnError: false,
-      dedupingInterval: 60000,
-    }
-  );
-
   const {
     isExportingPDF,
     isPreviewOpen,
@@ -743,7 +457,15 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     setIsPreviewCached,
     handleGeneratePreview,
     handleExportPDF,
-  } = usePcrExport({ editableContent, sectionVisibility, sectionOrder, isEditMode, setIsEditMode, reportRef, campaign });
+  } = usePcrExport({
+    editableContent,
+    sectionVisibility,
+    sectionOrder,
+    isEditMode,
+    setIsEditMode,
+    reportRef,
+    campaign,
+  });
 
   const { history, historyIndex, handleUndo, handleRedo, resetHistory } = usePcrHistory({
     editableContent,
@@ -764,25 +486,50 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     setIsPreviewCached,
   });
 
+  const mutation = useAiAnalytic(campaign.id);
+
   // usePcrData needs clearDraft and usePcrAutosave needs isLoadingPCR, so the two
   // hooks depend on each other. A ref breaks the cycle; Save only fires on a
   // click, long after the assignment effect below has run.
   const clearDraftRef = useRef(null);
   const clearDraft = useCallback((savedJson) => clearDraftRef.current?.(savedJson), []);
   const discardStaleDraftRef = useRef(null);
-  const discardStaleDraft = useCallback((staleDraft) => discardStaleDraftRef.current?.(staleDraft), []);
+  const discardStaleDraft = useCallback(
+    (staleDraft) => discardStaleDraftRef.current?.(staleDraft),
+    []
+  );
   const getDraftStateRef = useRef(null);
   const getDraftState = useCallback(() => getDraftStateRef.current?.(), []);
-  const applyConflictCopy = useCallback((content) => {
-    setEditableContent({ ...DEFAULT_EDITABLE_CONTENT, ...content });
-    setSectionOrder(content.sectionOrder || DEFAULT_SECTION_ORDER);
-    setSectionVisibility({ ...DEFAULT_SECTION_VISIBILITY, ...(content.sectionVisibility || {}) });
-    setShowEducatorCard(content.showEducatorCard ?? Boolean(content.educatorTitle || content.educatorContentStyle));
-    setShowThirdCard(content.showThirdCard ?? Boolean(content.thirdTitle || content.thirdContentStyle));
-    setShowFourthCard(content.showFourthCard ?? Boolean(content.fourthTitle || content.fourthContentStyle));
-    setShowFifthCard(content.showFifthCard ?? Boolean(content.fifthTitle || content.fifthContentStyle));
-    bumpHydrationVersion();
-  }, [bumpHydrationVersion, setEditableContent, setSectionOrder, setSectionVisibility, setShowEducatorCard, setShowThirdCard, setShowFourthCard, setShowFifthCard]);
+  const applyConflictCopy = useCallback(
+    (content) => {
+      setEditableContent({ ...DEFAULT_EDITABLE_CONTENT, ...content });
+      setSectionOrder(content.sectionOrder || DEFAULT_SECTION_ORDER);
+      setSectionVisibility({ ...DEFAULT_SECTION_VISIBILITY, ...(content.sectionVisibility || {}) });
+      setShowEducatorCard(
+        content.showEducatorCard ?? Boolean(content.educatorTitle || content.educatorContentStyle)
+      );
+      setShowThirdCard(
+        content.showThirdCard ?? Boolean(content.thirdTitle || content.thirdContentStyle)
+      );
+      setShowFourthCard(
+        content.showFourthCard ?? Boolean(content.fourthTitle || content.fourthContentStyle)
+      );
+      setShowFifthCard(
+        content.showFifthCard ?? Boolean(content.fifthTitle || content.fifthContentStyle)
+      );
+      bumpHydrationVersion();
+    },
+    [
+      bumpHydrationVersion,
+      setEditableContent,
+      setSectionOrder,
+      setSectionVisibility,
+      setShowEducatorCard,
+      setShowThirdCard,
+      setShowFourthCard,
+      setShowFifthCard,
+    ]
+  );
 
   const {
     isLoadingPCR,
@@ -798,7 +545,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     restoredRemoteDraft,
     retryLoad,
     handleSavePCR,
-    handleRefreshInsights,
     handleMarkAsReady,
     handleMarkAsUnready,
   } = usePcrData({
@@ -877,11 +623,12 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
       const { target } = e;
       const isInReport = reportRef.current?.contains(target);
 
-      if (isInReport && (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.contentEditable === 'true'
-      )) {
+      if (
+        isInReport &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.contentEditable === 'true')
+      ) {
         handlePlainTextPaste(e);
       }
     };
@@ -905,69 +652,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     }
   }, [isEditMode, editableContent.creatorTiersDescription]);
 
-
-  // Calculate top engagement creator
-  const topEngagementCreator = useMemo(() => {
-    if (!filteredInsightsData || filteredInsightsData.length === 0) return null;
-
-    let highestEngagement = -1;
-    let topCreator = null;
-
-    filteredInsightsData.forEach((insightData) => {
-      const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-      if (submission) {
-        // Calculate engagement rate using the insight array
-        const engagementRate = calculateEngagementRate(insightData.insight);
-
-        if (engagementRate > highestEngagement) {
-          highestEngagement = engagementRate;
-          topCreator = {
-            ...submission,
-            engagementRate,
-            insightData,
-          };
-        }
-      }
-    });
-
-    return topCreator;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredInsightsData, filteredSubmissions]);
-
-  // Calculate most views creator
-  const mostViewsCreator = useMemo(() => {
-    let result = null;
-    let maxViews = 0;
-
-    filteredInsightsData.forEach((insightData) => {
-      const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-      const views = getMetricValue(insightData.insight, 'views');
-      if (views > maxViews) {
-        maxViews = views;
-        result = { submission, insightData, views };
-      }
-    });
-
-    return result;
-  }, [filteredInsightsData, filteredSubmissions]);
-
-  // Calculate most comments creator
-  const mostCommentsCreator = useMemo(() => {
-    let result = null;
-    let maxComments = 0;
-
-    filteredInsightsData.forEach((insightData) => {
-      const submission = filteredSubmissions.find((sub) => sub.id === insightData.submissionId);
-      const comments = getMetricValue(insightData.insight, 'comments');
-      if (comments > maxComments) {
-        maxComments = comments;
-        result = { submission, insightData, comments };
-      }
-    });
-
-    return result;
-  }, [filteredInsightsData, filteredSubmissions]);
-
   // Calculate most likes creator
   const mostLikesCreator = useMemo(() => {
     let result = null;
@@ -978,7 +662,12 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
       const likes = getMetricValue(insightData.insight, 'likes');
       if (likes > maxLikes) {
         maxLikes = likes;
-        result = { submission, insightData, likes, platform: insightData.platform || submission.platform };
+        result = {
+          submission,
+          insightData,
+          likes,
+          platform: insightData.platform || submission.platform,
+        };
       }
     });
 
@@ -995,85 +684,61 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
       const shares = getMetricValue(insightData.insight, 'shares');
       if (shares > maxShares) {
         maxShares = shares;
-        result = { submission, insightData, shares, platform: insightData.platform || submission.platform };
+        result = {
+          submission,
+          insightData,
+          shares,
+          platform: insightData.platform || submission.platform,
+        };
       }
     });
 
     return result;
   }, [filteredInsightsData, filteredSubmissions]);
 
-  const mostViewsUserId = typeof mostViewsCreator?.submission?.user === 'string'
-    ? mostViewsCreator?.submission?.user
-    : mostViewsCreator?.submission?.user?.id;
-  const mostCommentsUserId = typeof mostCommentsCreator?.submission?.user === 'string'
-    ? mostCommentsCreator?.submission?.user
-    : mostCommentsCreator?.submission?.user?.id;
-  const mostLikesUserId = typeof mostLikesCreator?.submission?.user === 'string'
-    ? mostLikesCreator?.submission?.user
-    : mostLikesCreator?.submission?.user?.id;
-  const mostSharesUserId = typeof mostSharesCreator?.submission?.user === 'string'
-    ? mostSharesCreator?.submission?.user
-    : mostSharesCreator?.submission?.user?.id;
+  const mostLikesUserId =
+    typeof mostLikesCreator?.submission?.user === 'string'
+      ? mostLikesCreator?.submission?.user
+      : mostLikesCreator?.submission?.user?.id;
+
+  const mostSharesUserId =
+    typeof mostSharesCreator?.submission?.user === 'string'
+      ? mostSharesCreator?.submission?.user
+      : mostSharesCreator?.submission?.user?.id;
 
   // Check if they are manual entries (userId equals submission.id)
-  const isViewsManual = mostViewsUserId === mostViewsCreator?.submission?.id;
-  const isCommentsManual = mostCommentsUserId === mostCommentsCreator?.submission?.id;
   const isLikesManual = mostLikesUserId === mostLikesCreator?.submission?.id;
   const isSharesManual = mostSharesUserId === mostSharesCreator?.submission?.id;
 
-  const { data: topEngagementCreatorData } = useGetCreatorById(topEngagementCreator?.user);
-  const { data: mostViewsCreatorData } = useGetCreatorById(!isViewsManual ? mostViewsUserId : null);
-  const { data: mostCommentsCreatorData } = useGetCreatorById(!isCommentsManual ? mostCommentsUserId : null);
   const { data: mostLikesCreatorData } = useGetCreatorById(!isLikesManual ? mostLikesUserId : null);
-  const { data: mostSharesCreatorData } = useGetCreatorById(!isSharesManual ? mostSharesUserId : null);
+
+  const { data: mostSharesCreatorData } = useGetCreatorById(
+    !isSharesManual ? mostSharesUserId : null
+  );
+
+  const aiAnalyticsData = useMemo(
+    () => formatAnalyticData(mutation.data?.report?.sections),
+    [mutation.data?.report?.sections]
+  );
+
+  useEffect(() => {
+    if (!aiAnalyticsData) return;
+
+    setEditableContent((prev) => ({
+      ...prev,
+      campaignDescription: aiAnalyticsData.campaign_summary,
+      engagementDescription: aiAnalyticsData.engagement_interactions,
+      platformBreakdownDescription: aiAnalyticsData.platform_breakdown,
+      viewsDescription: aiAnalyticsData.views_analysis,
+    }));
+  }, [aiAnalyticsData]);
+
+  useEffect(() => {
+    setCampaignId(campaign.id);
+  }, [campaign?.id]);
+
   return (
     <>
-      {/* Print-specific CSS */}
-      <style>
-        {`
-          @media print {
-            @page {
-              size: A4;
-              margin: 15mm;
-            }
-            
-            body {
-              margin: 0;
-              padding: 0;
-            }
-            
-            /* Prevent sections from breaking across pages */
-            .pcr-section {
-              page-break-inside: avoid;
-              break-inside: avoid;
-            }
-            
-            /* Allow break before sections if needed */
-            .pcr-section {
-              page-break-before: auto;
-            }
-            
-            /* Prevent breaks inside cards and grids */
-            .MuiGrid-item,
-            .MuiBox-root[class*="card"] {
-              page-break-inside: avoid;
-              break-inside: avoid;
-            }
-            
-            /* Hide elements that shouldn't print */
-            .hide-in-pdf {
-              display: none !important;
-            }
-            
-            /* Ensure proper sizing */
-            * {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-          }
-        `}
-      </style>
-
       {/* Top bar - Ready/Unready - above the PCR blue border */}
       {!isClientView && (
         <Box
@@ -1116,9 +781,24 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
             onClick={isPCRReady ? handleMarkAsUnready : handleMarkAsReady}
             startIcon={
               isPCRReady ? (
-                <Box component="img" src="/assets/greentick.svg" alt="" sx={{ width: 24, height: 24 }} />
+                <Box
+                  component="img"
+                  src="/assets/greentick.svg"
+                  alt=""
+                  sx={{ width: 24, height: 24 }}
+                />
               ) : (
-                <Box component="img" src="/assets/greentick.svg" alt="" sx={{ width: 24, height: 24, filter: 'brightness(0) saturate(100%) invert(55%) sepia(8%) saturate(1200%) hue-rotate(200deg) brightness(92%) contrast(88%)' }} />
+                <Box
+                  component="img"
+                  src="/assets/greentick.svg"
+                  alt=""
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    filter:
+                      'brightness(0) saturate(100%) invert(55%) sepia(8%) saturate(1200%) hue-rotate(200deg) brightness(92%) contrast(88%)',
+                  }}
+                />
               )
             }
           >
@@ -1127,28 +807,13 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
         </Box>
       )}
 
-      {!loadingInsights && insightsError && (
-        <Alert severity="error" className="hide-in-pdf" sx={{ width: '1046px', mx: 'auto', mb: 2 }}>
-          Analytics data could not load. Try again before you mark this report as ready.
-        </Alert>
-      )}
+      {!loadingInsights && insightsError && <Error type="insightsError" />}
 
       {!loadingInsights && !insightsError && missingInsightSnapshots.length > 0 && (
-        <Alert severity="warning" className="hide-in-pdf" sx={{ width: '1046px', mx: 'auto', mb: 2 }}>
-          This report excludes {missingInsightSnapshots.length}{' '}
-          {missingInsightSnapshots.length === 1 ? 'post' : 'posts'} that are waiting for an analytics
-          sync. Sync the data before you mark the report as ready.
-        </Alert>
+        <Error type="missingSnapshots" count={missingInsightSnapshots.length} />
       )}
 
-      {loadError && !isLoadingPCR && (
-        <Alert severity="error" className="hide-in-pdf" sx={{ width: '1046px', mx: 'auto', mb: 2 }}>
-          PCR report could not load. Editing, saving, and autosave are disabled.
-          <Button size="small" onClick={retryLoad} sx={{ ml: 1 }}>
-            Retry
-          </Button>
-        </Alert>
-      )}
+      {loadError && !isLoadingPCR && <Error type="loadError" onRetry={retryLoad} />}
 
       <Box
         id="pcr-report-main"
@@ -1159,88 +824,18 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
           gap: '10px',
           background: 'linear-gradient(180deg, #1340FF 0%, #8A5AFE 100%)',
           margin: '0 auto',
-          position: 'relative'
+          position: 'relative',
+          borderRadius: 1,
         }}
       >
         {/* Loading overlay */}
-        {isLoadingPCR && (
-          <Box className="hide-in-pdf" sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            bgcolor: 'rgba(255, 255, 255, 0.95)',
-            zIndex: 9999,
-            borderRadius: '12px',
-            backdropFilter: 'blur(4px)'
-          }}>
-            <CircularProgress size={60} thickness={4} sx={{ color: '#1340FF', mb: 3 }} />
-            <Typography sx={{
-              fontFamily: 'Inter Display',
-              fontWeight: 600,
-              fontSize: '18px',
-              color: '#231F20',
-              mb: 1
-            }}>
-              Loading Post Campaign Report
-            </Typography>
-            <Typography sx={{
-              fontFamily: 'Aileron',
-              fontWeight: 400,
-              fontSize: '14px',
-              color: '#636366'
-            }}>
-              Please wait while we prepare your data...
-            </Typography>
-          </Box>
-        )}
+        {isLoadingPCR && <Overlay type="loading" />}
 
         {/* Saving overlay */}
-        {isSaving && (
-          <Box className="hide-in-pdf" sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            bgcolor: 'rgba(255, 255, 255, 0.95)',
-            zIndex: 9999,
-            borderRadius: '12px',
-            backdropFilter: 'blur(4px)'
-          }}>
-            <CircularProgress size={60} thickness={4} sx={{ color: '#10B981', mb: 3 }} />
-            <Typography sx={{
-              fontFamily: 'Inter Display',
-              fontWeight: 600,
-              fontSize: '18px',
-              color: '#231F20',
-              mb: 1
-            }}>
-              Saving Changes
-            </Typography>
-            <Typography sx={{
-              fontFamily: 'Aileron',
-              fontWeight: 400,
-              fontSize: '14px',
-              color: '#636366'
-            }}>
-              Your edits are being saved...
-            </Typography>
-          </Box>
-        )}
+        {isSaving && <Overlay type="saving" />}
 
         {/* PDF Capture Wrapper - includes gradient border */}
         <Box ref={reportRef}>
-
           {/* Inner content container - transparent background */}
           <Box
             sx={{
@@ -1273,498 +868,484 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                   animate={{ opacity: 1, x: 0, y: 0 }}
                   exit={{ opacity: shouldReduceMotion ? 1 : 0, y: shouldReduceMotion ? 0 : -4 }}
                   transition={{ duration: shouldReduceMotion ? 0 : 0.16, ease: 'easeOut' }}
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: { xs: 'wrap', lg: 'nowrap' },
-                  rowGap: 1,
-                  mb: 2,
-                  position: isToolbarFloating ? 'fixed' : 'relative',
-                  top: isToolbarFloating
-                    ? floatingToolbarBounds?.top || { xs: HEADER.H_MOBILE, lg: HEADER.H_DESKTOP }
-                    : 'auto',
-                  // Keep the banner in the AppBar's stacking layer, not above it.
-                  // Its measured top is the AppBar's actual bottom edge.
-                  zIndex: isToolbarFloating ? (theme) => theme.zIndex.appBar : 'auto',
-                  left: isToolbarFloating ? floatingToolbarBounds?.left || 0 : 'auto',
-                  width: isToolbarFloating
-                    ? floatingToolbarBounds?.width || { xs: 'calc(100vw - 16px)', lg: '100%' }
-                    : 'auto',
-                  maxWidth: isToolbarFloating ? '100vw' : 'none',
-                  mx: isToolbarFloating ? 0 : 'auto',
-                  px: isToolbarFloating ? { xs: 1, sm: 2 } : 0,
-                  py: isToolbarFloating ? 0.75 : 0,
-                  // Match the dashboard Header's bgBlur(theme.palette.background.paper)
-                  // values exactly: alpha 0.8 with a 6px backdrop blur.
-                  backgroundColor: isToolbarFloating
-                    ? (theme) => alpha(theme.palette.background.paper, 0.8)
-                    : 'transparent',
-                  backdropFilter: isToolbarFloating ? 'blur(6px)' : 'none',
-                  WebkitBackdropFilter: isToolbarFloating ? 'blur(6px)' : 'none',
-                  borderBottom: isToolbarFloating ? 1 : 0,
-                  borderBottomColor: isToolbarFloating ? (theme) => theme.palette.divider : 'transparent',
-                  boxShadow: 'none',
-                }}
-                >
-                <Button
-                  onClick={onBack}
                   sx={{
-                    width: '73px',
-                    height: '44px',
-                    borderRadius: '8px',
-                    gap: '6px',
-                    padding: '10px 16px 13px 16px',
-                    background: '#3A3A3C',
-                    boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                    color: '#FFFFFF',
-                    textTransform: 'none',
-                    fontFamily: 'Inter Display, sans-serif',
-                    fontWeight: 600,
-                    fontStyle: 'normal',
-                    fontSize: '16px',
-                    lineHeight: '20px',
-                    letterSpacing: '0%',
-                    '&:hover': {
-                      background: '#2A2A2C',
-                      boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
-                    },
-                    '&:active': {
-                      boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                      transform: 'translateY(1px)',
-                    }
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: { xs: 'wrap', lg: 'nowrap' },
+                    rowGap: 1,
+                    mb: 2,
+                    position: isToolbarFloating ? 'fixed' : 'relative',
+                    top: isToolbarFloating
+                      ? floatingToolbarBounds?.top || { xs: HEADER.H_MOBILE, lg: HEADER.H_DESKTOP }
+                      : 'auto',
+                    // Keep the banner in the AppBar's stacking layer, not above it.
+                    // Its measured top is the AppBar's actual bottom edge.
+                    zIndex: isToolbarFloating ? (theme) => theme.zIndex.appBar : 'auto',
+                    left: isToolbarFloating ? floatingToolbarBounds?.left || 0 : 'auto',
+                    width: isToolbarFloating
+                      ? floatingToolbarBounds?.width || { xs: 'calc(100vw - 16px)', lg: '100%' }
+                      : 'auto',
+                    maxWidth: isToolbarFloating ? '100vw' : 'none',
+                    mx: isToolbarFloating ? 0 : 'auto',
+                    px: isToolbarFloating ? { xs: 1, sm: 2 } : 0,
+                    py: isToolbarFloating ? 0.75 : 0,
+                    // Match the dashboard Header's bgBlur(theme.palette.background.paper)
+                    // values exactly: alpha 0.8 with a 6px backdrop blur.
+                    backgroundColor: isToolbarFloating
+                      ? (theme) => alpha(theme.palette.background.paper, 0.8)
+                      : 'transparent',
+                    backdropFilter: isToolbarFloating ? 'blur(6px)' : 'none',
+                    WebkitBackdropFilter: isToolbarFloating ? 'blur(6px)' : 'none',
+                    borderBottom: isToolbarFloating ? 1 : 0,
+                    borderBottomColor: isToolbarFloating
+                      ? (theme) => theme.palette.divider
+                      : 'transparent',
+                    boxShadow: 'none',
                   }}
                 >
-                  Back
-                </Button>
-
-                {!isClientView && (
-                  <Box
+                  <Button
+                    onClick={onBack}
                     sx={{
-                      display: 'flex',
-                      gap: 2,
-                      flexWrap: { xs: 'wrap', lg: 'nowrap' },
-                      justifyContent: { xs: 'flex-end', lg: 'flex-start' },
+                      width: '73px',
+                      height: '44px',
+                      borderRadius: '8px',
+                      gap: '6px',
+                      padding: '10px 16px 13px 16px',
+                      background: '#3A3A3C',
+                      boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                      color: '#FFFFFF',
+                      textTransform: 'none',
+                      fontFamily: 'Inter Display, sans-serif',
+                      fontWeight: 600,
+                      fontStyle: 'normal',
+                      fontSize: '16px',
+                      lineHeight: '20px',
+                      letterSpacing: '0%',
+                      '&:hover': {
+                        background: '#2A2A2C',
+                        boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
+                      },
+                      '&:active': {
+                        boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                        transform: 'translateY(1px)',
+                      },
                     }}
                   >
-                    {effectiveEditMode ? (
-                      <>
-                        <Button
-                          sx={{
-                            width: '90px',
-                            height: '44px',
-                            borderRadius: '8px',
-                            gap: '6px',
-                            padding: '10px 16px 13px 16px',
-                            background: '#FFFFFF',
-                            border: '1px solid #E7E7E7',
-                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                            color: '#374151',
-                            textTransform: 'none',
-                            fontFamily: 'Inter Display, sans-serif',
-                            fontWeight: 600,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '20px',
-                            letterSpacing: '0%',
-                            whiteSpace: 'nowrap',
-                            '&:hover': {
-                              background: '#F9FAFB',
-                              border: '1px solid #D1D5DB',
-                              boxShadow: '0px -3px 0px 0px #D1D5DB inset',
-                            },
-                            '&:active': {
-                              boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
-                              transform: 'translateY(1px)',
-                            },
-                            '&:disabled': {
-                              background: '#F3F4F6',
-                              color: '#9CA3AF',
-                              border: '1px solid #E5E7EB',
-                            }
-                          }}
-                          onClick={handleGeneratePreview}
-                        >
-                          Preview
-                        </Button>
-                        <Button
-                          onClick={handleUndo}
-                          disabled={historyIndex <= 0}
-                          endIcon={
-                            <Box
-                              component="img"
-                              src="/assets/icons/components/undo.svg"
-                              alt="Undo"
+                    Back
+                  </Button>
+
+                  {!isClientView && (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: 2,
+                        flexWrap: { xs: 'wrap', lg: 'nowrap' },
+                        justifyContent: { xs: 'flex-end', lg: 'flex-start' },
+                      }}
+                    >
+                      {isEditMode.state ? (
+                        <>
+                          {isEditMode.type === 'ai' && (
+                            <Button
+                              disabled={mutation.isPending}
                               sx={{
-                                width: '19px',
-                                height: '18px',
-                                opacity: historyIndex <= 0 ? 0.4 : 1
+                                borderRadius: '8px',
+                                position: 'relative',
+                                gap: '6px',
+                                padding: '10px 16px 13px 16px',
+                                bgcolor: 'rgba(138, 90, 254, 1)',
+                                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                                color: 'rgba(255, 255, 255, 1)',
+                                textTransform: 'none',
+                                fontFamily: 'Inter Display, sans-serif',
+                                fontWeight: 600,
+                                fontStyle: 'normal',
+                                fontSize: '16px',
+                                lineHeight: '20px',
+                                letterSpacing: '0%',
+                                whiteSpace: 'nowrap',
+                                paddingLeft: 4,
+                                '&:hover': {
+                                  background: alpha('rgba(138, 90, 254, 1)', 0.7),
+                                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                                },
+                                '&:active': {
+                                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                                  transform: 'translateY(1px)',
+                                },
+                                '&:disabled': {
+                                  color: 'rgba(255, 255, 255, 1)',
+                                },
                               }}
-                            />
-                          }
-                          sx={{
-                            height: '44px',
-                            borderRadius: '8px',
-                            padding: '10px 16px 13px 16px',
-                            background: '#FFFFFF',
-                            border: '1px solid #E7E7E7',
-                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                            color: '#374151',
-                            textTransform: 'none',
-                            fontFamily: 'Inter Display, sans-serif',
-                            fontWeight: 600,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '20px',
-                            letterSpacing: '0%',
-                            '&:hover': {
-                              background: '#F9FAFB',
-                              border: '1px solid #D1D5DB',
-                              boxShadow: '0px -3px 0px 0px #D1D5DB inset',
-                            },
-                            '&:active': {
-                              boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
-                              transform: 'translateY(1px)',
-                            },
-                            '&:disabled': {
-                              background: '#F3F4F6',
-                              color: '#9CA3AF',
-                            }
-                          }}
-                        >
-                          Undo
-                        </Button>
-                        <Button
-                          onClick={handleRedo}
-                          disabled={historyIndex >= history.length - 1}
-                          endIcon={
-                            <Box
-                              component="img"
-                              src="/assets/icons/components/redo.svg"
-                              alt="Redo"
-                              sx={{
-                                width: '19px',
-                                height: '18px',
-                                opacity: historyIndex >= history.length - 1 ? 0.4 : 1
-                              }}
-                            />
-                          }
-                          sx={{
-                            height: '44px',
-                            borderRadius: '8px',
-                            padding: '10px 16px 13px 16px',
-                            background: '#FFFFFF',
-                            border: '1px solid #E7E7E7',
-                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                            color: '#374151',
-                            textTransform: 'none',
-                            fontFamily: 'Inter Display, sans-serif',
-                            fontWeight: 600,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '20px',
-                            letterSpacing: '0%',
-                            '&:hover': {
-                              background: '#F9FAFB',
-                              border: '1px solid #D1D5DB',
-                              boxShadow: '0px -3px 0px 0px #D1D5DB inset',
-                            },
-                            '&:active': {
-                              boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
-                              transform: 'translateY(1px)',
-                            },
-                            '&:disabled': {
-                              background: '#F3F4F6',
-                              color: '#9CA3AF',
-                            }
-                          }}
-                        >
-                          Redo
-                        </Button>
-                        {lastAutosavedAt && (
-                          <Typography
+                              onClick={mutation.mutate}
+                              startIcon={
+                                <img
+                                  src="/assets/star.svg"
+                                  alt="star"
+                                  style={{
+                                    backgroundColor: 'transparent',
+                                    position: 'absolute',
+                                    left: 0,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                  }}
+                                  draggable="false"
+                                />
+                              }
+                            >
+                              Generate with AI
+                            </Button>
+                          )}
+                          <Button
                             sx={{
-                              alignSelf: 'center',
-                              fontSize: '12px',
-                              color: '#9CA3AF',
+                              width: '90px',
+                              height: '44px',
+                              borderRadius: '8px',
+                              gap: '6px',
+                              padding: '10px 16px 13px 16px',
+                              background: '#FFFFFF',
+                              border: '1px solid #E7E7E7',
+                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                              color: '#374151',
+                              textTransform: 'none',
                               fontFamily: 'Inter Display, sans-serif',
+                              fontWeight: 600,
+                              fontStyle: 'normal',
+                              fontSize: '16px',
+                              lineHeight: '20px',
+                              letterSpacing: '0%',
                               whiteSpace: 'nowrap',
+                              '&:hover': {
+                                background: '#F9FAFB',
+                                border: '1px solid #D1D5DB',
+                                boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+                              },
+                              '&:active': {
+                                boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                                transform: 'translateY(1px)',
+                              },
+                              '&:disabled': {
+                                background: '#F3F4F6',
+                                color: '#9CA3AF',
+                                border: '1px solid #E5E7EB',
+                              },
+                            }}
+                            onClick={handleGeneratePreview}
+                          >
+                            Preview
+                          </Button>
+                          <Button
+                            onClick={handleUndo}
+                            disabled={historyIndex <= 0}
+                            endIcon={
+                              <Box
+                                component="img"
+                                src="/assets/icons/components/undo.svg"
+                                alt="Undo"
+                                sx={{
+                                  width: '19px',
+                                  height: '18px',
+                                  opacity: historyIndex <= 0 ? 0.4 : 1,
+                                }}
+                              />
+                            }
+                            sx={{
+                              height: '44px',
+                              borderRadius: '8px',
+                              padding: '10px 16px 13px 16px',
+                              background: '#FFFFFF',
+                              border: '1px solid #E7E7E7',
+                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                              color: '#374151',
+                              textTransform: 'none',
+                              fontFamily: 'Inter Display, sans-serif',
+                              fontWeight: 600,
+                              fontStyle: 'normal',
+                              fontSize: '16px',
+                              lineHeight: '20px',
+                              letterSpacing: '0%',
+                              '&:hover': {
+                                background: '#F9FAFB',
+                                border: '1px solid #D1D5DB',
+                                boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+                              },
+                              '&:active': {
+                                boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                                transform: 'translateY(1px)',
+                              },
+                              '&:disabled': {
+                                background: '#F3F4F6',
+                                color: '#9CA3AF',
+                              },
                             }}
                           >
-                            Autosaved {format(lastAutosavedAt, 'HH:mm')}
-                          </Typography>
-                        )}
-                        <Button
-                          onClick={handleSavePCR}
-                          disabled={isSaving || Boolean(loadError) || !pcrRevision || isAutosaveBlocked}
-                          sx={{
-                            height: '44px',
-                            borderRadius: '8px',
-                            padding: '10px 16px 13px 16px',
-                            background: '#3A3A3C',
-                            boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                            color: '#FFFFFF',
-                            textTransform: 'none',
-                            fontFamily: 'Inter Display, sans-serif',
-                            fontWeight: 600,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '20px',
-                            letterSpacing: '0%',
-                            '&:hover': {
-                              background: '#2A2A2C',
-                              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
-                            },
-                            '&:active': {
-                              boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
-                              transform: 'translateY(1px)',
-                            },
-                            '&:disabled': {
-                              background: '#9CA3AF',
-                              color: '#D1D5DB',
+                            Undo
+                          </Button>
+                          <Button
+                            onClick={handleRedo}
+                            disabled={historyIndex >= history.length - 1}
+                            endIcon={
+                              <Box
+                                component="img"
+                                src="/assets/icons/components/redo.svg"
+                                alt="Redo"
+                                sx={{
+                                  width: '19px',
+                                  height: '18px',
+                                  opacity: historyIndex >= history.length - 1 ? 0.4 : 1,
+                                }}
+                              />
                             }
-                          }}
-                        >
-                          {isSaving ? 'Saving...' : 'Save'}
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          disabled={isExportingPDF}
-                          sx={{
-                            width: '100px',
-                            height: '44px',
-                            borderRadius: '8px',
-                            gap: '6px',
-                            padding: '10px 16px 13px 16px',
-                            background: '#FFFFFF',
-                            border: '1px solid #E7E7E7',
-                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                            color: '#374151',
-                            textTransform: 'none',
-                            fontFamily: 'Inter Display, sans-serif',
-                            fontWeight: 600,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '20px',
-                            letterSpacing: '0%',
-                            whiteSpace: 'nowrap',
-                            '&:hover': {
-                              background: '#F9FAFB',
-                              border: '1px solid #D1D5DB',
-                              boxShadow: '0px -3px 0px 0px #D1D5DB inset',
-                            },
-                            '&:active': {
-                              boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
-                              transform: 'translateY(1px)',
-                            },
-                            '&:disabled': {
-                              background: '#F3F4F6',
-                              color: '#9CA3AF',
-                              border: '1px solid #E5E7EB',
-                            }
-                          }}
-                          onClick={handleGeneratePreview}
-                        >
-                          Preview
-                        </Button>
-                        <Button
-                          sx={{
-                            width: '117px',
-                            height: '44px',
-                            borderRadius: '8px',
-                            gap: '6px',
-                            padding: '10px 16px 13px 16px',
-                            background: '#FFFFFF',
-                            border: '1px solid #E7E7E7',
-                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                            color: '#374151',
-                            textTransform: 'none',
-                            fontFamily: 'Inter Display, sans-serif',
-                            fontWeight: 600,
-                            fontStyle: 'normal',
-                            fontSize: '16px',
-                            lineHeight: '20px',
-                            letterSpacing: '0%',
-                            whiteSpace: 'nowrap',
-                            '&:hover': {
-                              background: '#F9FAFB',
-                              border: '1px solid #D1D5DB',
-                              boxShadow: '0px -3px 0px 0px #D1D5DB inset',
-                            },
-                            '&:active': {
-                              boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
-                              transform: 'translateY(1px)',
-                            }
-                          }}
-                          disabled={Boolean(loadError) || isLoadingPCR || !pcrRevision}
-                          onClick={() => setIsEditMode(true)}
-                        >
-                          Edit Report
-                        </Button>
-                        <Button
-                          onClick={handleExportPDF}
-                          sx={{
-                            minWidth: '44px',
-                            width: '44px',
-                            height: '44px',
-                            borderRadius: '8px',
-                            padding: '10px',
-                            background: '#FFFFFF',
-                            border: '1px solid #E7E7E7',
-                            boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                            color: '#1340FF',
-                            '&:hover': {
-                              background: '#F9FAFB',
-                              border: '1px solid #D1D5DB',
-                              boxShadow: '0px -3px 0px 0px #D1D5DB inset',
-                            },
-                            '&:active': {
-                              boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
-                              transform: 'translateY(1px)',
-                            }
-                          }}
-                        >
-                          <Iconify icon="material-symbols:download-rounded" width={20} />
-                        </Button>
-                      </>
-                    )}
-                  </Box>
-                )}
+                            sx={{
+                              height: '44px',
+                              borderRadius: '8px',
+                              padding: '10px 16px 13px 16px',
+                              background: '#FFFFFF',
+                              border: '1px solid #E7E7E7',
+                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                              color: '#374151',
+                              textTransform: 'none',
+                              fontFamily: 'Inter Display, sans-serif',
+                              fontWeight: 600,
+                              fontStyle: 'normal',
+                              fontSize: '16px',
+                              lineHeight: '20px',
+                              letterSpacing: '0%',
+                              '&:hover': {
+                                background: '#F9FAFB',
+                                border: '1px solid #D1D5DB',
+                                boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+                              },
+                              '&:active': {
+                                boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                                transform: 'translateY(1px)',
+                              },
+                              '&:disabled': {
+                                background: '#F3F4F6',
+                                color: '#9CA3AF',
+                              },
+                            }}
+                          >
+                            Redo
+                          </Button>
+
+                          {lastAutosavedAt && (
+                            <Typography
+                              sx={{
+                                alignSelf: 'center',
+                                fontSize: '12px',
+                                color: '#9CA3AF',
+                                fontFamily: 'Inter Display, sans-serif',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              Autosaved {format(lastAutosavedAt, 'HH:mm')}
+                            </Typography>
+                          )}
+
+                          <Button
+                            onClick={handleSavePCR}
+                            disabled={isSaving || Boolean(loadError) || !pcrRevision}
+                            sx={{
+                              height: '44px',
+                              borderRadius: '8px',
+                              padding: '10px 16px 13px 16px',
+                              background: '#3A3A3C',
+                              boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                              color: '#FFFFFF',
+                              textTransform: 'none',
+                              fontFamily: 'Inter Display, sans-serif',
+                              fontWeight: 600,
+                              fontStyle: 'normal',
+                              fontSize: '16px',
+                              lineHeight: '20px',
+                              letterSpacing: '0%',
+                              '&:hover': {
+                                background: '#2A2A2C',
+                                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.55) inset',
+                              },
+                              '&:active': {
+                                boxShadow: '0px -1px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                                transform: 'translateY(1px)',
+                              },
+                              '&:disabled': {
+                                background: '#9CA3AF',
+                                color: '#D1D5DB',
+                              },
+                            }}
+                          >
+                            {isSaving ? 'Saving...' : 'Save'}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            disabled={isExportingPDF}
+                            sx={{
+                              width: '100px',
+                              height: '44px',
+                              borderRadius: '8px',
+                              gap: '6px',
+                              padding: '10px 16px 13px 16px',
+                              background: '#FFFFFF',
+                              border: '1px solid #E7E7E7',
+                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                              color: '#374151',
+                              textTransform: 'none',
+                              fontFamily: 'Inter Display, sans-serif',
+                              fontWeight: 600,
+                              fontStyle: 'normal',
+                              fontSize: '16px',
+                              lineHeight: '20px',
+                              letterSpacing: '0%',
+                              whiteSpace: 'nowrap',
+                              '&:hover': {
+                                background: '#F9FAFB',
+                                border: '1px solid #D1D5DB',
+                                boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+                              },
+                              '&:active': {
+                                boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                                transform: 'translateY(1px)',
+                              },
+                              '&:disabled': {
+                                background: '#F3F4F6',
+                                color: '#9CA3AF',
+                                border: '1px solid #E5E7EB',
+                              },
+                            }}
+                            onClick={handleGeneratePreview}
+                          >
+                            Preview
+                          </Button>
+
+                          {!isEditMode.state && (
+                            <Button
+                              sx={{
+                                borderRadius: '8px',
+                                position: 'relative',
+                                gap: '6px',
+                                padding: '10px 16px 13px 16px',
+                                bgcolor: 'rgba(138, 90, 254, 1)',
+                                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                                color: 'rgba(255, 255, 255, 1)',
+                                textTransform: 'none',
+                                fontFamily: 'Inter Display, sans-serif',
+                                fontWeight: 600,
+                                fontStyle: 'normal',
+                                fontSize: '16px',
+                                lineHeight: '20px',
+                                letterSpacing: '0%',
+                                whiteSpace: 'nowrap',
+                                paddingLeft: 4,
+                                '&:hover': {
+                                  background: alpha('rgba(138, 90, 254, 1)', 0.7),
+                                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                                },
+                                '&:active': {
+                                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.45) inset',
+                                  transform: 'translateY(1px)',
+                                },
+                                '&:disabled': {
+                                  color: 'rgba(255, 255, 255, 1)',
+                                },
+                              }}
+                              disabled={Boolean(loadError) || isLoadingPCR || !pcrRevision}
+                              onClick={() => setIsEditMode({ type: 'ai', state: true })}
+                              startIcon={
+                                <img
+                                  src="/assets/star.svg"
+                                  alt="star"
+                                  style={{
+                                    backgroundColor: 'transparent',
+                                    position: 'absolute',
+                                    left: 0,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                  }}
+                                  draggable="false"
+                                />
+                              }
+                            >
+                              Edit with AI
+                            </Button>
+                          )}
+
+                          <Button
+                            sx={{
+                              width: '117px',
+                              height: '44px',
+                              borderRadius: '8px',
+                              gap: '6px',
+                              padding: '10px 16px 13px 16px',
+                              background: '#FFFFFF',
+                              border: '1px solid #E7E7E7',
+                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                              color: '#374151',
+                              textTransform: 'none',
+                              fontFamily: 'Inter Display, sans-serif',
+                              fontWeight: 600,
+                              fontStyle: 'normal',
+                              fontSize: '16px',
+                              lineHeight: '20px',
+                              letterSpacing: '0%',
+                              whiteSpace: 'nowrap',
+                              '&:hover': {
+                                background: '#F9FAFB',
+                                border: '1px solid #D1D5DB',
+                                boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+                              },
+                              '&:active': {
+                                boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                                transform: 'translateY(1px)',
+                              },
+                            }}
+                            disabled={Boolean(loadError) || isLoadingPCR || !pcrRevision}
+                            onClick={() => setIsEditMode({ type: 'normal', state: true })}
+                          >
+                            Edit Report
+                          </Button>
+                          <Button
+                            onClick={handleExportPDF}
+                            sx={{
+                              minWidth: '44px',
+                              width: '44px',
+                              height: '44px',
+                              borderRadius: '8px',
+                              padding: '10px',
+                              background: '#FFFFFF',
+                              border: '1px solid #E7E7E7',
+                              boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                              color: '#1340FF',
+                              '&:hover': {
+                                background: '#F9FAFB',
+                                border: '1px solid #D1D5DB',
+                                boxShadow: '0px -3px 0px 0px #D1D5DB inset',
+                              },
+                              '&:active': {
+                                boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                                transform: 'translateY(1px)',
+                              },
+                            }}
+                          >
+                            <Iconify icon="material-symbols:download-rounded" width={20} />
+                          </Button>
+                        </>
+                      )}
+                    </Box>
+                  )}
                 </MotionBox>
               </AnimatePresence>
 
               {/* Add Section Buttons - Only show in edit mode */}
               {effectiveEditMode && (
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  {!sectionVisibility.engagement && (
-                    <Button
-                      size="small"
-                      onClick={() => setSectionVisibility({ ...sectionVisibility, engagement: true })}
-                      sx={{
-                        textTransform: 'none',
-                        bgcolor: '#FFFFFF',
-                        border: '1px solid #E7E7E7',
-                        color: '#374151',
-                        '&:hover': { bgcolor: '#F9FAFB' },
-                        gap: '4px',
-                        '& .MuiButton-startIcon': {
-                          marginRight: 0,
-                          marginLeft: 0
-                        }
-                      }}
-                    >
-                      <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
-                      Engagements
-                    </Button>
-                  )}
-                  {!sectionVisibility.platformBreakdown && (
-                    <Button
-                      size="small"
-                      onClick={() => setSectionVisibility({ ...sectionVisibility, platformBreakdown: true })}
-                      sx={{
-                        textTransform: 'none',
-                        bgcolor: '#FFFFFF',
-                        border: '1px solid #E7E7E7',
-                        color: '#374151',
-                        '&:hover': { bgcolor: '#F9FAFB' },
-                        gap: '4px'
-                      }}
-                    >
-                      <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
-                      Platform Breakdown
-                    </Button>
-                  )}
-                  {!sectionVisibility.views && (
-                    <Button
-                      size="small"
-                      onClick={() => setSectionVisibility({ ...sectionVisibility, views: true })}
-                      sx={{
-                        textTransform: 'none',
-                        bgcolor: '#FFFFFF',
-                        border: '1px solid #E7E7E7',
-                        color: '#374151',
-                        '&:hover': { bgcolor: '#F9FAFB' },
-                        gap: '4px'
-                      }}
-                    >
-                      <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
-                      Views
-                    </Button>
-                  )}
-                  {!sectionVisibility.audienceSentiment && (
-                    <Button
-                      size="small"
-                      onClick={() => setSectionVisibility({ ...sectionVisibility, audienceSentiment: true })}
-                      sx={{
-                        textTransform: 'none',
-                        bgcolor: '#FFFFFF',
-                        border: '1px solid #E7E7E7',
-                        color: '#374151',
-                        '&:hover': { bgcolor: '#F9FAFB' },
-                        gap: '4px'
-                      }}
-                    >
-                      <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
-                      Audience Sentiment
-                    </Button>
-                  )}
-                  {!sectionVisibility.creatorTiers && (
-                    <Button
-                      size="small"
-                      onClick={() => setSectionVisibility({ ...sectionVisibility, creatorTiers: true })}
-                      sx={{
-                        textTransform: 'none',
-                        bgcolor: '#FFFFFF',
-                        border: '1px solid #E7E7E7',
-                        color: '#374151',
-                        '&:hover': { bgcolor: '#F9FAFB' },
-                        gap: '4px'
-                      }}
-                    >
-                      <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
-                      Creator Tiers
-                    </Button>
-                  )}
-                  {!sectionVisibility.strategies && (
-                    <Button
-                      size="small"
-                      onClick={() => setSectionVisibility({ ...sectionVisibility, strategies: true })}
-                      sx={{
-                        textTransform: 'none',
-                        bgcolor: '#FFFFFF',
-                        border: '1px solid #E7E7E7',
-                        color: '#374151',
-                        '&:hover': { bgcolor: '#F9FAFB' },
-                        gap: '4px'
-                      }}
-                    >
-                      <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
-                      Strategies
-                    </Button>
-                  )}
-                  {!sectionVisibility.recommendations && (
-                    <Button
-                      size="small"
-                      onClick={() => setSectionVisibility({ ...sectionVisibility, recommendations: true })}
-                      sx={{
-                        textTransform: 'none',
-                        bgcolor: '#FFFFFF',
-                        border: '1px solid #E7E7E7',
-                        color: '#374151',
-                        '&:hover': { bgcolor: '#F9FAFB' },
-                        gap: '4px'
-                      }}
-                    >
-                      <Box component="span" sx={{ fontSize: '16px', lineHeight: 1 }}>+</Box>
-                      Recommendations
-                    </Button>
-                  )}
-                </Box>
+                <AddSectionButtons
+                  sectionVisibility={sectionVisibility}
+                  setSectionVisibility={setSectionVisibility}
+                />
               )}
             </Box>
-
 
             {/* Report Header */}
             <Box
@@ -1778,7 +1359,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
               }}
             >
               <Box sx={{ mb: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    mb: 2,
+                  }}
+                >
                   <Box>
                     <Typography
                       variant="caption"
@@ -1792,7 +1380,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         textTransform: 'uppercase',
                         color: '#231F20',
                         mb: 1,
-                        display: 'block'
+                        display: 'block',
                       }}
                     >
                       POST CAMPAIGN REPORT: {formatCampaignPeriod()}
@@ -1807,12 +1395,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                           fontSize: '56px',
                           lineHeight: '100%',
                           letterSpacing: '0%',
-                          color: '#231F20'
+                          color: '#231F20',
                         }}
                       >
                         {campaign?.name || 'Crafting Unforgettable Nights'}
                       </Typography>
-
                     </Box>
                   </Box>
 
@@ -1823,92 +1410,29 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                       alt="Cult Creative"
                       sx={{
                         width: '187px',
-                        height: '60px',
                         opacity: 0.8,
+                        aspectRatio: '3/2 auto',
                       }}
                     />
                   </Box>
                 </Box>
 
-                {(() => {
-                  if (effectiveEditMode) {
-                    return (
-                      <Box sx={{ position: 'relative', mb: 2 }}>
-                        <Box sx={{
-                          position: 'absolute',
-                          top: '12px',
-                          left: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          zIndex: 1,
-                          bgcolor: '#F3F4F6',
-                          px: 0.5
-                        }}>
-                          <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
-                            Editable
-                          </Typography>
-                        </Box>
-                        <FormattedTextField
-                          key={`pcr-ftf-campaignDescription-${hydrationVersion}`}
-                          value={editableContent.campaignDescription}
-                          onChange={(e) => setEditableContent({ ...editableContent, campaignDescription: e.target.value })}
-                          placeholder="type here"
-                          rows={3}
-                        />
-                      </Box>
-                    );
-                  }
-
-                  if (editableContent.campaignDescription) {
-                    return (
-                      <Box
-                        sx={{
-                          fontFamily: 'Aileron',
-                          fontWeight: 400,
-                          fontStyle: 'normal',
-                          fontSize: '20px',
-                          lineHeight: '24px',
-                          letterSpacing: '0%',
-                          color: '#231F20',
-                          wordWrap: 'break-word',
-                          overflowWrap: 'break-word',
-                          wordBreak: 'break-word',
-                          whiteSpace: 'pre-wrap',
-                          '& strong': { fontWeight: 700 },
-                          '& em': { fontStyle: 'italic' },
-                          '& u': { textDecoration: 'underline' },
-                        }}
-                        dangerouslySetInnerHTML={{ __html: editableContent.campaignDescription }}
-                      />
-                    );
-                  }
-
-                  return (
-                    <Box
-                      className="hide-in-pdf"
-                      sx={{
-                        bgcolor: '#E5E7EB',
-                        borderRadius: '8px',
-                        padding: '12px',
-                      }}
-                    >
-                      <Typography
-                        variant="body1"
-                        sx={{
-                          fontFamily: 'Aileron',
-                          fontWeight: 400,
-                          fontSize: '20px',
-                          lineHeight: '24px',
-                          letterSpacing: '0%',
-                          color: '#9CA3AF',
-                        }}
-                      >
-                        {isClientView ? 'No content' : 'Click Edit Report to edit Campaign Description'}
-                      </Typography>
-                    </Box>
-                  );
-                })()}
+                <EditableDescriptionField
+                  label="Campaign Description"
+                  fieldKey="campaignDescription"
+                  hydrationVersion={hydrationVersion}
+                  value={editableContent.campaignDescription}
+                  onChange={(v) => {
+                    setEditableContent({ ...editableContent, campaignDescription: v });
+                  }}
+                  rows={3}
+                  mb={2}
+                  isClientView={isClientView}
+                  isLoading={effectiveEditMode && mutation.isPending}
+                  loadingTitle="Overview"
+                  onCancelLoading={mutation.cancel}
+                  aiPrefillValue={aiAnalyticsData?.campaign_summary}
+                />
               </Box>
 
               {/* Metrics Cards */}
@@ -1925,7 +1449,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'flex-end',
-                      alignItems: 'flex-start'
+                      alignItems: 'flex-start',
                     }}
                   >
                     <Typography
@@ -1938,7 +1462,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         lineHeight: '100%',
                         letterSpacing: '0%',
                         color: '#FFFFFF',
-                        mb: 0.5
+                        mb: 0.5,
                       }}
                     >
                       {summaryStats.avgEngagementRate ? `${summaryStats.avgEngagementRate}%` : '0%'}
@@ -1952,7 +1476,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         fontSize: '12px',
                         lineHeight: '16px',
                         letterSpacing: '0%',
-                        color: '#FFFFFF'
+                        color: '#FFFFFF',
                       }}
                     >
                       Engagement
@@ -1964,7 +1488,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                 <Grid item xs={6} md={2.4}>
                   <Box
                     sx={{
-                      background: 'linear-gradient(359.86deg, #8A5AFE 0.13%, rgba(138, 90, 254, 0) 109.62%)',
+                      background:
+                        'linear-gradient(359.86deg, #8A5AFE 0.13%, rgba(138, 90, 254, 0) 109.62%)',
                       borderRadius: '12px',
                       p: 3,
                       color: 'white',
@@ -1972,7 +1497,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'flex-end',
-                      alignItems: 'flex-start'
+                      alignItems: 'flex-start',
                     }}
                   >
                     <Typography
@@ -1985,7 +1510,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         lineHeight: '100%',
                         letterSpacing: '0%',
                         color: '#FFFFFF',
-                        mb: 0.5
+                        mb: 0.5,
                       }}
                     >
                       {formatNumber(uniqueCreatorsCount || 0)}
@@ -1999,7 +1524,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         fontSize: '12px',
                         lineHeight: '16px',
                         letterSpacing: '0%',
-                        color: '#FFFFFF'
+                        color: '#FFFFFF',
                       }}
                     >
                       Total Creators
@@ -2011,7 +1536,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                 <Grid item xs={6} md={2.4}>
                   <Box
                     sx={{
-                      background: 'linear-gradient(180deg, rgba(255, 53, 0, 0) -9.77%, #FF3500 100%)',
+                      background:
+                        'linear-gradient(180deg, rgba(255, 53, 0, 0) -9.77%, #FF3500 100%)',
                       borderRadius: '12px',
                       p: 3,
                       color: 'white',
@@ -2019,7 +1545,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'flex-end',
-                      alignItems: 'flex-start'
+                      alignItems: 'flex-start',
                     }}
                   >
                     <Typography
@@ -2032,7 +1558,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         lineHeight: '100%',
                         letterSpacing: '0%',
                         color: '#FFFFFF',
-                        mb: 0.5
+                        mb: 0.5,
                       }}
                     >
                       {formatNumber(summaryStats.totalViews) || '0'}
@@ -2046,7 +1572,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         fontSize: '12px',
                         lineHeight: '16px',
                         letterSpacing: '0%',
-                        color: '#FFFFFF'
+                        color: '#FFFFFF',
                       }}
                     >
                       Total Views
@@ -2058,7 +1584,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                 <Grid item xs={6} md={2.4}>
                   <Box
                     sx={{
-                      background: 'linear-gradient(180deg, rgba(19, 64, 255, 0) -8.65%, #1340FF 100%)',
+                      background:
+                        'linear-gradient(180deg, rgba(19, 64, 255, 0) -8.65%, #1340FF 100%)',
                       borderRadius: '12px',
                       p: 3,
                       color: 'white',
@@ -2066,7 +1593,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'flex-end',
-                      alignItems: 'flex-start'
+                      alignItems: 'flex-start',
                     }}
                   >
                     <Typography
@@ -2079,10 +1606,15 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         lineHeight: '100%',
                         letterSpacing: '0%',
                         color: '#FFFFFF',
-                        mb: 0.5
+                        mb: 0.5,
                       }}
                     >
-                      {formatNumber((summaryStats.totalLikes || 0) + (summaryStats.totalComments || 0) + (summaryStats.totalShares || 0) + (summaryStats.totalSaved || 0))}
+                      {formatNumber(
+                        (summaryStats.totalLikes || 0) +
+                          (summaryStats.totalComments || 0) +
+                          (summaryStats.totalShares || 0) +
+                          (summaryStats.totalSaved || 0)
+                      )}
                     </Typography>
                     <Typography
                       variant="body2"
@@ -2093,7 +1625,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         fontSize: '12px',
                         lineHeight: '16px',
                         letterSpacing: '0%',
-                        color: '#FFFFFF'
+                        color: '#FFFFFF',
                       }}
                     >
                       Total Interactions
@@ -2113,7 +1645,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'flex-end',
-                      alignItems: 'flex-start'
+                      alignItems: 'flex-start',
                     }}
                   >
                     <Typography
@@ -2126,7 +1658,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         lineHeight: '100%',
                         letterSpacing: '0%',
                         color: '#FFFFFF',
-                        mb: 0.5
+                        mb: 0.5,
                       }}
                     >
                       {formatNumber(summaryStats.totalShares) || '0'}
@@ -2140,7 +1672,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         fontSize: '12px',
                         lineHeight: '16px',
                         letterSpacing: '0%',
-                        color: '#FFFFFF'
+                        color: '#FFFFFF',
                       }}
                     >
                       Total Shares
@@ -2157,7 +1689,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={sectionOrder.filter(id => sectionVisibility[id])}
+                items={sectionOrder.filter((id) => sectionVisibility[id])}
                 strategy={verticalListSortingStrategy}
               >
                 {sectionOrder.map((sectionId) => {
@@ -2166,7 +1698,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                   switch (sectionId) {
                     case 'engagement':
                       return (
-                        <SortableSection key="engagement" id="engagement" isEditMode={effectiveEditMode}>
+                        <SortableSection
+                          key="engagement"
+                          id="engagement"
+                          isEditMode={effectiveEditMode}
+                        >
                           {/* Engagement & Interactions Section */}
                           <Box
                             className="pcr-section"
@@ -2179,221 +1715,54 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                             }}
                           >
                             <Box sx={{ mb: 4 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                                <Typography
-                                  variant="h2"
-                                  sx={{
-                                    fontFamily: 'Instrument Serif, serif',
-                                    fontWeight: 400,
+                              <SectionHeader
+                                title="Engagements"
+                                sectionKey="engagement"
+                                effectiveEditMode={effectiveEditMode}
+                                sectionEditStates={sectionEditStates}
+                                setSectionEditStates={setSectionEditStates}
+                                sectionVisibility={sectionVisibility}
+                                setSectionVisibility={setSectionVisibility}
+                                handleSavePCR={handleSavePCR}
+                                setIsSaving={setIsSaving}
+                              />
+
+                              <EditableDescriptionField
+                                label="Engagement"
+                                fieldKey="engagementDescription"
+                                hydrationVersion={hydrationVersion}
+                                isEditingSection={
+                                  effectiveEditMode && !sectionEditStates.engagement
+                                }
+                                isLoading={effectiveEditMode && mutation.isPending}
+                                value={
+                                  aiAnalyticsData?.engagement_interactions ||
+                                  editableContent.engagementDescription
+                                }
+                                onChange={(v) =>
+                                  setEditableContent({
+                                    ...editableContent,
+                                    engagementDescription: v,
+                                  })
+                                }
+                                rows={4}
+                                mb={3}
+                                isClientView={isClientView}
+                                readOnlySx={{
+                                  '& strong': {
+                                    fontFamily: 'Inter Display, sans-serif',
+                                    fontWeight: 700,
                                     fontStyle: 'normal',
-                                    fontSize: '56px',
-                                    lineHeight: '60px',
+                                    fontSize: '20px',
+                                    lineHeight: '24px',
                                     letterSpacing: '0%',
                                     color: '#231F20',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  Engagements
-                                </Typography>
-                                <Box
-                                  sx={{
-                                    flex: 1,
-                                    height: '1px',
-                                    background: '#231F20',
-                                  }}
-                                />
-                                {effectiveEditMode && !sectionEditStates.engagement && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={async () => {
-                                        try {
-                                          setIsSaving(true);
-                                          const response = await handleSavePCR();
-                                          if (response?.data?.success) {
-                                            setSectionEditStates({ ...sectionEditStates, engagement: true });
-                                            enqueueSnackbar('Engagement section saved successfully', { variant: 'success' });
-                                          }
-                                        } catch (error) {
-                                          console.error('Error saving section:', error);
-                                          enqueueSnackbar('Failed to save section', { variant: 'error' });
-                                        } finally {
-                                          setIsSaving(false);
-                                        }
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, engagement: false });
-                                        enqueueSnackbar('Engagement section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                                {effectiveEditMode && sectionEditStates.engagement && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionEditStates({ ...sectionEditStates, engagement: false });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, engagement: false });
-                                        enqueueSnackbar('Engagement section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                              </Box>
-
-                              {(() => {
-                                if (effectiveEditMode && !sectionEditStates.engagement) {
-                                  return (
-                                    <Box sx={{ position: 'relative', mb: 3 }}>
-                                      <Box sx={{
-                                        position: 'absolute',
-                                        top: '12px',
-                                        left: '12px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                        zIndex: 1,
-                                        bgcolor: '#F3F4F6',
-                                        px: 0.5
-                                      }}>
-                                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
-                                          Editable
-                                        </Typography>
-                                      </Box>
-                                      <FormattedTextField
-                                        key={`pcr-ftf-engagementDescription-${hydrationVersion}`}
-                                        value={editableContent.engagementDescription}
-                                        onChange={(e) => setEditableContent({ ...editableContent, engagementDescription: e.target.value })}
-                                        placeholder="type here"
-                                        rows={4}
-                                      />
-                                    </Box>
-                                  );
-                                }
-
-                                if (editableContent.engagementDescription) {
-                                  return (
-                                    <Box
-                                      sx={{
-                                        fontFamily: 'Aileron',
-                                        fontWeight: 400,
-                                        fontStyle: 'normal',
-                                        fontSize: '20px',
-                                        lineHeight: '24px',
-                                        letterSpacing: '0%',
-                                        color: '#231F20',
-                                        mb: 3,
-                                        wordWrap: 'break-word',
-                                        overflowWrap: 'break-word',
-                                        wordBreak: 'break-word',
-                                        whiteSpace: 'pre-wrap',
-                                        '& strong': {
-                                          fontFamily: 'Inter Display, sans-serif',
-                                          fontWeight: 700,
-                                          fontStyle: 'normal',
-                                          fontSize: '20px',
-                                          lineHeight: '24px',
-                                          letterSpacing: '0%',
-                                          color: '#231F20'
-                                        },
-                                        '& em': { fontStyle: 'italic' },
-                                        '& u': { textDecoration: 'underline' },
-                                      }}
-                                      dangerouslySetInnerHTML={{ __html: editableContent.engagementDescription }}
-                                    />
-                                  );
-                                }
-
-                                return (
-                                  <Box
-                                    className="hide-in-pdf"
-                                    sx={{
-                                      bgcolor: '#E5E7EB',
-                                      borderRadius: '8px',
-                                      padding: '12px',
-                                      mb: 3,
-                                    }}
-                                  >
-                                    <Typography
-                                      variant="body1"
-                                      sx={{
-                                        fontFamily: 'Aileron',
-                                        fontWeight: 400,
-                                        fontSize: '20px',
-                                        lineHeight: '24px',
-                                        letterSpacing: '0%',
-                                        color: '#9CA3AF',
-                                      }}
-                                    >
-                                      {isClientView ? 'No content' : 'Click Edit Report to edit Engagement'}
-                                    </Typography>
-                                  </Box>
-                                );
-                              })()}
+                                  },
+                                }}
+                              />
 
                               {/* Analytics Grid */}
-                              <Grid container spacing={2} sx={{ mb: 4 }}>
+                              <Grid container spacing={2} sx={{ my: 3 }}>
                                 {/* Top 5 Creator Engagement Rate */}
                                 <Grid item xs={12} md={6}>
                                   <TopEngagementCard
@@ -2419,7 +1788,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
                     case 'platformBreakdown':
                       return (
-                        <SortableSection key="platformBreakdown" id="platformBreakdown" isEditMode={effectiveEditMode}>
+                        <SortableSection
+                          key="platformBreakdown"
+                          id="platformBreakdown"
+                          isEditMode={effectiveEditMode}
+                        >
                           {/* Platform Breakdown Section */}
                           <Box
                             className="pcr-section"
@@ -2432,214 +1805,44 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                             }}
                           >
                             <Box sx={{ mb: 4 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                                <Typography
-                                  variant="h2"
-                                  sx={{
-                                    fontFamily: 'Instrument Serif, serif',
-                                    fontWeight: 400,
-                                    fontStyle: 'normal',
-                                    fontSize: '56px',
-                                    lineHeight: '60px',
-                                    letterSpacing: '0%',
-                                    color: '#231F20',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  Platform Breakdown
-                                </Typography>
-                                <Box
-                                  sx={{
-                                    flex: 1,
-                                    height: '1px',
-                                    background: '#231F20',
-                                  }}
-                                />
-                                {effectiveEditMode && !sectionEditStates.platformBreakdown && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={async () => {
-                                        try {
-                                          setIsSaving(true);
-                                          const response = await handleSavePCR();
-                                          if (response?.data?.success) {
-                                            setSectionEditStates({ ...sectionEditStates, platformBreakdown: true });
-                                            enqueueSnackbar('Platform Breakdown section saved successfully', { variant: 'success' });
-                                          }
-                                        } catch (error) {
-                                          console.error('Error saving section:', error);
-                                          enqueueSnackbar('Failed to save section', { variant: 'error' });
-                                        } finally {
-                                          setIsSaving(false);
-                                        }
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, platformBreakdown: false });
-                                        enqueueSnackbar('Platform Breakdown section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                                {effectiveEditMode && sectionEditStates.platformBreakdown && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={() => {
-                                        // Switch back to edit mode
-                                        setSectionEditStates({ ...sectionEditStates, platformBreakdown: false });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, platformBreakdown: false });
-                                        enqueueSnackbar('Platform Breakdown section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                              </Box>
+                              <SectionHeader
+                                title="Platform Breakdown"
+                                sectionKey="platformBreakdown"
+                                effectiveEditMode={effectiveEditMode}
+                                sectionEditStates={sectionEditStates}
+                                setSectionEditStates={setSectionEditStates}
+                                sectionVisibility={sectionVisibility}
+                                setSectionVisibility={setSectionVisibility}
+                                handleSavePCR={handleSavePCR}
+                                setIsSaving={setIsSaving}
+                              />
 
-                              {(() => {
-                                if (effectiveEditMode && !sectionEditStates.platformBreakdown) {
-                                  return (
-                                    <Box sx={{ position: 'relative', mb: 3 }}>
-                                      <Box sx={{
-                                        position: 'absolute',
-                                        top: '12px',
-                                        left: '12px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                        zIndex: 1,
-                                        bgcolor: '#F3F4F6',
-                                        px: 0.5
-                                      }}>
-                                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
-                                          Editable
-                                        </Typography>
-                                      </Box>
-                                      <FormattedTextField
-                                        key={`pcr-ftf-platformBreakdownDescription-${hydrationVersion}`}
-                                        value={editableContent.platformBreakdownDescription || ''}
-                                        onChange={(e) => setEditableContent({ ...editableContent, platformBreakdownDescription: e.target.value })}
-                                        placeholder="type here"
-                                        rows={2}
-                                      />
-                                    </Box>
-                                  );
+                              <EditableDescriptionField
+                                label="Platform Breakdown"
+                                fieldKey="platformBreakdownDescription"
+                                hydrationVersion={hydrationVersion}
+                                isEditingSection={
+                                  effectiveEditMode && !sectionEditStates.platformBreakdown
                                 }
-
-                                if (editableContent.platformBreakdownDescription) {
-                                  return (
-                                    <Box
-                                      sx={{
-                                        fontFamily: 'Aileron',
-                                        fontWeight: 400,
-                                        fontStyle: 'normal',
-                                        fontSize: '20px',
-                                        lineHeight: '24px',
-                                        letterSpacing: '0%',
-                                        color: '#231F20',
-                                        mb: 3,
-                                        wordWrap: 'break-word',
-                                        overflowWrap: 'break-word',
-                                        wordBreak: 'break-word',
-                                        whiteSpace: 'pre-wrap',
-                                        '& strong': { fontWeight: 700 },
-                                        '& em': { fontStyle: 'italic' },
-                                        '& u': { textDecoration: 'underline' },
-                                      }}
-                                      dangerouslySetInnerHTML={{ __html: editableContent.platformBreakdownDescription }}
-                                    />
-                                  );
+                                isLoading={effectiveEditMode && mutation.isPending}
+                                value={
+                                  aiAnalyticsData?.platform_breakdown ||
+                                  editableContent.platformBreakdownDescription
                                 }
-
-                                return (
-                                  <Box
-                                    className="hide-in-pdf"
-                                    sx={{
-                                      bgcolor: '#E5E7EB',
-                                      borderRadius: '8px',
-                                      padding: '12px',
-                                      mb: 3,
-                                    }}
-                                  >
-                                    <Typography
-                                      variant="body1"
-                                      sx={{
-                                        fontFamily: 'Aileron',
-                                        fontWeight: 400,
-                                        fontSize: '20px',
-                                        lineHeight: '24px',
-                                        letterSpacing: '0%',
-                                        color: '#9CA3AF',
-                                      }}
-                                    >
-                                      {isClientView ? 'No content' : 'Click Edit Report to edit Platform Breakdown'}
-                                    </Typography>
-                                  </Box>
-                                );
-                              })()}
+                                // value={editableContent.platformBreakdownDescription || ''}
+                                onChange={(v) =>
+                                  setEditableContent({
+                                    ...editableContent,
+                                    platformBreakdownDescription: v,
+                                  })
+                                }
+                                rows={2}
+                                mb={3}
+                                isClientView={isClientView}
+                              />
 
                               {/* Platform Breakdown Grid */}
-                              <Grid container spacing={3}>
+                              <Grid container spacing={3} my={3}>
                                 {/* Platform Interactions Chart - Left */}
                                 <Grid item xs={12} md={4}>
                                   <PlatformInteractionsChart
@@ -2653,355 +1856,481 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                   <Grid container spacing={2}>
                                     {/* Most Likes Card */}
                                     {(() => {
-                                      const views = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'views') : 0;
-                                      const comments = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'comments') : 0;
-                                      const shares = mostLikesCreator ? getMetricValue(mostLikesCreator.insightData.insight, 'shares') : 0;
-                                      const maxLikes = mostLikesCreator ? mostLikesCreator.likes : 0;
-                                      const engagementRate = mostLikesCreator ? calculateEngagementRate(mostLikesCreator.insightData.insight) : 0;
+                                      const views = mostLikesCreator
+                                        ? getMetricValue(
+                                            mostLikesCreator.insightData.insight,
+                                            'views'
+                                          )
+                                        : 0;
+                                      const shares = mostLikesCreator
+                                        ? getMetricValue(
+                                            mostLikesCreator.insightData.insight,
+                                            'shares'
+                                          )
+                                        : 0;
+                                      const maxLikes = mostLikesCreator
+                                        ? mostLikesCreator.likes
+                                        : 0;
+                                      const engagementRate = mostLikesCreator
+                                        ? calculateEngagementRate(
+                                            mostLikesCreator.insightData.insight
+                                          )
+                                        : 0;
 
                                       // Get username based on platform
                                       let username = '';
                                       if (mostLikesCreator) {
                                         const { platform } = mostLikesCreator;
                                         if (platform === 'Instagram') {
-                                          username = mostLikesCreatorData?.user?.creator?.instagram
-                                            || mostLikesCreator?.submission?.user?.creator?.instagram
-                                            || mostLikesCreator?.submission?.user?.username
-                                            || mostLikesCreator?.submission?.user?.name
-                                            || '';
+                                          username =
+                                            mostLikesCreatorData?.user?.creator?.instagram ||
+                                            mostLikesCreator?.submission?.user?.creator
+                                              ?.instagram ||
+                                            mostLikesCreator?.submission?.user?.username ||
+                                            mostLikesCreator?.submission?.user?.name ||
+                                            '';
                                         } else if (platform === 'TikTok') {
-                                          username = mostLikesCreatorData?.user?.creator?.tiktok
-                                            || mostLikesCreator?.submission?.user?.creator?.tiktok
-                                            || mostLikesCreator?.submission?.user?.username
-                                            || mostLikesCreator?.submission?.user?.name
-                                            || '';
+                                          username =
+                                            mostLikesCreatorData?.user?.creator?.tiktok ||
+                                            mostLikesCreator?.submission?.user?.creator?.tiktok ||
+                                            mostLikesCreator?.submission?.user?.username ||
+                                            mostLikesCreator?.submission?.user?.name ||
+                                            '';
                                         }
                                       }
 
-                                      return mostLikesCreator && (
-                                        <Grid item xs={12} md={12}>
-                                          <Box sx={{
-                                            padding: '16px',
-                                            bgcolor: '#FFFFFF',
-                                            borderRadius: '8px',
-                                            border: '1px solid #EBEBEB',
-                                            boxShadow: '0px -3px 0px 0px #EBEBEB inset',
-                                            position: 'relative',
-                                            width: '611px',
-                                            height: '112px',
-                                            gap: '4px',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            justifyContent: 'center',
-                                            marginLeft: 'auto',
-                                          }}>
-                                            {/* Most Likes Badge */}
-                                            <Box sx={{
-                                              position: 'absolute',
-                                              top: '-10px',
-                                              left: '16px',
-                                              bgcolor: '#DBFAE6',
-                                              borderRadius: '4px',
-                                              px: 2,
-                                              py: 0.5,
-                                              fontFamily: 'Aileron',
-                                              fontSize: '10px',
-                                              fontWeight: 600,
-                                              color: '#1ABF66'
-                                            }}>
-                                              Most Likes
-                                            </Box>
-
-                                            {/* Creator Info */}
-                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0 }}>
-                                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <Avatar sx={{ width: 40, height: 40, mr: 1.5, bgcolor: '#E4405F' }}>
-                                                  {(mostLikesCreatorData?.user?.name || mostLikesCreator?.submission?.user?.name)?.charAt(0) || 'U'}
-                                                </Avatar>
-                                                <Box>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontWeight: 600,
-                                                    fontSize: '16px',
-                                                    color: '#231F20',
-                                                    lineHeight: '18px'
-                                                  }}>
-                                                    {mostLikesCreatorData?.user?.name || mostLikesCreator?.submission?.user?.name || 'Unknown'}
-                                                  </Typography>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontSize: '14px',
-                                                    color: '#636366',
-                                                    lineHeight: '16px'
-                                                  }}>
-                                                    {username}
-                                                  </Typography>
-                                                </Box>
+                                      return (
+                                        mostLikesCreator && (
+                                          <Grid item xs={12} md={12}>
+                                            <Box
+                                              sx={{
+                                                padding: '16px',
+                                                bgcolor: '#FFFFFF',
+                                                borderRadius: '8px',
+                                                border: '1px solid #EBEBEB',
+                                                boxShadow: '0px -3px 0px 0px #EBEBEB inset',
+                                                position: 'relative',
+                                                width: '611px',
+                                                height: '112px',
+                                                gap: '4px',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'center',
+                                                marginLeft: 'auto',
+                                              }}
+                                            >
+                                              {/* Most Likes Badge */}
+                                              <Box
+                                                sx={{
+                                                  position: 'absolute',
+                                                  top: '-10px',
+                                                  left: '16px',
+                                                  bgcolor: '#DBFAE6',
+                                                  borderRadius: '4px',
+                                                  px: 2,
+                                                  py: 0.5,
+                                                  fontFamily: 'Aileron',
+                                                  fontSize: '10px',
+                                                  fontWeight: 600,
+                                                  color: '#1ABF66',
+                                                }}
+                                              >
+                                                Most Likes
                                               </Box>
 
-                                              {/* Metrics - Inline */}
-                                              <Box sx={{ display: 'flex', gap: 5 }}>
-                                                <Box sx={{ textAlign: 'left' }}>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontWeight: 600,
-                                                    fontSize: '12px',
-                                                    lineHeight: '14px',
-                                                    color: '#636366'
-                                                  }}>
-                                                    Engage. Rate
-                                                  </Typography>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Instrument Serif',
-                                                    fontWeight: 400,
-                                                    fontSize: '28px',
-                                                    lineHeight: '30px',
-                                                    color: '#1340FF'
-                                                  }}>
-                                                    {engagementRate}%
-                                                  </Typography>
+                                              {/* Creator Info */}
+                                              <Box
+                                                sx={{
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'space-between',
+                                                  mb: 0,
+                                                }}
+                                              >
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                  <Avatar
+                                                    sx={{
+                                                      width: 40,
+                                                      height: 40,
+                                                      mr: 1.5,
+                                                      bgcolor: '#E4405F',
+                                                    }}
+                                                  >
+                                                    {(
+                                                      mostLikesCreatorData?.user?.name ||
+                                                      mostLikesCreator?.submission?.user?.name
+                                                    )?.charAt(0) || 'U'}
+                                                  </Avatar>
+                                                  <Box>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontWeight: 600,
+                                                        fontSize: '16px',
+                                                        color: '#231F20',
+                                                        lineHeight: '18px',
+                                                      }}
+                                                    >
+                                                      {mostLikesCreatorData?.user?.name ||
+                                                        mostLikesCreator?.submission?.user?.name ||
+                                                        'Unknown'}
+                                                    </Typography>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontSize: '14px',
+                                                        color: '#636366',
+                                                        lineHeight: '16px',
+                                                      }}
+                                                    >
+                                                      {username}
+                                                    </Typography>
+                                                  </Box>
                                                 </Box>
-                                                <Box sx={{ textAlign: 'left' }}>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontWeight: 600,
-                                                    fontSize: '12px',
-                                                    lineHeight: '14px',
-                                                    color: '#636366'
-                                                  }}>
-                                                    Views
-                                                  </Typography>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Instrument Serif',
-                                                    fontWeight: 400,
-                                                    fontSize: '28px',
-                                                    lineHeight: '30px',
-                                                    color: '#1340FF'
-                                                  }}>
-                                                    {formatNumber(views)}
-                                                  </Typography>
-                                                </Box>
-                                                <Box sx={{ textAlign: 'left' }}>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontWeight: 600,
-                                                    fontSize: '12px',
-                                                    lineHeight: '14px',
-                                                    color: '#636366'
-                                                  }}>
-                                                    Likes
-                                                  </Typography>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Instrument Serif',
-                                                    fontWeight: 400,
-                                                    fontSize: '28px',
-                                                    lineHeight: '30px',
-                                                    color: '#1340FF'
-                                                  }}>
-                                                    {formatNumber(maxLikes)}
-                                                  </Typography>
-                                                </Box>
-                                                <Box sx={{ textAlign: 'left' }}>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontWeight: 600,
-                                                    fontSize: '12px',
-                                                    lineHeight: '14px',
-                                                    color: '#636366'
-                                                  }}>
-                                                    Shares
-                                                  </Typography>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Instrument Serif',
-                                                    fontWeight: 400,
-                                                    fontSize: '28px',
-                                                    lineHeight: '30px',
-                                                    color: '#1340FF'
-                                                  }}>
-                                                    {formatNumber(shares)}
-                                                  </Typography>
+
+                                                {/* Metrics - Inline */}
+                                                <Box sx={{ display: 'flex', gap: 5 }}>
+                                                  <Box sx={{ textAlign: 'left' }}>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontWeight: 600,
+                                                        fontSize: '12px',
+                                                        lineHeight: '14px',
+                                                        color: '#636366',
+                                                      }}
+                                                    >
+                                                      Engage. Rate
+                                                    </Typography>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Instrument Serif',
+                                                        fontWeight: 400,
+                                                        fontSize: '28px',
+                                                        lineHeight: '30px',
+                                                        color: '#1340FF',
+                                                      }}
+                                                    >
+                                                      {engagementRate}%
+                                                    </Typography>
+                                                  </Box>
+                                                  <Box sx={{ textAlign: 'left' }}>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontWeight: 600,
+                                                        fontSize: '12px',
+                                                        lineHeight: '14px',
+                                                        color: '#636366',
+                                                      }}
+                                                    >
+                                                      Views
+                                                    </Typography>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Instrument Serif',
+                                                        fontWeight: 400,
+                                                        fontSize: '28px',
+                                                        lineHeight: '30px',
+                                                        color: '#1340FF',
+                                                      }}
+                                                    >
+                                                      {formatNumber(views)}
+                                                    </Typography>
+                                                  </Box>
+                                                  <Box sx={{ textAlign: 'left' }}>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontWeight: 600,
+                                                        fontSize: '12px',
+                                                        lineHeight: '14px',
+                                                        color: '#636366',
+                                                      }}
+                                                    >
+                                                      Likes
+                                                    </Typography>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Instrument Serif',
+                                                        fontWeight: 400,
+                                                        fontSize: '28px',
+                                                        lineHeight: '30px',
+                                                        color: '#1340FF',
+                                                      }}
+                                                    >
+                                                      {formatNumber(maxLikes)}
+                                                    </Typography>
+                                                  </Box>
+                                                  <Box sx={{ textAlign: 'left' }}>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontWeight: 600,
+                                                        fontSize: '12px',
+                                                        lineHeight: '14px',
+                                                        color: '#636366',
+                                                      }}
+                                                    >
+                                                      Shares
+                                                    </Typography>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Instrument Serif',
+                                                        fontWeight: 400,
+                                                        fontSize: '28px',
+                                                        lineHeight: '30px',
+                                                        color: '#1340FF',
+                                                      }}
+                                                    >
+                                                      {formatNumber(shares)}
+                                                    </Typography>
+                                                  </Box>
                                                 </Box>
                                               </Box>
                                             </Box>
-                                          </Box>
-                                        </Grid>
+                                          </Grid>
+                                        )
                                       );
                                     })()}
 
                                     {/* Most Shares Card */}
                                     {(() => {
-                                      const views = mostSharesCreator ? getMetricValue(mostSharesCreator.insightData.insight, 'views') : 0;
-                                      const comments = mostSharesCreator ? getMetricValue(mostSharesCreator.insightData.insight, 'comments') : 0;
-                                      const likes = mostSharesCreator ? getMetricValue(mostSharesCreator.insightData.insight, 'likes') : 0;
-                                      const maxShares = mostSharesCreator ? mostSharesCreator.shares : 0;
-                                      const engagementRate = mostSharesCreator ? calculateEngagementRate(mostSharesCreator.insightData.insight) : 0;
+                                      const views = mostSharesCreator
+                                        ? getMetricValue(
+                                            mostSharesCreator.insightData.insight,
+                                            'views'
+                                          )
+                                        : 0;
+                                      const likes = mostSharesCreator
+                                        ? getMetricValue(
+                                            mostSharesCreator.insightData.insight,
+                                            'likes'
+                                          )
+                                        : 0;
+                                      const maxShares = mostSharesCreator
+                                        ? mostSharesCreator.shares
+                                        : 0;
+                                      const engagementRate = mostSharesCreator
+                                        ? calculateEngagementRate(
+                                            mostSharesCreator.insightData.insight
+                                          )
+                                        : 0;
 
                                       // Get username based on platform
                                       let username = '';
                                       if (mostSharesCreator) {
                                         const { platform } = mostSharesCreator;
                                         if (platform === 'Instagram') {
-                                          username = mostSharesCreatorData?.user?.creator?.instagram
-                                            || mostSharesCreator?.submission?.user?.creator?.instagram
-                                            || mostSharesCreator?.submission?.user?.username
-                                            || mostSharesCreator?.submission?.user?.name
-                                            || '';
+                                          username =
+                                            mostSharesCreatorData?.user?.creator?.instagram ||
+                                            mostSharesCreator?.submission?.user?.creator
+                                              ?.instagram ||
+                                            mostSharesCreator?.submission?.user?.username ||
+                                            mostSharesCreator?.submission?.user?.name ||
+                                            '';
                                         } else if (platform === 'TikTok') {
-                                          username = mostSharesCreatorData?.user?.creator?.tiktok
-                                            || mostSharesCreator?.submission?.user?.creator?.tiktok
-                                            || mostSharesCreator?.submission?.user?.username
-                                            || mostSharesCreator?.submission?.user?.name
-                                            || '';
+                                          username =
+                                            mostSharesCreatorData?.user?.creator?.tiktok ||
+                                            mostSharesCreator?.submission?.user?.creator?.tiktok ||
+                                            mostSharesCreator?.submission?.user?.username ||
+                                            mostSharesCreator?.submission?.user?.name ||
+                                            '';
                                         }
                                       }
 
-                                      return mostSharesCreator && (
-                                        <Grid item xs={12} md={12}>
-                                          <Box sx={{
-                                            padding: '16px',
-                                            bgcolor: '#FFFFFF',
-                                            borderRadius: '8px',
-                                            border: '1px solid #EBEBEB',
-                                            boxShadow: '0px -3px 0px 0px #EBEBEB inset',
-                                            position: 'relative',
-                                            width: '611px',
-                                            height: '112px',
-                                            gap: '4px',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            justifyContent: 'center',
-                                            marginLeft: 'auto',
-                                          }}>
-                                            {/* Most Shares Badge */}
-                                            <Box sx={{
-                                              position: 'absolute',
-                                              top: '-10px',
-                                              left: '16px',
-                                              bgcolor: '#DBFAE6',
-                                              borderRadius: '4px',
-                                              px: 2,
-                                              py: 0.5,
-                                              fontFamily: 'Aileron',
-                                              fontSize: '10px',
-                                              fontWeight: 600,
-                                              color: '#1ABF66'
-                                            }}>
-                                              Most Shares
-                                            </Box>
-
-                                            {/* Creator Info */}
-                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0 }}>
-                                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <Avatar sx={{ width: 40, height: 40, mr: 1.5, bgcolor: '#E4405F' }}>
-                                                  {(mostSharesCreatorData?.user?.name || mostSharesCreator?.submission?.user?.name)?.charAt(0) || 'U'}
-                                                </Avatar>
-                                                <Box>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontWeight: 600,
-                                                    fontSize: '16px',
-                                                    color: '#231F20',
-                                                    lineHeight: '18px'
-                                                  }}>
-                                                    {mostSharesCreatorData?.user?.name || mostSharesCreator?.submission?.user?.name || 'Unknown'}
-                                                  </Typography>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontSize: '14px',
-                                                    color: '#636366',
-                                                    lineHeight: '16px'
-                                                  }}>
-                                                    {username}
-                                                  </Typography>
-                                                </Box>
+                                      return (
+                                        mostSharesCreator && (
+                                          <Grid item xs={12} md={12}>
+                                            <Box
+                                              sx={{
+                                                padding: '16px',
+                                                bgcolor: '#FFFFFF',
+                                                borderRadius: '8px',
+                                                border: '1px solid #EBEBEB',
+                                                boxShadow: '0px -3px 0px 0px #EBEBEB inset',
+                                                position: 'relative',
+                                                width: '611px',
+                                                height: '112px',
+                                                gap: '4px',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'center',
+                                                marginLeft: 'auto',
+                                              }}
+                                            >
+                                              {/* Most Shares Badge */}
+                                              <Box
+                                                sx={{
+                                                  position: 'absolute',
+                                                  top: '-10px',
+                                                  left: '16px',
+                                                  bgcolor: '#DBFAE6',
+                                                  borderRadius: '4px',
+                                                  px: 2,
+                                                  py: 0.5,
+                                                  fontFamily: 'Aileron',
+                                                  fontSize: '10px',
+                                                  fontWeight: 600,
+                                                  color: '#1ABF66',
+                                                }}
+                                              >
+                                                Most Shares
                                               </Box>
 
-                                              {/* Metrics - Inline */}
-                                              <Box sx={{ display: 'flex', gap: 5 }}>
-                                                <Box sx={{ textAlign: 'left' }}>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontWeight: 600,
-                                                    fontSize: '12px',
-                                                    lineHeight: '14px',
-                                                    color: '#636366'
-                                                  }}>
-                                                    Engage. Rate
-                                                  </Typography>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Instrument Serif',
-                                                    fontWeight: 400,
-                                                    fontSize: '28px',
-                                                    lineHeight: '30px',
-                                                    color: '#1340FF'
-                                                  }}>
-                                                    {engagementRate}%
-                                                  </Typography>
+                                              {/* Creator Info */}
+                                              <Box
+                                                sx={{
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'space-between',
+                                                  mb: 0,
+                                                }}
+                                              >
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                  <Avatar
+                                                    sx={{
+                                                      width: 40,
+                                                      height: 40,
+                                                      mr: 1.5,
+                                                      bgcolor: '#E4405F',
+                                                    }}
+                                                  >
+                                                    {(
+                                                      mostSharesCreatorData?.user?.name ||
+                                                      mostSharesCreator?.submission?.user?.name
+                                                    )?.charAt(0) || 'U'}
+                                                  </Avatar>
+                                                  <Box>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontWeight: 600,
+                                                        fontSize: '16px',
+                                                        color: '#231F20',
+                                                        lineHeight: '18px',
+                                                      }}
+                                                    >
+                                                      {mostSharesCreatorData?.user?.name ||
+                                                        mostSharesCreator?.submission?.user?.name ||
+                                                        'Unknown'}
+                                                    </Typography>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontSize: '14px',
+                                                        color: '#636366',
+                                                        lineHeight: '16px',
+                                                      }}
+                                                    >
+                                                      {username}
+                                                    </Typography>
+                                                  </Box>
                                                 </Box>
-                                                <Box sx={{ textAlign: 'left' }}>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontWeight: 600,
-                                                    fontSize: '12px',
-                                                    lineHeight: '14px',
-                                                    color: '#636366'
-                                                  }}>
-                                                    Views
-                                                  </Typography>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Instrument Serif',
-                                                    fontWeight: 400,
-                                                    fontSize: '28px',
-                                                    lineHeight: '30px',
-                                                    color: '#1340FF'
-                                                  }}>
-                                                    {formatNumber(views)}
-                                                  </Typography>
-                                                </Box>
-                                                <Box sx={{ textAlign: 'left' }}>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontWeight: 600,
-                                                    fontSize: '12px',
-                                                    lineHeight: '14px',
-                                                    color: '#636366'
-                                                  }}>
-                                                    Likes
-                                                  </Typography>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Instrument Serif',
-                                                    fontWeight: 400,
-                                                    fontSize: '28px',
-                                                    lineHeight: '30px',
-                                                    color: '#1340FF'
-                                                  }}>
-                                                    {formatNumber(likes)}
-                                                  </Typography>
-                                                </Box>
-                                                <Box sx={{ textAlign: 'left' }}>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Aileron',
-                                                    fontWeight: 600,
-                                                    fontSize: '12px',
-                                                    lineHeight: '14px',
-                                                    color: '#636366'
-                                                  }}>
-                                                    Shares
-                                                  </Typography>
-                                                  <Typography sx={{
-                                                    fontFamily: 'Instrument Serif',
-                                                    fontWeight: 400,
-                                                    fontSize: '28px',
-                                                    lineHeight: '30px',
-                                                    color: '#1340FF'
-                                                  }}>
-                                                    {formatNumber(maxShares)}
-                                                  </Typography>
+
+                                                {/* Metrics - Inline */}
+                                                <Box sx={{ display: 'flex', gap: 5 }}>
+                                                  <Box sx={{ textAlign: 'left' }}>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontWeight: 600,
+                                                        fontSize: '12px',
+                                                        lineHeight: '14px',
+                                                        color: '#636366',
+                                                      }}
+                                                    >
+                                                      Engage. Rate
+                                                    </Typography>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Instrument Serif',
+                                                        fontWeight: 400,
+                                                        fontSize: '28px',
+                                                        lineHeight: '30px',
+                                                        color: '#1340FF',
+                                                      }}
+                                                    >
+                                                      {engagementRate}%
+                                                    </Typography>
+                                                  </Box>
+                                                  <Box sx={{ textAlign: 'left' }}>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontWeight: 600,
+                                                        fontSize: '12px',
+                                                        lineHeight: '14px',
+                                                        color: '#636366',
+                                                      }}
+                                                    >
+                                                      Views
+                                                    </Typography>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Instrument Serif',
+                                                        fontWeight: 400,
+                                                        fontSize: '28px',
+                                                        lineHeight: '30px',
+                                                        color: '#1340FF',
+                                                      }}
+                                                    >
+                                                      {formatNumber(views)}
+                                                    </Typography>
+                                                  </Box>
+                                                  <Box sx={{ textAlign: 'left' }}>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontWeight: 600,
+                                                        fontSize: '12px',
+                                                        lineHeight: '14px',
+                                                        color: '#636366',
+                                                      }}
+                                                    >
+                                                      Likes
+                                                    </Typography>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Instrument Serif',
+                                                        fontWeight: 400,
+                                                        fontSize: '28px',
+                                                        lineHeight: '30px',
+                                                        color: '#1340FF',
+                                                      }}
+                                                    >
+                                                      {formatNumber(likes)}
+                                                    </Typography>
+                                                  </Box>
+                                                  <Box sx={{ textAlign: 'left' }}>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontWeight: 600,
+                                                        fontSize: '12px',
+                                                        lineHeight: '14px',
+                                                        color: '#636366',
+                                                      }}
+                                                    >
+                                                      Shares
+                                                    </Typography>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Instrument Serif',
+                                                        fontWeight: 400,
+                                                        fontSize: '28px',
+                                                        lineHeight: '30px',
+                                                        color: '#1340FF',
+                                                      }}
+                                                    >
+                                                      {formatNumber(maxShares)}
+                                                    </Typography>
+                                                  </Box>
                                                 </Box>
                                               </Box>
                                             </Box>
-                                          </Box>
-                                        </Grid>
+                                          </Grid>
+                                        )
                                       );
                                     })()}
                                   </Grid>
@@ -3027,210 +2356,36 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                             }}
                           >
                             <Box sx={{ mb: 4 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                                <Typography
-                                  variant="h2"
-                                  sx={{
-                                    fontFamily: 'Instrument Serif, serif',
-                                    fontWeight: 400,
-                                    fontStyle: 'normal',
-                                    fontSize: '56px',
-                                    lineHeight: '60px',
-                                    letterSpacing: '0%',
-                                    color: '#231F20',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  Views
-                                </Typography>
-                                <Box
-                                  sx={{
-                                    flex: 1,
-                                    height: '1px',
-                                    background: '#231F20',
-                                  }}
-                                />
-                                {effectiveEditMode && !sectionEditStates.views && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={async () => {
-                                        try {
-                                          setIsSaving(true);
-                                          const response = await handleSavePCR();
-                                          if (response?.data?.success) {
-                                            setSectionEditStates({ ...sectionEditStates, views: true });
-                                            enqueueSnackbar('Views section saved successfully', { variant: 'success' });
-                                          }
-                                        } catch (error) {
-                                          console.error('Error saving section:', error);
-                                          enqueueSnackbar('Failed to save section', { variant: 'error' });
-                                        } finally {
-                                          setIsSaving(false);
-                                        }
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, views: false });
-                                        enqueueSnackbar('Views section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                                {effectiveEditMode && sectionEditStates.views && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionEditStates({ ...sectionEditStates, views: false });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, views: false });
-                                        enqueueSnackbar('Views section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                              </Box>
+                              <SectionHeader
+                                title="Views"
+                                sectionKey="views"
+                                effectiveEditMode={effectiveEditMode}
+                                sectionEditStates={sectionEditStates}
+                                setSectionEditStates={setSectionEditStates}
+                                sectionVisibility={sectionVisibility}
+                                setSectionVisibility={setSectionVisibility}
+                                handleSavePCR={handleSavePCR}
+                                setIsSaving={setIsSaving}
+                              />
 
-                              {(() => {
-                                if (effectiveEditMode && !sectionEditStates.views) {
-                                  return (
-                                    <Box sx={{ position: 'relative', mb: 3 }}>
-                                      <Box sx={{
-                                        position: 'absolute',
-                                        top: '12px',
-                                        left: '12px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                        zIndex: 1,
-                                        bgcolor: '#F3F4F6',
-                                        px: 0.5
-                                      }}>
-                                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
-                                          Editable
-                                        </Typography>
-                                      </Box>
-                                      <FormattedTextField
-                                        key={`pcr-ftf-viewsDescription-${hydrationVersion}`}
-                                        value={editableContent.viewsDescription || ''}
-                                        onChange={(e) => setEditableContent({ ...editableContent, viewsDescription: e.target.value })}
-                                        placeholder="type here"
-                                        rows={3}
-                                      />
-                                    </Box>
-                                  );
+                              <EditableDescriptionField
+                                label="Views"
+                                fieldKey="viewsDescription"
+                                hydrationVersion={hydrationVersion}
+                                isEditingSection={effectiveEditMode && !sectionEditStates.views}
+                                value={
+                                  aiAnalyticsData?.views_analysis ||
+                                  editableContent.viewsDescription ||
+                                  ''
                                 }
-
-                                if (editableContent.viewsDescription) {
-                                  return (
-                                    <Box
-                                      sx={{
-                                        fontFamily: 'Aileron',
-                                        fontWeight: 400,
-                                        fontStyle: 'normal',
-                                        fontSize: '20px',
-                                        lineHeight: '24px',
-                                        letterSpacing: '0%',
-                                        color: '#231F20',
-                                        mb: 3,
-                                        wordWrap: 'break-word',
-                                        overflowWrap: 'break-word',
-                                        wordBreak: 'break-word',
-                                        whiteSpace: 'pre-wrap',
-                                        '& strong': { fontWeight: 700 },
-                                        '& em': { fontStyle: 'italic' },
-                                        '& u': { textDecoration: 'underline' },
-                                      }}
-                                      dangerouslySetInnerHTML={{ __html: editableContent.viewsDescription }}
-                                    />
-                                  );
+                                onChange={(v) =>
+                                  setEditableContent({ ...editableContent, viewsDescription: v })
                                 }
-
-                                return (
-                                  <Box
-                                    className="hide-in-pdf"
-                                    sx={{
-                                      bgcolor: '#E5E7EB',
-                                      borderRadius: '8px',
-                                      padding: '12px',
-                                      mb: 3,
-                                    }}
-                                  >
-                                    <Typography
-                                      variant="body1"
-                                      sx={{
-                                        fontFamily: 'Aileron',
-                                        fontWeight: 400,
-                                        fontSize: '20px',
-                                        lineHeight: '24px',
-                                        letterSpacing: '0%',
-                                        color: '#9CA3AF',
-                                      }}
-                                    >
-                                      {isClientView ? 'No content' : 'Click Edit Report to edit Views'}
-                                    </Typography>
-                                  </Box>
-                                );
-                              })()}
+                                rows={3}
+                                mb={3}
+                                isClientView={isClientView}
+                                isLoading={effectiveEditMode && mutation.isPending}
+                              />
 
                               {/* Views Charts Grid */}
                               <Grid container spacing={3}>
@@ -3257,7 +2412,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
                     case 'audienceSentiment':
                       return (
-                        <SortableSection key="audienceSentiment" id="audienceSentiment" isEditMode={effectiveEditMode}>
+                        <SortableSection
+                          key="audienceSentiment"
+                          id="audienceSentiment"
+                          isEditMode={effectiveEditMode}
+                        >
                           {/* Audience Sentiment */}
                           <Box
                             className="pcr-section"
@@ -3270,234 +2429,63 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                             }}
                           >
                             <Box sx={{ mb: 6, mt: 0 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                                <Typography
-                                  variant="h2"
-                                  sx={{
-                                    fontFamily: 'Instrument Serif, serif',
-                                    fontWeight: 400,
-                                    fontStyle: 'normal',
-                                    fontSize: '56px',
-                                    lineHeight: '60px',
-                                    letterSpacing: '0%',
-                                    color: '#231F20',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  Audience Sentiment
-                                </Typography>
-                                <Box
-                                  sx={{
-                                    flex: 1,
-                                    height: '1px',
-                                    background: '#231F20',
-                                  }}
-                                />
-                                {effectiveEditMode && !sectionEditStates.audienceSentiment && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={async () => {
-                                        try {
-                                          setIsSaving(true);
-                                          const response = await handleSavePCR();
-                                          if (response?.data?.success) {
-                                            setSectionEditStates({ ...sectionEditStates, audienceSentiment: true });
-                                            enqueueSnackbar('Audience Sentiment section saved successfully', { variant: 'success' });
-                                          }
-                                        } catch (error) {
-                                          console.error('Error saving section:', error);
-                                          enqueueSnackbar('Failed to save section', { variant: 'error' });
-                                        } finally {
-                                          setIsSaving(false);
-                                        }
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, audienceSentiment: false });
-                                        enqueueSnackbar('Audience Sentiment section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                                {effectiveEditMode && sectionEditStates.audienceSentiment && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionEditStates({ ...sectionEditStates, audienceSentiment: false });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, audienceSentiment: false });
-                                        enqueueSnackbar('Audience Sentiment section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                              </Box>
+                              <SectionHeader
+                                title="Audience Sentiment"
+                                sectionKey="audienceSentiment"
+                                effectiveEditMode={effectiveEditMode}
+                                sectionEditStates={sectionEditStates}
+                                setSectionEditStates={setSectionEditStates}
+                                sectionVisibility={sectionVisibility}
+                                setSectionVisibility={setSectionVisibility}
+                                handleSavePCR={handleSavePCR}
+                                setIsSaving={setIsSaving}
+                              />
 
-                              {(() => {
-                                if (effectiveEditMode && !sectionEditStates.audienceSentiment) {
-                                  return (
-                                    <Box sx={{ position: 'relative', mb: 3 }}>
-                                      <Box sx={{
-                                        position: 'absolute',
-                                        top: '12px',
-                                        left: '12px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                        zIndex: 1,
-                                        bgcolor: '#F3F4F6',
-                                        px: 0.5
-                                      }}>
-                                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
-                                          Editable
-                                        </Typography>
-                                      </Box>
-                                      <FormattedTextField
-                                        key={`pcr-ftf-audienceSentimentDescription-${hydrationVersion}`}
-                                        value={editableContent.audienceSentimentDescription}
-                                        onChange={(e) => setEditableContent({ ...editableContent, audienceSentimentDescription: e.target.value })}
-                                        placeholder="type here"
-                                        rows={3}
-                                      />
-                                    </Box>
-                                  );
+                              <EditableDescriptionField
+                                label="Audience Sentiment"
+                                fieldKey="audienceSentimentDescription"
+                                hydrationVersion={hydrationVersion}
+                                isEditingSection={
+                                  effectiveEditMode && !sectionEditStates.audienceSentiment
                                 }
-
-                                if (editableContent.audienceSentimentDescription) {
-                                  return (
-                                    <Box
-                                      sx={{
-                                        fontFamily: 'Aileron',
-                                        fontWeight: 400,
-                                        fontStyle: 'normal',
-                                        fontSize: '20px',
-                                        lineHeight: '24px',
-                                        letterSpacing: '0%',
-                                        color: '#231F20',
-                                        mb: 3,
-                                        wordWrap: 'break-word',
-                                        overflowWrap: 'break-word',
-                                        wordBreak: 'break-word',
-                                        whiteSpace: 'pre-wrap',
-                                        '& strong': { fontWeight: 700 },
-                                        '& em': { fontStyle: 'italic' },
-                                        '& u': { textDecoration: 'underline' },
-                                      }}
-                                      dangerouslySetInnerHTML={{ __html: editableContent.audienceSentimentDescription }}
-                                    />
-                                  );
+                                value={editableContent.audienceSentimentDescription}
+                                onChange={(v) =>
+                                  setEditableContent({
+                                    ...editableContent,
+                                    audienceSentimentDescription: v,
+                                  })
                                 }
-
-                                return (
-                                  <Box
-                                    className="hide-in-pdf"
-                                    sx={{
-                                      bgcolor: '#E5E7EB',
-                                      borderRadius: '8px',
-                                      padding: '12px',
-                                      mb: 3,
-                                    }}
-                                  >
-                                    <Typography
-                                      variant="body1"
-                                      sx={{
-                                        fontFamily: 'Aileron',
-                                        fontWeight: 400,
-                                        fontSize: '20px',
-                                        lineHeight: '24px',
-                                        letterSpacing: '0%',
-                                        color: '#9CA3AF',
-                                      }}
-                                    >
-                                      {isClientView ? 'No content' : 'Click Edit Report to edit Audience Sentiment'}
-                                    </Typography>
-                                  </Box>
-                                );
-                              })()}
+                                rows={3}
+                                mb={3}
+                                isClientView={isClientView}
+                              />
 
                               {/* Positive Comments */}
-                              {(effectiveEditMode || editableContent.positiveComments.length > 0) && (
+                              {(effectiveEditMode ||
+                                editableContent.positiveComments.length > 0) && (
                                 <Box sx={{ mb: 3, position: 'relative', mt: 3 }}>
                                   <Box
                                     sx={{
                                       p: 3,
                                       border: '2px solid #10B981',
                                       borderRadius: '12px',
-                                      bgcolor: 'white'
+                                      bgcolor: 'white',
                                     }}
                                   >
-                                    <Box sx={{
-                                      position: 'absolute',
-                                      top: '-10px',
-                                      left: '24px',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 1,
-                                      bgcolor: '#D1FAE5',
-                                      px: 2,
-                                      py: 0.5,
-                                      borderRadius: '4px'
-                                    }}>
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        top: '-10px',
+                                        left: '24px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        bgcolor: '#D1FAE5',
+                                        px: 2,
+                                        py: 0.5,
+                                        borderRadius: '4px',
+                                      }}
+                                    >
                                       <Typography
                                         sx={{
                                           fontFamily: 'Aileron',
@@ -3513,28 +2501,64 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                     {effectiveEditMode && !sectionEditStates.audienceSentiment ? (
                                       <>
                                         <Grid container spacing={2}>
-                                          {editableContent.positiveComments.map((comment, index) => (
-                                            <Grid item xs={12} sm={6} md={3} key={index}>
-                                              <Box sx={{ p: 1.5, bgcolor: '#F3F4F6', borderRadius: '8px', position: 'relative' }}>
-                                                <IconButton
-                                                  size="small"
-                                                  onClick={() => {
-                                                    const newComments = editableContent.positiveComments.filter((_, i) => i !== index);
-                                                    setEditableContent({ ...editableContent, positiveComments: newComments });
+                                          {editableContent.positiveComments.map(
+                                            (comment, index) => (
+                                              <Grid item xs={12} sm={6} md={3} key={index}>
+                                                <Box
+                                                  sx={{
+                                                    p: 1.5,
+                                                    bgcolor: '#F3F4F6',
+                                                    borderRadius: '8px',
+                                                    position: 'relative',
                                                   }}
-                                                  sx={{ position: 'absolute', top: 4, right: 4, color: '#6B7280' }}
                                                 >
-                                                  <DeleteIcon fontSize="small" />
-                                                </IconButton>
-                                                <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 0.5, pr: 3 }}>
-                                                  {comment.username}
-                                                </Typography>
-                                                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151', lineHeight: 1.4 }}>
-                                                  {comment.comment}
-                                                </Typography>
-                                              </Box>
-                                            </Grid>
-                                          ))}
+                                                  <IconButton
+                                                    size="small"
+                                                    onClick={() => {
+                                                      const newComments =
+                                                        editableContent.positiveComments.filter(
+                                                          (_, i) => i !== index
+                                                        );
+                                                      setEditableContent({
+                                                        ...editableContent,
+                                                        positiveComments: newComments,
+                                                      });
+                                                    }}
+                                                    sx={{
+                                                      position: 'absolute',
+                                                      top: 4,
+                                                      right: 4,
+                                                      color: '#6B7280',
+                                                    }}
+                                                  >
+                                                    <DeleteIcon fontSize="small" />
+                                                  </IconButton>
+                                                  <Typography
+                                                    sx={{
+                                                      fontFamily: 'Aileron',
+                                                      fontSize: '12px',
+                                                      fontWeight: 600,
+                                                      color: '#6B7280',
+                                                      mb: 0.5,
+                                                      pr: 3,
+                                                    }}
+                                                  >
+                                                    {comment.username}
+                                                  </Typography>
+                                                  <Typography
+                                                    sx={{
+                                                      fontFamily: 'Aileron',
+                                                      fontSize: '14px',
+                                                      color: '#374151',
+                                                      lineHeight: 1.4,
+                                                    }}
+                                                  >
+                                                    {comment.comment}
+                                                  </Typography>
+                                                </Box>
+                                              </Grid>
+                                            )
+                                          )}
                                         </Grid>
                                         <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
                                           <TextField
@@ -3567,17 +2591,37 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               if (e.key === ' ') {
                                                 e.preventDefault();
                                               }
-                                              if (e.key === 'Enter' && editableContent.positiveComments.length < 4) {
-                                                const username = document.getElementById('positive-username-input').value;
-                                                const postlink = document.getElementById('positive-postlink-input').value;
-                                                const comment = document.getElementById('positive-comment-input').value;
+                                              if (
+                                                e.key === 'Enter' &&
+                                                editableContent.positiveComments.length < 4
+                                              ) {
+                                                const username =
+                                                  document.getElementById(
+                                                    'positive-username-input'
+                                                  ).value;
+                                                const comment =
+                                                  document.getElementById(
+                                                    'positive-comment-input'
+                                                  ).value;
 
                                                 if (username && username !== '@' && comment) {
-                                                  const newComments = [...editableContent.positiveComments, { username, comment }];
-                                                  setEditableContent({ ...editableContent, positiveComments: newComments });
-                                                  document.getElementById('positive-username-input').value = '@';
-                                                  document.getElementById('positive-postlink-input').value = '';
-                                                  document.getElementById('positive-comment-input').value = '';
+                                                  const newComments = [
+                                                    ...editableContent.positiveComments,
+                                                    { username, comment },
+                                                  ];
+                                                  setEditableContent({
+                                                    ...editableContent,
+                                                    positiveComments: newComments,
+                                                  });
+                                                  document.getElementById(
+                                                    'positive-username-input'
+                                                  ).value = '@';
+                                                  document.getElementById(
+                                                    'positive-postlink-input'
+                                                  ).value = '';
+                                                  document.getElementById(
+                                                    'positive-comment-input'
+                                                  ).value = '';
                                                 }
                                               }
                                             }}
@@ -3588,17 +2632,37 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                             id="positive-postlink-input"
                                             disabled={editableContent.positiveComments.length >= 4}
                                             onKeyPress={(e) => {
-                                              if (e.key === 'Enter' && editableContent.positiveComments.length < 4) {
-                                                const username = document.getElementById('positive-username-input').value;
-                                                const postlink = document.getElementById('positive-postlink-input').value;
-                                                const comment = document.getElementById('positive-comment-input').value;
+                                              if (
+                                                e.key === 'Enter' &&
+                                                editableContent.positiveComments.length < 4
+                                              ) {
+                                                const username =
+                                                  document.getElementById(
+                                                    'positive-username-input'
+                                                  ).value;
+                                                const comment =
+                                                  document.getElementById(
+                                                    'positive-comment-input'
+                                                  ).value;
 
                                                 if (username && username !== '@' && comment) {
-                                                  const newComments = [...editableContent.positiveComments, { username, comment }];
-                                                  setEditableContent({ ...editableContent, positiveComments: newComments });
-                                                  document.getElementById('positive-username-input').value = '@';
-                                                  document.getElementById('positive-postlink-input').value = '';
-                                                  document.getElementById('positive-comment-input').value = '';
+                                                  const newComments = [
+                                                    ...editableContent.positiveComments,
+                                                    { username, comment },
+                                                  ];
+                                                  setEditableContent({
+                                                    ...editableContent,
+                                                    positiveComments: newComments,
+                                                  });
+                                                  document.getElementById(
+                                                    'positive-username-input'
+                                                  ).value = '@';
+                                                  document.getElementById(
+                                                    'positive-postlink-input'
+                                                  ).value = '';
+                                                  document.getElementById(
+                                                    'positive-comment-input'
+                                                  ).value = '';
                                                 }
                                               }
                                             }}
@@ -3611,17 +2675,41 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                           id="positive-comment-input"
                                           disabled={editableContent.positiveComments.length >= 4}
                                           onKeyPress={(e) => {
-                                            if (e.key === 'Enter' && editableContent.positiveComments.length < 4) {
-                                              const username = document.getElementById('positive-username-input').value;
-                                              const postlink = document.getElementById('positive-postlink-input').value;
-                                              const comment = document.getElementById('positive-comment-input').value;
+                                            if (
+                                              e.key === 'Enter' &&
+                                              editableContent.positiveComments.length < 4
+                                            ) {
+                                              const username =
+                                                document.getElementById(
+                                                  'positive-username-input'
+                                                ).value;
+                                              const postlink =
+                                                document.getElementById(
+                                                  'positive-postlink-input'
+                                                ).value;
+                                              const comment =
+                                                document.getElementById(
+                                                  'positive-comment-input'
+                                                ).value;
 
                                               if (username && username !== '@' && comment) {
-                                                const newComments = [...editableContent.positiveComments, { username, comment, postlink }];
-                                                setEditableContent({ ...editableContent, positiveComments: newComments });
-                                                document.getElementById('positive-username-input').value = '@';
-                                                document.getElementById('positive-postlink-input').value = '';
-                                                document.getElementById('positive-comment-input').value = '';
+                                                const newComments = [
+                                                  ...editableContent.positiveComments,
+                                                  { username, comment, postlink },
+                                                ];
+                                                setEditableContent({
+                                                  ...editableContent,
+                                                  positiveComments: newComments,
+                                                });
+                                                document.getElementById(
+                                                  'positive-username-input'
+                                                ).value = '@';
+                                                document.getElementById(
+                                                  'positive-postlink-input'
+                                                ).value = '';
+                                                document.getElementById(
+                                                  'positive-comment-input'
+                                                ).value = '';
                                               }
                                             }
                                           }}
@@ -3630,19 +2718,38 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               <InputAdornment position="end">
                                                 <IconButton
                                                   onClick={() => {
-                                                    const username = document.getElementById('positive-username-input').value;
-                                                    const postlink = document.getElementById('positive-postlink-input').value;
-                                                    const comment = document.getElementById('positive-comment-input').value;
+                                                    const username =
+                                                      document.getElementById(
+                                                        'positive-username-input'
+                                                      ).value;
+                                                    const comment =
+                                                      document.getElementById(
+                                                        'positive-comment-input'
+                                                      ).value;
 
                                                     if (username && username !== '@' && comment) {
-                                                      const newComments = [...editableContent.positiveComments, { username, comment }];
-                                                      setEditableContent({ ...editableContent, positiveComments: newComments });
-                                                      document.getElementById('positive-username-input').value = '@';
-                                                      document.getElementById('positive-postlink-input').value = '';
-                                                      document.getElementById('positive-comment-input').value = '';
+                                                      const newComments = [
+                                                        ...editableContent.positiveComments,
+                                                        { username, comment },
+                                                      ];
+                                                      setEditableContent({
+                                                        ...editableContent,
+                                                        positiveComments: newComments,
+                                                      });
+                                                      document.getElementById(
+                                                        'positive-username-input'
+                                                      ).value = '@';
+                                                      document.getElementById(
+                                                        'positive-postlink-input'
+                                                      ).value = '';
+                                                      document.getElementById(
+                                                        'positive-comment-input'
+                                                      ).value = '';
                                                     }
                                                   }}
-                                                  disabled={editableContent.positiveComments.length >= 4}
+                                                  disabled={
+                                                    editableContent.positiveComments.length >= 4
+                                                  }
                                                   edge="end"
                                                   sx={{
                                                     color: '#1ABF66',
@@ -3665,40 +2772,56 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       <>
                                         {editableContent.positiveComments.length > 0 ? (
                                           <Grid container spacing={2}>
-                                            {editableContent.positiveComments.map((comment, index) => (
-                                              <Grid item xs={12} sm={6} md={3} key={index}>
-                                                <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
-                                                  <Link
-                                                    href={comment.postlink || '#'}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                            {editableContent.positiveComments.map(
+                                              (comment, index) => (
+                                                <Grid item xs={12} sm={6} md={3} key={index}>
+                                                  <Box
                                                     sx={{
-                                                      textDecoration: 'none',
-                                                      '&:hover': {
-                                                        textDecoration: 'underline'
-                                                      }
+                                                      p: 2,
+                                                      bgcolor: '#F3F4F6',
+                                                      borderRadius: '8px',
                                                     }}
                                                   >
-                                                    <Typography sx={{
-                                                      fontFamily: 'Aileron',
-                                                      fontSize: '12px',
-                                                      fontWeight: 600,
-                                                      color: '#6B7280',
-                                                      mb: 1,
-                                                      cursor: 'pointer',
-                                                      '&:hover': {
-                                                        color: '#1340FF'
-                                                      }
-                                                    }}>
-                                                      {comment.username}
+                                                    <Link
+                                                      href={comment.postlink || '#'}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      sx={{
+                                                        textDecoration: 'none',
+                                                        '&:hover': {
+                                                          textDecoration: 'underline',
+                                                        },
+                                                      }}
+                                                    >
+                                                      <Typography
+                                                        sx={{
+                                                          fontFamily: 'Aileron',
+                                                          fontSize: '12px',
+                                                          fontWeight: 600,
+                                                          color: '#6B7280',
+                                                          mb: 1,
+                                                          cursor: 'pointer',
+                                                          '&:hover': {
+                                                            color: '#1340FF',
+                                                          },
+                                                        }}
+                                                      >
+                                                        {comment.username}
+                                                      </Typography>
+                                                    </Link>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontSize: '14px',
+                                                        color: '#374151',
+                                                      }}
+                                                    >
+                                                      {comment.comment}
                                                     </Typography>
-                                                  </Link>
-                                                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
-                                                    {comment.comment}
-                                                  </Typography>
-                                                </Box>
-                                              </Grid>
-                                            ))}
+                                                  </Box>
+                                                </Grid>
+                                              )
+                                            )}
                                           </Grid>
                                         ) : null}
                                       </>
@@ -3708,28 +2831,31 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                               )}
 
                               {/* Neutral Comments */}
-                              {(effectiveEditMode || editableContent.neutralComments.length > 0) && (
+                              {(effectiveEditMode ||
+                                editableContent.neutralComments.length > 0) && (
                                 <Box sx={{ mb: 3, position: 'relative', mt: 3 }}>
                                   <Box
                                     sx={{
                                       p: 3,
                                       border: '2px solid #F59E0B',
                                       borderRadius: '12px',
-                                      bgcolor: 'white'
+                                      bgcolor: 'white',
                                     }}
                                   >
-                                    <Box sx={{
-                                      position: 'absolute',
-                                      top: '-10px',
-                                      left: '24px',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 1,
-                                      bgcolor: '#FEF3C7',
-                                      px: 2,
-                                      py: 0.5,
-                                      borderRadius: '4px'
-                                    }}>
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        top: '-10px',
+                                        left: '24px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        bgcolor: '#FEF3C7',
+                                        px: 2,
+                                        py: 0.5,
+                                        borderRadius: '4px',
+                                      }}
+                                    >
                                       <Typography
                                         sx={{
                                           fontFamily: 'Aileron',
@@ -3747,21 +2873,53 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         <Grid container spacing={2}>
                                           {editableContent.neutralComments.map((comment, index) => (
                                             <Grid item xs={12} sm={6} md={3} key={index}>
-                                              <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px', position: 'relative' }}>
+                                              <Box
+                                                sx={{
+                                                  p: 2,
+                                                  bgcolor: '#F3F4F6',
+                                                  borderRadius: '8px',
+                                                  position: 'relative',
+                                                }}
+                                              >
                                                 <IconButton
                                                   size="small"
                                                   onClick={() => {
-                                                    const newComments = editableContent.neutralComments.filter((_, i) => i !== index);
-                                                    setEditableContent({ ...editableContent, neutralComments: newComments });
+                                                    const newComments =
+                                                      editableContent.neutralComments.filter(
+                                                        (_, i) => i !== index
+                                                      );
+                                                    setEditableContent({
+                                                      ...editableContent,
+                                                      neutralComments: newComments,
+                                                    });
                                                   }}
-                                                  sx={{ position: 'absolute', top: 4, right: 4, color: '#6B7280' }}
+                                                  sx={{
+                                                    position: 'absolute',
+                                                    top: 4,
+                                                    right: 4,
+                                                    color: '#6B7280',
+                                                  }}
                                                 >
                                                   <DeleteIcon fontSize="small" />
                                                 </IconButton>
-                                                <Typography sx={{ fontFamily: 'Aileron', fontSize: '12px', fontWeight: 600, color: '#6B7280', mb: 1 }}>
+                                                <Typography
+                                                  sx={{
+                                                    fontFamily: 'Aileron',
+                                                    fontSize: '12px',
+                                                    fontWeight: 600,
+                                                    color: '#6B7280',
+                                                    mb: 1,
+                                                  }}
+                                                >
                                                   {comment.username}
                                                 </Typography>
-                                                <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
+                                                <Typography
+                                                  sx={{
+                                                    fontFamily: 'Aileron',
+                                                    fontSize: '14px',
+                                                    color: '#374151',
+                                                  }}
+                                                >
                                                   {comment.comment}
                                                 </Typography>
                                               </Box>
@@ -3799,17 +2957,37 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               if (e.key === ' ') {
                                                 e.preventDefault();
                                               }
-                                              if (e.key === 'Enter' && editableContent.neutralComments.length < 4) {
-                                                const username = document.getElementById('neutral-username-input').value;
-                                                const postlink = document.getElementById('neutral-postlink-input').value;
-                                                const comment = document.getElementById('neutral-comment-input').value;
+                                              if (
+                                                e.key === 'Enter' &&
+                                                editableContent.neutralComments.length < 4
+                                              ) {
+                                                const username =
+                                                  document.getElementById(
+                                                    'neutral-username-input'
+                                                  ).value;
+                                                const comment =
+                                                  document.getElementById(
+                                                    'neutral-comment-input'
+                                                  ).value;
 
                                                 if (username && username !== '@' && comment) {
-                                                  const newComments = [...editableContent.neutralComments, { username, comment }];
-                                                  setEditableContent({ ...editableContent, neutralComments: newComments });
-                                                  document.getElementById('neutral-username-input').value = '@';
-                                                  document.getElementById('neutral-postlink-input').value = '';
-                                                  document.getElementById('neutral-comment-input').value = '';
+                                                  const newComments = [
+                                                    ...editableContent.neutralComments,
+                                                    { username, comment },
+                                                  ];
+                                                  setEditableContent({
+                                                    ...editableContent,
+                                                    neutralComments: newComments,
+                                                  });
+                                                  document.getElementById(
+                                                    'neutral-username-input'
+                                                  ).value = '@';
+                                                  document.getElementById(
+                                                    'neutral-postlink-input'
+                                                  ).value = '';
+                                                  document.getElementById(
+                                                    'neutral-comment-input'
+                                                  ).value = '';
                                                 }
                                               }
                                             }}
@@ -3820,17 +2998,37 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                             id="neutral-postlink-input"
                                             disabled={editableContent.neutralComments.length >= 4}
                                             onKeyPress={(e) => {
-                                              if (e.key === 'Enter' && editableContent.neutralComments.length < 4) {
-                                                const username = document.getElementById('neutral-username-input').value;
-                                                const postlink = document.getElementById('neutral-postlink-input').value;
-                                                const comment = document.getElementById('neutral-comment-input').value;
+                                              if (
+                                                e.key === 'Enter' &&
+                                                editableContent.neutralComments.length < 4
+                                              ) {
+                                                const username =
+                                                  document.getElementById(
+                                                    'neutral-username-input'
+                                                  ).value;
+                                                const comment =
+                                                  document.getElementById(
+                                                    'neutral-comment-input'
+                                                  ).value;
 
                                                 if (username && username !== '@' && comment) {
-                                                  const newComments = [...editableContent.neutralComments, { username, comment }];
-                                                  setEditableContent({ ...editableContent, neutralComments: newComments });
-                                                  document.getElementById('neutral-username-input').value = '@';
-                                                  document.getElementById('neutral-postlink-input').value = '';
-                                                  document.getElementById('neutral-comment-input').value = '';
+                                                  const newComments = [
+                                                    ...editableContent.neutralComments,
+                                                    { username, comment },
+                                                  ];
+                                                  setEditableContent({
+                                                    ...editableContent,
+                                                    neutralComments: newComments,
+                                                  });
+                                                  document.getElementById(
+                                                    'neutral-username-input'
+                                                  ).value = '@';
+                                                  document.getElementById(
+                                                    'neutral-postlink-input'
+                                                  ).value = '';
+                                                  document.getElementById(
+                                                    'neutral-comment-input'
+                                                  ).value = '';
                                                 }
                                               }
                                             }}
@@ -3843,17 +3041,41 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                           id="neutral-comment-input"
                                           disabled={editableContent.neutralComments.length >= 4}
                                           onKeyPress={(e) => {
-                                            if (e.key === 'Enter' && editableContent.neutralComments.length < 4) {
-                                              const username = document.getElementById('neutral-username-input').value;
-                                              const postlink = document.getElementById('neutral-postlink-input').value;
-                                              const comment = document.getElementById('neutral-comment-input').value;
+                                            if (
+                                              e.key === 'Enter' &&
+                                              editableContent.neutralComments.length < 4
+                                            ) {
+                                              const username =
+                                                document.getElementById(
+                                                  'neutral-username-input'
+                                                ).value;
+                                              const postlink =
+                                                document.getElementById(
+                                                  'neutral-postlink-input'
+                                                ).value;
+                                              const comment =
+                                                document.getElementById(
+                                                  'neutral-comment-input'
+                                                ).value;
 
                                               if (username && username !== '@' && comment) {
-                                                const newComments = [...editableContent.neutralComments, { username, comment, postlink }];
-                                                setEditableContent({ ...editableContent, neutralComments: newComments });
-                                                document.getElementById('neutral-username-input').value = '@';
-                                                document.getElementById('neutral-postlink-input').value = '';
-                                                document.getElementById('neutral-comment-input').value = '';
+                                                const newComments = [
+                                                  ...editableContent.neutralComments,
+                                                  { username, comment, postlink },
+                                                ];
+                                                setEditableContent({
+                                                  ...editableContent,
+                                                  neutralComments: newComments,
+                                                });
+                                                document.getElementById(
+                                                  'neutral-username-input'
+                                                ).value = '@';
+                                                document.getElementById(
+                                                  'neutral-postlink-input'
+                                                ).value = '';
+                                                document.getElementById(
+                                                  'neutral-comment-input'
+                                                ).value = '';
                                               }
                                             }
                                           }}
@@ -3862,19 +3084,38 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               <InputAdornment position="end">
                                                 <IconButton
                                                   onClick={() => {
-                                                    const username = document.getElementById('neutral-username-input').value;
-                                                    const postlink = document.getElementById('neutral-postlink-input').value;
-                                                    const comment = document.getElementById('neutral-comment-input').value;
+                                                    const username =
+                                                      document.getElementById(
+                                                        'neutral-username-input'
+                                                      ).value;
+                                                    const comment =
+                                                      document.getElementById(
+                                                        'neutral-comment-input'
+                                                      ).value;
 
                                                     if (username && username !== '@' && comment) {
-                                                      const newComments = [...editableContent.neutralComments, { username, comment }];
-                                                      setEditableContent({ ...editableContent, neutralComments: newComments });
-                                                      document.getElementById('neutral-username-input').value = '@';
-                                                      document.getElementById('neutral-postlink-input').value = '';
-                                                      document.getElementById('neutral-comment-input').value = '';
+                                                      const newComments = [
+                                                        ...editableContent.neutralComments,
+                                                        { username, comment },
+                                                      ];
+                                                      setEditableContent({
+                                                        ...editableContent,
+                                                        neutralComments: newComments,
+                                                      });
+                                                      document.getElementById(
+                                                        'neutral-username-input'
+                                                      ).value = '@';
+                                                      document.getElementById(
+                                                        'neutral-postlink-input'
+                                                      ).value = '';
+                                                      document.getElementById(
+                                                        'neutral-comment-input'
+                                                      ).value = '';
                                                     }
                                                   }}
-                                                  disabled={editableContent.neutralComments.length >= 4}
+                                                  disabled={
+                                                    editableContent.neutralComments.length >= 4
+                                                  }
                                                   edge="end"
                                                   sx={{
                                                     color: '#FF9800',
@@ -3897,40 +3138,56 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       <>
                                         {editableContent.neutralComments.length > 0 ? (
                                           <Grid container spacing={2}>
-                                            {editableContent.neutralComments.map((comment, index) => (
-                                              <Grid item xs={12} sm={6} md={3} key={index}>
-                                                <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: '8px' }}>
-                                                  <Link
-                                                    href={comment.postlink || '#'}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
+                                            {editableContent.neutralComments.map(
+                                              (comment, index) => (
+                                                <Grid item xs={12} sm={6} md={3} key={index}>
+                                                  <Box
                                                     sx={{
-                                                      textDecoration: 'none',
-                                                      '&:hover': {
-                                                        textDecoration: 'underline'
-                                                      }
+                                                      p: 2,
+                                                      bgcolor: '#F3F4F6',
+                                                      borderRadius: '8px',
                                                     }}
                                                   >
-                                                    <Typography sx={{
-                                                      fontFamily: 'Aileron',
-                                                      fontSize: '12px',
-                                                      fontWeight: 600,
-                                                      color: '#6B7280',
-                                                      mb: 1,
-                                                      cursor: 'pointer',
-                                                      '&:hover': {
-                                                        color: '#1340FF'
-                                                      }
-                                                    }}>
-                                                      {comment.username}
+                                                    <Link
+                                                      href={comment.postlink || '#'}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      sx={{
+                                                        textDecoration: 'none',
+                                                        '&:hover': {
+                                                          textDecoration: 'underline',
+                                                        },
+                                                      }}
+                                                    >
+                                                      <Typography
+                                                        sx={{
+                                                          fontFamily: 'Aileron',
+                                                          fontSize: '12px',
+                                                          fontWeight: 600,
+                                                          color: '#6B7280',
+                                                          mb: 1,
+                                                          cursor: 'pointer',
+                                                          '&:hover': {
+                                                            color: '#1340FF',
+                                                          },
+                                                        }}
+                                                      >
+                                                        {comment.username}
+                                                      </Typography>
+                                                    </Link>
+                                                    <Typography
+                                                      sx={{
+                                                        fontFamily: 'Aileron',
+                                                        fontSize: '14px',
+                                                        color: '#374151',
+                                                      }}
+                                                    >
+                                                      {comment.comment}
                                                     </Typography>
-                                                  </Link>
-                                                  <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', color: '#374151' }}>
-                                                    {comment.comment}
-                                                  </Typography>
-                                                </Box>
-                                              </Grid>
-                                            ))}
+                                                  </Box>
+                                                </Grid>
+                                              )
+                                            )}
                                           </Grid>
                                         ) : null}
                                       </>
@@ -3945,7 +3202,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
                     case 'creatorTiers':
                       return (
-                        <SortableSection key="creatorTiers" id="creatorTiers" isEditMode={effectiveEditMode}>
+                        <SortableSection
+                          key="creatorTiers"
+                          id="creatorTiers"
+                          isEditMode={effectiveEditMode}
+                        >
                           {/* Creator Tiers */}
                           <Box
                             className="pcr-section"
@@ -3958,128 +3219,17 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                             }}
                           >
                             <Box sx={{ mb: 2 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                                <Typography
-                                  variant="h2"
-                                  sx={{
-                                    fontFamily: 'Instrument Serif, serif',
-                                    fontWeight: 400,
-                                    fontStyle: 'normal',
-                                    fontSize: '56px',
-                                    lineHeight: '60px',
-                                    letterSpacing: '0%',
-                                    color: '#231F20',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  Creator Tiers
-                                </Typography>
-                                <Box
-                                  sx={{
-                                    flex: 1,
-                                    height: '1px',
-                                    background: '#231F20',
-                                  }}
-                                />
-                                {effectiveEditMode && !sectionEditStates.creatorTiers && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={async () => {
-                                        try {
-                                          setIsSaving(true);
-                                          const response = await handleSavePCR();
-                                          if (response?.data?.success) {
-                                            setSectionEditStates({ ...sectionEditStates, creatorTiers: true });
-                                            enqueueSnackbar('Creator Tiers section saved successfully', { variant: 'success' });
-                                          }
-                                        } catch (error) {
-                                          console.error('Error saving section:', error);
-                                          enqueueSnackbar('Failed to save section', { variant: 'error' });
-                                        } finally {
-                                          setIsSaving(false);
-                                        }
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, creatorTiers: false });
-                                        enqueueSnackbar('Creator Tiers section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                                {effectiveEditMode && sectionEditStates.creatorTiers && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionEditStates({ ...sectionEditStates, creatorTiers: false });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, creatorTiers: false });
-                                        enqueueSnackbar('Creator Tiers section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                              </Box>
+                              <SectionHeader
+                                title="Creator Tiers"
+                                sectionKey="creatorTiers"
+                                effectiveEditMode={effectiveEditMode}
+                                sectionEditStates={sectionEditStates}
+                                setSectionEditStates={setSectionEditStates}
+                                sectionVisibility={sectionVisibility}
+                                setSectionVisibility={setSectionVisibility}
+                                handleSavePCR={handleSavePCR}
+                                setIsSaving={setIsSaving}
+                              />
                               {(() => {
                                 if (effectiveEditMode && !sectionEditStates.creatorTiers) {
                                   return (
@@ -4095,7 +3245,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                           gap: 0.5,
                                         }}
                                       >
-                                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                                        <Typography
+                                          sx={{
+                                            fontFamily: 'Aileron',
+                                            fontSize: '10px',
+                                            fontWeight: 400,
+                                            color: '#3A3A3C',
+                                          }}
+                                        >
                                           Editable
                                         </Typography>
                                       </Box>
@@ -4123,7 +3280,9 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               const selectedText = range.toString();
                                               if (!selectedText) return;
 
-                                              const editor = document.querySelector('[data-creator-tiers-editor]');
+                                              const editor = document.querySelector(
+                                                '[data-creator-tiers-editor]'
+                                              );
                                               if (editor) {
                                                 editor.focus();
                                                 document.execCommand('bold', false, null);
@@ -4144,7 +3303,9 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               const selectedText = range.toString();
                                               if (!selectedText) return;
 
-                                              const editor = document.querySelector('[data-creator-tiers-editor]');
+                                              const editor = document.querySelector(
+                                                '[data-creator-tiers-editor]'
+                                              );
                                               if (editor) {
                                                 editor.focus();
                                                 document.execCommand('italic', false, null);
@@ -4165,7 +3326,9 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               const selectedText = range.toString();
                                               if (!selectedText) return;
 
-                                              const editor = document.querySelector('[data-creator-tiers-editor]');
+                                              const editor = document.querySelector(
+                                                '[data-creator-tiers-editor]'
+                                              );
                                               if (editor) {
                                                 editor.focus();
                                                 document.execCommand('underline', false, null);
@@ -4185,30 +3348,45 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                           data-creator-tiers-editor
                                           contentEditable
                                           suppressContentEditableWarning
-                                          onInput={(e) => setEditableContent({ ...editableContent, creatorTiersDescription: e.currentTarget.innerHTML })}
+                                          onInput={(e) =>
+                                            setEditableContent({
+                                              ...editableContent,
+                                              creatorTiersDescription: sanitizeReportHtml(
+                                                e.currentTarget.innerHTML
+                                              ),
+                                            })
+                                          }
                                           onKeyDown={(e) => {
                                             const isMod = e.metaKey || e.ctrlKey;
                                             if (isMod) {
-                                              const editor = document.querySelector('[data-creator-tiers-editor]');
+                                              const editor = document.querySelector(
+                                                '[data-creator-tiers-editor]'
+                                              );
                                               if (e.key === 'b' || e.key === 'B') {
                                                 e.preventDefault();
                                                 document.execCommand('bold', false, null);
                                                 if (editor) {
-                                                  const event = new Event('input', { bubbles: true });
+                                                  const event = new Event('input', {
+                                                    bubbles: true,
+                                                  });
                                                   editor.dispatchEvent(event);
                                                 }
                                               } else if (e.key === 'i' || e.key === 'I') {
                                                 e.preventDefault();
                                                 document.execCommand('italic', false, null);
                                                 if (editor) {
-                                                  const event = new Event('input', { bubbles: true });
+                                                  const event = new Event('input', {
+                                                    bubbles: true,
+                                                  });
                                                   editor.dispatchEvent(event);
                                                 }
                                               } else if (e.key === 'u' || e.key === 'U') {
                                                 e.preventDefault();
                                                 document.execCommand('underline', false, null);
                                                 if (editor) {
-                                                  const event = new Event('input', { bubbles: true });
+                                                  const event = new Event('input', {
+                                                    bubbles: true,
+                                                  });
                                                   editor.dispatchEvent(event);
                                                 }
                                               }
@@ -4217,7 +3395,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                           onFocus={(e) => {
                                             // Set initial content if empty
                                             if (!e.currentTarget.innerHTML) {
-                                              e.currentTarget.innerHTML = editableContent.creatorTiersDescription || '';
+                                              e.currentTarget.innerHTML =
+                                                editableContent.creatorTiersDescription || '';
                                             }
                                           }}
                                           sx={{
@@ -4274,7 +3453,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         '& em': { fontStyle: 'italic' },
                                         '& u': { textDecoration: 'underline' },
                                       }}
-                                      dangerouslySetInnerHTML={{ __html: editableContent.creatorTiersDescription }}
+                                      dangerouslySetInnerHTML={{
+                                        __html: sanitizeReportHtml(
+                                          editableContent.creatorTiersDescription
+                                        ),
+                                      }}
                                     />
                                   );
                                 }
@@ -4298,7 +3481,9 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         color: '#9CA3AF',
                                       }}
                                     >
-                                      {isClientView ? 'No content' : 'Click Edit Report to edit Creator Tiers'}
+                                      {isClientView
+                                        ? 'No content'
+                                        : 'Click Edit Report to edit Creator Tiers'}
                                     </Typography>
                                   </Box>
                                 );
@@ -4356,9 +3541,13 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                 const tierData = Array.from(tierDataMap.values())
                                   .map((tier) => ({
                                     name: tier.name,
-                                    averageEngagement: tier.engagementRates.length > 0
-                                      ? (tier.engagementRates.reduce((a, b) => a + b, 0) / tier.engagementRates.length).toFixed(1)
-                                      : null,
+                                    averageEngagement:
+                                      tier.engagementRates.length > 0
+                                        ? (
+                                            tier.engagementRates.reduce((a, b) => a + b, 0) /
+                                            tier.engagementRates.length
+                                          ).toFixed(1)
+                                        : null,
                                   }))
                                   .sort((a, b) => {
                                     // Sort: Macro, Micro, Nano
@@ -4430,7 +3619,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         </Box>
                                       </Box>
                                       <Box component="tbody">
-                                        {tierData.map((tier, index) => (
+                                        {tierData.map((tier) => (
                                           <Box
                                             component="tr"
                                             key={tier.name}
@@ -4466,7 +3655,9 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                                 textAlign: 'center',
                                               }}
                                             >
-                                              {tier.averageEngagement ? `${tier.averageEngagement}%` : '-'}
+                                              {tier.averageEngagement
+                                                ? `${tier.averageEngagement}%`
+                                                : '-'}
                                             </Box>
                                           </Box>
                                         ))}
@@ -4482,7 +3673,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
                     case 'strategies':
                       return (
-                        <SortableSection key="strategies" id="strategies" isEditMode={effectiveEditMode}>
+                        <SortableSection
+                          key="strategies"
+                          id="strategies"
+                          isEditMode={effectiveEditMode}
+                        >
                           {/* Strategies Utilised */}
                           <Box
                             className="pcr-section"
@@ -4495,219 +3690,55 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                             }}
                           >
                             <Box sx={{ mb: 6 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                                <Typography
-                                  variant="h2"
-                                  sx={{
-                                    fontFamily: 'Instrument Serif, serif',
-                                    fontWeight: 400,
-                                    fontStyle: 'normal',
-                                    fontSize: '56px',
-                                    lineHeight: '60px',
-                                    letterSpacing: '0%',
-                                    color: '#231F20',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  Strategies Utilised
-                                </Typography>
-                                <Box
-                                  sx={{
-                                    flex: 1,
-                                    height: '1px',
-                                    background: '#231F20',
-                                  }}
-                                />
-                                {effectiveEditMode && !sectionEditStates.strategies && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={async () => {
-                                        try {
-                                          setIsSaving(true);
-                                          const response = await handleSavePCR();
-                                          if (response?.data?.success) {
-                                            setSectionEditStates({ ...sectionEditStates, strategies: true });
-                                            enqueueSnackbar('Strategies Utilised section saved successfully', { variant: 'success' });
-                                          }
-                                        } catch (error) {
-                                          console.error('Error saving section:', error);
-                                          enqueueSnackbar('Failed to save section', { variant: 'error' });
-                                        } finally {
-                                          setIsSaving(false);
-                                        }
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, strategies: false });
-                                        enqueueSnackbar('Strategies Utilised section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                                {effectiveEditMode && sectionEditStates.strategies && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionEditStates({ ...sectionEditStates, strategies: false });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, strategies: false });
-                                        enqueueSnackbar('Strategies Utilised section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                              </Box>
-                              {(() => {
-                                if (effectiveEditMode && !sectionEditStates.strategies) {
-                                  return (
-                                    <Box sx={{ position: 'relative', mb: 4 }}>
-                                      <Box
-                                        sx={{
-                                          position: 'absolute',
-                                          top: 12,
-                                          left: 12,
-                                          zIndex: 1,
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          gap: 0.5,
-                                          px: 0.5,
-                                          py: 0.5,
-                                          bgcolor: '#F3F4F6',
-                                          borderRadius: '4px',
-                                        }}
-                                      >
-                                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '14px', fontWeight: 600, color: '#3A3A3C' }}>
-                                          Editable
-                                        </Typography>
-                                      </Box>
-                                      <FormattedTextField
-                                        key={`pcr-ftf-bestPerformingPersonasDescription-${hydrationVersion}`}
-                                        value={editableContent.bestPerformingPersonasDescription}
-                                        onChange={(e) => setEditableContent({ ...editableContent, bestPerformingPersonasDescription: e.target.value })}
-                                        placeholder="type here"
-                                        rows={3}
-                                        sx={{
-                                          border: 'none',
-                                        }}
-                                      />
-                                    </Box>
-                                  );
+                              <SectionHeader
+                                title="Strategies Utilised"
+                                sectionKey="strategies"
+                                effectiveEditMode={effectiveEditMode}
+                                sectionEditStates={sectionEditStates}
+                                setSectionEditStates={setSectionEditStates}
+                                sectionVisibility={sectionVisibility}
+                                setSectionVisibility={setSectionVisibility}
+                                handleSavePCR={handleSavePCR}
+                                setIsSaving={setIsSaving}
+                              />
+                              <EditableDescriptionField
+                                label="Creator Personas"
+                                fieldKey="bestPerformingPersonasDescription"
+                                hydrationVersion={hydrationVersion}
+                                isEditingSection={
+                                  effectiveEditMode && !sectionEditStates.strategies
                                 }
-
-                                if (editableContent.bestPerformingPersonasDescription) {
-                                  return (
-                                    <Box
-                                      sx={{
-                                        fontFamily: 'Aileron',
-                                        fontWeight: 400,
-                                        fontSize: '20px',
-                                        lineHeight: '24px',
-                                        color: '#374151',
-                                        mb: 4,
-                                        wordWrap: 'break-word',
-                                        overflowWrap: 'break-word',
-                                        wordBreak: 'break-word',
-                                        whiteSpace: 'pre-wrap',
-                                        '& strong': { fontWeight: 700 },
-                                        '& em': { fontStyle: 'italic' },
-                                        '& u': { textDecoration: 'underline' },
-                                      }}
-                                      dangerouslySetInnerHTML={{ __html: editableContent.bestPerformingPersonasDescription }}
-                                    />
-                                  );
+                                value={editableContent.bestPerformingPersonasDescription}
+                                onChange={(v) =>
+                                  setEditableContent({
+                                    ...editableContent,
+                                    bestPerformingPersonasDescription: v,
+                                  })
                                 }
-
-                                return (
-                                  <Box
-                                    className="hide-in-pdf"
-                                    sx={{
-                                      bgcolor: '#E5E7EB',
-                                      borderRadius: '8px',
-                                      padding: '12px',
-                                      mb: 4,
-                                    }}
-                                  >
-                                    <Typography
-                                      sx={{
-                                        fontFamily: 'Aileron',
-                                        fontWeight: 400,
-                                        fontSize: '20px',
-                                        lineHeight: '24px',
-                                        color: '#9CA3AF',
-                                      }}
-                                    >
-                                      {isClientView ? 'No content' : 'Click Edit Report to edit Creator Personas'}
-                                    </Typography>
-                                  </Box>
-                                );
-                              })()}
+                                rows={3}
+                                mb={4}
+                                isClientView={isClientView}
+                                badgeSx={{ top: 12, left: 12, py: 0.5, borderRadius: '4px' }}
+                                textFieldSx={{ border: 'none' }}
+                                readOnlySx={{ color: '#374151' }}
+                              />
                               {/* Creator Persona Cards */}
                               {effectiveEditMode && !sectionEditStates.strategies ? (
                                 // Edit Mode: Grid layout with cards on left, chart on right
                                 <Grid container spacing={2}>
                                   {/* Left side - Persona Cards stacked vertically */}
                                   <Grid item xs={12} md={7}>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, ml: 7, width: '100%', minWidth: 0, overflow: 'visible' }}>
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 3,
+                                        ml: 7,
+                                        width: '100%',
+                                        minWidth: 0,
+                                        overflow: 'visible',
+                                      }}
+                                    >
                                       {/* The Comic Card */}
                                       <PersonaCardEdit
                                         titleField="comicTitle"
@@ -4745,13 +3776,15 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               setEditableContent({
                                                 ...editableContent,
                                                 educatorTitle: editableContent.thirdTitle,
-                                                educatorContentStyle: editableContent.thirdContentStyle,
-                                                educatorCreatorCount: editableContent.thirdCreatorCount,
+                                                educatorContentStyle:
+                                                  editableContent.thirdContentStyle,
+                                                educatorCreatorCount:
+                                                  editableContent.thirdCreatorCount,
                                                 educatorEmoji: editableContent.thirdEmoji,
                                                 thirdTitle: '',
                                                 thirdContentStyle: '',
                                                 thirdCreatorCount: '',
-                                                thirdEmoji: ''
+                                                thirdEmoji: '',
                                               });
                                               setShowThirdCard(false);
                                             } else {
@@ -4761,7 +3794,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                                 educatorTitle: '',
                                                 educatorContentStyle: '',
                                                 educatorCreatorCount: '',
-                                                educatorEmoji: ''
+                                                educatorEmoji: '',
                                               });
                                             }
                                           }}
@@ -4790,7 +3823,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               thirdTitle: '',
                                               thirdContentStyle: '',
                                               thirdCreatorCount: '',
-                                              thirdEmoji: ''
+                                              thirdEmoji: '',
                                             });
                                           }}
                                         />
@@ -4818,7 +3851,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               fourthTitle: '',
                                               fourthContentStyle: '',
                                               fourthCreatorCount: '',
-                                              fourthEmoji: ''
+                                              fourthEmoji: '',
                                             });
                                           }}
                                         />
@@ -4846,16 +3879,25 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               fifthTitle: '',
                                               fifthContentStyle: '',
                                               fifthCreatorCount: '',
-                                              fifthEmoji: ''
+                                              fifthEmoji: '',
                                             });
                                           }}
                                         />
                                       )}
 
-
                                       {/* Add Persona Button - Show when there are less than 5 cards */}
-                                      {(!showEducatorCard || !showThirdCard || !showFourthCard || !showFifthCard) && (
-                                        <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 3, ml: 2 }}>
+                                      {(!showEducatorCard ||
+                                        !showThirdCard ||
+                                        !showFourthCard ||
+                                        !showFifthCard) && (
+                                        <Box
+                                          sx={{
+                                            display: 'flex',
+                                            justifyContent: 'flex-start',
+                                            mt: 3,
+                                            ml: 2,
+                                          }}
+                                        >
                                           <IconButton
                                             onClick={() => {
                                               if (!showEducatorCard) {
@@ -4881,9 +3923,28 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                               },
                                             }}
                                           >
-                                            <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                                              <rect x="32" y="8" width="16" height="64" rx="8" fill="#1340FF" />
-                                              <rect x="8" y="32" width="64" height="16" rx="8" fill="#1340FF" />
+                                            <svg
+                                              width="80"
+                                              height="80"
+                                              viewBox="0 0 80 80"
+                                              fill="none"
+                                            >
+                                              <rect
+                                                x="32"
+                                                y="8"
+                                                width="16"
+                                                height="64"
+                                                rx="8"
+                                                fill="#1340FF"
+                                              />
+                                              <rect
+                                                x="8"
+                                                y="32"
+                                                width="64"
+                                                height="16"
+                                                rx="8"
+                                                fill="#1340FF"
+                                              />
                                             </svg>
                                           </IconButton>
                                         </Box>
@@ -4905,7 +3966,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                 <Grid container spacing={2}>
                                   {/* Left side - Persona Cards */}
                                   <Grid item xs={12} md={7}>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, ml: 10 }}>
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 3,
+                                        ml: 10,
+                                      }}
+                                    >
                                       {/* The Comic Card */}
                                       {editableContent.comicTitle && (
                                         <PersonaCardDisplay
@@ -4985,7 +4053,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
                     case 'recommendations':
                       return (
-                        <SortableSection key="recommendations" id="recommendations" isEditMode={effectiveEditMode}>
+                        <SortableSection
+                          key="recommendations"
+                          id="recommendations"
+                          isEditMode={effectiveEditMode}
+                        >
                           {/* Recommendations Section */}
                           <Box
                             className="pcr-section"
@@ -4998,128 +4070,18 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                             }}
                           >
                             <Box sx={{ mb: 4 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                                <Typography
-                                  variant="h2"
-                                  sx={{
-                                    fontFamily: 'Instrument Serif, serif',
-                                    fontWeight: 400,
-                                    fontStyle: 'normal',
-                                    fontSize: '56px',
-                                    lineHeight: '60px',
-                                    letterSpacing: '0%',
-                                    color: '#231F20',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  Recommendations
-                                </Typography>
-                                <Box
-                                  sx={{
-                                    flex: 1,
-                                    height: '1px',
-                                    background: '#231F20',
-                                  }}
-                                />
-                                {effectiveEditMode && !sectionEditStates.recommendations && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={async () => {
-                                        try {
-                                          setIsSaving(true);
-                                          const response = await handleSavePCR();
-                                          if (response?.data?.success) {
-                                            setSectionEditStates({ ...sectionEditStates, recommendations: true });
-                                            enqueueSnackbar('Recommendations section saved successfully', { variant: 'success' });
-                                          }
-                                        } catch (error) {
-                                          console.error('Error saving section:', error);
-                                          enqueueSnackbar('Failed to save section', { variant: 'error' });
-                                        } finally {
-                                          setIsSaving(false);
-                                        }
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:check-fill" width={30} sx={{ color: '#10B981' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, recommendations: false });
-                                        enqueueSnackbar('Recommendations section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                                {effectiveEditMode && sectionEditStates.recommendations && (
-                                  <Box sx={{ display: 'flex', gap: 1, ml: 2 }}>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionEditStates({ ...sectionEditStates, recommendations: false });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#F9F9F9',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:edit-line" width={30} sx={{ color: '#3B82F6' }} />
-                                    </IconButton>
-                                    <IconButton
-                                      onClick={() => {
-                                        setSectionVisibility({ ...sectionVisibility, recommendations: false });
-                                        enqueueSnackbar('Recommendations section removed', { variant: 'info' });
-                                      }}
-                                      sx={{
-                                        width: '46px',
-                                        height: '46px',
-                                        padding: '8px',
-                                        borderRadius: '11px',
-                                        border: '1.38px solid #E7E7E7',
-                                        backgroundColor: '#FFFFFF',
-                                        boxShadow: '0px -2.75px 0px 0px #E7E7E7 inset',
-                                        '&:hover': {
-                                          backgroundColor: '#FEE2E2',
-                                        }
-                                      }}
-                                    >
-                                      <Iconify icon="mingcute:delete-2-fill" width={30} sx={{ color: '#EF4444' }} />
-                                    </IconButton>
-                                  </Box>
-                                )}
-                              </Box>
+                              <SectionHeader
+                                title="Recommendations"
+                                sectionKey="recommendations"
+                                effectiveEditMode={effectiveEditMode}
+                                sectionEditStates={sectionEditStates}
+                                setSectionEditStates={setSectionEditStates}
+                                sectionVisibility={sectionVisibility}
+                                setSectionVisibility={setSectionVisibility}
+                                handleSavePCR={handleSavePCR}
+                                setIsSaving={setIsSaving}
+                                mb={3}
+                              />
 
                               {/* Headers Row */}
                               <Grid container spacing={3} sx={{ mb: 2 }}>
@@ -5132,7 +4094,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      gap: 1
+                                      gap: 1,
                                     }}
                                   >
                                     <Box
@@ -5147,7 +4109,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         fontWeight: 700,
                                         fontSize: '18px',
                                         color: 'white',
-                                        textAlign: 'center'
+                                        textAlign: 'center',
                                       }}
                                     >
                                       What Worked Well
@@ -5164,7 +4126,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      gap: 1
+                                      gap: 1,
                                     }}
                                   >
                                     <Box
@@ -5179,7 +4141,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         fontWeight: 700,
                                         fontSize: '18px',
                                         color: 'white',
-                                        textAlign: 'center'
+                                        textAlign: 'center',
                                       }}
                                     >
                                       What Could Be Improved
@@ -5196,7 +4158,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                       display: 'flex',
                                       alignItems: 'center',
                                       justifyContent: 'center',
-                                      gap: 1
+                                      gap: 1,
                                     }}
                                   >
                                     <Box
@@ -5211,7 +4173,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         fontWeight: 700,
                                         fontSize: '18px',
                                         color: 'white',
-                                        textAlign: 'center'
+                                        textAlign: 'center',
                                       }}
                                     >
                                       What To Do Next
@@ -5227,50 +4189,83 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                 !effectiveEditMode && (
                                   <Grid container spacing={3} sx={{ mb: 2 }}>
                                     <Grid item xs={12} md={4}>
-                                      <Box className="hide-in-pdf" sx={{
-                                        background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
-                                        p: 3,
-                                        color: 'white',
-                                        height: '120px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        borderRadius: '0 0 12px 12px',
-                                      }}>
-                                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.8 }}>
-                                          {isClientView ? 'No content' : 'Click Edit Report to edit What Worked Well'}
+                                      <Box
+                                        className="hide-in-pdf"
+                                        sx={{
+                                          background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
+                                          p: 3,
+                                          color: 'white',
+                                          height: '120px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          borderRadius: '0 0 12px 12px',
+                                        }}
+                                      >
+                                        <Typography
+                                          sx={{
+                                            fontFamily: 'Aileron',
+                                            fontSize: '20px',
+                                            opacity: 0.8,
+                                          }}
+                                        >
+                                          {isClientView
+                                            ? 'No content'
+                                            : 'Click Edit Report to edit What Worked Well'}
                                         </Typography>
                                       </Box>
                                     </Grid>
                                     <Grid item xs={12} md={4}>
-                                      <Box className="hide-in-pdf" sx={{
-                                        bgcolor: '#1340FFD9',
-                                        p: 3,
-                                        color: 'white',
-                                        height: '120px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        borderRadius: '0 0 12px 12px',
-                                      }}>
-                                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.8 }}>
-                                          {isClientView ? 'No content' : 'Click Edit Report to edit What Can Be Improved'}
+                                      <Box
+                                        className="hide-in-pdf"
+                                        sx={{
+                                          bgcolor: '#1340FFD9',
+                                          p: 3,
+                                          color: 'white',
+                                          height: '120px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          borderRadius: '0 0 12px 12px',
+                                        }}
+                                      >
+                                        <Typography
+                                          sx={{
+                                            fontFamily: 'Aileron',
+                                            fontSize: '20px',
+                                            opacity: 0.8,
+                                          }}
+                                        >
+                                          {isClientView
+                                            ? 'No content'
+                                            : 'Click Edit Report to edit What Can Be Improved'}
                                         </Typography>
                                       </Box>
                                     </Grid>
                                     <Grid item xs={12} md={4}>
-                                      <Box className="hide-in-pdf" sx={{
-                                        bgcolor: '#026D54D9',
-                                        p: 3,
-                                        color: 'white',
-                                        height: '120px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        borderRadius: '0 0 12px 12px',
-                                      }}>
-                                        <Typography sx={{ fontFamily: 'Aileron', fontSize: '20px', opacity: 0.9 }}>
-                                          {isClientView ? 'No content' : 'Click Edit Report to edit Next Steps'}
+                                      <Box
+                                        className="hide-in-pdf"
+                                        sx={{
+                                          bgcolor: '#026D54D9',
+                                          p: 3,
+                                          color: 'white',
+                                          height: '120px',
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          borderRadius: '0 0 12px 12px',
+                                        }}
+                                      >
+                                        <Typography
+                                          sx={{
+                                            fontFamily: 'Aileron',
+                                            fontSize: '20px',
+                                            opacity: 0.9,
+                                          }}
+                                        >
+                                          {isClientView
+                                            ? 'No content'
+                                            : 'Click Edit Report to edit Next Steps'}
                                         </Typography>
                                       </Box>
                                     </Grid>
@@ -5283,7 +4278,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                   editableContent.workedWellInsights.length,
                                   editableContent.improvedInsights.length,
                                   editableContent.nextStepsInsights.length
-                                )
+                                ),
                               }).map((_, rowIndex) => (
                                 <Grid container spacing={3} sx={{ mb: 1 }} key={`row-${rowIndex}`}>
                                   {/* Left Column - What Worked Well */}
@@ -5301,20 +4296,34 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                           display: 'flex',
                                           alignItems: 'center',
                                           justifyContent: 'space-between',
-                                          borderRadius: rowIndex === editableContent.workedWellInsights.length - 1 ? '0 0 12px 12px' : 0,
+                                          borderRadius:
+                                            rowIndex ===
+                                            editableContent.workedWellInsights.length - 1
+                                              ? '0 0 12px 12px'
+                                              : 0,
                                           position: 'relative',
                                         }}
                                       >
                                         {effectiveEditMode && !sectionEditStates.recommendations ? (
-                                          <Box sx={{
-                                            bgcolor: '#E5E7EB',
-                                            borderRadius: '12px',
-                                            p: 2,
-                                            flex: 1,
-                                            display: 'flex',
-                                            gap: 0.5,
-                                          }}>
-                                            <Box sx={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                          <Box
+                                            sx={{
+                                              bgcolor: '#E5E7EB',
+                                              borderRadius: '12px',
+                                              p: 2,
+                                              flex: 1,
+                                              display: 'flex',
+                                              gap: 0.5,
+                                            }}
+                                          >
+                                            <Box
+                                              sx={{
+                                                position: 'relative',
+                                                flex: 1,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                height: '100%',
+                                              }}
+                                            >
                                               <Box
                                                 sx={{
                                                   display: 'flex',
@@ -5323,7 +4332,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                                   mb: 0.5,
                                                 }}
                                               >
-                                                <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                                                <Typography
+                                                  sx={{
+                                                    fontFamily: 'Aileron',
+                                                    fontSize: '10px',
+                                                    fontWeight: 400,
+                                                    color: '#3A3A3C',
+                                                  }}
+                                                >
                                                   Editable
                                                 </Typography>
                                               </Box>
@@ -5331,9 +4347,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                                 value={editableContent.workedWellInsights[rowIndex]}
                                                 onChange={(e) => {
                                                   const newValue = e.target.value;
-                                                  const newInsights = [...editableContent.workedWellInsights];
+                                                  const newInsights = [
+                                                    ...editableContent.workedWellInsights,
+                                                  ];
                                                   newInsights[rowIndex] = newValue;
-                                                  setEditableContent((prev) => ({ ...prev, workedWellInsights: newInsights }));
+                                                  setEditableContent((prev) => ({
+                                                    ...prev,
+                                                    workedWellInsights: newInsights,
+                                                  }));
                                                 }}
                                                 onPaste={(e) => {
                                                   e.stopPropagation();
@@ -5359,8 +4380,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                             <IconButton
                                               size="small"
                                               onClick={() => {
-                                                const newInsights = editableContent.workedWellInsights.filter((__, i) => i !== rowIndex);
-                                                setEditableContent({ ...editableContent, workedWellInsights: newInsights });
+                                                const newInsights =
+                                                  editableContent.workedWellInsights.filter(
+                                                    (__, i) => i !== rowIndex
+                                                  );
+                                                setEditableContent({
+                                                  ...editableContent,
+                                                  workedWellInsights: newInsights,
+                                                });
                                               }}
                                               sx={{ color: '#000000', alignSelf: 'flex-start' }}
                                             >
@@ -5368,15 +4395,17 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                             </IconButton>
                                           </Box>
                                         ) : (
-                                          <Typography sx={{
-                                            fontFamily: 'Aileron',
-                                            fontSize: '14px',
-                                            lineHeight: '20px',
-                                            wordWrap: 'break-word',
-                                            overflowWrap: 'break-word',
-                                            wordBreak: 'break-word',
-                                            whiteSpace: 'pre-line',
-                                          }}>
+                                          <Typography
+                                            sx={{
+                                              fontFamily: 'Aileron',
+                                              fontSize: '14px',
+                                              lineHeight: '20px',
+                                              wordWrap: 'break-word',
+                                              overflowWrap: 'break-word',
+                                              wordBreak: 'break-word',
+                                              whiteSpace: 'pre-line',
+                                            }}
+                                          >
                                             {editableContent.workedWellInsights[rowIndex]}
                                           </Typography>
                                         )}
@@ -5398,20 +4427,33 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                           display: 'flex',
                                           alignItems: 'center',
                                           justifyContent: 'space-between',
-                                          borderRadius: rowIndex === editableContent.improvedInsights.length - 1 ? '0 0 12px 12px' : 0,
+                                          borderRadius:
+                                            rowIndex === editableContent.improvedInsights.length - 1
+                                              ? '0 0 12px 12px'
+                                              : 0,
                                           position: 'relative',
                                         }}
                                       >
                                         {effectiveEditMode && !sectionEditStates.recommendations ? (
-                                          <Box sx={{
-                                            bgcolor: '#E5E7EB',
-                                            borderRadius: '12px',
-                                            p: 2,
-                                            flex: 1,
-                                            display: 'flex',
-                                            gap: 0.5,
-                                          }}>
-                                            <Box sx={{ position: 'relative', flex: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                          <Box
+                                            sx={{
+                                              bgcolor: '#E5E7EB',
+                                              borderRadius: '12px',
+                                              p: 2,
+                                              flex: 1,
+                                              display: 'flex',
+                                              gap: 0.5,
+                                            }}
+                                          >
+                                            <Box
+                                              sx={{
+                                                position: 'relative',
+                                                flex: 1,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                height: '100%',
+                                              }}
+                                            >
                                               <Box
                                                 sx={{
                                                   display: 'flex',
@@ -5420,7 +4462,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                                   mb: 0.5,
                                                 }}
                                               >
-                                                <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                                                <Typography
+                                                  sx={{
+                                                    fontFamily: 'Aileron',
+                                                    fontSize: '10px',
+                                                    fontWeight: 400,
+                                                    color: '#3A3A3C',
+                                                  }}
+                                                >
                                                   Editable
                                                 </Typography>
                                               </Box>
@@ -5428,9 +4477,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                                 value={editableContent.improvedInsights[rowIndex]}
                                                 onChange={(e) => {
                                                   const newValue = e.target.value;
-                                                  const newInsights = [...editableContent.improvedInsights];
+                                                  const newInsights = [
+                                                    ...editableContent.improvedInsights,
+                                                  ];
                                                   newInsights[rowIndex] = newValue;
-                                                  setEditableContent((prev) => ({ ...prev, improvedInsights: newInsights }));
+                                                  setEditableContent((prev) => ({
+                                                    ...prev,
+                                                    improvedInsights: newInsights,
+                                                  }));
                                                 }}
                                                 onPaste={(e) => {
                                                   e.stopPropagation();
@@ -5456,8 +4510,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                             <IconButton
                                               size="small"
                                               onClick={() => {
-                                                const newInsights = editableContent.improvedInsights.filter((__, i) => i !== rowIndex);
-                                                setEditableContent({ ...editableContent, improvedInsights: newInsights });
+                                                const newInsights =
+                                                  editableContent.improvedInsights.filter(
+                                                    (__, i) => i !== rowIndex
+                                                  );
+                                                setEditableContent({
+                                                  ...editableContent,
+                                                  improvedInsights: newInsights,
+                                                });
                                               }}
                                               sx={{ color: '#000000', alignSelf: 'flex-start' }}
                                             >
@@ -5465,15 +4525,17 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                             </IconButton>
                                           </Box>
                                         ) : (
-                                          <Typography sx={{
-                                            fontFamily: 'Aileron',
-                                            fontSize: '14px',
-                                            lineHeight: '20px',
-                                            wordWrap: 'break-word',
-                                            overflowWrap: 'break-word',
-                                            wordBreak: 'break-word',
-                                            whiteSpace: 'pre-line',
-                                          }}>
+                                          <Typography
+                                            sx={{
+                                              fontFamily: 'Aileron',
+                                              fontSize: '14px',
+                                              lineHeight: '20px',
+                                              wordWrap: 'break-word',
+                                              overflowWrap: 'break-word',
+                                              wordBreak: 'break-word',
+                                              whiteSpace: 'pre-line',
+                                            }}
+                                          >
                                             {editableContent.improvedInsights[rowIndex]}
                                           </Typography>
                                         )}
@@ -5495,20 +4557,26 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                           display: 'flex',
                                           alignItems: 'center',
                                           justifyContent: 'space-between',
-                                          borderRadius: rowIndex === editableContent.nextStepsInsights.length - 1 ? '0 0 12px 12px' : 0,
+                                          borderRadius:
+                                            rowIndex ===
+                                            editableContent.nextStepsInsights.length - 1
+                                              ? '0 0 12px 12px'
+                                              : 0,
                                           position: 'relative',
                                         }}
                                       >
                                         {effectiveEditMode && !sectionEditStates.recommendations ? (
-                                          <Box sx={{
-                                            bgcolor: '#E5E7EB',
-                                            borderRadius: '12px',
-                                            p: 2.5,
-                                            px: 1,
-                                            flex: 1,
-                                            display: 'flex',
-                                            gap: 0.5,
-                                          }}>
+                                          <Box
+                                            sx={{
+                                              bgcolor: '#E5E7EB',
+                                              borderRadius: '12px',
+                                              p: 2.5,
+                                              px: 1,
+                                              flex: 1,
+                                              display: 'flex',
+                                              gap: 0.5,
+                                            }}
+                                          >
                                             <Box sx={{ position: 'relative', flex: 1 }}>
                                               <Box
                                                 sx={{
@@ -5521,7 +4589,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                                   zIndex: 1,
                                                 }}
                                               >
-                                                <Typography sx={{ fontFamily: 'Aileron', fontSize: '10px', fontWeight: 400, color: '#3A3A3C' }}>
+                                                <Typography
+                                                  sx={{
+                                                    fontFamily: 'Aileron',
+                                                    fontSize: '10px',
+                                                    fontWeight: 400,
+                                                    color: '#3A3A3C',
+                                                  }}
+                                                >
                                                   Editable
                                                 </Typography>
                                               </Box>
@@ -5529,9 +4604,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                                 value={editableContent.nextStepsInsights[rowIndex]}
                                                 onChange={(e) => {
                                                   const newValue = e.target.value;
-                                                  const newInsights = [...editableContent.nextStepsInsights];
+                                                  const newInsights = [
+                                                    ...editableContent.nextStepsInsights,
+                                                  ];
                                                   newInsights[rowIndex] = newValue;
-                                                  setEditableContent((prev) => ({ ...prev, nextStepsInsights: newInsights }));
+                                                  setEditableContent((prev) => ({
+                                                    ...prev,
+                                                    nextStepsInsights: newInsights,
+                                                  }));
                                                 }}
                                                 onPaste={(e) => {
                                                   e.stopPropagation();
@@ -5558,8 +4638,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                             <IconButton
                                               size="small"
                                               onClick={() => {
-                                                const newInsights = editableContent.nextStepsInsights.filter((__, i) => i !== rowIndex);
-                                                setEditableContent({ ...editableContent, nextStepsInsights: newInsights });
+                                                const newInsights =
+                                                  editableContent.nextStepsInsights.filter(
+                                                    (__, i) => i !== rowIndex
+                                                  );
+                                                setEditableContent({
+                                                  ...editableContent,
+                                                  nextStepsInsights: newInsights,
+                                                });
                                               }}
                                               sx={{ color: '#000000', alignSelf: 'flex-start' }}
                                             >
@@ -5567,15 +4653,17 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                             </IconButton>
                                           </Box>
                                         ) : (
-                                          <Typography sx={{
-                                            fontFamily: 'Aileron',
-                                            fontSize: '14px',
-                                            lineHeight: '20px',
-                                            wordWrap: 'break-word',
-                                            overflowWrap: 'break-word',
-                                            wordBreak: 'break-word',
-                                            whiteSpace: 'pre-line',
-                                          }}>
+                                          <Typography
+                                            sx={{
+                                              fontFamily: 'Aileron',
+                                              fontSize: '14px',
+                                              lineHeight: '20px',
+                                              wordWrap: 'break-word',
+                                              overflowWrap: 'break-word',
+                                              wordBreak: 'break-word',
+                                              whiteSpace: 'pre-line',
+                                            }}
+                                          >
                                             {editableContent.nextStepsInsights[rowIndex]}
                                           </Typography>
                                         )}
@@ -5594,13 +4682,18 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         onClick={() => {
                                           setEditableContent({
                                             ...editableContent,
-                                            workedWellInsights: [...editableContent.workedWellInsights, ''],
+                                            workedWellInsights: [
+                                              ...editableContent.workedWellInsights,
+                                              '',
+                                            ],
                                           });
                                         }}
                                         sx={{
                                           background: 'linear-gradient(0deg, #8A5AFE, #8A5AFE)',
                                           color: 'white',
-                                          '&:hover': { background: 'linear-gradient(0deg, #7A4AEE, #7A4AEE)' },
+                                          '&:hover': {
+                                            background: 'linear-gradient(0deg, #7A4AEE, #7A4AEE)',
+                                          },
                                           borderRadius: '12px',
                                           width: '44px',
                                           height: '44px',
@@ -5618,7 +4711,10 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         onClick={() => {
                                           setEditableContent({
                                             ...editableContent,
-                                            improvedInsights: [...editableContent.improvedInsights, ''],
+                                            improvedInsights: [
+                                              ...editableContent.improvedInsights,
+                                              '',
+                                            ],
                                           });
                                         }}
                                         sx={{
@@ -5642,7 +4738,10 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                         onClick={() => {
                                           setEditableContent({
                                             ...editableContent,
-                                            nextStepsInsights: [...editableContent.nextStepsInsights, ''],
+                                            nextStepsInsights: [
+                                              ...editableContent.nextStepsInsights,
+                                              '',
+                                            ],
                                           });
                                         }}
                                         sx={{
@@ -5673,134 +4772,36 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                 })}
               </SortableContext>
             </DndContext>
-
           </Box>
 
           {/* Emoji Picker Popover */}
-          <Popover
-            open={Boolean(emojiPickerAnchor)}
-            anchorEl={emojiPickerAnchor}
+          <CustomEmojiPicker
+            anchor={emojiPickerAnchor}
             onClose={() => {
               setEmojiPickerAnchor(null);
               setEmojiPickerType(null);
             }}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'center',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'center',
-            }}
-          >
-            <EmojiPicker
-              onEmojiClick={(emojiObject) => {
-                if (emojiPickerType === 'comic') {
-                  setEditableContent({ ...editableContent, comicEmoji: emojiObject.emoji });
-                } else if (emojiPickerType === 'educator') {
-                  setEditableContent({ ...editableContent, educatorEmoji: emojiObject.emoji });
-                } else if (emojiPickerType === 'third') {
-                  setEditableContent({ ...editableContent, thirdEmoji: emojiObject.emoji });
-                } else if (emojiPickerType === 'fourth') {
-                  setEditableContent({ ...editableContent, fourthEmoji: emojiObject.emoji });
-                } else if (emojiPickerType === 'fifth') {
-                  setEditableContent({ ...editableContent, fifthEmoji: emojiObject.emoji });
-                }
-                setEmojiPickerAnchor(null);
-                setEmojiPickerType(null);
-              }}
-            />
-          </Popover>
-
-          {/* Preview Modal */}
-          <Dialog
-            open={isPreviewOpen}
-            onClose={() => setIsPreviewOpen(false)}
-            maxWidth="lg"
-            fullWidth
-            PaperProps={{
-              sx: {
-                maxHeight: '90vh',
-                borderRadius: '12px',
+            onPick={(emojiObject) => {
+              if (emojiPickerType === 'comic') {
+                setEditableContent({ ...editableContent, comicEmoji: emojiObject.emoji });
+              } else if (emojiPickerType === 'educator') {
+                setEditableContent({ ...editableContent, educatorEmoji: emojiObject.emoji });
+              } else if (emojiPickerType === 'third') {
+                setEditableContent({ ...editableContent, thirdEmoji: emojiObject.emoji });
+              } else if (emojiPickerType === 'fourth') {
+                setEditableContent({ ...editableContent, fourthEmoji: emojiObject.emoji });
+              } else if (emojiPickerType === 'fifth') {
+                setEditableContent({ ...editableContent, fifthEmoji: emojiObject.emoji });
               }
             }}
-          >
-            <DialogTitle sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              borderBottom: '1px solid #E7E7E7',
-              pb: 2
-            }}>
-              <Typography variant="h5" sx={{ fontFamily: 'Aileron', fontWeight: 600 }}>
-                Report Preview
-              </Typography>
-              <IconButton onClick={() => setIsPreviewOpen(false)}>
-                <Iconify icon="mingcute:close-line" width={24} />
-              </IconButton>
-            </DialogTitle>
-            <DialogContent sx={{ p: 0, overflow: 'auto', bgcolor: '#F5F5F5' }}>
-              {previewImages.length > 0 ? (
-                <Box sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 3,
-                  p: 3,
-                  minHeight: '500px'
-                }}>
-                  {previewImages.map((imgData, index) => (
-                    <Box key={index} sx={{
-                      position: 'relative',
-                      width: '100%',
-                      maxWidth: '800px'
-                    }}>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          position: 'absolute',
-                          top: -24,
-                          left: 0,
-                          color: '#6B7280',
-                          fontWeight: 600
-                        }}
-                      >
-                        Page {index + 1} of {previewImages.length}
-                      </Typography>
-                      <Box
-                        component="img"
-                        src={imgData}
-                        alt={`Report Preview - Page ${index + 1}`}
-                        sx={{
-                          width: '100%',
-                          height: 'auto',
-                          borderRadius: '8px',
-                          boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.15)',
-                          border: '1px solid #E5E7EB'
-                        }}
-                      />
-                    </Box>
-                  ))}
-                </Box>
-              ) : (
-                <Box sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  minHeight: '500px',
-                  p: 4
-                }}>
-                  <Box sx={{ textAlign: 'center' }}>
-                    <CircularProgress sx={{ mb: 2 }} />
-                    <Typography variant="body1" color="text.secondary">
-                      Generating preview with page breaks...
-                    </Typography>
-                  </Box>
-                </Box>
-              )}
-            </DialogContent>
-          </Dialog>
+          />
 
+          {/* Preview Modal */}
+          <ReportReviewModal
+            isOpen={isPreviewOpen}
+            onClose={() => setIsPreviewOpen(false)}
+            previewImages={previewImages}
+          />
         </Box>
       </Box>
     </>
