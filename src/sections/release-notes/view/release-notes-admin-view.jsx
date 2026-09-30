@@ -5,17 +5,20 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useForm, Controller, useFieldArray, useFormContext } from 'react-hook-form';
+import { useForm, useWatch, Controller, useFieldArray, useFormContext } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
 import Container from '@mui/material/Container';
 import ButtonBase from '@mui/material/ButtonBase';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useEventListener } from 'src/hooks/use-event-listener';
 import { useGetManageReleaseNotes } from 'src/hooks/use-get-release-notes';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -24,11 +27,16 @@ import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import FormProvider, { RHFTextField, RHFDatePicker } from 'src/components/hook-form';
 
-import { LIP_BUTTON_SX, RELEASE_TYPES } from '../constants';
+import { LIP_BUTTON_SX, RELEASE_TYPES, RELEASE_STATUS_META } from '../constants';
 
 const EMPTY_ITEM = { type: 'NEW', title: '', description: '' };
 
 const CalendarIcon = () => <Iconify icon="ant-design:calendar-outlined" width={20} />;
+
+const IS_MAC =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent);
+
+const SUBMIT_SHORTCUT_LABEL = IS_MAC ? '⌘ + Enter' : 'Ctrl + Enter';
 
 const getDefaultValues = () => ({ releaseDate: dayjs(), items: [{ ...EMPTY_ITEM }] });
 
@@ -55,10 +63,24 @@ const ReleaseNoteSchema = Yup.object().shape({
     .min(1, 'Add at least one update'),
 });
 
+const getPrimaryLabel = (status, isFutureDate) => {
+  if (status === 'PUBLISHED' || status === 'SCHEDULED') return 'Save changes';
+  return isFutureDate ? 'Schedule' : 'Publish';
+};
+
+const getSaveMessage = (saved, previousStatus = 'DRAFT') => {
+  if (saved.status === previousStatus) return 'Release saved';
+  if (saved.status === 'PUBLISHED') return 'Release published';
+  if (saved.status === 'SCHEDULED') {
+    return `Release scheduled for ${dayjs(saved.releaseDate).format('DD MMM YYYY')}`;
+  }
+  return 'Release moved to drafts';
+};
+
 // ----------------------------------------------------------------------
 
 function ReleaseListItem({ release, selected, onClick }) {
-  const isPublished = release.status === 'PUBLISHED';
+  const status = RELEASE_STATUS_META[release.status] ?? RELEASE_STATUS_META.DRAFT;
   const count = release.items.length;
 
   return (
@@ -83,8 +105,8 @@ function ReleaseListItem({ release, selected, onClick }) {
           {count} {count === 1 ? 'update' : 'updates'}
         </Typography>
       </Box>
-      <Typography variant="caption" sx={{ color: isPublished ? 'success.main' : 'text.secondary' }}>
-        {isPublished ? 'Published' : 'Draft'}
+      <Typography variant="caption" sx={{ color: status.color }}>
+        {status.label}
       </Typography>
     </ButtonBase>
   );
@@ -132,7 +154,7 @@ function ReleaseItemCard({ index, canRemove, onRemove }) {
         />
 
         {canRemove && (
-          <Button size="small" color="inherit" onClick={onRemove}>
+          <Button size="small" onClick={onRemove} sx={{color: 'text.secondary'}}>
             Remove
           </Button>
         )}
@@ -182,7 +204,12 @@ export default function ReleaseNotesAdminView() {
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
 
   const selected = releases.find((release) => release.id === selectedId);
-  const isPublished = selected?.status === 'PUBLISHED';
+  const status = selected?.status;
+  const isPublished = status === 'PUBLISHED';
+  const isScheduled = status === 'SCHEDULED';
+
+  const releaseDate = useWatch({ control, name: 'releaseDate' });
+  const isFutureDate = dayjs(releaseDate).isValid() && dayjs(releaseDate).isAfter(dayjs(), 'day');
 
   // Reset in the handler (not an effect) so SWR revalidation never wipes in-progress edits
   const handleSelect = (release) => {
@@ -226,16 +253,31 @@ export default function ReleaseNotesAdminView() {
           ? await axiosInstance.patch(endpoints.releaseNotes.detail(selectedId), payload)
           : await axiosInstance.post(endpoints.releaseNotes.root, payload);
 
-        // Once published, start a blank release for the next note; drafts and edits to
-        // an already-published release stay selected so work can continue on them
-        const justPublished = publish && !isPublished;
-        handleSelect(justPublished ? null : res.data.data);
+        const saved = res.data.data;
+
+        // Once a draft/new release is published or scheduled, start a blank release for the
+        // next note; drafts and edits to scheduled/published releases stay selected
+        const justReleased = publish && (!status || status === 'DRAFT');
+        handleSelect(justReleased ? null : saved);
         await refreshAll();
-        enqueueSnackbar(justPublished ? 'Release published' : 'Release saved');
+        enqueueSnackbar(getSaveMessage(saved, status));
       } catch (error) {
         enqueueSnackbar(error?.message || 'Failed to save release', { variant: 'error' });
       }
     });
+
+  // Cmd+Enter (Mac) / Ctrl+Enter (Windows/Linux) triggers the primary action, anywhere on the page
+  const handleSubmitShortcut = (event) => {
+    const modifierHeld = IS_MAC ? event.metaKey : event.ctrlKey;
+    if (event.key !== 'Enter' || !modifierHeld || event.repeat) return;
+    // Never fire behind an open confirm dialog or while a save is in flight
+    if (confirm.value || pendingSwitch || isSubmitting) return;
+
+    event.preventDefault(); // don't insert a newline in the description field
+    save(true)();
+  };
+
+  useEventListener('keydown', handleSubmitShortcut);
 
   const handleDelete = async () => {
     confirm.onFalse();
@@ -297,12 +339,35 @@ export default function ReleaseNotesAdminView() {
         <Box sx={{ flexGrow: 1, pl: { md: 4 }, borderLeft: { md: '1px solid #E7E7E7' } }}>
           <FormProvider methods={methods} onSubmit={save(true)}>
             <Stack spacing={3}>
-              <RHFDatePicker
-                name="releaseDate"
-                label="Date"
-                slots={{ openPickerIcon: CalendarIcon }}
-                sx={{ width: 0.32 }}
-              />
+              <Stack spacing={1}>
+                <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
+                  <RHFDatePicker
+                    name="releaseDate"
+                    label="Date"
+                    slots={{ openPickerIcon: CalendarIcon }}
+                    sx={{ width: 0.32 }}
+                  />
+
+                  {selectedId && (
+                    <Tooltip title="Delete release">
+                      <IconButton
+                        aria-label="Delete release"
+                        onClick={confirm.onTrue}
+                        sx={{ ...LIP_BUTTON_SX.danger, width: 40, height: 40, p: 0, mt: 1 }}
+                      >
+                        <Iconify icon="solar:trash-bin-trash-bold" width={20} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Stack>
+
+                {isFutureDate && !isPublished && (
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    Future date. This release will be scheduled and go live automatically on{' '}
+                    {dayjs(releaseDate).format('DD MMM YYYY')} at 12:00 AM (MYT).
+                  </Typography>
+                )}
+              </Stack>
 
               <Stack spacing={2}>
                 <Typography variant="subtitle2">Updates</Typography>
@@ -327,15 +392,6 @@ export default function ReleaseNotesAdminView() {
               </Stack>
 
               <Stack direction="row" spacing={1.5} justifyContent="flex-end">
-                {selectedId && (
-                  <Button
-                    variant="contained"
-                    onClick={confirm.onTrue}
-                    sx={{ ...LIP_BUTTON_SX.danger, mr: 'auto' }}
-                  >
-                    Delete
-                  </Button>
-                )}
                 {!isPublished && (
                   <LoadingButton
                     variant="outlined"
@@ -343,17 +399,22 @@ export default function ReleaseNotesAdminView() {
                     onClick={save(false)}
                     sx={LIP_BUTTON_SX.outlined}
                   >
-                    Save draft
+                    {isScheduled ? 'Move to draft' : 'Save draft'}
                   </LoadingButton>
                 )}
-                <LoadingButton
-                  variant="contained"
-                  loading={isSubmitting}
-                  onClick={save(true)}
-                  sx={LIP_BUTTON_SX.blue}
-                >
-                  {isPublished ? 'Save changes' : 'Publish'}
-                </LoadingButton>
+                {/* span: Tooltip needs a non-disabled child; LoadingButton disables itself while loading */}
+                <Tooltip title={SUBMIT_SHORTCUT_LABEL}>
+                  <span>
+                    <LoadingButton
+                      variant="contained"
+                      loading={isSubmitting}
+                      onClick={save(true)}
+                      sx={LIP_BUTTON_SX.blue}
+                    >
+                      {getPrimaryLabel(status, isFutureDate)}
+                    </LoadingButton>
+                  </span>
+                </Tooltip>
               </Stack>
             </Stack>
           </FormProvider>
