@@ -65,7 +65,7 @@ const DETAILS = {
       reasons: [
         'Like counts are hidden',
         'Mostly photos or carousels, which have no views',
-        'Recent Reels are paid partnerships, pinned, or collabs posted by another account',
+        'Recent Reels are paid partnerships, pinned, or collabs with another account',
       ],
     },
     tiktok: {

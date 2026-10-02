@@ -52,8 +52,14 @@ export function describeFormula(formulaVersion) {
 const isNum = (value) => typeof value === 'number' && Number.isFinite(value);
 const number = (value) => (isNum(value) ? value.toLocaleString() : '—');
 
-/** Always dd/mm/yy from the UTC calendar day on the stored ISO time. */
+/**
+ * Always dd/mm/yy from the UTC calendar day on the stored ISO time.
+ *
+ * Null for an Instagram Reel whose publish date the provider did not expose.
+ * `new Date(null)` is the epoch, so without the guard it renders 01/01/70.
+ */
 export function shortDate(iso) {
+  if (!iso) return '—';
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) return '—';
   const dd = String(parsed.getUTCDate()).padStart(2, '0');

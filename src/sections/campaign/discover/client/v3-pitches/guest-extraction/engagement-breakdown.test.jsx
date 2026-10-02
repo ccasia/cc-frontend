@@ -176,6 +176,12 @@ describe('shortDate', () => {
   it('returns a dash for a bad value', () => {
     expect(shortDate('not-a-date')).toBe('—');
   });
+
+  it('returns a dash for an undated post, never 01/01/70', () => {
+    expect(shortDate(null)).toBe('—');
+    expect(shortDate(undefined)).toBe('—');
+    expect(shortDate('')).toBe('—');
+  });
 });
 
 describe('embedFromPostUrl', () => {
