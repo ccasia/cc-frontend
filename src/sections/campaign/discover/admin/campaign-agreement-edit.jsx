@@ -931,7 +931,7 @@ const CampaignAgreementEdit = ({
                           fixedDecimalScale
                           onChange={undefined}
                           onValueChange={(value) => {
-                            setValue('product.value', value.floatValue);
+                            setValue('product.value', value.floatValue, { shouldValidate: true, shouldDirty: true });
                           }}
                           prefix={
                             CURRENCY_PREFIXES[selectedCurrency]?.prefix
@@ -1023,7 +1023,7 @@ const CampaignAgreementEdit = ({
                           decimalScale={2}
                           fixedDecimalScale
                           onValueChange={(value) => {
-                            setValue('paymentAmount', value.floatValue);
+                            setValue('paymentAmount', value.floatValue, { shouldValidate: true, shouldDirty: true });
                           }}
                           prefix={`${CURRENCY_PREFIXES[selectedCurrency]?.prefix} ` ?? ''}
                           placeholder={`${CURRENCY_PREFIXES[selectedCurrency]?.prefix} 350`}
@@ -1060,7 +1060,7 @@ const CampaignAgreementEdit = ({
                         customInput={RHFTextField}
                         allowNegative={false}
                         onValueChange={(value) => {
-                          setValue('platformFollowerCount', value.floatValue);
+                          setValue('platformFollowerCount', value.floatValue, { shouldValidate: true, shouldDirty: true });
                         }}
                         placeholder="2021"
                         variant="outlined"
@@ -1149,7 +1149,7 @@ const CampaignAgreementEdit = ({
                           customInput={RHFTextField}
                           allowNegative={false}
                           onValueChange={(value) => {
-                            setValue('ugcCredits', value.floatValue);
+                            setValue('ugcCredits', value.floatValue, { shouldValidate: true, shouldDirty: true });
                           }}
                           placeholder="2"
                           variant="outlined"
