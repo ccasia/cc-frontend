@@ -161,12 +161,11 @@ const FinaliseCampaign = ({
 
   const filteredCampaignManagers = useMemo(
     () =>
-      admins?.filter((item) => item.role === 'CSM' || item.role === 'CSL').sort((a, b) => a.name.localeCompare(b.name)) ||
-      [],
+      admins
+        ?.filter((item) => item.role === 'CSM' || item.role === 'CSL')
+        .sort((a, b) => a.name.localeCompare(b.name)) || [],
     [admins]
   );
-
-  console.log(filteredCampaignManagers);
 
   return (
     <Stack spacing={3} sx={{ maxWidth: '800px', mx: 'auto', mt: 4, mb: 8 }}>

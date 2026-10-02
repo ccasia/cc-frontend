@@ -468,6 +468,7 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
   const tierData = campaign?.isCreditTier ? getTierData() : null;
 
   const hasPlatformChanged = selectedPlatform !== agreedPlatform;
+
   const selectedPlatformFollower = getFollowerCountByPlatform(
     campaign,
     agreement,
@@ -512,6 +513,7 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
   // Credits already used by creators who are NOT part of this bulk form
   const usedCreditsByOthers = useMemo(() => {
     if (campaign?.campaignCredits == null) return null;
+
     if (!savedAgreements || !campaign?.shortlisted) return 0;
 
     const idsInForm = new Set(userIdsInForm.split(','));
@@ -541,7 +543,7 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
 
   // Credits the OTHER rows in this form want to use (each row writes its own creditCost)
   const otherRowsCost = rows.reduce(
-    (sum, r, i) => (i === index ? sum : sum + (Number(r?.creditCost) || 0)),
+    (sum, r, i) => (i === index ? sum : sum + (Number(r?.ugcCredits) || 0)),
     0
   );
 
