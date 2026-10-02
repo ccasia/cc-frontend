@@ -6,12 +6,19 @@ import { useSnackbar } from 'notistack';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Stack, Button, Divider, Skeleton, Typography, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Menu,
+  Stack,
+  Button,
+  Divider,
+  MenuItem,
+  Skeleton,
+  Typography,
+  CircularProgress,
+} from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
-
-import { formatNumber } from 'src/utils/socialMetricsCalculator';
-import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
@@ -22,9 +29,12 @@ import BookmarkListDropdown from './BookmarkListDropdown';
 import CreatorCompareDialog from './CreatorCompareDialog';
 import {
   getPlatformHandle,
+  resolveProfileUrl,
+  metricSourceLabel,
   resolvePlatformData,
   formatEngagementRate,
   resolveCreatorRating,
+  formatDiscoveryNumber,
 } from './creator-helpers';
 
 // ─── Loading Skeleton ─────────────────────────────────────────────────────────
@@ -122,6 +132,11 @@ const EXPORT_COLUMNS = [
   { header: 'Cult Rating', key: 'creatorRating', width: 16 },
   { header: 'Followers', key: 'followers', width: 14 },
   { header: 'Engagement Rate', key: 'engagementRate', width: 18 },
+  { header: 'Tier', key: 'tier', width: 14 },
+  { header: 'Metric Source', key: 'source', width: 26 },
+  { header: 'Saved Date', key: 'savedAt', width: 24 },
+  { header: 'Scrape Rate', key: 'scrapeRate', width: 18 },
+  { header: 'Scrape Formula', key: 'scrapeFormula', width: 42 },
   { header: 'Bio', key: 'bio', width: 48 },
   { header: 'Interests', key: 'interests', width: 36 },
   { header: 'Languages', key: 'languages', width: 28 },
@@ -131,7 +146,7 @@ const getCreatorExportRow = (creator) => {
   const platformData = resolvePlatformData(creator);
   const platform = platformData.platform || '';
   const handle = getPlatformHandle(creator, platform) || '';
-  const profileUrl = handle && platform ? createSocialProfileUrl(handle, platform) : '';
+  const profileUrl = resolveProfileUrl(creator, platform) || '';
   const bio =
     platform === 'tiktok'
       ? creator.tiktok?.biography || creator.about || ''
@@ -143,11 +158,18 @@ const getCreatorExportRow = (creator) => {
     handle,
     profileUrl,
     creatorRating: resolveCreatorRating(creator).toFixed(1),
-    followers: formatNumber(platformData.followers || 0),
-    engagementRate: formatEngagementRate(platformData.engagementRate || 0),
+    followers: formatDiscoveryNumber(platformData.followers),
+    engagementRate: formatEngagementRate(platformData.engagementRate),
+    tier: creator.creditTier || '—',
+    source: metricSourceLabel(platformData.metricSource),
+    savedAt: platformData.savedAt || '—',
+    scrapeRate: formatEngagementRate(platformData.scrapeDetails?.engagementRate),
+    scrapeFormula: platformData.scrapeDetails?.formulaVersion || '—',
     bio: bio || '',
     interests: (creator.interests || []).join(', '),
-    languages: (Array.isArray(creator.languages) ? creator.languages : []).filter(Boolean).join(', '),
+    languages: (Array.isArray(creator.languages) ? creator.languages : [])
+      .filter(Boolean)
+      .join(', '),
   };
 };
 
@@ -178,6 +200,117 @@ const downloadCreatorsWorkbook = async (creatorRows, filePrefix = 'Bookmarked_Cr
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+/** Values match what `onSortChange` takes. */
+const FOLLOWER_SORT_OPTIONS = [
+  { value: 'followers_desc', label: 'Most Followers', icon: 'lucide:arrow-down-wide-narrow' },
+  { value: 'followers_asc', label: 'Fewest Followers', icon: 'lucide:arrow-up-narrow-wide' },
+];
+
+const ADDED_SORT_OPTIONS = [
+  { value: 'recent', label: 'Recently Added', icon: 'lucide:clock-arrow-down' },
+  { value: 'oldest', label: 'Oldest Added', icon: 'lucide:clock-arrow-up' },
+  { value: 'name', label: 'Alphabetical (A–Z)', icon: 'lucide:arrow-down-a-z' },
+];
+
+/** Every sort in one menu. Only one applies at a time. */
+const SORT_OPTIONS = [...FOLLOWER_SORT_OPTIONS, ...ADDED_SORT_OPTIONS];
+
+const ONYX_TEXT = '#231F20';
+const ACTIVE_BLUE = '#1340FF';
+
+/** The sort pill and its menu, styled like Select List. */
+function SortDropdown({ name, options, value, onChange }) {
+  const [anchor, setAnchor] = useState(null);
+  const current = options.find((option) => option.value === value);
+  const label = current?.label ?? name;
+
+  return (
+    <>
+      <Button
+        onClick={(event) => setAnchor(event.currentTarget)}
+        aria-haspopup="menu"
+        aria-expanded={anchor ? 'true' : 'false'}
+        aria-label={`Sort: ${label}`}
+        startIcon={<Iconify icon={current?.icon ?? options[0].icon} width={16} />}
+        endIcon={<Iconify icon="eva:chevron-down-fill" width={18} />}
+        sx={{
+          height: 34,
+          minWidth: 'auto',
+          whiteSpace: 'nowrap',
+          px: 2,
+          py: 1,
+          gap: 0.5,
+          color: ONYX_TEXT,
+          bgcolor: '#F5F5F5',
+          textTransform: 'none',
+          fontWeight: 600,
+          fontSize: 14,
+          lineHeight: '18px',
+          borderRadius: '100px',
+          boxShadow: 'none',
+          '& .MuiButton-startIcon, & .MuiButton-endIcon': { m: 0 },
+          '&:hover': { bgcolor: '#F5F5F5', boxShadow: 'none' },
+        }}
+      >
+        {label}
+      </Button>
+      <Menu
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={() => setAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            sx: {
+              mt: 1,
+              p: 0.75,
+              width: 220,
+              border: '1px solid #E7E7E7',
+              borderBottom: '3px solid #E7E7E7',
+              boxShadow: 'none',
+            },
+          },
+        }}
+      >
+        {options.map((option) => {
+          const selected = option.value === value;
+          return (
+            <MenuItem
+              key={option.value}
+              selected={selected}
+              onClick={() => {
+                onChange(option.value);
+                setAnchor(null);
+              }}
+              sx={{ gap: 1, px: 1, borderRadius: 1, fontSize: 14, color: ONYX_TEXT }}
+            >
+              <Iconify icon={option.icon} width={16} sx={{ color: '#636366' }} />
+              <Box component="span" sx={{ flex: 1 }}>
+                {option.label}
+              </Box>
+              {selected && (
+                <Iconify icon="eva:checkmark-fill" width={16} sx={{ color: ACTIVE_BLUE }} />
+              )}
+            </MenuItem>
+          );
+        })}
+      </Menu>
+    </>
+  );
+}
+
+SortDropdown.propTypes = {
+  name: PropTypes.string.isRequired,
+  options: PropTypes.arrayOf(PropTypes.object).isRequired,
+  value: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+};
+
+SortDropdown.defaultProps = {
+  value: null,
+};
+
 const CreatorList = ({
   creators,
   isLoading,
@@ -185,7 +318,7 @@ const CreatorList = ({
   isError,
   isReachingEnd,
   pagination,
-  sortByFollowers,
+  followersSortDirection,
   lists,
   membershipsByRowKey,
   listCreators,
@@ -197,9 +330,11 @@ const CreatorList = ({
   onToggleCreatorInList,
   onOpenListManager,
   listDropdownRef,
-  onToggleFollowersSort,
+  addedSort,
+  onSortChange,
   onLoadMore,
   onInviteOne,
+  onLinkCreator,
   onOpenDetails,
 }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -211,6 +346,7 @@ const CreatorList = ({
   const [compareSelectedIds, setCompareSelectedIds] = useState([]);
   const [compareModalOpen, setCompareModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const sortByFollowers = Boolean(followersSortDirection);
 
   const handleCompareSelect = useCallback((rowKey) => {
     setCompareSelectedIds((prev) => {
@@ -380,24 +516,6 @@ const CreatorList = ({
 
   return (
     <Box sx={{ mt: 4 }}>
-      <Button
-        onClick={onToggleFollowersSort}
-        variant="text"
-        disableRipple
-        sx={{
-          color: sortByFollowers ? '#1340FF' : '#231F20',
-          fontWeight: 400,
-          fontSize: 14,
-          p: 0,
-          cursor: 'pointer',
-          '&:hover': {
-            bgcolor: 'transparent',
-          },
-        }}
-        endIcon={<Iconify icon="fluent:arrow-sort-down-lines-24-regular" width={18} ml={-0.5} />}
-      >
-        Total Followers
-      </Button>
       <Box
         sx={{
           display: 'flex',
@@ -413,6 +531,14 @@ const CreatorList = ({
         </Typography>
         <Box>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ flexWrap: 'nowrap' }}>
+            {onSortChange && (
+              <SortDropdown
+                name="sort"
+                options={SORT_OPTIONS}
+                value={sortByFollowers ? `followers_${followersSortDirection}` : addedSort}
+                onChange={onSortChange}
+              />
+            )}
             <BookmarkListDropdown
               ref={listDropdownRef}
               lists={lists}
@@ -507,9 +633,7 @@ const CreatorList = ({
           position: 'relative',
           width: '100%',
           height:
-            visibleCreatorRows.length === 0 && isFiltering
-              ? 'auto'
-              : rowVirtualizer.getTotalSize(),
+            visibleCreatorRows.length === 0 && isFiltering ? 'auto' : rowVirtualizer.getTotalSize(),
         }}
       >
         {visibleCreatorRows.length === 0 && isFiltering ? (
@@ -568,6 +692,7 @@ const CreatorList = ({
                       onToggleList={onToggleCreatorInList}
                       onOpenListManager={onOpenListManager}
                       onInviteOne={onInviteOne}
+                      onLinkCreator={onLinkCreator}
                       onOpenDetails={onOpenDetails}
                       rowKey={rowKey}
                       compareMode={compareMode}
@@ -583,7 +708,9 @@ const CreatorList = ({
       </Box>
 
       {!isFiltering && isReachingEnd && visibleCreatorRows.length > 0 ? (
-        <Typography sx={{ mt: 1, mb: 2, textAlign: 'center', fontSize: 13, color: 'text.secondary' }}>
+        <Typography
+          sx={{ mt: 1, mb: 2, textAlign: 'center', fontSize: 13, color: 'text.secondary' }}
+        >
           All creators loaded
         </Typography>
       ) : null}
@@ -614,7 +741,7 @@ CreatorList.propTypes = {
     limit: PropTypes.number,
     total: PropTypes.number,
   }),
-  sortByFollowers: PropTypes.bool,
+  followersSortDirection: PropTypes.oneOf(['asc', 'desc']),
   lists: PropTypes.array,
   membershipsByRowKey: PropTypes.instanceOf(Map),
   listCreators: PropTypes.array,
@@ -626,9 +753,12 @@ CreatorList.propTypes = {
   onToggleCreatorInList: PropTypes.func,
   onOpenListManager: PropTypes.func,
   listDropdownRef: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
-  onToggleFollowersSort: PropTypes.func,
+  addedSort: PropTypes.oneOf(['recent', 'oldest', 'name']),
+  /** Called with a SORT_OPTIONS value. */
+  onSortChange: PropTypes.func,
   onLoadMore: PropTypes.func,
   onInviteOne: PropTypes.func,
+  onLinkCreator: PropTypes.func,
   onOpenDetails: PropTypes.func,
 };
 
@@ -639,7 +769,7 @@ CreatorList.defaultProps = {
   isError: null,
   isReachingEnd: true,
   pagination: null,
-  sortByFollowers: false,
+  followersSortDirection: null,
   lists: [],
   membershipsByRowKey: undefined,
   listCreators: [],
@@ -651,9 +781,11 @@ CreatorList.defaultProps = {
   onToggleCreatorInList: undefined,
   onOpenListManager: undefined,
   listDropdownRef: undefined,
-  onToggleFollowersSort: undefined,
+  addedSort: 'recent',
+  onSortChange: undefined,
   onLoadMore: undefined,
   onInviteOne: undefined,
+  onLinkCreator: undefined,
   onOpenDetails: undefined,
 };
 

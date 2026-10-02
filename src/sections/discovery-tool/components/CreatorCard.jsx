@@ -3,21 +3,22 @@ import PropTypes from 'prop-types';
 
 import { Box, Chip, Stack, Button, Avatar, Typography } from '@mui/material';
 
-import { formatNumber } from 'src/utils/socialMetricsCalculator';
-import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
-
 import Iconify from 'src/components/iconify';
 import StarRating from 'src/components/star-rating';
 
 import BookmarkButton from './BookmarkButton';
+import SavedPostPreview from './SavedPostPreview';
 import {
   ONYX,
   BLUE,
   getPlatformIcon,
+  canInviteCreator,
   getPlatformHandle,
+  resolveProfileUrl,
   resolvePlatformData,
   formatEngagementRate,
   resolveCreatorRating,
+  formatDiscoveryNumber,
 } from './creator-helpers';
 
 const StatItem = ({ label, shortLabel, value }) => (
@@ -123,6 +124,28 @@ CreatorRating.propTypes = {
   rating: PropTypes.number.isRequired,
 };
 
+const ACTION_BUTTON_SX = {
+  width: 96,
+  height: 28,
+  minWidth: 96,
+  px: 1,
+  pt: 0.25,
+  pb: 0.625,
+  bgcolor: '#3A3A3C',
+  borderRadius: '6px',
+  boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
+  color: '#FFFFFF',
+  flex: '0 0 auto',
+  fontSize: 13,
+  fontWeight: 600,
+  lineHeight: '17px',
+  textTransform: 'none',
+  '&:hover': {
+    bgcolor: '#3A3A3C',
+    boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.35)',
+  },
+};
+
 const VideoThumbnail = ({ video, platform }) => {
   const [hasImageError, setHasImageError] = useState(false);
 
@@ -154,7 +177,9 @@ const VideoThumbnail = ({ video, platform }) => {
           : undefined,
       }}
     >
-      {thumbnailUrl && !hasImageError ? (
+      {video.savedPost ? (
+        <SavedPostPreview thumbnailUrl={thumbnailUrl} postUrl={video.permalink || video.video_url} />
+      ) : thumbnailUrl && !hasImageError ? (
         <Box
           component="img"
           src={thumbnailUrl}
@@ -200,6 +225,7 @@ const CreatorCard = ({
   onToggleList,
   onCreateList,
   onInviteOne,
+  onLinkCreator,
   onOpenDetails,
   rowKey,
   compareMode,
@@ -221,8 +247,8 @@ const CreatorCard = ({
     platform === 'tiktok'
       ? creator.tiktok?.biography || creator.about || null
       : creator.instagram?.biography || creator.about || null;
-  const followers = platformData.followers || 0;
-  const engagementRate = platformData.engagementRate || 0;
+  const {followers} = platformData;
+  const {engagementRate} = platformData;
   const topVideos = [...(platformData.topVideos || [])]
     .sort((a, b) => Number(b?.like_count || 0) - Number(a?.like_count || 0))
     .slice(0, 3);
@@ -239,6 +265,11 @@ const CreatorCard = ({
   const handleInvite = (event) => {
     event.stopPropagation();
     onInviteOne?.(creatorRowKey);
+  };
+
+  const handleLinkCreator = (event) => {
+    event.stopPropagation();
+    onLinkCreator?.(creatorRowKey);
   };
 
   return (
@@ -295,7 +326,7 @@ const CreatorCard = ({
                 {platformIcon && <Iconify icon={platformIcon} width={12} color={ONYX} />}
                 <Box
                   component="a"
-                  href={createSocialProfileUrl(handle, platform)}
+                  href={resolveProfileUrl(creator, platform)}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(event) => event.stopPropagation()}
@@ -355,7 +386,7 @@ const CreatorCard = ({
             flex: '0 0 auto',
           }}
         >
-          <StatItem label="Followers" value={formatNumber(followers)} />
+          <StatItem label="Followers" value={formatDiscoveryNumber(followers)} />
           <StatItem
             label="Engagement Rate"
             shortLabel="Engagement"
@@ -447,33 +478,27 @@ const CreatorCard = ({
             />
           ))}
         </Stack>
-        {onInviteOne && (
+        {onInviteOne && canInviteCreator(creator) && (
+          <Button type="button" onClick={handleInvite} sx={ACTION_BUTTON_SX}>
+            + Campaign
+          </Button>
+        )}
+        {onLinkCreator && creator.isGuest && (
           <Button
             type="button"
-            onClick={handleInvite}
+            onClick={handleLinkCreator}
+            startIcon={<Iconify icon="mdi:account-plus-outline" width={16} />}
             sx={{
-              width: 96,
-              height: 28,
+              ...ACTION_BUTTON_SX,
+              width: 'auto',
               minWidth: 96,
-              px: 1,
-              pt: 0.25,
-              pb: 0.625,
-              bgcolor: '#3A3A3C',
-              borderRadius: '6px',
-              boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
-              color: '#FFFFFF',
-              flex: '0 0 auto',
-              fontSize: 13,
-              fontWeight: 600,
-              lineHeight: '17px',
-              textTransform: 'none',
-              '&:hover': {
-                bgcolor: '#3A3A3C',
-                boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.35)',
-              },
+              px: 1.5,
+              bgcolor: BLUE,
+              '& .MuiButton-startIcon': { mr: 0.5, ml: 0 },
+              '&:hover': { ...ACTION_BUTTON_SX['&:hover'], bgcolor: BLUE },
             }}
           >
-            + Campaign
+            Link Creator
           </Button>
         )}
       </Stack>
@@ -487,9 +512,11 @@ CreatorCard.propTypes = {
     platform: PropTypes.oneOf(['instagram', 'tiktok']),
     userId: PropTypes.string,
     creatorId: PropTypes.string,
+    isGuest: PropTypes.bool,
     name: PropTypes.string,
     creatorRating: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     rating: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    creditTier: PropTypes.string,
     averageRating: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     score: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     creditScore: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -508,6 +535,7 @@ CreatorCard.propTypes = {
   onToggleList: PropTypes.func,
   onCreateList: PropTypes.func,
   onInviteOne: PropTypes.func,
+  onLinkCreator: PropTypes.func,
   onOpenDetails: PropTypes.func,
   rowKey: PropTypes.string,
   compareMode: PropTypes.bool,
@@ -521,6 +549,7 @@ CreatorCard.defaultProps = {
   onToggleList: undefined,
   onCreateList: undefined,
   onInviteOne: undefined,
+  onLinkCreator: undefined,
   onOpenDetails: undefined,
   rowKey: undefined,
   compareMode: false,

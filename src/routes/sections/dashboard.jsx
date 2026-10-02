@@ -133,6 +133,9 @@ const FindCipta = lazy(() => import('src/pages/dashboard/treasure-hunts/find-cip
 // Feedback
 const Feedback = lazy(() => import('src/pages/dashboard/feedback/feedback'));
 
+// Release Notes
+const ReleaseNotes = lazy(() => import('src/pages/dashboard/release-notes'));
+
 // Mobile View
 const MobileModalView = lazy(
   () => import('src/sections/campaign/discover/creator/mobile-modal-view')
@@ -194,7 +197,10 @@ export const dashboardRoutes = [
         children: [
           {
             element: (
-              <RoleBasedGuard roles={['superadmin', 'admin', 'CSL', 'sales_and_marketing']} hasContent>
+              <RoleBasedGuard
+                roles={['superadmin', 'admin', 'CSL', 'sales_and_marketing']}
+                hasContent
+              >
                 <CreatorList />
               </RoleBasedGuard>
             ),
@@ -203,7 +209,10 @@ export const dashboardRoutes = [
           {
             path: 'lists',
             element: (
-              <RoleBasedGuard roles={['superadmin', 'admin', 'CSL', 'sales_and_marketing']} hasContent>
+              <RoleBasedGuard
+                roles={['superadmin', 'admin', 'CSL', 'sales_and_marketing']}
+                hasContent
+              >
                 <CreatorList />
               </RoleBasedGuard>
             ),
@@ -777,6 +786,14 @@ export const dashboardRoutes = [
         element: (
           <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
             <Feedback />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'release-notes',
+        element: (
+          <RoleBasedGuard roles={['superadmin']} hasContent>
+            <ReleaseNotes />
           </RoleBasedGuard>
         ),
       },

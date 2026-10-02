@@ -187,7 +187,15 @@ export default function CreatorScrapeRow({
       <>
         {label(text, hint, fieldProvenanceOf(row, field))}
         {loading ? (
-          <CreatorFieldLoading label={`Fetching ${text.toLowerCase()}`} showSpinner />
+          <CreatorFieldLoading
+            label={`Fetching ${text.toLowerCase()}`}
+            showSpinner
+            progress={{
+              status: row.status,
+              startedAt: row.extractionStartedAt,
+              checkingMore: row.checkingMore,
+            }}
+          />
         ) : (
           <ScrapeTextFieldReveal
             reveal={revealScrapedFields}
@@ -362,9 +370,7 @@ export default function CreatorScrapeRow({
 
       {canFallback && (
         <Alert severity="info" sx={{ mt: 1.5, borderRadius: 1 }}>
-          <Typography sx={{ fontSize: '13px', mb: 0.5 }}>
-            {extractionErrorCopy(row)}
-          </Typography>
+          <Typography sx={{ fontSize: '13px', mb: 0.5 }}>{extractionErrorCopy(row)}</Typography>
           <FormControlLabel
             control={
               <Checkbox
@@ -400,6 +406,7 @@ export default function CreatorScrapeRow({
         engagementRate={row.engagementRate}
         followerCount={Number(row.followerCount) || null}
         creatorName={row.name || undefined}
+        profileLinks={[row.canonicalProfileUrl, row.profileLink]}
       />
 
       <Box sx={{ mt: 1.5 }}>
