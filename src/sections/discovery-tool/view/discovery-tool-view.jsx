@@ -11,8 +11,16 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import LinkCreatorDialog from './link-creator-dialog';
 import InviteCreatorsDialog from './invite-creators-dialog';
+import { canInviteCreator } from '../components/creator-helpers';
 import { CreatorList, DiscoveryFilterBar, CreatorDetailsDrawer } from '../components';
+
+const ADDED_SORT_QUERY = {
+  recent: { sortBy: 'createdAt', sortDirection: 'desc' },
+  oldest: { sortBy: 'createdAt', sortDirection: 'asc' },
+  name: { sortBy: 'name', sortDirection: 'asc' },
+};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -23,6 +31,8 @@ const DiscoveryToolView = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { user } = useAuthContext();
   const isClientDemo = user?.role === 'client_demo';
+  // Same rule as the backend isSuperAdmin guard on /api/campaign/linkGuestCreator.
+  const canLinkCreators = ['god', 'advanced', 'normal'].includes(user?.admin?.mode);
   const [filters, setFilters] = useState({
     platform: 'all',
     debouncedKeyword: '',
@@ -36,7 +46,9 @@ const DiscoveryToolView = () => {
     interests: [],
   });
 
-  const [sortByFollowers, setSortByFollowers] = useState(false);
+  // null = off, 'desc' = highest first, 'asc' = lowest first.
+  const [followersSortDirection, setFollowersSortDirection] = useState(null);
+  const [addedSort, setAddedSort] = useState('name');
 
   // All filters are now server-side — pass them all to the SWR hook
   const discoveryQuery = useMemo(
@@ -51,12 +63,13 @@ const DiscoveryToolView = () => {
       interests: filters.interests?.length ? filters.interests : undefined,
       keyword: filters.debouncedKeyword || undefined,
       hashtag: filters.debouncedHashtag || undefined,
-      sortBy: sortByFollowers ? 'followers' : 'name',
-      sortDirection: sortByFollowers ? 'desc' : 'asc',
+      ...(followersSortDirection
+        ? { sortBy: 'followers', sortDirection: followersSortDirection }
+        : ADDED_SORT_QUERY[addedSort]),
       hydrateMissing: true,
       limit: 20,
     }),
-    [filters, sortByFollowers]
+    [filters, followersSortDirection, addedSort]
   );
 
   const {
@@ -70,6 +83,7 @@ const DiscoveryToolView = () => {
     size,
     setSize,
     isError,
+    mutate: mutateCreators,
   } = useGetDiscoveryCreators(discoveryQuery);
 
   // Stable callback for the filter bar
@@ -77,8 +91,15 @@ const DiscoveryToolView = () => {
     setFilters(newFilters);
   }, []);
 
+  // First click sorts highest first; later clicks flip between highest and lowest.
   const handleToggleFollowersSort = useCallback(() => {
-    setSortByFollowers((prev) => !prev);
+    setFollowersSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+  }, []);
+
+  // Picking a date or name sort turns the followers sort off.
+  const handleAddedSortChange = useCallback((value) => {
+    setAddedSort(value);
+    setFollowersSortDirection(null);
   }, []);
 
   const handleLoadMore = useCallback(() => {
@@ -211,7 +232,7 @@ const DiscoveryToolView = () => {
   );
 
   const inviteCreators = useMemo(
-    () => inviteCreatorIds.map(findCreatorByRowKey).filter(Boolean),
+    () => inviteCreatorIds.map(findCreatorByRowKey).filter(canInviteCreator),
     [inviteCreatorIds, findCreatorByRowKey]
   );
 
@@ -283,9 +304,16 @@ const DiscoveryToolView = () => {
     [enqueueSnackbar]
   );
 
+  const [linkCreatorRowKey, setLinkCreatorRowKey] = useState(null);
+  const linkCreator = linkCreatorRowKey ? findCreatorByRowKey(linkCreatorRowKey) : null;
+  const handleLinked = useCallback(() => {
+    mutateCreators();
+    mutateListCreators();
+  }, [mutateCreators, mutateListCreators]);
+
   const handleInviteOne = useCallback(
     async (rowId) => {
-      if (!rowId) return;
+      if (!rowId || !canInviteCreator(findCreatorByRowKey(rowId))) return;
 
       setInviteCreatorIds([rowId]);
       setInviteCampaignId('');
@@ -295,7 +323,7 @@ const DiscoveryToolView = () => {
         await loadInviteCampaigns();
       }
     },
-    [loadInviteCampaigns]
+    [loadInviteCampaigns, findCreatorByRowKey]
   );
 
   const handleInviteClose = useCallback(() => {
@@ -385,8 +413,10 @@ const DiscoveryToolView = () => {
         isError={isError}
         isReachingEnd={isReachingEnd}
         pagination={pagination}
-        sortByFollowers={sortByFollowers}
+        followersSortDirection={followersSortDirection}
         onToggleFollowersSort={handleToggleFollowersSort}
+        addedSort={addedSort}
+        onAddedSortChange={handleAddedSortChange}
         onLoadMore={handleLoadMore}
         lists={lists}
         membershipsByRowKey={membershipsByRowKey}
@@ -400,6 +430,7 @@ const DiscoveryToolView = () => {
         onOpenListManager={handleOpenListManager}
         listDropdownRef={listDropdownRef}
         onInviteOne={isClientDemo ? undefined : handleInviteOne}
+        onLinkCreator={canLinkCreators ? setLinkCreatorRowKey : undefined}
         onOpenDetails={handleOpenDetails}
       />
 
@@ -415,6 +446,16 @@ const DiscoveryToolView = () => {
         onOpenListManager={handleOpenListManager}
         onInvite={isClientDemo ? undefined : handleInviteOne}
       />
+
+      {/* Mounted only while open: the dialog fetches every platform creator. */}
+      {linkCreator && (
+        <LinkCreatorDialog
+          open
+          creator={linkCreator}
+          onClose={() => setLinkCreatorRowKey(null)}
+          onLinked={handleLinked}
+        />
+      )}
 
       <InviteCreatorsDialog
         open={inviteOpen}
