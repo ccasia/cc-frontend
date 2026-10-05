@@ -37,6 +37,10 @@ jobs:
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev --quiet
 
+      # 3b. Write the Vite env file so VITE_* values are baked into the build
+      - name: Create .env for build
+        run: echo "${{ secrets.FRONTEND_ENV }}" > .env
+
       # 4. Build the image, tagged both "latest" and with the commit SHA
       #    (the SHA tag is what lets you roll back to any previous version later)
       - name: Build Docker image
