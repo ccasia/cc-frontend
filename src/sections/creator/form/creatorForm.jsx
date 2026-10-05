@@ -1,12 +1,11 @@
 /* eslint-disable no-unused-vars */
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
-import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
@@ -135,6 +134,19 @@ const stepSchemas = Yup.object({
   recaptcha: Yup.string().required('Please complete the reCAPTCHA'),
 });
 
+const FIELD_STEPS = [
+  { name: 'Nationality', step: 0, label: 'Country of residence' },
+  { name: 'city', step: 0, label: 'City' },
+  { name: 'phone', step: 1, label: 'Phone number' },
+  { name: 'pronounce', step: 1, label: 'Pronouns' },
+  { name: 'birthDate', step: 1, label: 'Birth date' },
+  { name: 'languages', step: 2, label: 'Languages' },
+  { name: 'interests', step: 2, label: 'Interests' },
+  { name: 'instagramProfileLink', step: 2, label: 'Instagram profile link' },
+  { name: 'tiktokProfileLink', step: 2, label: 'TikTok profile link' },
+  { name: 'recaptcha', step: 2, label: 'reCAPTCHA' },
+];
+
 // Add error icon component
 const ErrorIcon = () => (
   <Box
@@ -157,6 +169,10 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser, pho
   const [completedSteps, setCompletedSteps] = useState({});
   const [countryCode, setCountryCode] = useState('');
   const [stepErrors, setStepErrors] = useState({});
+
+  // state for auto-scroll
+  const [scrollTarget, setScrollTarget] = useState(null);
+  const scrollRef = useRef(null);
 
   const { logout, initialize } = useAuthContext();
   const smDown = useResponsive('down', 'sm');
@@ -214,10 +230,12 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser, pho
 
   const {
     reset,
+    trigger,
     handleSubmit,
     watch,
     getValues,
     setValue,
+    getFieldState,
     formState: { isValid, errors },
   } = methods;
 
@@ -280,7 +298,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser, pho
     }
   }, [nationality]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const currentValues = getValues();
     const newStepErrors = { ...stepErrors };
 
@@ -314,7 +332,19 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser, pho
 
     setStepErrors(newStepErrors);
 
-    // Always allow navigation to next step
+    const stepFields = FIELD_STEPS.filter(({ step }) => step === activeStep).map(
+      ({ name }) => name
+    );
+    const isStepValid = await trigger(stepFields);
+
+    if (!isStepValid) {
+      const firstError = FIELD_STEPS.find(
+        ({ name }) => stepFields.includes(name) && getFieldState(name).invalid
+      );
+      if (firstError) goToField(firstError);
+      return;
+    }
+
     setCompletedSteps((prev) => ({
       ...prev,
       [activeStep]: true,
@@ -358,6 +388,17 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser, pho
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
+  const goToField = (field) => {
+    enqueueSnackbar(`Please complete: ${field.label}`, { variant: 'warning' });
+    setActiveStep(field.step);
+    setScrollTarget(field.name);
+  };
+
+  const onInvalid = (formErrors) => {
+    const firstError = FIELD_STEPS.find(({ name }) => formErrors[name]);
+    if (firstError) goToField(firstError);
+  };
+
   const onSubmit = handleSubmit(async (data) => {
     setIsSubmitting(true);
 
@@ -392,7 +433,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser, pho
     } finally {
       setIsSubmitting(false);
     }
-  });
+  }, onInvalid);
 
   useEffect(() => {
     if (!phoneNumber) return;
@@ -404,6 +445,34 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser, pho
       setValue('languages', ['English', 'Malay', 'Chinese', 'Tamil']);
     }
   }, [languages, setValue]);
+
+  useEffect(() => {
+    if (!scrollTarget) return undefined;
+
+    const frame = requestAnimationFrame(() => {
+      const container = scrollRef.current;
+      const fieldEl = container?.querySelector(`[data-field="${scrollTarget}"]`);
+
+      if (fieldEl) {
+        const fieldRect = fieldEl.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        const isInView =
+          fieldRect.top >= containerRect.top && fieldRect.bottom <= containerRect.bottom;
+
+        if (!isInView) {
+          fieldEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        fieldEl
+          .querySelector('input:not([aria-hidden="true"]), [tabindex="0"]')
+          ?.focus({ preventScroll: true });
+      }
+
+      setScrollTarget(null);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [scrollTarget, activeStep]);
 
   const socialMediaForm = (
     <Box
@@ -446,20 +515,6 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser, pho
       </Stack>
     </Box>
   );
-
-  const finalSubmit = async () => {
-    onSubmit();
-    if (!methods.formState.isValid) {
-      toast.error('Please fill all the required fields');
-      setActiveStep((prevActiveStep) => prevActiveStep - 2);
-    } else {
-      const data = {
-        ...newCreator,
-        Interests: ratingInterst,
-        industries: ratingIndustries,
-      };
-    }
-  };
 
   const renderForm = useCallback(
     (info) => {
@@ -680,6 +735,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser, pho
       </Box>
 
       <Stack
+        ref={scrollRef}
         alignItems="center"
         sx={{
           mt: { xs: 10, sm: 5 },
@@ -766,6 +822,7 @@ export default function CreatorForm({ open, onClose, onSubmit: registerUser, pho
             {activeStep === steps.length - 1 && (
               <>
                 <Box
+                  data-field="recaptcha"
                   sx={{
                     mb: { xs: 3, sm: 5 },
                     mt: { xs: 0, sm: -2 },
