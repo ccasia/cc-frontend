@@ -92,7 +92,7 @@ const FourthStep = ({ item }) => {
           px: { xs: 1, sm: 0 },
         }}
       >
-        <Stack spacing={1}>
+        <Stack spacing={1} data-field="languages">
           <FormLabel
             required
             sx={{ fontWeight: 600, color: 'black', fontFamily: primaryFont, fontSize: '14px' }}
@@ -146,7 +146,7 @@ const FourthStep = ({ item }) => {
           </Stack>
         </Stack>
 
-        <Stack spacing={1}>
+        <Stack spacing={1} data-field="interests">
           <FormLabel
             required
             sx={{ fontWeight: 600, color: 'black', fontFamily: primaryFont, fontSize: '14px' }}
@@ -222,7 +222,7 @@ const FourthStep = ({ item }) => {
         </Stack>
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-          <Stack spacing={1} flex={1} width="100%">
+          <Stack spacing={1} flex={1} width="100%" data-field="instagramProfileLink">
             <FormLabel
               required
               sx={{
@@ -269,7 +269,7 @@ const FourthStep = ({ item }) => {
             or
           </Box>
 
-          <Stack spacing={1} flex={1} width="100%">
+          <Stack spacing={1} flex={1} width="100%" data-field="tiktokProfileLink">
             <FormLabel
               required
               sx={{

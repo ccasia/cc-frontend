@@ -107,7 +107,7 @@ const SecondStep = ({ item }) => {
           px: { xs: 1, sm: 0 },
         }}
       >
-        <Stack spacing={1}>
+        <Stack spacing={1} data-field="Nationality">
           <FormLabel
             required
             sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}
@@ -126,7 +126,7 @@ const SecondStep = ({ item }) => {
           </Stack>
         </Stack>
 
-        <Stack spacing={1}>
+        <Stack spacing={1} data-field="city">
           <FormLabel
             required
             sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}
