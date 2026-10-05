@@ -149,7 +149,7 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
           px: { xs: 1, sm: 0 },
         }}
       >
-        <Stack spacing={1}>
+        <Stack spacing={1} data-field="phone">
           <FormLabel
             required
             sx={{ fontWeight: 600, color: '#231F20', fontFamily: primaryFont, fontSize: '14px' }}
@@ -170,9 +170,9 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
                   countrySelectComponent={CountrySelect}
                   placeholder="Eg. 60192399123"
                 />
-                {errors.phoneNumber && (
+                {errors.phone && (
                   <FormHelperText error sx={{ mx: 1.5 }}>
-                    {errors.phoneNumber.message}
+                    {errors.phone.message}
                   </FormHelperText>
                 )}
               </Box>
@@ -180,7 +180,7 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
           />
         </Stack>
 
-        <Stack spacing={1}>
+        <Stack spacing={1} data-field="pronounce">
           <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
             Pronouns
           </FormLabel>
@@ -201,7 +201,7 @@ const ThirdStep = ({ item, setCountryCode, countryCode }) => {
           )}
         </Stack>
 
-        <Stack spacing={1}>
+        <Stack spacing={1} data-field="birthDate">
           <FormLabel required sx={{ fontWeight: 600, color: 'black' }}>
             Birth Date
           </FormLabel>
