@@ -1,4 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+
+import {
+  usePcrStore,
+  setShowFifthCard,
+  setShowThirdCard,
+  setShowFourthCard,
+  setShowEducatorCard,
+} from '../store/usePcrStore';
 
 // Undo/redo history for the PCR report editor. Tracks editableContent, section
 // order/visibility, and which optional persona cards are shown.
@@ -9,19 +18,20 @@ export default function usePcrHistory({
   setSectionVisibility,
   sectionOrder,
   setSectionOrder,
-  showEducatorCard,
-  setShowEducatorCard,
-  showThirdCard,
-  setShowThirdCard,
-  showFourthCard,
-  setShowFourthCard,
-  showFifthCard,
-  setShowFifthCard,
   isEditMode,
   setIsPreviewCached,
 }) {
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const { showEducatorCard, showFifthCard, showFourthCard, showThirdCard } = usePcrStore(
+    useShallow((state) => ({
+      showEducatorCard: state.showEducatorCard,
+      showFifthCard: state.showFifthCard,
+      showFourthCard: state.showFourthCard,
+      showThirdCard: state.showThirdCard,
+    }))
+  );
 
   const saveToHistory = (
     content,
@@ -57,6 +67,7 @@ export default function usePcrHistory({
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       const state = history[newIndex];
+
       setHistoryIndex(newIndex);
       setEditableContent(JSON.parse(JSON.stringify(state.content)));
       setSectionVisibility(JSON.parse(JSON.stringify(state.sectionVisibility)));

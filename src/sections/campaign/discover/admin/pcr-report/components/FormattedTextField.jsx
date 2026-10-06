@@ -25,9 +25,11 @@ const FormattedTextField = ({
   const editorRef = useRef(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // console.log(isInitialized);
+
   // Initialize content only once
   useEffect(() => {
-    if (editorRef.current && !isInitialized) {
+    if (editorRef.current) {
       editorRef.current.innerHTML = value || '';
       setIsInitialized(true);
     }

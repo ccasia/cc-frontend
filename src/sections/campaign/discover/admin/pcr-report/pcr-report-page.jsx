@@ -3,7 +3,7 @@ import axios from 'axios';
 // eslint-disable-next-line new-cap
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
-import EmojiPicker from 'emoji-picker-react';
+import { useShallow } from 'zustand/react/shallow';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import {
@@ -33,15 +33,10 @@ import {
   Link,
   Button,
   Avatar,
-  Dialog,
-  Popover,
   TextField,
   Typography,
   IconButton,
-  DialogTitle,
-  DialogContent,
   InputAdornment,
-  CircularProgress,
 } from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
@@ -63,6 +58,7 @@ import Iconify from 'src/components/iconify';
 
 import useAiAnalytic, {
   formatAnalyticData,
+  markdownBoldToHtml,
 } from 'src/sections/campaign/discover/admin/pcr-report/hooks/useAiAnalytic';
 
 import Error from './components/Error';
@@ -70,12 +66,15 @@ import Overlay from './components/Overlay';
 import usePcrData from './hooks/usePcrData';
 import usePcrExport from './hooks/usePcrExport';
 import usePcrHistory from './hooks/usePcrHistory';
+
 import SectionHeader from './components/SectionHeader';
 import PersonaCardEdit from './charts/StrategiesCardEdit';
 import SortableSection from './components/SortableSection';
 import TopEngagementCard from './charts/TopEngagementCard';
+import ReportReviewModal from './dialog/ReportReviewModal';
 import PersonaCardDisplay from './charts/StrategiesDisplay';
 import AddSectionButtons from './components/AddSectionButtons';
+import CustomEmojiPicker from './components/CustomEmojiPicker';
 import TopCreatorViewsChart from './charts/TopCreatorViewsChart';
 import { sanitizeReportHtml } from './utils/sanitize-report-html';
 import EngagementRateHeatmap from './charts/EngagementRateHeatmap';
@@ -85,14 +84,24 @@ import PlatformInteractionsChart from './charts/PlatformInteractionsChart';
 import EditableDescriptionField from './components/EditableDescriptionField';
 import usePcrAutosave, { getPcrEditorSessionId } from './hooks/usePcrAutosave';
 import CreatorStrategyChartDisplay from './charts/CreatorStrategyChartDisplay';
-import { usePcrStore, setCampaignId, setIsEditMode } from './store/usePcrStore';
 import {
   DEFAULT_SECTION_ORDER,
   DEFAULT_EDITABLE_CONTENT,
   DEFAULT_SECTION_VISIBILITY,
 } from './utils/constants';
-import CustomEmojiPicker from './components/CustomEmojiPicker';
-import ReportReviewModal from './dialog/ReportReviewModal';
+import {
+  usePcrStore,
+  setCampaignId,
+  setIsEditMode,
+  setShowThirdCard,
+  setShowFifthCard,
+  setShowFourthCard,
+  setShowEducatorCard,
+} from './store/usePcrStore';
+import { useAiPrompt } from './store/useAiPrompt';
+import { useMutation } from '@tanstack/react-query';
+import axiosInstance from 'src/utils/axios';
+import socket from 'src/hooks/socket';
 
 const getImprovedInsightBgColor = (index) => {
   if (index === 0) return '#1340FFD9';
@@ -165,7 +174,20 @@ const getTierForShortlisted = (shortlisted, campaign) => {
 
 const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdate }) => {
   const { user } = useAuthContext();
+
   const isEditMode = usePcrStore((state) => state.isEditMode);
+
+  const promptValue = useAiPrompt((state) => state.prompt);
+
+  const { showEducatorCard, showFifthCard, showFourthCard, showThirdCard } = usePcrStore(
+    useShallow((state) => ({
+      showEducatorCard: state.showEducatorCard,
+      showFifthCard: state.showFifthCard,
+      showFourthCard: state.showFourthCard,
+      showThirdCard: state.showThirdCard,
+    }))
+  );
+
   // Helper function to format campaign period (matching campaign detail view format)
   const formatCampaignPeriod = () => {
     const startDate = campaign?.startDate || campaign?.campaignBrief?.startDate;
@@ -236,18 +258,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     }
   };
 
-  // Show second persona card state
-  const [showEducatorCard, setShowEducatorCard] = useState(false);
-
-  // Show third persona card state
-  const [showThirdCard, setShowThirdCard] = useState(false);
-
-  // Show fourth persona card state
-  const [showFourthCard, setShowFourthCard] = useState(false);
-
-  // Show fifth persona card state
-  const [showFifthCard, setShowFifthCard] = useState(false);
-
   const [editableContent, setEditableContent] = useState(DEFAULT_EDITABLE_CONTENT);
 
   // Emoji picker state
@@ -257,6 +267,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   const reportRef = useRef(null);
   const toolbarSentinelRef = useRef(null);
   const creatorTiersEditorRef = useRef(null);
+
   const [isToolbarFloating, setIsToolbarFloating] = useState(false);
   const [floatingToolbarBounds, setFloatingToolbarBounds] = useState(null);
   const [autosaveConflict, setAutosaveConflict] = useState(null);
@@ -474,14 +485,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     setSectionVisibility,
     sectionOrder,
     setSectionOrder,
-    showEducatorCard,
-    setShowEducatorCard,
-    showThirdCard,
-    setShowThirdCard,
-    showFourthCard,
-    setShowFourthCard,
-    showFifthCard,
-    setShowFifthCard,
     isEditMode,
     setIsPreviewCached,
   });
@@ -519,16 +522,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
       );
       bumpHydrationVersion();
     },
-    [
-      bumpHydrationVersion,
-      setEditableContent,
-      setSectionOrder,
-      setSectionVisibility,
-      setShowEducatorCard,
-      setShowThirdCard,
-      setShowFourthCard,
-      setShowFifthCard,
-    ]
+    [bumpHydrationVersion, setEditableContent, setSectionOrder, setSectionVisibility]
   );
 
   const {
@@ -561,10 +555,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     sectionOrder,
     setSectionOrder,
     sectionVisibility,
-    showEducatorCard,
-    showThirdCard,
-    showFourthCard,
-    showFifthCard,
     setSectionVisibility,
     setShowEducatorCard,
     setShowThirdCard,
@@ -596,10 +586,6 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
     editableContent,
     sectionOrder,
     sectionVisibility,
-    showEducatorCard,
-    showThirdCard,
-    showFourthCard,
-    showFifthCard,
     onPcrRevisionUpdate: setPcrRevision,
     onDraftConflict: setAutosaveConflict,
     initialConflict: draftConflictPayload || autosaveConflict,
@@ -736,6 +722,142 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   useEffect(() => {
     setCampaignId(campaign.id);
   }, [campaign?.id]);
+
+  // const aiMutation = useMutation({
+  //   mutationKey: ['ai'],
+  //   mutationFn: async () => {
+  //     const val = Object.fromEntries(promptValue);
+  //     const res = await axiosInstance.post(`/api/reports/generate/${campaign.id}/stream`, {
+  //       humanPrompts: val,
+  //       sections: Object.keys(val),
+  //     });
+
+  //     console.log(res.data);
+
+  //     return res.data;
+  //   },
+  //   onSuccess: (data) => {
+  //     const sanitizedData = formatAnalyticData(data?.report?.sections);
+  //     setEditableContent((prev) => ({
+  //       ...prev,
+  //       campaignDescription: sanitizedData.campaign_summary,
+  //     }));
+  //   },
+  // });
+
+  const aiMutation = useMutation({
+    mutationKey: ['ai'],
+    mutationFn: async () => {
+      const val = Object.fromEntries(promptValue);
+
+      const res = await fetch(`http://localhost/api/reports/generate/${campaign.id}/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ humanPrompts: val, sections: Object.keys(val) }),
+      });
+
+      if (!res.body) throw new Error('Streaming not supported by this response');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      const sections = [];
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Frames are separated by a blank line and can arrive split across chunks — only
+        // consume complete frames, keep any partial one buffered for the next read.
+        let sepIndex;
+        while ((sepIndex = buffer.indexOf('\n\n')) !== -1) {
+          const frame = buffer.slice(0, sepIndex);
+          buffer = buffer.slice(sepIndex + 2);
+
+          const line = frame.split('\n').find((l) => l.startsWith('data: '));
+          if (!line) continue;
+
+          const event = JSON.parse(line.slice('data: '.length));
+
+          if (event.type === 'section:completed') {
+            sections.push({ section: event.section, summary: event.summary, data: event.data });
+          } else if (event.type === 'section:failed') {
+            console.error(`Section ${event.section} failed:`, event.error);
+          } else if (event.type === 'report:failed') {
+            throw new Error(event.error);
+          }
+        }
+      }
+
+      return sections;
+    },
+    onSuccess: (sections) => {
+      const sanitizedData = formatAnalyticData(sections);
+      setEditableContent((prev) => ({
+        ...prev,
+        campaignDescription: sanitizedData.campaign_summary,
+        engagementDescription: sanitizedData.engagement_interactions,
+      }));
+    },
+  });
+
+  const [text, setText] = useState('');
+  const controllerRef = useRef(null);
+
+  const stream = useMutation({
+    mutationKey: ['ai', 'response'],
+    mutationFn: async () => {
+      controllerRef?.current?.abort();
+
+      const controller = new AbortController();
+      controllerRef.current = controller;
+
+      const response = await fetch(`http://localhost/api/reports/test/${campaign.id}/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        // eslint-disable-next-line no-await-in-loop
+        const { value, done } = await reader.read();
+
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+
+        setEditableContent((prev) => ({
+          ...prev,
+          campaignDescription: markdownBoldToHtml(prev.campaignDescription.concat(chunk)),
+        }));
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (!effectiveEditMode || aiMutation.isPending) return;
+
+    const handleEnter = (event) => {
+      if (event.key === 'Enter') {
+        stream.mutate();
+        // aiMutation.mutate();
+      }
+    };
+
+    document.addEventListener('keydown', handleEnter);
+
+    // eslint-disable-next-line consistent-return
+    return () => {
+      document.removeEventListener('keydown', handleEnter);
+    };
+  }, [effectiveEditMode, promptValue, aiMutation.isPending, stream]);
 
   return (
     <>
@@ -944,6 +1066,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                         justifyContent: { xs: 'flex-end', lg: 'flex-start' },
                       }}
                     >
+                      {text}
                       {isEditMode.state ? (
                         <>
                           {isEditMode.type === 'ai' && (
@@ -978,7 +1101,10 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                   color: 'rgba(255, 255, 255, 1)',
                                 },
                               }}
-                              onClick={mutation.mutate}
+                              // onClick={mutation.mutate}
+                              onClick={() => {
+                                handleStream();
+                              }}
                               startIcon={
                                 <img
                                   src="/assets/star.svg"
@@ -1428,10 +1554,16 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                   rows={3}
                   mb={2}
                   isClientView={isClientView}
-                  isLoading={effectiveEditMode && mutation.isPending}
+                  isLoading={effectiveEditMode && (mutation.isPending || aiMutation.isPending)}
                   loadingTitle="Overview"
-                  onCancelLoading={mutation.cancel}
-                  aiPrefillValue={aiAnalyticsData?.campaign_summary}
+                  // onCancelLoading={mutation.cancel}
+                  onCancelLoading={() => {
+                    controllerRef.current?.abort();
+
+                    setEditableContent({ ...editableContent, campaignDescription: '' });
+                  }}
+                  isStreamRunning={stream.isPending}
+                  aiSection="campaign_summary"
                 />
               </Box>
 
@@ -1734,7 +1866,9 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                 isEditingSection={
                                   effectiveEditMode && !sectionEditStates.engagement
                                 }
-                                isLoading={effectiveEditMode && mutation.isPending}
+                                isLoading={
+                                  effectiveEditMode && (mutation.isPending || aiMutation.isPending)
+                                }
                                 value={
                                   aiAnalyticsData?.engagement_interactions ||
                                   editableContent.engagementDescription
@@ -1759,6 +1893,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                     color: '#231F20',
                                   },
                                 }}
+                                aiSection="engagement_interactions"
                               />
 
                               {/* Analytics Grid */}

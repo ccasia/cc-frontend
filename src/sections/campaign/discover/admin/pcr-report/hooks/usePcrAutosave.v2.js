@@ -1,10 +1,8 @@
 import axios from 'axios';
-import { useShallow } from 'zustand/react/shallow';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { setStorage, getStorage, removeStorage } from 'src/hooks/use-local-storage';
 
-import { usePcrStore } from '../store/usePcrStore';
 import { PCR_DRAFT_STORAGE_PREFIX, PCR_EDITOR_SESSION_STORAGE_PREFIX } from '../utils/constants';
 
 const REDIS_DEBOUNCE_MS = 2000;
@@ -51,6 +49,26 @@ const isConflict = (error) => error?.response?.status === 409;
 /**
  * Keep one local copy and one ordered, session-scoped Redis draft. Redis writes
  * are serialized so an old response cannot replace a newer editor revision.
+ *
+ * How this file is organized (same order top to bottom as the code below):
+ *   1. Refs & derived state      - everything the rest of the hook reads/writes.
+ *   2. Lifecycle effects         - mount/unmount, and reset on campaign change.
+ *   3. Conflict registration     - the single place a 409 response turns into UI state.
+ *   4. Redis sync pipeline       - debounced, serialized writes of the local draft to Redis.
+ *   5. Main autosave effect      - detects content changes and produces new draft revisions.
+ *   6. Retry effect              - resends a draft after a transport failure (not a conflict).
+ *   7. DB flush effect           - periodically promotes an accepted Redis draft into the DB.
+ *   8. Conflict resolution       - user-facing actions: keep mine / discard mine / discard stale.
+ *   9. Unsaved-changes guard     - warns on tab close if the latest edit never reached the DB.
+ *  10. Public imperative actions - clearDraft / getDraftState, used by the save flow.
+ *  11. Public API                - what the component actually gets back from this hook.
+ *
+ * Two of the params are pre-grouped by the caller instead of passed field-by-field:
+ *   - `draftContent` is the *entire* payload being autosaved, already merged (editableContent
+ *     spread together with sectionOrder, sectionVisibility, and the four show*Card flags) — this
+ *     hook used to do that merge internally; now the caller owns that shape.
+ *   - `initialState` is what was loaded before this hook took over: `{ draftRevision, remoteDraft,
+ *     conflict }`, used only once, during initialization.
  */
 export default function usePcrAutosave({
   userId,
@@ -60,73 +78,75 @@ export default function usePcrAutosave({
   isLoadingPCR,
   isLoadError,
   pcrRevision,
-  initialDraftRevision,
-  restoredRemoteDraft,
-  editableContent,
-  sectionOrder,
-  sectionVisibility,
+  draftContent,
+  initialState,
   onPcrRevisionUpdate,
   onDraftConflict,
-  initialConflict,
   onRecoverAsCopy,
   onDiscardConflict,
 }) {
+  const {
+    draftRevision: initialDraftRevision,
+    remoteDraft: restoredRemoteDraft,
+    conflict: initialConflict,
+  } = initialState || {};
+  // ===========================================================================================
+  // 1. Refs & derived state
+  // ===========================================================================================
+
   const [lastAutosavedAt, setLastAutosavedAt] = useState(null);
   const [conflictDraft, setConflictDraft] = useState(null);
   const [isAutosaveBlocked, setIsAutosaveBlocked] = useState(false);
 
-  const { showEducatorCard, showFifthCard, showFourthCard, showThirdCard } = usePcrStore(
-    useShallow((state) => ({
-      showEducatorCard: state.showEducatorCard,
-      showFifthCard: state.showFifthCard,
-      showFourthCard: state.showFourthCard,
-      showThirdCard: state.showThirdCard,
-    }))
-  );
-
+  // ---- React lifecycle / request generation ----
+  // `campaignGenerationRef` bumps whenever the campaign identity changes, so an async response
+  // that resolves after the campaign switched can be detected and ignored (see the generation
+  // checks throughout the effects below).
   const mountedRef = useRef(true);
   const campaignGenerationRef = useRef(0);
   const initialisedRef = useRef(false);
+
+  // ---- Payload tracking ----
+  // What JSON we've last *observed* from the caller (`lastObservedJsonRef`), last confirmed
+  // *Redis* has (`lastSyncedJsonRef`), last confirmed the *DB* has (`lastFlushedJsonRef`), and
+  // the live value right now (`latestJsonRef` / `latestEnvelopeRef`).
   const lastObservedJsonRef = useRef(null);
   const lastSyncedJsonRef = useRef(null);
   const lastFlushedJsonRef = useRef(null);
   const latestEnvelopeRef = useRef(null);
   const latestJsonRef = useRef(null);
+
+  // ---- Redis write pipeline ----
+  // `inFlightRef` is the PUT currently in the air; `queuedEnvelopeRef` is the newest edit that
+  // arrived while a PUT (or flush) was in flight, sent once it resolves. `redisTimerRef` is the
+  // debounce timer. `retryRef` flags a *transport* failure (not a conflict) for the retry effect
+  // to resend.
   const inFlightRef = useRef(null);
   const flushInFlightRef = useRef(false);
   const queuedEnvelopeRef = useRef(null);
   const redisTimerRef = useRef(null);
   const retryRef = useRef(false);
+
+  // ---- Revision bookkeeping ----
+  // `draftRevisionRef` is the next revision number to assign to a new edit. `basePcrRevisionRef`
+  // is the PCR row this draft is based on. `acceptedDraftRevisionRef` is the highest revision
+  // Redis has confirmed. `flushedDraftRevisionRef` / `flushedPcrRevisionRef` are the last
+  // revision/PCR row the DB flush confirmed durable.
   const draftRevisionRef = useRef(0);
   const basePcrRevisionRef = useRef(null);
   const acceptedDraftRevisionRef = useRef(0);
   const flushedDraftRevisionRef = useRef(0);
   const flushedPcrRevisionRef = useRef(null);
+
+  // ---- Conflict state ----
+  // Ref mirrors of the `conflictDraft` / `isAutosaveBlocked` state, for synchronous reads inside
+  // callbacks that can't wait for a re-render.
   const conflictDraftRef = useRef(null);
   const autosaveBlockedRef = useRef(false);
 
-  const draftPayload = useMemo(
-    () => ({
-      ...editableContent,
-      sectionOrder,
-      sectionVisibility,
-      showEducatorCard,
-      showThirdCard,
-      showFourthCard,
-      showFifthCard,
-    }),
-    [
-      editableContent,
-      sectionOrder,
-      sectionVisibility,
-      showEducatorCard,
-      showThirdCard,
-      showFourthCard,
-      showFifthCard,
-    ]
-  );
-
-  const draftJson = useMemo(() => JSON.stringify(draftPayload), [draftPayload]);
+  // The caller already merges editableContent + sectionOrder + sectionVisibility + the four
+  // show*Card flags into this one object — see the prop-shape note on the JSDoc above.
+  const draftJson = useMemo(() => JSON.stringify(draftContent), [draftContent]);
   latestJsonRef.current = draftJson;
 
   const isActive = Boolean(
@@ -147,6 +167,10 @@ export default function usePcrAutosave({
         : null,
     [userId, editorSessionId, campaignId]
   );
+
+  // ===========================================================================================
+  // 2. Lifecycle effects
+  // ===========================================================================================
 
   useEffect(() => {
     mountedRef.current = true;
@@ -184,6 +208,12 @@ export default function usePcrAutosave({
     redisTimerRef.current = null;
   }, [campaignId, userId, editorSessionId]);
 
+  // ===========================================================================================
+  // 3. Conflict registration
+  // ===========================================================================================
+  // Every 409 response anywhere in this hook funnels through `registerConflict`. It is the one
+  // place that blocks autosave and hands the conflicting draft to the caller via `onDraftConflict`.
+
   const registerConflict = useCallback(
     (conflict) => {
       if (!conflict?.content || (conflict.campaignId && conflict.campaignId !== campaignId)) return;
@@ -212,9 +242,14 @@ export default function usePcrAutosave({
     [campaignId, onDraftConflict]
   );
 
+  // A conflict already known when the hook mounts (e.g. restored from the initial page load).
   useEffect(() => {
     if (initialConflict && !conflictDraftRef.current) registerConflict(initialConflict);
   }, [initialConflict, registerConflict]);
+
+  // ===========================================================================================
+  // 4. Redis sync pipeline (debounced, serialized writes)
+  // ===========================================================================================
 
   const startRedisPut = useCallback(
     (envelope) => {
@@ -302,6 +337,9 @@ export default function usePcrAutosave({
     [startRedisPut]
   );
 
+  // ===========================================================================================
+  // 5. Main autosave effect: baseline + change detection
+  // ===========================================================================================
   // The first state after a successful load is the baseline. Later changes
   // receive an increasing revision and are written to localStorage immediately.
   useEffect(() => {
@@ -386,6 +424,9 @@ export default function usePcrAutosave({
     storageKey,
   ]);
 
+  // ===========================================================================================
+  // 6. Retry effect
+  // ===========================================================================================
   // Retry only failed transport writes. A revision conflict is surfaced and
   // never silently retried with a different revision.
   useEffect(() => {
@@ -400,6 +441,9 @@ export default function usePcrAutosave({
     return () => clearInterval(intervalId);
   }, [isActive, queueRedisPut]);
 
+  // ===========================================================================================
+  // 7. DB flush effect (durability layer)
+  // ===========================================================================================
   // Flush only an ordered, fully accepted draft. The next interval retries if
   // a PUT is still in flight, so a flush can never save an older payload.
   useEffect(() => {
@@ -407,6 +451,7 @@ export default function usePcrAutosave({
 
     const intervalId = setInterval(async () => {
       const envelope = latestEnvelopeRef.current;
+      console.log(envelope);
       if (!envelope || inFlightRef.current || queuedEnvelopeRef.current) return;
       if (acceptedDraftRevisionRef.current < envelope.draftRevision) return;
       if (lastSyncedJsonRef.current !== envelope.json) return;
@@ -494,6 +539,12 @@ export default function usePcrAutosave({
     storageKey,
   ]);
 
+  // ===========================================================================================
+  // 8. Conflict resolution: user-facing actions
+  // ===========================================================================================
+
+  // "Keep my changes" — resend the conflicting local draft as a brand new revision on top of
+  // whatever is now on the server.
   const recoverConflict = useCallback(() => {
     const conflict = conflictDraftRef.current;
     if (!conflict) return false;
@@ -540,6 +591,8 @@ export default function usePcrAutosave({
     storageKey,
   ]);
 
+  // A stale draft from a *different* session than the one that's live now (e.g. a leftover tab).
+  // Not the same thing as a conflict the user actively resolves — see `discardConflict` below.
   const discardStaleDraft = useCallback(
     async (staleDraft) => {
       if (!staleDraft || !campaignId || !editorSessionId) return false;
@@ -585,6 +638,7 @@ export default function usePcrAutosave({
     [campaignId, editorSessionId, onDiscardConflict, onPcrRevisionUpdate, pcrRevision, storageKey]
   );
 
+  // "Discard my changes" — drop the conflicting local draft and accept the server's version.
   const discardConflict = useCallback(async () => {
     const conflict = conflictDraftRef.current;
     if (!conflict || !campaignId || !editorSessionId) return false;
@@ -633,6 +687,10 @@ export default function usePcrAutosave({
     storageKey,
   ]);
 
+  // ===========================================================================================
+  // 9. Unsaved-changes guard
+  // ===========================================================================================
+
   useEffect(() => {
     if (!isActive) return undefined;
     const handleBeforeUnload = (event) => {
@@ -643,6 +701,10 @@ export default function usePcrAutosave({
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isActive]);
+
+  // ===========================================================================================
+  // 10. Public imperative actions
+  // ===========================================================================================
 
   const clearDraft = useCallback(
     async (savedJson) => {
@@ -692,6 +754,10 @@ export default function usePcrAutosave({
     }),
     []
   );
+
+  // ===========================================================================================
+  // 11. Public API
+  // ===========================================================================================
 
   return {
     editorSessionId,

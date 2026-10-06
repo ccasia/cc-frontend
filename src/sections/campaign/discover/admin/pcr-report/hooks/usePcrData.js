@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { enqueueSnackbar } from 'notistack';
+import { useShallow } from 'zustand/react/shallow';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useState, useEffect, useCallback } from 'react';
 
@@ -13,6 +14,13 @@ import {
   DEFAULT_EDITABLE_CONTENT,
   DEFAULT_SECTION_VISIBILITY,
 } from '../utils/constants';
+import {
+  usePcrStore,
+  setShowFifthCard,
+  setShowThirdCard,
+  setShowFourthCard,
+  setShowEducatorCard,
+} from '../store/usePcrStore';
 
 const EMPTY_SECTION_EDIT_STATES = {
   campaignDescription: false,
@@ -33,15 +41,7 @@ const normalizeRevision = (value) => {
 };
 
 function applyLoadedContent(loadedContent, setters, cardOverrides) {
-  const {
-    setEditableContent,
-    setSectionOrder,
-    setSectionVisibility,
-    setShowEducatorCard,
-    setShowThirdCard,
-    setShowFourthCard,
-    setShowFifthCard,
-  } = setters;
+  const { setEditableContent, setSectionOrder, setSectionVisibility } = setters;
 
   setEditableContent({ ...DEFAULT_EDITABLE_CONTENT, ...loadedContent });
   setSectionOrder(loadedContent.sectionOrder || DEFAULT_SECTION_ORDER);
@@ -103,14 +103,6 @@ export default function usePcrData({
   setSectionOrder,
   sectionVisibility,
   setSectionVisibility,
-  showEducatorCard,
-  showThirdCard,
-  showFourthCard,
-  showFifthCard,
-  setShowEducatorCard,
-  setShowThirdCard,
-  setShowFourthCard,
-  setShowFifthCard,
   setIsEditMode,
   setSectionEditStates,
   resetHistory,
@@ -131,6 +123,15 @@ export default function usePcrData({
   const requestGenerationRef = useRef(0);
   const requestControllerRef = useRef(null);
 
+  const { showEducatorCard, showFifthCard, showFourthCard, showThirdCard } = usePcrStore(
+    useShallow((state) => ({
+      showEducatorCard: state.showEducatorCard,
+      showFifthCard: state.showFifthCard,
+      showFourthCard: state.showFourthCard,
+      showThirdCard: state.showThirdCard,
+    }))
+  );
+
   const resetEditor = useCallback(() => {
     setEditableContent(DEFAULT_EDITABLE_CONTENT);
     setSectionOrder(DEFAULT_SECTION_ORDER);
@@ -149,10 +150,6 @@ export default function usePcrData({
     setSectionEditStates,
     setSectionOrder,
     setSectionVisibility,
-    setShowEducatorCard,
-    setShowFifthCard,
-    setShowFourthCard,
-    setShowThirdCard,
   ]);
 
   const loadPCRData = useCallback(async () => {
@@ -282,8 +279,8 @@ export default function usePcrData({
     }
   }, [
     bumpHydrationVersion,
-    campaign?.id,
-    campaign?.isPCRReady,
+    campaign.id,
+    campaign.isPCRReady,
     editorSessionId,
     isClientView,
     onStaleDraft,
@@ -292,10 +289,6 @@ export default function usePcrData({
     setEditableContent,
     setSectionOrder,
     setSectionVisibility,
-    setShowEducatorCard,
-    setShowThirdCard,
-    setShowFourthCard,
-    setShowFifthCard,
     userId,
   ]);
 

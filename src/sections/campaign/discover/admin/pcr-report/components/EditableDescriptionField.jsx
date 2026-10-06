@@ -1,12 +1,15 @@
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 
-import { Box, Typography } from '@mui/material';
+import { Box, TextField, IconButton, Typography } from '@mui/material';
 
 import Image from 'src/components/image';
+import Iconify from 'src/components/iconify';
 
 import LoadingSkeleton from './LoadingSkeleton';
 import { usePcrStore } from '../store/usePcrStore';
 import FormattedTextField from './FormattedTextField';
+import { setPrompt, useAiPrompt } from '../store/useAiPrompt';
 import { sanitizeReportHtml } from '../utils/sanitize-report-html';
 
 const BADGE_SX = {
@@ -45,6 +48,13 @@ const READ_ONLY_SX = {
  * description field in the report (campaign summary, engagement, platform breakdown, views,
  * audience sentiment, creator personas) — this component is the single source of truth for it.
  */
+
+const MotionIconButton = m(IconButton);
+
+/**
+ * @param {Object} props
+ * @param {'campaign_summary' |'engagement_interactions' |'views_analysis' |'audience_sentiment' |'top_creator_personas' |'campaign_recommendations'} props.aiSection
+ */
 const EditableDescriptionField = ({
   label,
   fieldKey,
@@ -57,12 +67,14 @@ const EditableDescriptionField = ({
   isLoading,
   loadingTitle,
   onCancelLoading,
-  aiPrefillValue,
   badgeSx,
   textFieldSx,
   readOnlySx,
+  aiSection,
+  isStreamRunning,
 }) => {
   const isEditMode = usePcrStore((state) => state.isEditMode);
+  const promptValue = useAiPrompt((state) => state.prompt);
 
   if (isLoading) {
     return <LoadingSkeleton title={loadingTitle} cancel={onCancelLoading} />;
@@ -89,15 +101,40 @@ const EditableDescriptionField = ({
               AI Draft
             </Typography>
           </Box>
+
           <FormattedTextField
             key={`pcr-ftf-${fieldKey}-${hydrationVersion}`}
-            value={aiPrefillValue || value}
+            value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="type here"
             rows={rows}
             sx={textFieldSx}
             isAiGenerated
             section="campaign_summary"
+          />
+
+          <TextField
+            placeholder="Prompts"
+            fullWidth
+            sx={{ mt: 2 }}
+            value={promptValue.get(aiSection)}
+            onChange={(e) => setPrompt(aiSection, e.target.value)}
+            InputProps={{
+              ...(isStreamRunning && {
+                endAdornment: (
+                  <MotionIconButton
+                    whileTap={{
+                      y: 2,
+                    }}
+                    onClick={() => {
+                      onCancelLoading();
+                    }}
+                  >
+                    <Iconify icon="bx:stop-circle" />
+                  </MotionIconButton>
+                ),
+              }),
+            }}
           />
         </Box>
       );
@@ -169,10 +206,10 @@ EditableDescriptionField.propTypes = {
   isLoading: PropTypes.bool,
   loadingTitle: PropTypes.string,
   onCancelLoading: PropTypes.func,
-  aiPrefillValue: PropTypes.string,
   badgeSx: PropTypes.object,
   textFieldSx: PropTypes.object,
   readOnlySx: PropTypes.object,
+  aiSection: PropTypes.array,
 };
 
 EditableDescriptionField.defaultProps = {

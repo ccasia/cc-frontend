@@ -60,7 +60,7 @@ export default useAiAnalytic;
 // contentEditable innerHTML, the read-only dangerouslySetInnerHTML render) expects real HTML —
 // sanitizeReportHtml's allow-list is <strong>/<b>, not raw asterisks. Convert once, here, so
 // every field coming out of this hook is already HTML.
-const markdownBoldToHtml = (text) =>
+export const markdownBoldToHtml = (text) =>
   typeof text === 'string' ? text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') : text;
 
 /**
