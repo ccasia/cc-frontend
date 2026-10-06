@@ -16,7 +16,6 @@ import {
 
 import { fDate } from 'src/utils/format-time';
 import { getUserDisplay } from 'src/utils/user-display';
-import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 import {
   formatNumber,
   createSocialProfileUrl,
@@ -27,6 +26,7 @@ import { getOutreachStatusConfig } from 'src/contants/outreach';
 
 import Iconify from 'src/components/iconify';
 
+import { resolveRowMetrics } from '../client/v3-pitches/resolve-pitch-platform-stats';
 import {
   chipSx,
   CELL_SX,
@@ -45,6 +45,7 @@ import {
   VIEW_BUTTON_SX,
   CHIP_ROW_HEIGHT,
   CONTROL_ICON_SIZE,
+  MissingMetricValue,
   formatEngagementRate,
 } from '../master-list-row-kit';
 
@@ -112,85 +113,24 @@ const CreatorMasterListRow = ({
   const hasPlatformLinks =
     instagramProfileLink || tiktokProfileLink || instagramUsername || tiktokUsername;
 
-  // Platform the row falls back to when a metric carries no platform of its own.
-  const fallbackPlatform = resolveTierPlatformForDisplay(pitch, campaign);
-
-  // Determine what to display for username, engagement rate and follower count
-  const getDisplayData = () => {
-    const igStats = pitch?.user?.creator?.instagramUser || null;
-    const tkStats = pitch?.user?.creator?.tiktokUser || null;
-
-    const pickValue = (...values) => {
-      const foundValue = values.find(
-        (value) => value === 0 || (value !== undefined && value !== null && value !== '')
-      );
-      return foundValue !== undefined ? foundValue : null;
-    };
-
-    const pickString = (...values) => {
-      const foundValue = values.find((value) => typeof value === 'string' && value.trim());
-      return foundValue ? foundValue.trim() : null;
-    };
-
-    // Select the account with the most followers and highest engagement
-    const selectBestAccount = () => {
-      const igFollowers = igStats?.followers_count || 0;
-      const igEngagement = igStats?.engagement_rate || 0;
-      const tkFollowers = tkStats?.follower_count || 0;
-      const tkEngagement = tkStats?.engagement_rate || 0;
-
-      const ig = {
-        stats: igStats,
-        followers: igFollowers,
-        engagement: igEngagement,
-        platform: 'instagram',
-      };
-      const tk = {
-        stats: tkStats,
-        followers: tkFollowers,
-        engagement: tkEngagement,
-        platform: 'tiktok',
-      };
-
-      // If only one account exists, use it
-      if (!tkFollowers) return ig;
-      if (!igFollowers) return tk;
-
-      // If both exist, compare follower count first, then engagement rate
-      return igFollowers >= tkFollowers ? ig : tk;
-    };
-
-    // P1: Prioritize connected social media stats delivered with the pitch payload
-    if (igStats || tkStats) {
-      const bestAccount = selectBestAccount();
-      const usernameFromStats = pickString(
-        bestAccount.stats?.username,
-        igStats?.username,
-        tkStats?.username,
-        profileUsername
-      );
-
-      return {
-        username: usernameFromStats || profileUsername || '-',
-        platform: bestAccount.platform,
-        engagementRate: pickValue(bestAccount.engagement, pitch?.engagementRate),
-        followerCount: pickValue(
-          bestAccount.followers,
-          pitch?.followerCount,
-          pitch?.user?.creator?.manualFollowerCount
-        ),
-      };
-    }
-
-    return {
-      username: profileUsername || '-',
-      platform: fallbackPlatform,
-      engagementRate: pitch?.engagementRate ?? null,
-      followerCount: pitch?.followerCount ?? pitch?.user?.creator?.manualFollowerCount ?? null,
-    };
+  // One platform per row: both metrics and the tier icon come from it, so a
+  // row never shows Instagram followers beside a TikTok engagement rate.
+  const metrics = resolveRowMetrics(pitch, campaign);
+  const platformStats = metrics.platform === 'tiktok' ? tiktokStats : instagramStats;
+  const displayData = {
+    ...metrics,
+    username:
+      [platformStats?.username, instagramStats?.username, tiktokStats?.username, profileUsername]
+        .find((value) => typeof value === 'string' && value.trim())
+        ?.trim() || '-',
   };
-
-  const displayData = getDisplayData();
+  const missingMetric = (
+    <MissingMetricValue
+      platform={metrics.platform}
+      otherPlatform={metrics.otherPlatform}
+      otherPlatformHasData={metrics.otherPlatformHasData}
+    />
+  );
   const engagementRateText = formatEngagementRate(displayData.engagementRate);
 
   // Get tier data: the creator's current tier, else the shortlist snapshot.
@@ -399,7 +339,7 @@ const CreatorMasterListRow = ({
                 <Typography sx={VALUE_PLAIN_SX}>{engagementRateText}</Typography>
               </Stack>
             ) : (
-              <EmptyValue />
+              missingMetric
             )}
           </FieldBlock>
 
@@ -407,7 +347,7 @@ const CreatorMasterListRow = ({
           <FieldBlock label="Tier">
             {tierData ? (
               <Stack direction="row" alignItems="center" spacing={1}>
-                <PlatformIcon platform={fallbackPlatform} />
+                <PlatformIcon platform={displayData.platform} />
                 <Typography sx={VALUE_PLAIN_SX}>{tierData.name}</Typography>
                 {creditsText && <Typography sx={VALUE_MUTED_SX}>{creditsText}</Typography>}
               </Stack>
@@ -451,7 +391,7 @@ const CreatorMasterListRow = ({
               </Stack>
             </Tooltip>
           ) : (
-            <EmptyValue />
+            missingMetric
           )}
         </FieldBlock>
       </TableCell>
