@@ -21,7 +21,7 @@ const LoadingSkeleton = ({ title, cancel }) => (
       border: 1,
       borderStyle: 'dashed',
       borderRadius: 1,
-      p: '20px 10px',
+      p: '20px 10px 0px 10px',
       borderColor: 'rgba(138, 90, 254, 1)',
     }}
   >
@@ -47,8 +47,8 @@ const LoadingSkeleton = ({ title, cancel }) => (
       <Skeleton animation={false} sx={{ ...SKELETON_GRADIENT_SX }} width="80%" />
       <Skeleton animation={false} sx={{ ...SKELETON_GRADIENT_SX }} width="40%" />
     </Stack>
-    <Divider sx={{ my: 2 }} />
-    <Stack justifyContent="space-between" direction="row" alignItems="center">
+    <Divider sx={{ mt: 1 }} />
+    <Stack justifyContent="space-between" direction="row" alignItems="center" my={1}>
       <Typography color="GrayText">Nothing is saved to the report until you confirm.</Typography>
       <Button variant="text" onClick={cancel}>
         Cancel

@@ -1,10 +1,12 @@
 import PropTypes from 'prop-types';
 import { useRef, useState, useEffect } from 'react';
 
-import { Box, Stack, IconButton } from '@mui/material';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
+import { Box, Stack, Button, IconButton } from '@mui/material';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
+
+import Iconify from 'src/components/iconify';
 
 import { sanitizeReportHtml } from '../utils/sanitize-report-html';
 
@@ -21,6 +23,7 @@ const FormattedTextField = ({
   sx = {},
   isAiGenerated = false,
   section,
+  regenerate,
 }) => {
   const editorRef = useRef(null);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -180,7 +183,7 @@ const FormattedTextField = ({
           </IconButton>
         </Box>
 
-        {/* {isAiGenerated && (
+        {isAiGenerated && regenerate && (
           <Button
             size="small"
             sx={{
@@ -193,11 +196,13 @@ const FormattedTextField = ({
             }}
             startIcon={<Iconify icon="codicon:refresh" sx={{ ml: 0.5 }} />}
             variant="outlined"
-            onClick={() => mutation.mutate()}
+            onClick={() => {
+              regenerate();
+            }}
           >
             Regenerate
           </Button>
-        )} */}
+        )}
       </Stack>
 
       {/* Editable Content */}
@@ -264,4 +269,5 @@ FormattedTextField.propTypes = {
   sx: PropTypes.object,
   isAiGenerated: PropTypes.bool,
   section: PropTypes.string,
+  regenerate: PropTypes.func,
 };

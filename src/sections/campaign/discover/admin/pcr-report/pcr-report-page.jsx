@@ -3,7 +3,6 @@ import axios from 'axios';
 // eslint-disable-next-line new-cap
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
-import EmojiPicker from 'emoji-picker-react';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import {
@@ -33,15 +32,10 @@ import {
   Link,
   Button,
   Avatar,
-  Dialog,
-  Popover,
   TextField,
   Typography,
   IconButton,
-  DialogTitle,
-  DialogContent,
   InputAdornment,
-  CircularProgress,
 } from '@mui/material';
 
 import { useSocialInsights } from 'src/hooks/use-social-insights';
@@ -74,8 +68,10 @@ import SectionHeader from './components/SectionHeader';
 import PersonaCardEdit from './charts/StrategiesCardEdit';
 import SortableSection from './components/SortableSection';
 import TopEngagementCard from './charts/TopEngagementCard';
+import ReportReviewModal from './dialog/ReportReviewModal';
 import PersonaCardDisplay from './charts/StrategiesDisplay';
 import AddSectionButtons from './components/AddSectionButtons';
+import CustomEmojiPicker from './components/CustomEmojiPicker';
 import TopCreatorViewsChart from './charts/TopCreatorViewsChart';
 import { sanitizeReportHtml } from './utils/sanitize-report-html';
 import EngagementRateHeatmap from './charts/EngagementRateHeatmap';
@@ -85,14 +81,17 @@ import PlatformInteractionsChart from './charts/PlatformInteractionsChart';
 import EditableDescriptionField from './components/EditableDescriptionField';
 import usePcrAutosave, { getPcrEditorSessionId } from './hooks/usePcrAutosave';
 import CreatorStrategyChartDisplay from './charts/CreatorStrategyChartDisplay';
-import { usePcrStore, setCampaignId, setIsEditMode } from './store/usePcrStore';
+import {
+  usePcrStore,
+  setCampaignId,
+  setIsEditMode,
+  setIsAiRegenerating,
+} from './store/usePcrStore';
 import {
   DEFAULT_SECTION_ORDER,
   DEFAULT_EDITABLE_CONTENT,
   DEFAULT_SECTION_VISIBILITY,
 } from './utils/constants';
-import CustomEmojiPicker from './components/CustomEmojiPicker';
-import ReportReviewModal from './dialog/ReportReviewModal';
 
 const getImprovedInsightBgColor = (index) => {
   if (index === 0) return '#1340FFD9';
@@ -487,6 +486,22 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   });
 
   const mutation = useAiAnalytic(campaign.id);
+  const regenerate = useAiAnalytic(campaign.id);
+
+  const isAiGenerating = usePcrStore((state) => state.isAiRegenerating);
+
+  const regenerateAnalyticsData = useCallback(
+    /**
+     *
+     * @param {'campaign_summary' |'engagement_interactions' |'views_analysis' |'audience_sentiment' |'top_creator_personas' |'campaign_recommendations' | 'platform_breakdown'} section - Section name
+     */
+    async (section) => {
+      setIsAiRegenerating(section, true);
+      await regenerate.mutateAsync(section);
+      setIsAiRegenerating(section, false);
+    },
+    [regenerate]
+  );
 
   // usePcrData needs clearDraft and usePcrAutosave needs isLoadingPCR, so the two
   // hooks depend on each other. A ref breaks the cycle; Save only fires on a
@@ -717,8 +732,8 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   );
 
   const aiAnalyticsData = useMemo(
-    () => formatAnalyticData(mutation.data?.report?.sections),
-    [mutation.data?.report?.sections]
+    () => formatAnalyticData(mutation.data?.report?.sections || regenerate.data?.report?.sections),
+    [mutation.data?.report?.sections, regenerate.data?.report?.sections]
   );
 
   useEffect(() => {
@@ -726,10 +741,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
 
     setEditableContent((prev) => ({
       ...prev,
-      campaignDescription: aiAnalyticsData.campaign_summary,
-      engagementDescription: aiAnalyticsData.engagement_interactions,
-      platformBreakdownDescription: aiAnalyticsData.platform_breakdown,
-      viewsDescription: aiAnalyticsData.views_analysis,
+      campaignDescription: aiAnalyticsData.campaign_summary ?? prev.campaignDescription,
+      engagementDescription: aiAnalyticsData.engagement_interactions ?? prev.engagementDescription,
+      platformBreakdownDescription:
+        aiAnalyticsData.platform_breakdown ?? prev.platformBreakdownDescription,
+      viewsDescription: aiAnalyticsData.views_analysis ?? prev.viewsDescription,
     }));
   }, [aiAnalyticsData]);
 
@@ -978,7 +994,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                   color: 'rgba(255, 255, 255, 1)',
                                 },
                               }}
-                              onClick={mutation.mutate}
+                              onClick={() => mutation.mutate()}
                               startIcon={
                                 <img
                                   src="/assets/star.svg"
@@ -1428,10 +1444,13 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                   rows={3}
                   mb={2}
                   isClientView={isClientView}
-                  isLoading={effectiveEditMode && mutation.isPending}
+                  isLoading={
+                    effectiveEditMode && (mutation.isPending || isAiGenerating.campaign_summary)
+                  }
                   loadingTitle="Overview"
                   onCancelLoading={mutation.cancel}
                   aiPrefillValue={aiAnalyticsData?.campaign_summary}
+                  regenerate={() => regenerateAnalyticsData('campaign_summary')}
                 />
               </Box>
 
@@ -1734,7 +1753,10 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                 isEditingSection={
                                   effectiveEditMode && !sectionEditStates.engagement
                                 }
-                                isLoading={effectiveEditMode && mutation.isPending}
+                                isLoading={
+                                  effectiveEditMode &&
+                                  (mutation.isPending || isAiGenerating.engagement_interactions)
+                                }
                                 value={
                                   aiAnalyticsData?.engagement_interactions ||
                                   editableContent.engagementDescription
@@ -1759,6 +1781,10 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                     color: '#231F20',
                                   },
                                 }}
+                                regenerate={() =>
+                                  regenerateAnalyticsData('engagement_interactions')
+                                }
+                                loadingTitle="Overview"
                               />
 
                               {/* Analytics Grid */}
@@ -1824,12 +1850,14 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                 isEditingSection={
                                   effectiveEditMode && !sectionEditStates.platformBreakdown
                                 }
-                                isLoading={effectiveEditMode && mutation.isPending}
+                                isLoading={
+                                  effectiveEditMode &&
+                                  (mutation.isPending || isAiGenerating.platform_breakdown)
+                                }
                                 value={
                                   aiAnalyticsData?.platform_breakdown ||
                                   editableContent.platformBreakdownDescription
                                 }
-                                // value={editableContent.platformBreakdownDescription || ''}
                                 onChange={(v) =>
                                   setEditableContent({
                                     ...editableContent,
@@ -1839,6 +1867,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                 rows={2}
                                 mb={3}
                                 isClientView={isClientView}
+                                regenerate={() => regenerateAnalyticsData('platform_breakdown')}
                               />
 
                               {/* Platform Breakdown Grid */}
@@ -2375,8 +2404,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                 isEditingSection={effectiveEditMode && !sectionEditStates.views}
                                 value={
                                   aiAnalyticsData?.views_analysis ||
-                                  editableContent.viewsDescription ||
-                                  ''
+                                  editableContent.viewsDescription
                                 }
                                 onChange={(v) =>
                                   setEditableContent({ ...editableContent, viewsDescription: v })
@@ -2384,7 +2412,11 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
                                 rows={3}
                                 mb={3}
                                 isClientView={isClientView}
-                                isLoading={effectiveEditMode && mutation.isPending}
+                                isLoading={
+                                  effectiveEditMode &&
+                                  (mutation.isPending || isAiGenerating.views_analysis)
+                                }
+                                regenerate={() => regenerateAnalyticsData('views_analysis')}
                               />
 
                               {/* Views Charts Grid */}
