@@ -61,6 +61,7 @@ const EditableDescriptionField = ({
   badgeSx,
   textFieldSx,
   readOnlySx,
+  regenerate,
 }) => {
   const isEditMode = usePcrStore((state) => state.isEditMode);
 
@@ -98,6 +99,7 @@ const EditableDescriptionField = ({
             sx={textFieldSx}
             isAiGenerated
             section="campaign_summary"
+            regenerate={regenerate}
           />
         </Box>
       );
@@ -173,6 +175,7 @@ EditableDescriptionField.propTypes = {
   badgeSx: PropTypes.object,
   textFieldSx: PropTypes.object,
   readOnlySx: PropTypes.object,
+  regenerate: PropTypes.func,
 };
 
 EditableDescriptionField.defaultProps = {
