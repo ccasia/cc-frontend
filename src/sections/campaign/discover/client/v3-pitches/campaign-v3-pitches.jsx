@@ -48,6 +48,7 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import usePitchSocket from './use-pitch-socket';
+import { resolveRowMetrics } from './resolve-pitch-platform-stats';
 import useGuestExtraction from './guest-extraction/use-guest-extraction';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 import { extractionErrorCopy } from './guest-extraction/extraction-error-copy';
@@ -836,22 +837,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
 
       switch (sortColumn) {
         case 'followers': {
-          // Get follower count using same logic as getHighestFollowerCount
-          // Priority: Media kit (max of IG/TikTok) > manualFollowerCount > pitch.followerCount
-          const getFollowerCount = (pitch) => {
-            const igFollowers = pitch.user?.creator?.instagramUser?.followers_count || 0;
-            const tkFollowers = pitch.user?.creator?.tiktokUser?.follower_count || 0;
-            const manualFollowers = pitch.user?.creator?.manualFollowerCount || 0;
-            const pitchFollowers = parseInt(pitch.followerCount, 10) || 0;
-
-            // If media kit exists, use highest between IG and TikTok
-            if (igFollowers > 0 || tkFollowers > 0) {
-              return Math.max(igFollowers, tkFollowers);
-            }
-
-            // Otherwise use manual follower count, then pitch follower count as fallback
-            return manualFollowers || pitchFollowers;
-          };
+          // Same number the row shows, so the order matches the screen.
+          const getFollowerCount = (pitch) => resolveRowMetrics(pitch, campaign).followerCount || 0;
           const followersA = getFollowerCount(a);
           const followersB = getFollowerCount(b);
           comparison = followersA - followersB;

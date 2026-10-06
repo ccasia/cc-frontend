@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack, Tooltip, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
@@ -145,6 +145,29 @@ FieldBlock.propTypes = {
 };
 
 export const EmptyValue = () => <Typography sx={VALUE_PLAIN_SX}>—</Typography>;
+
+const PLATFORM_LABELS = { instagram: 'Instagram', tiktok: 'TikTok' };
+
+// A dash for a metric the row's platform has no value for. The tooltip says
+// why, so the admin does not read it as a fetch that never ran.
+export const MissingMetricValue = ({ platform, otherPlatform, otherPlatformHasData }) => {
+  const label = PLATFORM_LABELS[platform] ?? 'platform';
+  const title = otherPlatformHasData
+    ? `No ${label} data for this creator. Only ${PLATFORM_LABELS[otherPlatform]} data is available.`
+    : `No ${label} data for this creator yet.`;
+
+  return (
+    <Tooltip title={title} arrow placement="top">
+      <Typography sx={{ ...VALUE_PLAIN_SX, cursor: 'help' }}>—</Typography>
+    </Tooltip>
+  );
+};
+
+MissingMetricValue.propTypes = {
+  platform: PropTypes.string,
+  otherPlatform: PropTypes.string,
+  otherPlatformHasData: PropTypes.bool,
+};
 
 export const PlatformIcon = ({ platform, size = PLATFORM_ICON_SIZE }) => {
   const { icon, color } = getPlatformIcon(platform);

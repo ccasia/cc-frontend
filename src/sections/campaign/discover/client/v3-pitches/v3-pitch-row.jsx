@@ -27,7 +27,6 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 import {
   formatNumber,
   createSocialProfileUrl,
@@ -42,6 +41,7 @@ import Iconify from 'src/components/iconify';
 import DiaTextReveal from './dia-text-reveal';
 import V3PitchActions from './v3-pitch-actions';
 import useJustFinished from './use-just-finished';
+import { resolveRowMetrics } from './resolve-pitch-platform-stats';
 import { canEditFailedMetrics } from './guest-extraction/manual-metrics';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 import ManualMetricsDialog from './guest-extraction/manual-metrics-dialog';
@@ -72,6 +72,7 @@ import {
   VALUE_PLAIN_SX,
   CHIP_ROW_HEIGHT,
   CONTROL_ICON_SIZE,
+  MissingMetricValue,
   formatEngagementRate,
 } from '../../master-list-row-kit';
 
@@ -485,41 +486,16 @@ const PitchRow = ({
   // Check if we have any social usernames to display
   const hasSocialUsernames = instagramUsername || tiktokUsername;
 
-  // Platform the row falls back to when a metric carries no platform of its own.
-  const fallbackPlatform = resolveTierPlatformForDisplay(pitch, campaign);
-
-  // Each metric reports which platform it came from, so the icon beside the
-  // number always matches its source. The resolution order is unchanged.
-  const getDisplayData = () => {
-    const resolve = (...candidates) =>
-      candidates.find(({ value }) => value != null) ?? { value: null, platform: null };
-
-    const engagement = resolve(
-      { value: instagramStats?.engagement_rate, platform: 'instagram' },
-      { value: tiktokStats?.engagement_rate, platform: 'tiktok' },
-      { value: pitch.engagementRate, platform: fallbackPlatform },
-      // Scraped for a creator with no connected account. The pitch value
-      // above already covers this campaign; these two carry the rate into
-      // every other campaign the creator appears in.
-      { value: pitch.user?.creator?.manualInstagramEngagementRate, platform: 'instagram' },
-      { value: pitch.user?.creator?.manualTiktokEngagementRate, platform: 'tiktok' }
-    );
-
-    const followers = resolve(
-      { value: instagramStats?.followers_count, platform: 'instagram' },
-      { value: tiktokStats?.follower_count, platform: 'tiktok' },
-      { value: pitch.followerCount, platform: fallbackPlatform },
-      // Fallback for manually entered count
-      { value: pitch.user?.creator?.manualFollowerCount, platform: fallbackPlatform }
-    );
-
-    return {
-      engagementRate: engagement.value,
-      engagementPlatform: engagement.platform,
-      followerCount: followers.value,
-      followerPlatform: followers.platform,
-    };
-  };
+  // One platform per row: both metrics and the tier icon come from it, so a
+  // row never shows Instagram followers beside a TikTok engagement rate.
+  const displayData = resolveRowMetrics(pitch, campaign);
+  const missingMetric = (
+    <MissingMetricValue
+      platform={displayData.platform}
+      otherPlatform={displayData.otherPlatform}
+      otherPlatformHasData={displayData.otherPlatformHasData}
+    />
+  );
 
   // Get tier data from synthetic shortlisted row or creator's current tier
   const getTierData = () => {
@@ -541,7 +517,6 @@ const PitchRow = ({
     return null;
   };
 
-  const displayData = getDisplayData();
   const engagementRateText = formatEngagementRate(displayData.engagementRate);
   const tierData = getTierData();
   const credits = tierData?.creditsPerVideo;
@@ -882,7 +857,7 @@ const PitchRow = ({
               if (engagementRateText)
                 return (
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <PlatformIcon platform={displayData.engagementPlatform} />
+                    <PlatformIcon platform={displayData.platform} />
                     <ScrapeMetricValue text={engagementRateText} reveal={revealScrapeMetrics} />
                     {metricsEditable && <ManualEditButton onClick={openManualMetrics} />}
                   </Stack>
@@ -895,7 +870,7 @@ const PitchRow = ({
                     onEnter={canEnterFailedMetrics ? enterFailedMetrics : undefined}
                   />
                 );
-              return <EmptyValue />;
+              return missingMetric;
             })()}
           </FieldBlock>
 
@@ -903,7 +878,7 @@ const PitchRow = ({
           <FieldBlock label="Tier">
             {tierData ? (
               <Stack direction="row" alignItems="center" spacing={1}>
-                <PlatformIcon platform={fallbackPlatform} />
+                <PlatformIcon platform={displayData.platform} />
                 <ScrapeMetricValue
                   text={tierData.name}
                   reveal={revealScrapeMetrics}
@@ -970,7 +945,7 @@ const PitchRow = ({
                         spacing={1}
                         sx={{ cursor: 'help' }}
                       >
-                        <PlatformIcon platform={displayData.followerPlatform} />
+                        <PlatformIcon platform={displayData.platform} />
                         <ScrapeMetricValue
                           text={formatNumber(displayData.followerCount)}
                           reveal={revealScrapeMetrics}
@@ -982,7 +957,7 @@ const PitchRow = ({
                     )}
                   </Stack>
                 );
-              return <EmptyValue />;
+              return missingMetric;
             })()}
           </FieldBlock>
 
