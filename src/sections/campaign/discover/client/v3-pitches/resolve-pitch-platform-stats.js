@@ -3,6 +3,8 @@
  * that platform (pitch + manual creator columns).
  */
 
+import { resolveRecordedPlatform } from 'src/utils/credit-tier-platform';
+
 function toNumber(value) {
   if (value == null || value === '') return null;
   const n = Number(value);
@@ -100,4 +102,31 @@ export function resolvePitchPlatformStats({ pitch, creatorProfileFull, platform 
   );
 
   return { followers, engagementRate, averageLikes };
+}
+
+const otherPlatformOf = (platform) => (platform === 'tiktok' ? 'instagram' : 'tiktok');
+
+/**
+ * Master list row metrics. The row shows one platform: the one saved on the
+ * pitch or shortlist, else the one the modal would open on. Both numbers come
+ * from that platform only, so a row never mixes Instagram and TikTok values.
+ */
+export function resolveRowMetrics(pitch, campaign) {
+  const recorded = resolveRecordedPlatform(pitch, campaign);
+  const platform = recorded ?? seedPitchPlatform(pitch);
+  const other = otherPlatformOf(platform);
+
+  // A pitch with no saved platform has scrape numbers of unknown origin. They
+  // belong to the platform the row shows, the way they did before.
+  const rowPitch = { ...pitch, selectedPlatform: platform };
+  const stats = resolvePitchPlatformStats({ pitch: rowPitch, platform });
+  const otherStats = resolvePitchPlatformStats({ pitch: rowPitch, platform: other });
+
+  return {
+    platform,
+    followerCount: stats.followers,
+    engagementRate: stats.engagementRate,
+    otherPlatform: other,
+    otherPlatformHasData: otherStats.followers != null || otherStats.engagementRate != null,
+  };
 }

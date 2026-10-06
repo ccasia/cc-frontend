@@ -1,4 +1,5 @@
-export function resolveTierPlatformForDisplay(row, campaign) {
+/** The platform saved for this row, or null when none was ever recorded. */
+export function resolveRecordedPlatform(row, campaign) {
   const direct =
     row?.selectedPlatform ??
     row?.shortlistedCreator?.selectedPlatform ??
@@ -13,5 +14,9 @@ export function resolveTierPlatformForDisplay(row, campaign) {
     if (sc?.selectedPlatform === 'instagram') return 'instagram';
   }
 
-  return 'instagram';
+  return null;
+}
+
+export function resolveTierPlatformForDisplay(row, campaign) {
+  return resolveRecordedPlatform(row, campaign) ?? 'instagram';
 }
