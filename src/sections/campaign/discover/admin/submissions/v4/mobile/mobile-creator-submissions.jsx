@@ -4,6 +4,11 @@ import { useMemo, useState, useCallback } from 'react';
 import { Box, Stack, Avatar, Collapse, Typography } from '@mui/material';
 
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
+import {
+  useGetReimbursements,
+  getVideoReimbursement,
+  getFirstVideoIdByRound,
+} from 'src/hooks/use-get-reimbursements';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { getStatusColor } from 'src/contants/statusColors';
@@ -29,6 +34,8 @@ function MobileSubmissionRow({
   isClient,
   campaignType,
   isDisabled = false,
+  reimbursement,
+  creator,
 }) {
   // Status color
   const getClientStatusColor = (submissionStatus, submissionType = null) => {
@@ -128,6 +135,8 @@ function MobileSubmissionRow({
             campaign={campaign}
             onUpdate={onUpdate}
             isDisabled={isDisabled}
+            reimbursement={reimbursement}
+            creator={creator}
           />
         );
       case 'photo':
@@ -222,6 +231,8 @@ MobileSubmissionRow.propTypes = {
   isClient: PropTypes.bool,
   campaignType: PropTypes.string,
   isDisabled: PropTypes.bool,
+  reimbursement: PropTypes.object,
+  creator: PropTypes.object,
 };
 
 // ----------------------------------------------------------------------
@@ -244,6 +255,16 @@ function MobileCreatorRow({
   const { grouped, submissionsLoading, submissionsMutate } = useGetV4Submissions(
     campaign?.id,
     creator?.userId
+  );
+
+  // Receipts are admin-only; clients never fetch them.
+  const { reimbursementRounds } = useGetReimbursements(
+    isClient ? null : campaign?.id,
+    creator?.userId
+  );
+  const firstVideoIdByRound = useMemo(
+    () => getFirstVideoIdByRound(grouped?.videos),
+    [grouped?.videos]
   );
 
   const handleSubmissionToggle = useCallback(
@@ -375,6 +396,12 @@ function MobileCreatorRow({
                       isClient={isClient}
                       campaignType={campaignType}
                       isDisabled={isDisabled}
+                      reimbursement={getVideoReimbursement(
+                        reimbursementRounds,
+                        firstVideoIdByRound,
+                        videoSubmission
+                      )}
+                      creator={creator}
                     />
                   );
                 })}

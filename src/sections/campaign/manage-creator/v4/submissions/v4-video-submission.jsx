@@ -19,6 +19,7 @@ import Iconify from 'src/components/iconify';
 import CustomV4Upload from 'src/components/upload/custom-v4-upload';
 
 import VideoSubmissionModal from './VideoSubmissionModal';
+import ReimbursementSection from './reimbursement-section';
 import { CreatorFeedbackModal } from './feeedback-component';
 import {
   getButtonStates,
@@ -94,6 +95,7 @@ const V4VideoSubmission = ({
   onUploadStateChange,
   creator,
   mutate,
+  reimbursement,
 }) => {
   // State for modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -602,6 +604,10 @@ const V4VideoSubmission = ({
             postingLoading={postingLoading}
           />
 
+          {reimbursement && (
+            <ReimbursementSection reimbursement={reimbursement} campaign={campaign} />
+          )}
+
           {!!selectedFiles.length && (
             <m.div
               initial={{ opacity: 0, scale: 0 }}
@@ -799,6 +805,7 @@ V4VideoSubmission.propTypes = {
   onUploadStateChange: PropTypes.func,
   creator: PropTypes.object,
   mutate: PropTypes.func,
+  reimbursement: PropTypes.object,
 };
 
 // Memoize component with custom comparison to prevent unnecessary re-renders
@@ -814,7 +821,8 @@ const MemoizedV4VideoSubmission = React.memo(
     JSON.stringify(prevProps.submission.video) === JSON.stringify(nextProps.submission.video) &&
     JSON.stringify(prevProps.submission.feedback) ===
       JSON.stringify(nextProps.submission.feedback) &&
-    prevProps.campaign?.campaignType === nextProps.campaign?.campaignType
+    prevProps.campaign?.campaignType === nextProps.campaign?.campaignType &&
+    JSON.stringify(prevProps.reimbursement) === JSON.stringify(nextProps.reimbursement)
 );
 
 MemoizedV4VideoSubmission.displayName = 'V4VideoSubmission';

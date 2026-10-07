@@ -35,6 +35,11 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useUploadingStatus } from 'src/hooks/zustands/useUploadingStatus';
+import {
+  useGetReimbursements,
+  getVideoReimbursement,
+  getFirstVideoIdByRound,
+} from 'src/hooks/use-get-reimbursements';
 
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
@@ -1313,6 +1318,9 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
   const { socket } = useSocketContext();
   const { user } = useAuthContext();
 
+  // Reimbursement receipts per agreement round (backend scopes these to the signed-in creator)
+  const { reimbursementRounds } = useGetReimbursements(campaign?.id);
+
   // Fetch logistics data
   const isLogisticsCompleted = !!logistic;
   const isDelivery = campaign?.logisticsType === 'PRODUCT_DELIVERY';
@@ -1696,6 +1704,9 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
 
   const { grouped, progress, total, completed } = submissionsData;
 
+  // A round's receipt upload lives on that round's first video
+  const firstVideoIdByRound = getFirstVideoIdByRound(grouped?.videos);
+
   // One entry per agreement round (oldest first) — "Agreement", "Agreement 2", ...
   const agreementSubmissions =
     grouped?.agreements ?? (grouped?.agreement ? [grouped.agreement] : []);
@@ -1800,6 +1811,7 @@ const CampaignV4Activity = ({ campaign, mutateLogistic, logistic, logisticLoadin
             <V4VideoSubmission
               submission={video}
               campaign={campaign}
+              reimbursement={getVideoReimbursement(reimbursementRounds, firstVideoIdByRound, video)}
               onUploadStateChange={(isUploading) => {
                 setUploadingSubmissions((prev) => ({
                   ...prev,

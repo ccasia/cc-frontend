@@ -112,6 +112,9 @@ const useStyles = () =>
 
 const InvoicePDF = ({ data }) => {
   const styles = useStyles();
+  const reimbursementLines = Array.isArray(data?.reimbursements) ? data.reimbursements : [];
+  const isReimbursementInvoice = data?.invoiceType === 'REIMBURSEMENT';
+  const firstLineNumber = isReimbursementInvoice ? 1 : 2;
 
   return (
     <Document>
@@ -223,7 +226,12 @@ const InvoicePDF = ({ data }) => {
                 </View>
 
                 {/* Table 2 */}
-                <View style={styles.table}>
+                <View
+                  style={[
+                    styles.table,
+                    reimbursementLines.length ? { height: 'auto', minHeight: 60 } : {},
+                  ]}
+                >
                   <View style={styles.tableHead}>
                     <View style={styles.tableRow}>
                       <Text style={styles.tableItem}>#</Text>
@@ -233,6 +241,8 @@ const InvoicePDF = ({ data }) => {
                       {/* <Text style={styles.tableItem}>Amount (MYR)</Text> */}
                     </View>
                   </View>
+                  {/* Fee row — a REIMBURSEMENT invoice has none, its receipts are the only lines */}
+                  {!isReimbursementInvoice && (
                   <View style={styles.tableBody}>
                     <View style={styles.tableRow}>
                       <Text style={styles.tableItem}>1</Text>
@@ -250,13 +260,15 @@ const InvoicePDF = ({ data }) => {
                                     </Text>
                                   ));
                                 }
+                                // No width here — the wrapper View is already the 20% column;
+                                // tableItem would shrink the text to 20% of that and hyphenate it.
                                 if (data?.task?.service) {
-                                  return <Text style={styles.tableItem}>{data.task.service}</Text>;
+                                  return <Text>{data.task.service}</Text>;
                                 }
                                 if (data?.task?.description) {
-                                  return <Text style={styles.tableItem}>{data.task.description}</Text>;
+                                  return <Text>{data.task.description}</Text>;
                                 }
-                                return <Text style={styles.tableItem}>None</Text>;
+                                return <Text>None</Text>;
                               })()}
                             </View>
                           );
@@ -279,7 +291,8 @@ const InvoicePDF = ({ data }) => {
                               </Text>
                             ))
                           ) : (
-                            <Text style={styles.tableItem}>None</Text>
+                            // Single task line (no deliverables breakdown) — one unit, like the reimbursement rows
+                            <Text>1</Text>
                           )}
                         </View>
                       ) : (
@@ -289,6 +302,23 @@ const InvoicePDF = ({ data }) => {
                       {/* <Text style={styles.tableItem}>RM {data.amount}</Text> */}
                     </View>
                   </View>
+                  )}
+
+                  {/* One line per approved reimbursement receipt (#2, #3, ... or #1… on a
+                      reimbursement invoice) */}
+                  {reimbursementLines.map((line, lineIndex) => (
+                    <View key={line.receiptId || lineIndex} style={styles.tableBody}>
+                      <View style={styles.tableRow}>
+                        <Text style={styles.tableItem}>{lineIndex + firstLineNumber}</Text>
+                        <Text style={styles.tableItem}>{data.campaign.name}</Text>
+                        <View style={styles.tableItem}>
+                          <Text>Reimbursement</Text>
+                          <Text style={{ color: '#8E8E93', marginTop: 2 }}>{line.description}</Text>
+                        </View>
+                        <Text style={styles.tableItem}>1</Text>
+                      </View>
+                    </View>
+                  ))}
                 </View>
               </View>
 

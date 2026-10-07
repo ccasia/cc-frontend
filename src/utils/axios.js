@@ -481,6 +481,15 @@ export const endpoints = {
     bookmarkLists: '/api/discovery/bookmark-lists',
     bookmarkListCreators: '/api/discovery/bookmark-lists/creators',
   },
+  reimbursement: {
+    root: '/api/reimbursements',
+    list: (campaignId, userId) =>
+      `/api/reimbursements?campaignId=${campaignId}${userId ? `&userId=${userId}` : ''}`,
+    setRequired: (agreementId) => `/api/reimbursements/agreement/${agreementId}/required`,
+    submit: (agreementId) => `/api/reimbursements/agreement/${agreementId}/submit`,
+    receipt: (id) => `/api/reimbursements/${id}`,
+    review: (id) => `/api/reimbursements/${id}/review`,
+  },
   invoice: {
     getAll: '/api/invoice/',
     getCampaignById: (id) => `/api/campaign/getCampaignByIdInvoice/${id}`,

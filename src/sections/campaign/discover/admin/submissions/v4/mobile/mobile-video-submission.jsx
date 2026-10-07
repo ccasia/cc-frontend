@@ -22,6 +22,7 @@ import FeedbackLogs from '../shared/feedback-logs';
 import FeedbackSection from '../shared/feedback-section';
 import FeedbackActions from '../shared/feedback-actions';
 import PostingLinkSection from '../shared/posting-link-section';
+import ReimbursementSummary from '../shared/reimbursement-summary';
 import useSubmissionSocket from '../shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from '../shared/feedback-utils';
 
@@ -32,6 +33,8 @@ export default function MobileVideoSubmission({
   campaign,
   onUpdate,
   isDisabled = false,
+  reimbursement,
+  creator,
 }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
@@ -410,6 +413,15 @@ export default function MobileVideoSubmission({
                 isClient={isClient}
               />
             )}
+
+            {!isClient && reimbursement && (
+              <ReimbursementSummary
+                reimbursement={reimbursement}
+                creator={creator}
+                campaign={campaign}
+                isDisabled={isDisabled}
+              />
+            )}
           </Box>
           {!showPostingLinkSection && isClient && (
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
@@ -607,4 +619,6 @@ MobileVideoSubmission.propTypes = {
   campaign: PropTypes.object,
   onUpdate: PropTypes.func,
   isDisabled: PropTypes.bool,
+  reimbursement: PropTypes.object,
+  creator: PropTypes.object,
 };

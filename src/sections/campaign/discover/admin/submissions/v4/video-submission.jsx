@@ -36,6 +36,7 @@ import ClientFeedbackModal from 'src/sections/campaign/manage-creator/v4/submiss
 import FeedbackLogs from './shared/feedback-logs';
 import FeedbackActions from './shared/feedback-actions';
 import PostingLinkSection from './shared/posting-link-section';
+import ReimbursementSummary from './shared/reimbursement-summary';
 import useSubmissionSocket from './shared/use-submission-socket';
 import { getInitialReasons, getDefaultFeedback } from './shared/feedback-utils';
 
@@ -45,6 +46,8 @@ export default function V4VideoSubmission({
   onUpdate,
   isDisabled = false,
   compressing,
+  reimbursement,
+  creator,
 }) {
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
@@ -648,6 +651,15 @@ export default function V4VideoSubmission({
                               view logs
                             </Button>
                           )}
+
+                        {!isClient && reimbursement && (
+                          <ReimbursementSummary
+                            reimbursement={reimbursement}
+                            creator={creator}
+                            campaign={campaign}
+                            isDisabled={isDisabled}
+                          />
+                        )}
                       </Box>
 
                       <Box
@@ -1395,4 +1407,6 @@ V4VideoSubmission.propTypes = {
   onUpdate: PropTypes.func,
   isDisabled: PropTypes.bool,
   compressing: PropTypes.object,
+  reimbursement: PropTypes.object,
+  creator: PropTypes.object,
 };

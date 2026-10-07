@@ -86,6 +86,21 @@ const useStyles = () =>
 export default function InvoicePDF({ invoice, currentStatus }) {
   const styles = useStyles();
 
+  const currencyLabel =
+    invoice?.task?.currencySymbol ||
+    invoice?.task?.currency ||
+    invoice?.campaign?.creatorAgreement?.[0]?.currency ||
+    'RM';
+  const reimbursementLines = Array.isArray(invoice?.reimbursements) ? invoice.reimbursements : [];
+  const isReimbursementInvoice = invoice?.invoiceType === 'REIMBURSEMENT';
+  const firstLineNumber = isReimbursementInvoice ? 1 : 2;
+  const reimbursementTotal = reimbursementLines.reduce(
+    (sum, line) => sum + (Number(line.amount) || 0),
+    0
+  );
+  // Row 1 is the fee only; invoice.amount already includes the reimbursement lines.
+  const feeAmount = Number(invoice?.amount || 0) - reimbursementTotal;
+
   const bankInfo = () => (
     <View style={[styles.table, styles.mb40]}>
       <View>
@@ -213,6 +228,8 @@ export default function InvoicePDF({ invoice, currentStatus }) {
           </View>
 
           <View>
+            {/* Fee row — a REIMBURSEMENT invoice has none, its receipts are the only lines */}
+            {!isReimbursementInvoice && (
             <View style={styles.tableRow} key={invoice?.id}>
               <View style={styles.tableCell_1}>
                 <Text>{1}</Text>
@@ -243,9 +260,36 @@ export default function InvoicePDF({ invoice, currentStatus }) {
                 </Text>
               </View>
               <View style={[styles.tableCell_2]}>
-                <Text>{`${invoice.task?.currencySymbol || invoice.task?.currency || invoice.campaign?.creatorAgreement?.[0]?.currency || 'RM'} ${invoice?.amount}`}</Text>
+                <Text>
+                  {reimbursementLines.length
+                    ? `${currencyLabel} ${feeAmount.toFixed(2)}`
+                    : `${currencyLabel} ${invoice?.amount}`}
+                </Text>
               </View>
             </View>
+            )}
+
+            {/* One line per approved reimbursement receipt (#2, #3, ... or #1… on a
+                reimbursement invoice) */}
+            {reimbursementLines.map((line, lineIndex) => (
+              <View style={styles.tableRow} key={line.receiptId || lineIndex}>
+                <View style={styles.tableCell_1}>
+                  <Text>{lineIndex + firstLineNumber}</Text>
+                </View>
+                <View style={[styles.tableCell_2]}>
+                  <Text>{invoice?.campaign.company?.name || invoice?.campaign.brand?.name}</Text>
+                </View>
+                <View style={styles.tableCell_2}>
+                  <Text>{invoice?.campaign?.name}</Text>
+                </View>
+                <View style={styles.tableCell_2}>
+                  <Text>{`Reimbursement – ${line.description}`}</Text>
+                </View>
+                <View style={[styles.tableCell_2]}>
+                  <Text>{`${currencyLabel} ${Number(line.amount || 0).toFixed(2)}`}</Text>
+                </View>
+              </View>
+            ))}
 
             <View style={[styles.tableRow, styles.noBorder]}>
               <View style={styles.tableCell_1} />
