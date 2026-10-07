@@ -5,8 +5,8 @@ import { m, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { Stack, Typography, ButtonBase } from '@mui/material';
 
 import StatusDot from './StatusDot';
-import { COLORS, VISIBLE_COUNT } from '../constants';
 import SubmissionItem from './SubmissionItem';
+import { COLORS, VISIBLE_COUNT } from '../constants';
 
 const SubmissionList = ({ submissions, selectedId, expanded, onSelect, onToggle }) => {
   const groupId = useId();

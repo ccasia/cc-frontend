@@ -1,19 +1,23 @@
-import React, { useMemo, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import React, { useMemo, useEffect } from 'react';
 
 import { Box, Stack } from '@mui/material';
+
+import { campaignHasClient } from 'src/utils/campaign-flow';
 
 import EmptyContent from 'src/components/empty-content';
 
 import { groupByCreator, filterSubmissions } from './utils';
 import useGetSubmissions from './hooks/use-get-submissions';
+import SubmissionViewer from './submission-viewer/SubmissionViewer';
+import CreatorSubmissionCard from './components/CreatorSubmissionCard';
+import CreatorSubmissionsToolbar from './components/CreatorSubmissionsToolbar';
+import CreatorSubmissionCardSkeleton from './components/CreatorSubmissionCardSkeleton';
 import {
+  setCampaign,
   resetCreatorSubmissions,
   useCreatorSubmissionsStore,
-} from './store/useCreatorSubmissionsStore';
-import CreatorSubmissionCard from './components/CreatorSubmissionCard';
-import CreatorSubmissionCardSkeleton from './components/CreatorSubmissionCardSkeleton';
-import CreatorSubmissionsToolbar from './components/CreatorSubmissionsToolbar';
+} from './store/use-creator-submissions-store';
 
 const CampaignCreatorSubmissions = ({ campaign }) => {
   const { submissions, isPending, isError } = useGetSubmissions(campaign?.id);
@@ -27,10 +31,17 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
     [submissions, search, statusFilter, typeFilter]
   );
 
+  // The viewer reads the campaign from the store, so cards can open it without props
+  const hasClient = campaignHasClient(campaign);
+  useEffect(() => {
+    setCampaign({ id: campaign?.id, hasClient });
+  }, [campaign?.id, hasClient]);
+
   useEffect(() => () => resetCreatorSubmissions(), []);
 
   return (
     <Stack spacing={3}>
+      <SubmissionViewer />
       <CreatorSubmissionsToolbar />
       {isError && (
         <EmptyContent

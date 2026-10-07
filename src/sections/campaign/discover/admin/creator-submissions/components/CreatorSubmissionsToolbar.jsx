@@ -5,13 +5,13 @@ import { Box, Stack, TextField, InputAdornment } from '@mui/material';
 import Iconify from 'src/components/iconify';
 
 import FilterDropdown from './FilterDropdown';
-import { STATUS_CHIP, TYPE_LABEL, TYPE_ORDER } from '../constants';
+import { TYPE_LABEL, TYPE_ORDER, STATUS_CHIP } from '../constants';
 import {
   setSearch,
   setTypeFilter,
   setStatusFilter,
   useCreatorSubmissionsStore,
-} from '../store/useCreatorSubmissionsStore';
+} from '../store/use-creator-submissions-store';
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All' },
