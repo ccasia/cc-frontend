@@ -212,6 +212,7 @@ export default function SendBulkAgreementModal({
         isForSurfShark={campaign?.isForSurfShark}
         isSeedingAgreement={row.isSeedingAgreement}
         productValue={row.isSeedingAgreement ? `${prefix}${row.product?.value}` : undefined}
+        currency={row.currency}
       />
     ).toBlob();
   };

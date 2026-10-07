@@ -20,6 +20,26 @@ const COMPANY_SIGNATORY = {
   signatureSrc: 'https://storage.googleapis.com/cult-prod/agreementTemplate/company-signatory.png',
 };
 
+// Contracting entity depends on the agreement currency: SGD agreements are with the Singapore company.
+const COMPANY_ENTITIES = {
+  MY: {
+    name: 'Cult Creative Sdn Bhd',
+    nameUpper: 'CULT CREATIVE SDN BHD',
+    registrationNo: '202001018157 (1374477-W)',
+    address:
+      '5-3A, Block A, Jaya One, 72A Jalan Profesor Diraja Ungku Aziz, PJS 13, 46200 Petaling Jaya Selangor',
+  },
+  SG: {
+    name: 'Cult Creative Pte Ltd',
+    nameUpper: 'CULT CREATIVE PTE LTD',
+    registrationNo: '202505503N',
+    address: '14 Robinson Road, #08-01A Far East Finance Building, Singapore 048545',
+  },
+};
+
+const getCompanyEntity = (currency) =>
+  currency === 'SGD' ? COMPANY_ENTITIES.SG : COMPANY_ENTITIES.MY;
+
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
@@ -122,7 +142,10 @@ export default function AgreementTemplate({
   isSeedingAgreement = false,
   productValue,
   isNdaRequired = false,
+  currency,
 }) {
+  const company = getCompanyEntity(currency);
+
   return (
     <Document pageLayout="singlePage">
       <Page size="A4" style={styles.page}>
@@ -149,10 +172,11 @@ export default function AgreementTemplate({
             This Agreement is entered into this date{' '}
             <Text style={{ fontWeight: 800 }}>(“Effective Date”)</Text>{' '}
             <Text style={{ fontWeight: 800 }}>{DATE}</Text> between{' '}
-            <Text style={{ fontWeight: 800 }}>Cult Creative Sdn Bhd 202001018157 (1374477-W)</Text>{' '}
-            located at 5-3A, Block A, Jaya One, 72A Jalan Profesor Diraja Ungku Aziz, PJS 13, 46200
-            Petaling Jaya Selangor <Text style={{ fontWeight: 800 }}>(“Cult Creative”)</Text> and{' '}
-            <Text style={{ fontWeight: 800 }}>{FREELANCER_FULL_NAME}</Text> (NRIC/Passport No.:{' '}
+            <Text style={{ fontWeight: 800 }}>
+              {company.name} {company.registrationNo}
+            </Text>{' '}
+            located at {company.address} <Text style={{ fontWeight: 800 }}>(“Cult Creative”)</Text>{' '}
+            and <Text style={{ fontWeight: 800 }}>{FREELANCER_FULL_NAME}</Text> (NRIC/Passport No.:{' '}
             <Text style={{ fontWeight: 800 }}>{IC_NUMBER}</Text>)
             <Text style={{ fontWeight: 800 }}>(“Freelancer”)</Text>.
           </Text>
@@ -585,8 +609,8 @@ export default function AgreementTemplate({
               <View style={styles.signatureTop}>
                 <Text style={styles.bold}>SIGNED by</Text>
                 <Text style={styles.bold}>for and on behalf of</Text>
-                <Text style={styles.bold}>CULT CREATIVE SDN BHD</Text>
-                <Text style={styles.bold}>(Registration No. 202001018157 (1374477-W)</Text>
+                <Text style={styles.bold}>{company.nameUpper}</Text>
+                <Text style={styles.bold}>(Registration No. {company.registrationNo})</Text>
                 <Text style={styles.bold}>by its duly authorised officer:-</Text>
                 <Image src={COMPANY_SIGNATORY.signatureSrc} style={styles.signatureImage} />
               </View>

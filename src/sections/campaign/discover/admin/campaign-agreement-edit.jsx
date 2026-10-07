@@ -584,6 +584,7 @@ const CampaignAgreementEdit = ({
           isSeedingAgreement={data.isSeedingAgreement}
           productValue={`${CURRENCY_PREFIXES[data.currency]?.prefix}${parseFloat(data.product?.value).toFixed(2)}`}
           isNdaRequired={isNdaRequired}
+          currency={data.currency}
         />
       ).toBlob();
 
