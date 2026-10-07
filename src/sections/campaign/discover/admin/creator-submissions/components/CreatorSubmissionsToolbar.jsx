@@ -2,11 +2,10 @@ import React from 'react';
 
 import { Box, Stack, TextField, InputAdornment } from '@mui/material';
 
-import { STATUS_COLORS } from 'src/contants/statusColors';
-
 import Iconify from 'src/components/iconify';
 
 import FilterDropdown from './FilterDropdown';
+import { STATUS_CHIP, TYPE_LABEL, TYPE_ORDER } from '../constants';
 import {
   setSearch,
   setTypeFilter,
@@ -14,39 +13,14 @@ import {
   useCreatorSubmissionsStore,
 } from '../store/useCreatorSubmissionsStore';
 
-// TODO: this app's real submission statuses (src/contants/statusColors.js) cover several
-// different flows at once (draft review, posting-link approval, client approval). Confirm which
-// subset actually applies to this board before shipping — for now every status is listed.
-const toTitleCase = (value) =>
-  value
-    .toLowerCase()
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All' },
-  ...Object.keys(STATUS_COLORS).map((status) => ({
-    value: status,
-    label: toTitleCase(status),
-  })),
+  ...Object.entries(STATUS_CHIP).map(([value, { label }]) => ({ value, label })),
 ];
-
-// Submission content types — matches the label set already used elsewhere in the admin area
-// (see ClientFeedbacksModal.jsx / DraftsPendingModal.jsx), so "type" means the same thing here
-// as it does on the other admin dashboards.
-const TYPE_LABEL = {
-  FIRST_DRAFT: 'First Draft',
-  FINAL_DRAFT: 'Final Draft',
-  POSTING: 'Posting Link',
-  VIDEO: 'Video',
-  PHOTO: 'Photo',
-  RAW_FOOTAGE: 'Raw Footage',
-};
 
 const TYPE_OPTIONS = [
   { value: 'all', label: 'All' },
-  ...Object.entries(TYPE_LABEL).map(([value, label]) => ({ value, label })),
+  ...TYPE_ORDER.map((value) => ({ value, label: TYPE_LABEL[value] })),
 ];
 
 const CreatorSubmissionsToolbar = () => {
