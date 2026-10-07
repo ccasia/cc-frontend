@@ -16,7 +16,17 @@ import { formatCurrencyAmount } from 'src/utils/currency';
 
 import { STATUS_COLORS } from './invoice-constants';
 
-const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditInvoice }) => {
+// isChild: a receipts-only invoice drawn nested under its main invoice.
+// parentInvoiceNumber: a child shown on its own (its main invoice isn't in the current results).
+const InvoiceItem = ({
+  invoice,
+  onChangeStatus,
+  selected,
+  onSelectRow,
+  openEditInvoice,
+  isChild = false,
+  parentInvoiceNumber,
+}) => {
   const [value, setValue] = useState(invoice?.status);
 
   // Get currency information
@@ -38,7 +48,8 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
       onClick={openEditInvoice}
       sx={{
         cursor: 'pointer',
-        bgcolor: 'transparent',
+        // Children sit on a faint tint so the family reads as one block
+        bgcolor: isChild ? '#FAFAFB' : 'transparent',
         borderBottom: '1px solid',
         borderColor: 'divider',
         '& td': {
@@ -56,9 +67,39 @@ const InvoiceItem = ({ invoice, onChangeStatus, selected, onSelectRow, openEditI
         <Checkbox checked={selected} onClick={onSelectRow} disabled={isPaid} />
       </TableCell>
       <TableCell>
-        <Typography variant="body2" noWrap>
-          {invoice?.invoiceNumber}
-        </Typography>
+        <Stack direction="row" alignItems="flex-start" spacing={1}>
+          {/* Tree connector tying the child to the main invoice row above */}
+          {isChild && (
+            <Typography sx={{ color: '#C7C7CC', lineHeight: '22px', pl: 0.5, flexShrink: 0 }}>└</Typography>
+          )}
+          <Stack spacing={0.5} alignItems="flex-start">
+            <Typography variant="body2" noWrap>
+              {invoice?.invoiceNumber}
+            </Typography>
+            {/* Child invoice: receipts required after the main invoice was sent */}
+            {invoice?.invoiceType === 'REIMBURSEMENT' && (
+              <Typography
+                variant="caption"
+                sx={{
+                  px: 0.75,
+                  py: 0.25,
+                  borderRadius: 0.75,
+                  fontWeight: 600,
+                  color: '#1340FF',
+                  bgcolor: '#1340FF14',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Receipts only
+              </Typography>
+            )}
+            {parentInvoiceNumber && (
+              <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                ↳ Child of {parentInvoiceNumber}
+              </Typography>
+            )}
+          </Stack>
+        </Stack>
       </TableCell>
       <TableCell>
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -139,4 +180,6 @@ InvoiceItem.propTypes = {
   selected: PropTypes.string,
   onSelectRow: PropTypes.func,
   openEditInvoice: PropTypes.func,
+  isChild: PropTypes.bool,
+  parentInvoiceNumber: PropTypes.string,
 };

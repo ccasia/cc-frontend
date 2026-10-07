@@ -18,6 +18,7 @@ import {
   Button,
   Dialog,
   Avatar,
+  Switch,
   Tooltip,
   Divider,
   Checkbox,
@@ -59,6 +60,7 @@ import FormProvider from 'src/components/hook-form/form-provider';
 import { INDEX_SX } from '../master-list-row-kit';
 import CampaignAgreementEdit from './campaign-agreement-edit';
 import SendBulkAgreementModal from './send-bulk-agreement-modal';
+import RegenerateInvoiceDialog from './regenerate-invoice-dialog';
 import SendAdditionalAgreementModal from './send-additional-agreement-modal';
 
 const ROUND_LABELS = {
@@ -598,6 +600,12 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [agreementFilterAnchorEl, setAgreementFilterAnchorEl] = useState(null);
   const [activeRound, setActiveRound] = useState(1);
+  const [receiptToggleId, setReceiptToggleId] = useState(null);
+  // { item, invoiceNumber, amount, agreementAmount, currency, wasEdited } from the 409 response
+  const [regenerateWarning, setRegenerateWarning] = useState(null);
+
+  // Reimbursement receipts are a v4-only flow
+  const showReceiptColumn = campaign?.submissionVersion === 'v4';
 
   const table = useTable();
   const sendAdditionalDialog = useBoolean();
@@ -1022,6 +1030,32 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar(error?.message, { variant: 'error' });
+    }
+  };
+
+  // `confirmRegenerate` is sent only after the admin accepted the "draft will be regenerated" warning
+  const handleToggleReceiptRequired = async (item, required, confirmRegenerate = false) => {
+    try {
+      setReceiptToggleId(item.id);
+      const res = await axiosInstance.patch(endpoints.reimbursement.setRequired(item.id), {
+        required,
+        ...(confirmRegenerate && { confirmRegenerate: true }),
+      });
+      setRegenerateWarning(null);
+      // This table reads from React Query, so refresh it directly (SWR `mutate` won't).
+      await mutateAgreements();
+      enqueueSnackbar(res?.data?.message);
+    } catch (error) {
+      // The round's invoice is still a draft: warn before the backend deletes and regenerates it
+      if (error?.code === 'DRAFT_INVOICE_EXISTS') {
+        setRegenerateWarning({ item, ...error });
+        return;
+      }
+      enqueueSnackbar(error?.message || 'Failed to update receipt requirement', {
+        variant: 'error',
+      });
+    } finally {
+      setReceiptToggleId(null);
     }
   };
 
@@ -1654,29 +1688,14 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                       px: { xs: 1, sm: 2 },
                       color: '#221f20',
                       fontWeight: 600,
-                      width: { xs: '25%', sm: 220 },
-                      minWidth: { xs: 120, sm: 220 },
+                      width: { xs: '25%', sm: 280 },
+                      minWidth: { xs: 120, sm: 280 },
                       bgcolor: '#f5f5f5',
                       whiteSpace: 'nowrap',
                     }}
                   >
                     Creator
                   </TableCell>
-                  {smUp && (
-                    <TableCell
-                      sx={{
-                        py: 1,
-                        color: '#221f20',
-                        fontWeight: 600,
-                        width: { xs: '20%', sm: 220 },
-                        minWidth: { xs: 140, sm: 220 },
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Creator&apos;s Email
-                    </TableCell>
-                  )}
                   {campaign?.isCreditTier && (
                     <TableCell
                       sx={{
@@ -1727,6 +1746,32 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                   >
                     Price
                   </TableCell>
+                  {showReceiptColumn && (
+                    <TableCell
+                      sx={{
+                        py: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        minWidth: 150,
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <span>Receipt required</span>
+                        <Tooltip
+                          arrow
+                          title="When on, the creator uploads reimbursement receipts. The invoice is generated only after the video(s) and every receipt are approved, with each receipt as its own line."
+                        >
+                          <Iconify
+                            icon="mdi:help-circle-outline"
+                            width={16}
+                            sx={{ color: '#8E8E93', cursor: 'help' }}
+                          />
+                        </Tooltip>
+                      </Stack>
+                    </TableCell>
+                  )}
                   <TableCell
                     sx={{
                       py: 1,
@@ -1884,7 +1929,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                             >
                               {item?.user?.name}
                             </Typography>
-                            {!smUp && !item?.user?.email?.endsWith('@tempmail.com') && (
+                            {!item?.user?.email?.endsWith('@tempmail.com') && (
                               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                 {item?.user?.email}
                               </Typography>
@@ -1939,11 +1984,6 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                         </Stack>
                       </TableCell>
 
-                      {smUp && (
-                        <TableCell>
-                          {item?.user?.email?.endsWith('@tempmail.com') ? '' : item?.user?.email}
-                        </TableCell>
-                      )}
                       {campaign?.isCreditTier && (
                         <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
                           {(() => {
@@ -2077,6 +2117,50 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                       >
                         {displayValue()}
                       </TableCell>
+
+                      {showReceiptColumn &&
+                        (() => {
+                          // An existing invoice no longer locks it (a draft is regenerated, a sent
+                          // one gets a separate reimbursement invoice) — only billed receipts do.
+                          const lockReason = item.receiptsBilled
+                            ? 'Receipts for this agreement are already invoiced'
+                            : item.isSeeding
+                              ? 'Not available for seeding agreements'
+                              : isDisabled
+                                ? 'You do not have permission to change this'
+                                : '';
+                          const required = Boolean(item.isReceiptRequired);
+
+                          return (
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              <Tooltip title={lockReason} disableHoverListener={!lockReason}>
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                  <Switch
+                                    size="small"
+                                    checked={required}
+                                    disabled={Boolean(lockReason) || receiptToggleId === item.id}
+                                    onChange={(e) =>
+                                      handleToggleReceiptRequired(item, e.target.checked)
+                                    }
+                                    sx={{
+                                      '& .MuiSwitch-switchBase.Mui-checked': { color: '#fff' },
+                                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                        bgcolor: '#1340FF',
+                                        opacity: 1,
+                                      },
+                                    }}
+                                  />
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ color: required ? '#221f20' : '#8E8E93' }}
+                                  >
+                                    {required ? 'Required' : 'Not required'}
+                                  </Typography>
+                                </Stack>
+                              </Tooltip>
+                            </TableCell>
+                          );
+                        })()}
 
                       <TableCell>
                         {smUp ? (
@@ -2520,6 +2604,15 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
         campaign={campaign}
         campaignMutate={campaignMutate}
         agreementsMutate={mutateAgreements}
+      />
+
+      {/* Turning receipts on while the round's invoice is still a draft deletes that draft */}
+      <RegenerateInvoiceDialog
+        warning={regenerateWarning}
+        creatorName={regenerateWarning?.item?.user?.name}
+        loading={Boolean(regenerateWarning) && receiptToggleId === regenerateWarning?.item?.id}
+        onClose={() => setRegenerateWarning(null)}
+        onConfirm={() => handleToggleReceiptRequired(regenerateWarning.item, true, true)}
       />
 
       <SendAdditionalAgreementModal

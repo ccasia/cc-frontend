@@ -28,6 +28,11 @@ import {
 
 import socket from 'src/hooks/socket';
 import { useGetV4Submissions } from 'src/hooks/use-get-v4-submissions';
+import {
+  useGetReimbursements,
+  getVideoReimbursement,
+  getFirstVideoIdByRound,
+} from 'src/hooks/use-get-reimbursements';
 
 import { getUserDisplay } from 'src/utils/user-display';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -239,6 +244,18 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
   const { submissions, grouped, submissionsLoading, submissionsMutate } = useGetV4Submissions(
     campaign?.id,
     creator?.userId
+  );
+
+  // Receipts are admin-only; clients never fetch them.
+  const { reimbursementRounds } = useGetReimbursements(
+    isClient ? null : campaign?.id,
+    creator?.userId
+  );
+
+  // A round's receipts are shown on that round's first video only.
+  const firstVideoIdByRound = useMemo(
+    () => getFirstVideoIdByRound(grouped?.videos),
+    [grouped?.videos]
   );
 
   const RATING_TAG_OPTIONS = ['On Brief', 'Creative', 'Easy to work with', 'On Time'];
@@ -942,6 +959,12 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
             expanded
             isDisabled={isDisabled}
             compressing={compressing}
+            reimbursement={getVideoReimbursement(
+              reimbursementRounds,
+              firstVideoIdByRound,
+              submission
+            )}
+            creator={creator}
           />
         );
       }
