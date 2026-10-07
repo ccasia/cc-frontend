@@ -70,6 +70,7 @@ import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
+import CampaignCreatorSubmissions from '../creator-submissions/campaign-creator-submissions';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -737,11 +738,12 @@ const CampaignDetailView = ({
         );
       case 'submissions-v4':
         return (
-          <CampaignCreatorSubmissionsV4
-            campaign={campaign}
-            isDisabled={isDisabled || isDemo}
-            onRated={campaignMutate}
-          />
+          // <CampaignCreatorSubmissionsV4
+          //   campaign={campaign}
+          //   isDisabled={isDisabled || isDemo}
+          //   onRated={campaignMutate}
+          // />
+          <CampaignCreatorSubmissions campaign={campaign} />
         );
       case 'analytics':
         return (
