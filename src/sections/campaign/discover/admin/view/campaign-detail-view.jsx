@@ -70,7 +70,7 @@ import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
-import CampaignCreatorSubmissions from '../creator-submissions/campaign-creator-submissions';
+import CampaignCreatorSubmissions from '../creator-submissions/CampaignCreatorSubmissions';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {

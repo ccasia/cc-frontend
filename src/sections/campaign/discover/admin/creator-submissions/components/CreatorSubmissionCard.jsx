@@ -1,18 +1,20 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack, Button, Typography } from '@mui/material';
 
 import MediaPreview from './MediaPreview';
 import CreatorHeader from './CreatorHeader';
 import ExpandableText from './ExpandableText';
 import SubmissionList from './SubmissionList';
 import { COLORS, VISIBLE_COUNT } from '../constants';
+import { hasMedia } from '../submission-viewer/utils';
 import {
   setExpanded,
   selectSubmission,
+  openSubmissionViewer,
   useCreatorSubmissionsStore,
-} from '../store/useCreatorSubmissionsStore';
+} from '../store/use-creator-submissions-store';
 
 const textSx = { fontSize: 14, lineHeight: '20px', color: COLORS.text };
 
@@ -32,6 +34,10 @@ const CreatorSubmissionCard = ({ creator, submissions }) => {
   const selected = submissions.find((s) => s.id === selectedId) ?? submissions[0];
 
   const handleSelect = (submissionId) => selectSubmission(creator.id, submissionId);
+
+  // The viewer only lists creators who have uploaded something
+  const canView = submissions.some(hasMedia);
+  const handleView = () => openSubmissionViewer({ userId: creator.id, submissionId: selected?.id });
 
   const handlePillSelect = (submissionId) => {
     const index = submissions.findIndex((s) => s.id === submissionId);
@@ -66,6 +72,15 @@ const CreatorSubmissionCard = ({ creator, submissions }) => {
           <Typography sx={{ ...textSx, color: COLORS.muted }}>No caption yet</Typography>
         )}
       </Box>
+
+      <Button
+        variant="contained"
+        disabled={!canView || !selected}
+        onClick={handleView}
+        sx={{ alignSelf: 'flex-start', bgcolor: COLORS.text, '&:hover': { bgcolor: '#000' } }}
+      >
+        View submission
+      </Button>
     </Stack>
   );
 };
