@@ -4,7 +4,7 @@ import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 import { useSearchParams } from 'react-router-dom';
-import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import { deepOrange } from '@mui/material/colors';
@@ -14,7 +14,6 @@ import {
   Radio,
   Button,
   Dialog,
-  Divider,
   Container,
   Typography,
   IconButton,
@@ -28,7 +27,6 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 import { useGetCampaignByIdScoped } from 'src/hooks/use-get-campaign-by-id';
 import { useCampaignPermissions } from 'src/hooks/use-campaign-permissions';
@@ -37,8 +35,6 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
-import { setOpenModal, usePublicUrl } from 'src/store/use-public-url';
-import { setOpenCopyDialog, useSpreadSheet } from 'src/store/use-spreadsheet';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
@@ -52,10 +48,20 @@ import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
+import {
+  setOpenModal,
+  usePublicUrl,
+} from 'src/sections/campaign/discover/admin/store/use-public-url';
+import {
+  useSpreadSheet,
+  setOpenCopyDialog,
+} from 'src/sections/campaign/discover/admin/store/use-spreadsheet';
 
 import CampaignFAQ from '../campaign-faq';
+import { useTabs } from '../store/use-tabs';
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalysis from '../campaign-analytics';
+import CampaignTabs from '../components/campaign-tabs';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignHeader from '../components/campaign-header';
@@ -82,35 +88,6 @@ if (typeof window !== 'undefined') {
     }
   }
 }
-
-const getAllowedTabs = (submissionVersion) => {
-  if (submissionVersion === 'v4') {
-    return clientAllowedTabs.filter((tab) => tab !== 'deliverables');
-  }
-  return clientAllowedTabs.filter((tab) => tab !== 'submissions-v4');
-};
-
-const clientAllowedTabs = [
-  'overview',
-  'campaign-content',
-  'creator-master-list',
-  'deliverables',
-  'submissions-v4',
-  'analytics',
-  'logistics', // allow client to access Logistics tab
-  'faq',
-];
-
-// Demo campaigns mirror the client layout (no Agreements/Invoices tabs). Data is fully mocked.
-const demoAllowedTabs = [
-  'overview',
-  'campaign-content',
-  'creator-master-list',
-  'submissions-v4',
-  'analytics',
-  'logistics',
-  'faq',
-];
 
 const CampaignDetailView = ({
   id,
@@ -141,8 +118,6 @@ const CampaignDetailView = ({
   const copy = useBoolean();
   const pdfModal = useBoolean();
 
-  const [isOffset, setIsOffset] = useState({ left: false, right: false });
-
   const { user } = useAuthContext();
 
   // Use centralized permission hook for view-only restrictions
@@ -161,13 +136,6 @@ const CampaignDetailView = ({
   const activateDialog = useBoolean();
   const initialActivateDialog = useBoolean();
   const bulkAssign = useBoolean();
-
-  const { data: campaignAgreements } = useGetAgreements(isDemo ? null : campaign?.id);
-
-  const agreementSubmissions = useMemo(
-    () => campaign?.submission?.filter((s) => s.submissionType?.type === 'AGREEMENT_FORM'),
-    [campaign?.submission]
-  );
 
   const generateNewAgreement = useCallback(async (template) => {
     try {
@@ -199,23 +167,18 @@ const CampaignDetailView = ({
     setSelectedTemplate(template);
   };
 
-  const [currentTab, setCurrentTab] = useState(
-    forcedTab ||
-      searchParams.get('tab') ||
-      localStorage.getItem('campaigndetail') ||
-      'campaign-content'
-  );
+  // const [currentTab, setCurrentTab] = useState(
+  //   forcedTab ||
+  //     searchParams.get('tab') ||
+  //     localStorage.getItem('campaigndetail') ||
+  //     'campaign-content'
+  // );
+
+  const currentTab = useTabs((state) => state.currentTab);
 
   // Check if user is client (demo sessions render the read-only client view)
   const isClient =
     publicReadonly || isDemo || user?.role === 'client' || user?.admin?.role?.name === 'Client';
-
-  const getClientAllowedTabs = useCallback(
-    () => (isDemo ? demoAllowedTabs : getAllowedTabs(campaign?.submissionVersion)),
-    [isDemo, campaign?.submissionVersion]
-  );
-
-  // Check user roles for activation
 
   const isSuperAdmin = user?.admin?.mode === 'god';
 
@@ -243,52 +206,7 @@ const CampaignDetailView = ({
     }
   };
 
-  // Check if current tab is valid for client users
-  useEffect(() => {
-    const allowed = getClientAllowedTabs();
-    if (isClient && !allowed.includes(currentTab)) {
-      setCurrentTab('overview');
-      localStorage.setItem('campaigndetail', 'overview');
-    }
-  }, [currentTab, isClient, getClientAllowedTabs]);
-
-  // Approval public page can force a specific readonly background tab.
-  useEffect(() => {
-    if (!forcedTab) return;
-    const allowed = getClientAllowedTabs();
-    if (isClient && !allowed.includes(forcedTab)) return;
-    setCurrentTab(forcedTab);
-  }, [forcedTab, isClient, getClientAllowedTabs]);
-
-  const handleChangeTab = useCallback(
-    (event, newValue) => {
-      const allowed = getClientAllowedTabs();
-      if (isClient && !allowed.includes(newValue)) {
-        return;
-      }
-      localStorage.setItem('campaigndetail', newValue);
-      setCurrentTab(newValue);
-    },
-    [isClient, getClientAllowedTabs]
-  );
-
-  // Allow children to request tab switching via a window event
-  useEffect(() => {
-    const handleSwitchTab = (e) => {
-      const targetTab = e?.detail;
-      if (typeof targetTab !== 'string') return;
-      const allowed = getClientAllowedTabs();
-      if (isClient && !allowed.includes(targetTab)) return;
-      localStorage.setItem('campaigndetail', targetTab);
-      setCurrentTab(targetTab);
-    };
-    window.addEventListener('switchCampaignTab', handleSwitchTab);
-    return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
-  }, [isClient, getClientAllowedTabs]);
-
-  const { campaigns: campaignInvoices, mutate: mutateCampaignInvoices } = useGetInvoicesByCampId(
-    isDemo ? null : id
-  );
+  const { mutate: mutateCampaignInvoices } = useGetInvoicesByCampId(isDemo ? null : id);
 
   const { socket: invoiceSocket } = useSocketContext();
 
@@ -315,272 +233,6 @@ const CampaignDetailView = ({
       invoiceSocket.emit('leave-campaign', id);
     };
   }, [invoiceSocket, id, isDemo, mutateCampaignInvoices, campaignMutate]);
-
-  const tabsContainerRef = useRef(null);
-
-  useEffect(() => {
-    const container = tabsContainerRef.current;
-    if (!container) return () => {};
-
-    const handleWheel = (e) => {
-      if (container.scrollWidth > container.clientWidth) {
-        // Check if it's a horizontal scroll attempt (touchpad horizontal swipe)
-        // or if deltaX is significant, let it scroll naturally
-        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-          // Horizontal scroll - let it work naturally
-          return;
-        }
-
-        // For vertical scroll (mouse wheel), convert to horizontal
-        e.preventDefault();
-        container.scrollLeft += e.deltaY;
-      }
-    };
-
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheel);
-  }, []);
-
-  const getAgreementsLabel = (submissions, agreements, pitches, shortlisted) => {
-    // Get approved pitch user IDs
-    const approvedPitchUserIds = new Set(
-      (pitches || [])
-        .filter(
-          (pitch) =>
-            (pitch?.status === 'APPROVED' ||
-              pitch?.status === 'AGREEMENT_SUBMITTED' ||
-              pitch?.status === 'AGREEMENT_PENDING') &&
-            pitch?.userId
-        )
-        .map((pitch) => pitch.userId)
-    );
-
-    // Get shortlisted user IDs (for backwards compatibility) — only those without a pitch.
-    // V4 caveat: a ShortListedCreator row can exist BEFORE client approval (e.g. after admin
-    // uses Link Creator on a SENT_TO_CLIENT pitch); the pitch's approval gate is the source
-    // of truth when both exist.
-    const allPitchUserIds = new Set((pitches || []).map((pitch) => pitch?.userId).filter(Boolean));
-    const shortlistedUserIds = new Set(
-      (shortlisted || [])
-        .filter((s) => s?.userId && !allPitchUserIds.has(s.userId))
-        .map((s) => s.userId)
-    );
-
-    // Combine both sets for total agreements
-    const totalAgreementsUserIds = new Set([...approvedPitchUserIds, ...shortlistedUserIds]);
-
-    const totalAgreements = (agreements || []).filter((a) => {
-      if (!totalAgreementsUserIds.has(a.userId)) return false;
-      const isUnlinkedGuest = a?.user?.creator?.isGuest === true;
-      if (!isUnlinkedGuest) return true;
-      const hasSubmission = (submissions || []).some((s) => s.userId === a.userId);
-      return hasSubmission;
-    }).length;
-
-    return `Agreements (${totalAgreements})`;
-  };
-
-  useEffect(() => {
-    if (!tabsContainerRef.current) return;
-    const container = tabsContainerRef.current;
-
-    const handleScroll = (e) => {
-      setIsOffset(() => ({
-        left: e.target.scrollLeft > 5,
-        right: e.target.scrollLeft + e.target.clientWidth + 0.5 < e.target.scrollWidth,
-      }));
-    };
-
-    container.addEventListener('scroll', handleScroll);
-
-    // eslint-disable-next-line consistent-return
-    return () => {
-      container.removeEventListener('scroll', handleScroll);
-    };
-  }, [tabsContainerRef]);
-
-  const renderTabs = (
-    <Box
-      sx={{
-        mt: 2,
-        mb: 2.5,
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          display: !isOffset.left && 'none',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 32,
-          background: 'linear-gradient(to right, white, transparent)',
-          zIndex: 1,
-          pointerEvents: 'none',
-        },
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          display: !isOffset.right && 'none',
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: 32,
-          background: 'linear-gradient(to left, white, transparent)',
-          zIndex: 1,
-          pointerEvents: 'none',
-        },
-      }}
-      overflow="hidden"
-    >
-      <Divider sx={{ position: 'absolute', bottom: 0, left: 0, width: 1 }} />
-      <Stack
-        ref={tabsContainerRef}
-        direction="row"
-        spacing={2}
-        sx={{
-          width: 1,
-          overflowX: 'scroll',
-          overflowY: 'hidden',
-          scrollbarWidth: 'none',
-          '&::-webkit-scrollbar': {
-            display: 'none',
-          },
-        }}
-      >
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          sx={{
-            // width: { xs: '100%', sm: 'auto' },
-            width: 'max-content',
-          }}
-        >
-          {/* Show different tabs based on user role */}
-          {(user?.role === 'client' || isDemo
-            ? // Client user tabs (no Pitches tab)
-              [
-                { label: 'Overview', value: 'overview' },
-                { label: 'Campaign Details', value: 'campaign-content' },
-                { label: 'Creator Master List', value: 'creator-master-list' },
-                ...(campaign?.submissionVersion === 'v4'
-                  ? [{ label: 'Creator Submissions', value: 'submissions-v4' }]
-                  : [{ label: 'Creator Deliverables', value: 'deliverables' }]),
-                { label: 'Campaign Analytics', value: 'analytics' },
-                campaign?.logisticsType && campaign.logisticsType !== ''
-                  ? {
-                      label: 'Logistics',
-                      value: 'logistics',
-                    }
-                  : null,
-
-                { label: 'FAQ', value: 'faq' },
-              ]
-            : // Admin/other user tabs
-              [
-                { label: 'Overview', value: 'overview' },
-                { label: 'Campaign Details', value: 'campaign-content' },
-                {
-                  label: `Creator Master List (${campaign?.pitch?.length || 0})`,
-                  value: 'pitch',
-                },
-                {
-                  label: getAgreementsLabel(
-                    agreementSubmissions,
-                    campaignAgreements,
-                    campaign?.pitch,
-                    campaign?.shortlisted
-                  ),
-                  value: 'agreement',
-                },
-                ...(campaign?.submissionVersion === 'v4'
-                  ? [
-                      {
-                        label: 'Creator Submissions',
-                        value: 'submissions-v4',
-                      },
-                    ]
-                  : [
-                      {
-                        label: 'Creator Deliverables',
-                        value: 'deliverables',
-                      },
-                    ]),
-                {
-                  label: 'Campaign Analytics',
-                  value: 'analytics',
-                },
-                {
-                  label: `Invoices (${campaignInvoices?.length || 0})`,
-                  value: 'invoices',
-                },
-                campaign?.logisticsType && campaign.logisticsType !== ''
-                  ? {
-                      label: 'Logistics',
-                      value: 'logistics',
-                    }
-                  : null,
-
-                { label: 'FAQ', value: 'faq' },
-              ]
-          )
-            .filter(Boolean)
-            .filter((tab) => !isDemo || demoAllowedTabs.includes(tab.value))
-            .map((tab) => (
-              <Button
-                key={tab.value}
-                disableRipple
-                size="large"
-                onClick={() => handleChangeTab(null, tab.value)}
-                sx={{
-                  px: { xs: 1, sm: 1.2 },
-                  py: 0.5,
-                  pb: 1,
-                  minWidth: !lgUp && 'fit-content',
-                  color: currentTab === tab.value ? '#221f20' : '#8e8e93',
-                  position: 'relative',
-                  fontSize: { xs: '0.9rem', sm: '1.05rem' },
-                  fontWeight: 650,
-                  whiteSpace: 'nowrap',
-                  mr: { xs: 1, sm: 2 },
-                  transition: 'transform 0.1s ease-in-out',
-                  '&:focus': {
-                    outline: 'none',
-                    bgcolor: 'transparent',
-                  },
-                  '&:active': {
-                    transform: 'scale(0.95)',
-                    bgcolor: 'transparent',
-                  },
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '2px',
-                    width: currentTab === tab.value ? '100%' : '0%',
-                    bgcolor: '#1340ff',
-                    transition: 'all 0.3s ease-in-out',
-                    transform: 'scaleX(1)',
-                    transformOrigin: 'left',
-                  },
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                    '&::after': {
-                      width: '100%',
-                      opacity: currentTab === tab.value ? 1 : 0.5,
-                    },
-                  },
-                  // mr: 2,
-                }}
-              >
-                {tab.label}
-              </Button>
-            ))}
-        </Stack>
-      </Stack>
-    </Box>
-  );
 
   const renderTabContent = () => {
     switch (currentTab) {
@@ -774,7 +426,12 @@ const CampaignDetailView = ({
       {/* View-only banner for CSMs viewing non-managed campaigns */}
       {isViewOnly && !isClient && <ViewOnlyBanner />}
 
-      {renderTabs}
+      <CampaignTabs
+        campaign={campaign}
+        isDemo={isDemo}
+        publicReadonly={publicReadonly}
+        forcedTab={forcedTab}
+      />
 
       {!campaignLoading ? renderTabContent() : <LoadingScreen />}
 
