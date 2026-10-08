@@ -3,28 +3,35 @@ import { m, LayoutGroup } from 'framer-motion';
 import { useId, useRef, useState, useEffect } from 'react';
 
 import { keyframes } from '@mui/material/styles';
-import { Box, Stack, IconButton, Typography, CircularProgress } from '@mui/material';
+import { Box, Stack, Tooltip, IconButton, Typography, CircularProgress } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import Iconify from 'src/components/iconify';
 
-import { getSubmissionMedia } from '../utils';
 import useViewerData from '../hooks/use-viewer-data';
 import useReleaseMedia from '../hooks/use-release-media';
 import useSettledValue from '../hooks/use-settled-value';
 import useSwipeNavigation from '../hooks/use-swipe-navigation';
 import { getStatusChip, getSubmissionLabel } from '../../utils';
 import useViewerNavigation from '../hooks/use-viewer-navigation';
-import VideoControls, { VIDEO_FRAME_ATTR } from './VideoControls';
 import usePreloadNeighbours from '../hooks/use-preload-neighbours';
-import { cacheRatio, DEFAULT_RATIO, getCachedRatio } from '../media-cache';
+import VideoControls, { OVERLAY_Z, VIDEO_FRAME_ATTR } from './VideoControls';
+import { cacheRatio, cacheDuration, DEFAULT_RATIO, getCachedRatio } from '../media-cache';
+import {
+  getItemNoun,
+  getShownUrl,
+  getItemCount,
+  getVersionCount,
+  getSubmissionMedia,
+} from '../utils';
 import {
   setMuted,
   togglePlay,
   setDuration,
   setIsPlaying,
   setCurrentTime,
+  setMediaSwitching,
   registerVideoElement,
   closeSubmissionViewer,
   useCreatorSubmissionsStore,
@@ -54,26 +61,32 @@ const roundButtonSx = {
   borderRadius: '50%',
 };
 
-const SHORTCUTS = [
-  ['↑↓', 'creator'],
-  ['←→', 'upload / photo'],
-  ['esc', 'close'],
-];
+// ← → steps through photos / raw footage clips, otherwise through video versions; hidden
+// when there's only one of either
+const getArrowLabel = (submission) => {
+  if (getItemCount(submission) > 1) return getItemNoun(submission);
+  if (getVersionCount(submission) > 1) return 'versions';
+  return null;
+};
 
-// Largest box with the media's own ratio that fits the stage (a `size` container),
-// so portrait fills the height and landscape fills the width — scaling up or down
+const getShortcuts = (submission) => {
+  const arrowLabel = getArrowLabel(submission);
+  return [['↑↓', 'creator'], ...(arrowLabel ? [['←→', arrowLabel]] : []), ['esc', 'close']];
+};
+
 const FADE_MS = 160;
-// Rapid switching only loads where you stop: wait this long after the last switch
+const MAX_KEPT_LAYERS = 2;
 const SETTLE_MS = 150;
-// Fast switches just crossfade; slower ones show a loading state after this delay
 const LOADING_DELAY_MS = 250;
 
 const loadingFadeIn = keyframes`
   from { opacity: 0; }
   to { opacity: 1; }
 `;
-// Show a video this long after its metadata loads even if no frame has decoded yet
 const READY_FALLBACK_MS = 800;
+const READY_TIMEOUT_MS = 4000;
+const READY_POLL_MS = 250;
+const HAVE_CURRENT_DATA = 2;
 
 // Largest box with the media's shape that fits the stage (a `size` container).
 // Width and height are explicit lengths so a shape change can ease instead of snap.
@@ -91,15 +104,24 @@ const layerSx = {
   objectFit: 'contain',
 };
 
-// Puts new media on top as a hidden layer and drops any half-loaded one it replaces.
-// Pure, so it can run during render. Ids come from a counter in state so a reused id
+// Brings `url` to the front: reuses a loaded layer if one is kept (instant, no reload),
+// otherwise adds a hidden layer that fades in once loaded. Half-loaded layers it replaces
+// are dropped. Stacking is by `z` (not array order) so <video> elements never move in the
+// DOM. Pure, so it can run during render; ids/z come from counters in state so a reused id
 // can never pick up a stale load event.
-const queueLayer = (stage, url, kind) => {
-  const ready = stage.layers.filter((layer) => layer.ready);
-
+const queueLayer = (stage, url, kind, keepable) => {
   if (!url) return { ...stage, trackedUrl: url, layers: [] };
-  // Switched back to what's already showing before the new media loaded
-  if (ready.at(-1)?.url === url) return { ...stage, trackedUrl: url, layers: ready };
+
+  const ready = stage.layers.filter((layer) => layer.ready);
+  const z = stage.nextZ;
+  const next = { ...stage, trackedUrl: url, nextZ: z + 1 };
+
+  if (ready.some((layer) => layer.url === url)) {
+    return {
+      ...next,
+      layers: ready.map((layer) => (layer.url === url ? { ...layer, z, hidden: false } : layer)),
+    };
+  }
 
   const layer = {
     id: stage.nextId,
@@ -107,8 +129,29 @@ const queueLayer = (stage, url, kind) => {
     kind,
     ratio: getCachedRatio(url) ?? DEFAULT_RATIO,
     ready: false,
+    hidden: false,
+    // Whether it may stay mounted in the pool after it's no longer shown
+    keepable,
+    z,
   };
-  return { trackedUrl: url, nextId: stage.nextId + 1, layers: [...ready, layer] };
+  return { ...next, nextId: stage.nextId + 1, layers: [...ready, layer] };
+};
+
+// The visible layer: the front-most one that has loaded
+const getActiveLayer = (layers) =>
+  layers.reduce((top, layer) => (layer.ready && (!top || layer.z > top.z) ? layer : top), null);
+
+// After a fade: hide everything but the active layer and keep only the most recent few
+const settleLayers = (layers, activeId) => {
+  const kept = layers
+    .filter((layer) => layer.ready && layer.keepable && layer.id !== activeId)
+    .sort((a, b) => b.z - a.z)
+    .slice(0, MAX_KEPT_LAYERS)
+    .map((layer) => layer.id);
+
+  return layers
+    .filter((layer) => layer.id === activeId || !layer.ready || kept.includes(layer.id))
+    .map((layer) => (layer.id === activeId || !layer.ready ? layer : { ...layer, hidden: true }));
 };
 
 const validRatio = (ratio) => (Number.isFinite(ratio) && ratio > 0 ? ratio : undefined);
@@ -118,7 +161,7 @@ const versionArrowSlotSx = {
   position: 'absolute',
   top: '50%',
   transform: 'translateY(-50%)',
-  zIndex: 1,
+  zIndex: OVERLAY_Z,
   cursor: 'default',
 };
 
@@ -135,7 +178,7 @@ const versionArrowSx = {
 const overlayTagSx = {
   position: 'absolute',
   left: 12,
-  zIndex: 1,
+  zIndex: OVERLAY_Z,
   px: 1,
   py: 0.375,
   borderRadius: 0.75,
@@ -216,12 +259,12 @@ function VersionArrows() {
   );
 }
 
-// Story-style progress bars + arrows + "3 / 9" for photo sets
-function PhotoPager() {
-  const { photoIndex, photoCount, prevPhoto, nextPhoto, hasPrevPhoto, hasNextPhoto } =
+// Story-style progress bars + arrows + "3 / 9" for photo sets and raw footage clips
+function ItemPager({ noun }) {
+  const { itemIndex, itemCount, prevItem, nextItem, hasPrevItem, hasNextItem } =
     useViewerNavigation();
 
-  if (photoCount < 2) return null;
+  if (itemCount < 2) return null;
 
   return (
     <>
@@ -233,18 +276,18 @@ function PhotoPager() {
           top: 12,
           left: 12,
           right: 12,
-          zIndex: 1,
+          zIndex: OVERLAY_Z,
           pointerEvents: 'none',
         }}
       >
-        {Array.from({ length: photoCount }, (_, index) => (
+        {Array.from({ length: itemCount }, (_, index) => (
           <Box
             key={index}
             sx={{
               flex: 1,
               height: 3,
               borderRadius: 99,
-              bgcolor: index === photoIndex ? 'common.white' : 'rgba(255, 255, 255, 0.35)',
+              bgcolor: index === itemIndex ? 'common.white' : 'rgba(255, 255, 255, 0.35)',
               transition: 'background-color 150ms ease',
             }}
           />
@@ -252,17 +295,21 @@ function PhotoPager() {
       </Stack>
 
       <EdgeArrows
-        noun="photo"
-        tag={`${photoIndex + 1} / ${photoCount}`}
+        noun={noun}
+        tag={`${itemIndex + 1} / ${itemCount}`}
         tagTop={24}
-        onPrev={prevPhoto}
-        onNext={nextPhoto}
-        hasPrev={hasPrevPhoto}
-        hasNext={hasNextPhoto}
+        onPrev={prevItem}
+        onNext={nextItem}
+        hasPrev={hasPrevItem}
+        hasNext={hasNextItem}
       />
     </>
   );
 }
+
+ItemPager.propTypes = {
+  noun: PropTypes.string,
+};
 
 // One video layer of the stage. Aborts its download when removed, and registers itself
 // for the store's video controls only while it's the visible layer.
@@ -270,9 +317,42 @@ function VideoLayer({ layer, isActive, isMobile, onReady, sx }) {
   const videoRef = useRef(null);
   useReleaseMedia(videoRef);
 
+  // Latest callback for the timers below, without restarting them every render
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+
+  // Safety nets while hidden: catch an element that loaded before (or without) its event
+  // firing — e.g. served from the media cache — and promote it anyway after a timeout so a
+  // stalled load can't leave the old video on screen. A late loadedmetadata still fills in
+  // the real shape/duration afterwards.
+  useEffect(() => {
+    if (layer.ready) return undefined;
+    const video = videoRef.current;
+
+    const poll = setInterval(() => {
+      if (video?.readyState >= HAVE_CURRENT_DATA) {
+        onReadyRef.current(video.videoWidth / video.videoHeight, video.duration);
+      }
+    }, READY_POLL_MS);
+    const timeout = setTimeout(() => onReadyRef.current(), READY_TIMEOUT_MS);
+
+    return () => {
+      clearInterval(poll);
+      clearTimeout(timeout);
+    };
+  }, [layer.ready]);
+
+  // The visible layer drives the store's playback state. A kept video coming back to the
+  // front reports where it was left, so it resumes instead of starting over.
   useEffect(() => {
     if (!isActive) return undefined;
-    registerVideoElement(videoRef.current);
+    const video = videoRef.current;
+    registerVideoElement(video);
+    if (video) {
+      setCurrentTime(video.currentTime);
+      setDuration(video.duration);
+      setMuted(video.muted);
+    }
     return () => registerVideoElement(null);
   }, [isActive]);
 
@@ -284,11 +364,9 @@ function VideoLayer({ layer, isActive, isMobile, onReady, sx }) {
       preload="auto"
       playsInline
       controls={isActive && isMobile}
-      // Ready once the first frame is decoded, so the fade never reveals black
       onLoadedData={(e) =>
         onReady(e.currentTarget.videoWidth / e.currentTarget.videoHeight, e.currentTarget.duration)
       }
-      // Fallback for browsers that won't decode a frame before play (iOS Safari)
       onLoadedMetadata={(e) => {
         const video = e.currentTarget;
         setTimeout(
@@ -302,6 +380,7 @@ function VideoLayer({ layer, isActive, isMobile, onReady, sx }) {
         onPause: () => setIsPlaying(false),
         onVolumeChange: (e) => setMuted(e.currentTarget.muted),
         onTimeUpdate: (e) => setCurrentTime(e.currentTarget.currentTime),
+        onDurationChange: (e) => setDuration(e.currentTarget.duration),
       })}
       sx={sx}
     />
@@ -323,14 +402,15 @@ VideoLayer.propTypes = {
  */
 function ViewerMedia({ submission }) {
   const versionIndex = useCreatorSubmissionsStore((s) => s.versionIndex);
-  const photoIndex = useCreatorSubmissionsStore((s) => s.photoIndex);
-  const { kind, urls } = getSubmissionMedia(submission, versionIndex);
-  // Photo sets show one photo at a time; everything else shows its first (latest) media
-  const url = kind === 'photo' ? urls[Math.min(photoIndex, urls.length - 1)] : urls[0];
-  const isPhotoSet = kind === 'photo' && urls.length > 1;
-  const { advancePhoto } = useViewerNavigation();
-  // Touch screens get the browser's native player; desktop gets the custom toolbar
+  const itemIndex = useCreatorSubmissionsStore((s) => s.itemIndex);
+  const { kind } = getSubmissionMedia(submission, versionIndex);
+  const url = getShownUrl(submission, versionIndex, itemIndex);
+  const isItemSet = getItemCount(submission) > 1;
+  // Clicking a photo flips to the next one; clicking a clip plays/pauses like any video
+  const isPhotoSet = isItemSet && kind === 'photo';
+  const { advanceItem } = useViewerNavigation();
   const isMobile = useResponsive('down', 'md');
+  const keepable = !isMobile && submission.submissionType?.type !== 'RAW_FOOTAGE';
 
   // Only start loading once switching has paused, so a fast swipe through several
   // creators loads just the one you land on. Settled as a primitive "kind|url" key.
@@ -339,40 +419,49 @@ function ViewerMedia({ submission }) {
   const settledKind = settledKey.slice(0, separator);
   const settledUrl = settledKey.slice(separator + 1) || undefined;
 
-  // layers: { id, url, kind, ratio, ready }[] — the last ready layer is the visible one
   const [stage, setStage] = useState(() =>
-    queueLayer({ trackedUrl: undefined, nextId: 1, layers: [] }, settledUrl, settledKind)
+    queueLayer({ trackedUrl: undefined, nextId: 1, nextZ: 1, layers: [] }, url, kind, keepable)
   );
 
-  // New media → queue it. This is React's "adjust state when a prop changes" pattern
-  // (react.dev/learn/you-might-not-need-an-effect): React re-renders before painting, so
-  // there's no extra pass. Pausing the old video happens in the store's switch actions.
-  if (stage.trackedUrl !== settledUrl) setStage(queueLayer(stage, settledUrl, settledKind));
+  const isKept = stage.layers.some((layer) => layer.ready && layer.url === url);
+  const shouldQueue =
+    stage.trackedUrl !== url && (!url || isKept || (settledUrl === url && settledKind === kind));
+  if (shouldQueue) setStage(queueLayer(stage, url, kind, keepable));
 
   const { layers } = stage;
   // Latest layers for async callbacks (load events, timers) that outlive a render
   const layersRef = useRef(layers);
   layersRef.current = layers;
 
+  const activeLayer = getActiveLayer(layers);
+
+  const mediaSwitching = Boolean(url) && activeLayer?.url !== url;
+  useEffect(() => {
+    setMediaSwitching(mediaSwitching);
+  }, [mediaSwitching]);
+  useEffect(() => () => setMediaSwitching(false), []);
+
+  const activeId = activeLayer?.id;
+  useEffect(() => {
+    if (activeId === undefined) return undefined;
+    const timer = setTimeout(
+      () => setStage((prev) => ({ ...prev, layers: settleLayers(prev.layers, activeId) })),
+      FADE_MS
+    );
+    return () => clearTimeout(timer);
+  }, [activeId]);
+
   const updateLayers = (update) => setStage((prev) => ({ ...prev, layers: update(prev.layers) }));
 
   const markReady = (id, layerUrl, ratio, duration) => {
-    // Already replaced by a newer switch — don't let it touch the shared playback state
     if (!layersRef.current.some((layer) => layer.id === id)) return;
     cacheRatio(layerUrl, ratio);
+    cacheDuration(layerUrl, duration);
     updateLayers((prev) =>
       prev.map((layer) =>
         layer.id === id ? { ...layer, ready: true, ratio: validRatio(ratio) ?? layer.ratio } : layer
       )
     );
-    if (duration !== undefined) setDuration(duration);
-    // Once it has faded in, remove the layers underneath
-    setTimeout(() => {
-      updateLayers((prev) => {
-        const index = prev.findIndex((layer) => layer.id === id);
-        return index < 0 ? prev : prev.slice(index);
-      });
-    }, FADE_MS);
   };
 
   if (!url) {
@@ -383,16 +472,20 @@ function ViewerMedia({ submission }) {
     );
   }
 
-  const activeLayer = [...layers].reverse().find((layer) => layer.ready);
-  const frameRatio = activeLayer?.ratio ?? layers.at(-1)?.ratio ?? DEFAULT_RATIO;
-  const isVideo = (activeLayer ?? layers.at(-1))?.kind === 'video';
-  // What's visible isn't what's selected yet (still settling or loading)
+  const frontLayer = layers.reduce((top, layer) => (!top || layer.z > top.z ? layer : top), null);
+  const frameRatio = activeLayer?.ratio ?? frontLayer?.ratio ?? DEFAULT_RATIO;
+  const isVideo = (activeLayer ?? frontLayer)?.kind === 'video';
+  const rankOf = (layer) => layers.filter((other) => other.z < layer.z).length;
   const isSwitching = activeLayer?.url !== url;
 
   return (
     <Box
       {...{ [VIDEO_FRAME_ATTR]: '' }}
-      onClick={(isPhotoSet && advancePhoto) || (isVideo && !isMobile && togglePlay) || undefined}
+      onClick={
+        (isPhotoSet && advanceItem) ||
+        (isVideo && !isMobile && !isSwitching && togglePlay) ||
+        undefined
+      }
       sx={{
         position: 'relative',
         ...getFrameSizeSx(frameRatio),
@@ -405,10 +498,11 @@ function ViewerMedia({ submission }) {
       }}
     >
       {layers.map((layer) => {
-        const isActive = layer === activeLayer;
+        const isActive = layer.id === activeLayer?.id;
         const fadeSx = {
           ...layerSx,
-          opacity: layer.ready ? 1 : 0,
+          zIndex: rankOf(layer),
+          opacity: layer.ready && !layer.hidden ? 1 : 0,
           transition: `opacity ${FADE_MS}ms ease`,
         };
 
@@ -450,7 +544,7 @@ function ViewerMedia({ submission }) {
           sx={{
             position: 'absolute',
             inset: 0,
-            zIndex: 1,
+            zIndex: OVERLAY_Z,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -464,7 +558,7 @@ function ViewerMedia({ submission }) {
       )}
 
       {isVideo && <VersionArrows />}
-      {isPhotoSet && <PhotoPager />}
+      {isItemSet && <ItemPager noun={getItemNoun(submission)} />}
       {isVideo && !isMobile && activeLayer && <VideoControls submission={submission} />}
     </Box>
   );
@@ -536,6 +630,46 @@ CreatorNavButtons.propTypes = {
   sx: PropTypes.object,
 };
 
+const COPIED_MS = 1500;
+
+// Copies the URL of what's on screen: this upload, photo or clip
+function CopyMediaLink() {
+  const { submission } = useViewerData();
+  const versionIndex = useCreatorSubmissionsStore((s) => s.versionIndex);
+  const itemIndex = useCreatorSubmissionsStore((s) => s.itemIndex);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return undefined;
+    const timer = setTimeout(() => setCopied(false), COPIED_MS);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const url = submission && getShownUrl(submission, versionIndex, itemIndex);
+  if (!url) return null;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+    } catch (error) {
+      // Clipboard blocked; nothing to confirm
+    }
+  };
+
+  return (
+    <Tooltip title={copied ? 'Copied' : 'Copy media link'}>
+      <IconButton onClick={handleCopy} sx={{ ...darkButtonSx, flexShrink: 0 }}>
+        <Iconify
+          icon={copied ? 'eva:checkmark-fill' : 'eva:link-2-fill'}
+          width={18}
+          sx={{ color: copied ? '#22C55E' : 'inherit' }}
+        />
+      </IconButton>
+    </Tooltip>
+  );
+}
+
 export default function ViewerMediaPane() {
   const { creators, creator, creatorIndex, submission, submissionIndex, pendingTotal } =
     useViewerData();
@@ -592,7 +726,7 @@ export default function ViewerMediaPane() {
             color: '#6E6E76',
           }}
         >
-          {SHORTCUTS.map(([keys, label]) => (
+          {getShortcuts(submission).map(([keys, label]) => (
             <Box key={label} component="span">
               <Box
                 component="span"
@@ -616,6 +750,7 @@ export default function ViewerMediaPane() {
           direction="row"
           sx={{ ml: 'auto', flexShrink: 0, display: { xs: 'flex', md: 'none' } }}
         />
+        <CopyMediaLink />
       </Stack>
 
       {/* Media + creator navigation */}

@@ -1,10 +1,12 @@
-import { useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import useViewerData from './use-viewer-data';
-import { useCreatorSubmissionsStore } from '../../store/use-creator-submissions-store';
+import {
+  setPendingDecision,
+  useCreatorSubmissionsStore,
+} from '../../store/use-creator-submissions-store';
 
 /**
  * Admin decisions on submitted content, mirroring the legacy flows:
@@ -20,7 +22,7 @@ export default function useReviewDecision(submission) {
   const { mutateSubmissions } = useViewerData();
   const hasClient = useCreatorSubmissionsStore((s) => s.campaignHasClient);
   // 'approve' | 'creator' while a request is in flight
-  const [pending, setPending] = useState(null);
+  const pending = useCreatorSubmissionsStore((s) => s.pendingDecision);
 
   const isVideo = submission.submissionType?.type === 'VIDEO';
   const videoId = isVideo ? submission.video?.[0]?.id : undefined;
@@ -32,7 +34,7 @@ export default function useReviewDecision(submission) {
 
   const run = async (kind, request, successMessage) => {
     if (pending) return false;
-    setPending(kind);
+    setPendingDecision(kind);
     try {
       await request();
       await mutateSubmissions();
@@ -44,7 +46,7 @@ export default function useReviewDecision(submission) {
       });
       return false;
     } finally {
-      setPending(null);
+      setPendingDecision(null);
     }
   };
 
@@ -62,8 +64,9 @@ export default function useReviewDecision(submission) {
       hasClient ? 'Sent to client' : 'Submission approved'
     );
 
-  // feedback: text for photos/raw footage (videos send their comment thread instead)
-  const sendToCreator = (feedback) =>
+  // reasons: photos/raw footage are sent back with reasons only (no typed feedback);
+  // videos forward their comment thread instead
+  const sendToCreator = (reasons = []) =>
     run(
       'creator',
       () =>
@@ -72,8 +75,8 @@ export default function useReviewDecision(submission) {
           : axiosInstance.post(endpoints.submission.v4.approve, {
               submissionId: submission.id,
               action: 'request_revision',
-              feedback,
-              reasons: [],
+              feedback: '',
+              reasons,
             }),
       'Sent to creator for changes'
     );

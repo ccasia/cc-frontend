@@ -75,6 +75,7 @@ import CampaignCreatorMasterListClient from '../campaign-creator-master-list-cli
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 import CampaignCreatorSubmissions from '../creator-submissions/CampaignCreatorSubmissions';
+import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -300,12 +301,15 @@ const CampaignDetailView = ({
           <CampaignCreatorDeliverables campaign={campaign} isDisabled={isDisabled} />
         );
       case 'submissions-v4':
-        return (
-          // <CampaignCreatorSubmissionsV4
-          //   campaign={campaign}
-          //   isDisabled={isDisabled || isDemo}
-          //   onRated={campaignMutate}
-          // />
+        // Clients (and demo / public read-only views) keep the legacy submissions UI;
+        // the new card list + viewer is admin-only
+        return isClient ? (
+          <CampaignCreatorSubmissionsV4
+            campaign={campaign}
+            isDisabled={isDisabled || isDemo}
+            onRated={campaignMutate}
+          />
+        ) : (
           <CampaignCreatorSubmissions campaign={campaign} />
         );
       case 'analytics':

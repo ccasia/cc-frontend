@@ -1,8 +1,10 @@
+import { mutate } from 'swr';
 import { enqueueSnackbar } from 'notistack';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import useViewerData from './use-viewer-data';
+import { captionHistoryKey } from './use-caption-history';
 import {
   setCaptionDraft,
   setCaptionSaving,
@@ -22,7 +24,10 @@ export default function useCaptionEditor(submission) {
   const saving = useCreatorSubmissionsStore((s) => s.captionSaving);
 
   const savedCaption = submission?.caption || '';
-  const canEdit = CAPTION_EDITABLE_STATUSES.includes(submission?.status);
+  // Only videos carry a caption; photos and raw footage are reviewed without one
+  const canEdit =
+    submission?.submissionType?.type === 'VIDEO' &&
+    CAPTION_EDITABLE_STATUSES.includes(submission?.status);
   const isDirty = captionDraft !== null && captionDraft.trim() !== savedCaption.trim();
 
   // Resolves true when there was nothing to save or the save succeeded
@@ -35,8 +40,9 @@ export default function useCaptionEditor(submission) {
       await axiosInstance.patch(endpoints.submission.v4.updateCaption(submission.id), {
         caption: captionDraft,
       });
-      // Refetch before clearing the draft so the saved caption doesn't flash back
-      await mutateSubmissions();
+      // Refetch before clearing the draft so the saved caption doesn't flash back; the
+      // history refetch keeps the "edited" tag on once the draft is gone
+      await Promise.all([mutateSubmissions(), mutate(captionHistoryKey(submission.id))]);
       setCaptionDraft(null);
       enqueueSnackbar('Caption saved', { variant: 'success' });
       return true;

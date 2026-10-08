@@ -1,9 +1,9 @@
 import { useMemo, useCallback } from 'react';
 
 import useViewerData from './use-viewer-data';
-import { needsAction, getPhotoCount, getVersionCount, firstActionableIndex } from '../utils';
+import { needsAction, getItemCount, getVersionCount, firstActionableIndex } from '../utils';
 import {
-  setPhotoIndex,
+  setItemIndex,
   setVersionIndex,
   showViewerSubmission,
   useCreatorSubmissionsStore,
@@ -13,8 +13,8 @@ export default function useViewerNavigation() {
   const { creators, creatorIndex, creator, submission, submissionIndex } = useViewerData();
   const versionIndex = useCreatorSubmissionsStore((s) => s.versionIndex);
   const versionCount = getVersionCount(submission);
-  const photoIndex = useCreatorSubmissionsStore((s) => s.photoIndex);
-  const photoCount = getPhotoCount(submission);
+  const itemIndex = useCreatorSubmissionsStore((s) => s.itemIndex);
+  const itemCount = getItemCount(submission);
 
   const goToSubmission = useCallback(
     (index) => {
@@ -44,21 +44,21 @@ export default function useViewerNavigation() {
   const newerVersion = useCallback(() => {
     if (versionIndex > 0) setVersionIndex(versionIndex - 1);
   }, [versionIndex]);
-  const prevPhoto = useCallback(() => {
-    if (photoIndex > 0) setPhotoIndex(photoIndex - 1);
-  }, [photoIndex]);
-  const nextPhoto = useCallback(() => {
-    if (photoIndex < photoCount - 1) setPhotoIndex(photoIndex + 1);
-  }, [photoIndex, photoCount]);
+  const prevItem = useCallback(() => {
+    if (itemIndex > 0) setItemIndex(itemIndex - 1);
+  }, [itemIndex]);
+  const nextItem = useCallback(() => {
+    if (itemIndex < itemCount - 1) setItemIndex(itemIndex + 1);
+  }, [itemIndex, itemCount]);
   // Tapping a photo advances and wraps back to the first, like stories
-  const advancePhoto = useCallback(() => {
-    if (photoCount > 1) setPhotoIndex((photoIndex + 1) % photoCount);
-  }, [photoIndex, photoCount]);
+  const advanceItem = useCallback(() => {
+    if (itemCount > 1) setItemIndex((itemIndex + 1) % itemCount);
+  }, [itemIndex, itemCount]);
 
-  // ← → (keys, swipes) step through photos in a photo set, otherwise through video uploads
-  const isPhotoSet = photoCount > 1;
-  const goLeft = isPhotoSet ? prevPhoto : olderVersion;
-  const goRight = isPhotoSet ? nextPhoto : newerVersion;
+  // ← → (keys, swipes) step through photos / raw footage clips, otherwise through video uploads
+  const isItemSet = itemCount > 1;
+  const goLeft = isItemSet ? prevItem : olderVersion;
+  const goRight = isItemSet ? nextItem : newerVersion;
 
   // ---- "What's next" once a decision is made ----
 
@@ -91,13 +91,13 @@ export default function useViewerNavigation() {
     versionCount,
     hasOlderVersion: versionIndex < versionCount - 1,
     hasNewerVersion: versionIndex > 0,
-    photoIndex,
-    photoCount,
-    prevPhoto,
-    nextPhoto,
-    advancePhoto,
-    hasPrevPhoto: photoIndex > 0,
-    hasNextPhoto: photoIndex < photoCount - 1,
+    itemIndex,
+    itemCount,
+    prevItem,
+    nextItem,
+    advanceItem,
+    hasPrevItem: itemIndex > 0,
+    hasNextItem: itemIndex < itemCount - 1,
     goLeft,
     goRight,
     prevCreator,

@@ -52,9 +52,20 @@ export const getViewerCreators = (submissions, filters) =>
     creator.submissions.some(hasMedia)
   );
 
-// Photos in a photo set; 0 for other types
-export const getPhotoCount = (submission) =>
-  submission?.submissionType?.type === 'PHOTO' ? getSubmissionMedia(submission).urls.length : 0;
+// Photo sets and raw footage hold several items (photos / clips) stepped through one at a
+// time; video submissions have versions instead, so they count 0
+const ITEM_NOUN = { PHOTO: 'photo', RAW_FOOTAGE: 'clip' };
+
+export const getItemNoun = (submission) => ITEM_NOUN[submission?.submissionType?.type];
+
+export const getItemCount = (submission) =>
+  getItemNoun(submission) ? getSubmissionMedia(submission).urls.length : 0;
+
+// The one URL on screen: the chosen version of a video, or the chosen photo / clip
+export const getShownUrl = (submission, versionIndex = 0, itemIndex = 0) => {
+  const { urls } = getSubmissionMedia(submission, versionIndex);
+  return urls[Math.min(itemIndex, urls.length - 1)];
+};
 
 // Uploads (versions) of a video submission, newest first; other types have one
 export const getVersionCount = (submission) =>
@@ -83,4 +94,51 @@ export const parseTimestamp = (timestamp) => {
   if (parts.length === 2) return parts[0] * 60 + parts[1];
   if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
   return 0;
+};
+
+// "0:12 tighten the cut" → { timestamp: '00:12', text: 'tighten the cut' }, so a reply
+// can point at a moment the same way new feedback does
+export const extractLeadingTimestamp = (input) => {
+  const match = input.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+([\s\S]*)$/);
+  if (!match) return { timestamp: null, text: input };
+  return { timestamp: formatTimestamp(parseTimestamp(match[1])), text: match[2].trim() };
+};
+
+// Reasons the client gave in their latest change request, to start the admin's from
+// (same as the legacy getInitialReasons)
+export const getClientReasons = (submission) => {
+  if (submission?.status !== 'CLIENT_FEEDBACK') return [];
+  const clientRequest = (submission.feedback || []).find(
+    (item) => item.admin?.role === 'client' && item.type === 'REQUEST'
+  );
+  return clientRequest?.reasons || [];
+};
+
+export const isCommentResolved = (comment) =>
+  Boolean(comment?.resolvedByUserId || comment?.resolvedAt);
+
+// Top-level comments followed by their replies
+export const flattenComments = (comments) =>
+  comments.flatMap((comment) => [comment, ...(comment.replies || [])]);
+
+// Admin + client comments the creator hasn't received yet and that are selected for them
+export const getUnsentFeedback = (comments) =>
+  flattenComments(comments).filter(
+    (comment) =>
+      !comment.deletedAt &&
+      comment.user?.role !== 'creator' &&
+      !comment.isSentToCreator &&
+      comment.isVisibleToCreator !== false
+  );
+
+// Thread rows carry this attribute so a comment can be scrolled into view after posting
+export const COMMENT_ID_ATTR = 'data-comment-id';
+
+export const revealComment = (commentId) => {
+  if (!commentId) return;
+  requestAnimationFrame(() =>
+    document
+      .querySelector(`[${COMMENT_ID_ATTR}="${commentId}"]`)
+      ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  );
 };

@@ -1,13 +1,20 @@
 import PropTypes from 'prop-types';
 import { useMemo, useState } from 'react';
 
-import { Box, Stack, Tooltip, IconButton, Typography } from '@mui/material';
+import { Box, Stack, alpha, Tooltip, IconButton, Typography } from '@mui/material';
 
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 
 import Iconify from 'src/components/iconify';
 
-import { parseTimestamp, formatTimestamp, getCommentVideoId } from '../utils';
+import { getCachedDuration } from '../media-cache';
+import {
+  getShownUrl,
+  parseTimestamp,
+  formatTimestamp,
+  getCommentVideoId,
+  isCommentResolved,
+} from '../utils';
 import {
   seekVideo,
   togglePlay,
@@ -15,6 +22,8 @@ import {
   playFromFeedback,
   useCreatorSubmissionsStore,
 } from '../../store/use-creator-submissions-store';
+
+const DOT_COLOR = { open: '#F2C94C', resolved: '#22C55E' };
 
 // Within this many seconds of the playhead, a feedback dot shows as active
 const ACTIVE_WINDOW = 1;
@@ -28,15 +37,32 @@ const controlButtonSx = {
 // Marks this element as the fullscreen target (video + custom controls)
 export const VIDEO_FRAME_ATTR = 'data-video-frame';
 
-function Scrubber({ submission }) {
+// Overlays on the media (toolbar, arrows, tags, spinner) sit above every stacked media layer
+export const OVERLAY_Z = 10;
+
+// The video's length, known before it loads when preloading already saw its metadata.
+// The store resets duration to 0 on every switch; without this the toolbar shows 00:00
+// and the feedback dots have nothing to position against until the new video loads.
+function useDisplayDuration(submission) {
   const duration = useCreatorSubmissionsStore((s) => s.duration);
+  const versionIndex = useCreatorSubmissionsStore((s) => s.versionIndex);
+  const itemIndex = useCreatorSubmissionsStore((s) => s.itemIndex);
+
+  if (duration > 0) return duration;
+  return getCachedDuration(getShownUrl(submission, versionIndex, itemIndex)) ?? 0;
+}
+
+function Scrubber({ submission }) {
+  const duration = useDisplayDuration(submission);
   const currentTime = useCreatorSubmissionsStore((s) => s.currentTime);
   const versionIndex = useCreatorSubmissionsStore((s) => s.versionIndex);
   // Only creator videos have timestamped feedback (raw footage doesn't)
   const isVideoSubmission = submission.submissionType?.type === 'VIDEO';
   const { comments } = useSubmissionComments(
     isVideoSubmission ? submission.id : null,
-    getCommentVideoId(submission, versionIndex)
+    getCommentVideoId(submission, versionIndex),
+    // Same cache entry as the review thread, so the dots update with it
+    { includeDeleted: true }
   );
   const [dragging, setDragging] = useState(false);
 
@@ -44,7 +70,7 @@ function Scrubber({ submission }) {
   const markers = useMemo(() => {
     const bySecond = new Map();
     comments
-      .filter((comment) => comment.timestamp)
+      .filter((comment) => comment.timestamp && !comment.deletedAt)
       .forEach((comment) => {
         const seconds = parseTimestamp(comment.timestamp);
         if (!bySecond.has(seconds)) bySecond.set(seconds, []);
@@ -119,6 +145,8 @@ function Scrubber({ submission }) {
       {!!duration &&
         markers.map(({ seconds, items }) => {
           const isActive = Math.abs(currentTime - seconds) <= ACTIVE_WINDOW;
+          // Green once everything at this moment is resolved
+          const dotColor = items.every(isCommentResolved) ? DOT_COLOR.resolved : DOT_COLOR.open;
 
           return (
             <Tooltip
@@ -156,8 +184,8 @@ function Scrubber({ submission }) {
                   height: isActive ? 12 : 10,
                   borderRadius: '50%',
                   border: '1.5px solid rgba(0, 0, 0, 0.55)',
-                  bgcolor: '#F2C94C',
-                  boxShadow: isActive ? '0 0 0 3px rgba(242, 201, 76, 0.35)' : 'none',
+                  bgcolor: dotColor,
+                  boxShadow: isActive ? `0 0 0 3px ${alpha(dotColor, 0.35)}` : 'none',
                   transform: 'translate(-50%, -50%)',
                   transition: 'all 0.15s',
                   '&:hover': { width: 12, height: 12 },
@@ -177,9 +205,10 @@ Scrubber.propTypes = {
 // Custom toolbar over the video: play, scrubber with feedback dots, time, mute, fullscreen
 export default function VideoControls({ submission }) {
   const isPlaying = useCreatorSubmissionsStore((s) => s.isPlaying);
+  const mediaSwitching = useCreatorSubmissionsStore((s) => s.mediaSwitching);
   const muted = useCreatorSubmissionsStore((s) => s.muted);
   const currentTime = useCreatorSubmissionsStore((s) => s.currentTime);
-  const duration = useCreatorSubmissionsStore((s) => s.duration);
+  const duration = useDisplayDuration(submission);
 
   const handleFullscreen = (event) => {
     if (document.fullscreenElement) {
@@ -199,6 +228,7 @@ export default function VideoControls({ submission }) {
         left: 0,
         right: 0,
         bottom: 0,
+        zIndex: OVERLAY_Z,
         px: 1.5,
         pt: 4,
         pb: 1,
@@ -213,12 +243,17 @@ export default function VideoControls({ submission }) {
       <Scrubber submission={submission} />
 
       <Stack direction="row" alignItems="center" gap={1}>
-        <IconButton size="small" onClick={togglePlay} sx={controlButtonSx}>
+        <IconButton
+          size="small"
+          disabled={mediaSwitching}
+          onClick={togglePlay}
+          sx={{ ...controlButtonSx, '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.35)' } }}
+        >
           <Iconify icon={isPlaying ? 'mdi:pause' : 'mdi:play'} width={20} />
         </IconButton>
 
         <Typography sx={{ fontFamily: 'monospace', fontSize: 12 }}>
-          {formatTimestamp(currentTime)} / {formatTimestamp(duration)}
+          {formatTimestamp(currentTime)} / {duration ? formatTimestamp(duration) : '--:--'}
         </Typography>
 
         <IconButton size="small" onClick={toggleMute} sx={{ ...controlButtonSx, ml: 'auto' }}>
