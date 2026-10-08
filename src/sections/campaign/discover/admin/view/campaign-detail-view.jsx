@@ -1,5 +1,4 @@
 import dayjs from 'dayjs';
-import { format } from 'date-fns';
 import PropTypes from 'prop-types';
 import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
@@ -11,13 +10,11 @@ import { LoadingButton } from '@mui/lab';
 import { deepOrange } from '@mui/material/colors';
 import {
   Box,
-  Menu,
   Stack,
   Radio,
   Button,
   Dialog,
   Divider,
-  MenuItem,
   Container,
   Typography,
   IconButton,
@@ -40,12 +37,13 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
+import { setOpenModal, usePublicUrl } from 'src/store/use-public-url';
+import { setOpenCopyDialog, useSpreadSheet } from 'src/store/use-spreadsheet';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
-import CampaignTabs from 'src/components/campaign/CampaignTabs';
 import ViewOnlyBanner from 'src/components/banner/view-only-banner';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
@@ -60,12 +58,12 @@ import CampaignOverview from '../campaign-overview';
 import CampaignAnalysis from '../campaign-analytics';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
+import CampaignHeader from '../components/campaign-header';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignOverviewClient from '../campaign-overview-client';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailContentClient from '../campaign-detail-content-client';
-import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
@@ -84,11 +82,6 @@ if (typeof window !== 'undefined') {
     }
   }
 }
-
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  return format(new Date(dateString), 'MMMM d, yyyy');
-};
 
 const getAllowedTabs = (submissionVersion) => {
   if (submissionVersion === 'v4') {
@@ -130,6 +123,13 @@ const CampaignDetailView = ({
   const router = useRouter();
   const [searchParams] = useSearchParams();
 
+  const publicUrl = usePublicUrl((state) => state.publicUrl);
+  const password = usePublicUrl((state) => state.password);
+  const openModal = usePublicUrl((state) => state.openModal);
+
+  const url = useSpreadSheet((state) => state.url);
+  const copyDialog = useSpreadSheet((state) => state.copyDialog);
+
   const {
     campaign,
     campaignLoading,
@@ -137,14 +137,10 @@ const CampaignDetailView = ({
   } = useGetCampaignByIdScoped(id, publicReadonly, isDemo);
 
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const loading = useBoolean();
-  const [url, setUrl] = useState('');
-  const copyDialog = useBoolean();
+
   const copy = useBoolean();
   const pdfModal = useBoolean();
-  const [publicUrl, setPublicUrl] = useState(null);
-  const [password, setPassword] = useState(null);
-  const [openModal, setOpenModal] = useState(false);
+
   const [isOffset, setIsOffset] = useState({ left: false, right: false });
 
   const { user } = useAuthContext();
@@ -160,49 +156,11 @@ const CampaignDetailView = ({
   const smDown = useResponsive('down', 'sm');
   const templateModal = useBoolean();
   const linking = useBoolean();
-  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
-  const menuOpen = Boolean(menuAnchorEl);
+
   const campaignLog = useBoolean();
   const activateDialog = useBoolean();
   const initialActivateDialog = useBoolean();
   const bulkAssign = useBoolean();
-
-  // Add this campaign to tabs and save to localStorage
-  // useEffect(() => {
-  //   if (id && window.campaignTabs) {
-  //     if (!window.campaignTabs.some(tab => tab.id === id)) {
-  //       // Wait for campaign data to get the name if available
-  //       const tabName = campaign ? campaign.name || 'Campaign Details' : 'Campaign Details';
-
-  //       window.campaignTabs.push({
-  //         id,
-  //         name: tabName
-  //       });
-
-  //       // Add status information to the global campaignTabsStatus
-  //       if (campaign && campaign.status) {
-  //         // Initialize campaignTabsStatus if it doesn't exist
-  //         if (!window.campaignTabsStatus) {
-  //           window.campaignTabsStatus = {};
-  //         }
-
-  //         // Store the campaign status
-  //         window.campaignTabsStatus[id] = {
-  //           status: campaign.status
-  //         };
-  //       }
-
-  //       // Save to localStorage
-  //       try {
-  //         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
-  //       } catch (error) {
-  //         console.error('Error saving campaign tabs to localStorage:', error);
-  //       }
-  //     }
-  //   }
-  // }, [id, campaign]);
-
-  const isCampaignHasSpreadSheet = campaign?.spreadSheetURL;
 
   const { data: campaignAgreements } = useGetAgreements(isDemo ? null : campaign?.id);
 
@@ -258,7 +216,7 @@ const CampaignDetailView = ({
   );
 
   // Check user roles for activation
-  const isCSL = user?.admin?.role?.name === 'CSL';
+
   const isSuperAdmin = user?.admin?.mode === 'god';
 
   const returnTo = searchParams.get('returnTo');
@@ -284,9 +242,6 @@ const CampaignDetailView = ({
       router.push(paths.dashboard.campaign.root);
     }
   };
-
-  // Check if user can perform initial activation (CSL or Superadmin)
-  const canInitialActivate = isCSL || isSuperAdmin;
 
   // Check if current tab is valid for client users
   useEffect(() => {
@@ -336,6 +291,7 @@ const CampaignDetailView = ({
   );
 
   const { socket: invoiceSocket } = useSocketContext();
+
   useEffect(() => {
     if (!invoiceSocket || !id || isDemo) return undefined;
 
@@ -626,51 +582,6 @@ const CampaignDetailView = ({
     </Box>
   );
 
-  const generatePublicUrl = async () => {
-    try {
-      loading.onTrue();
-      const response = await axiosInstance.post('/api/public/generate', {
-        campaignId: campaign?.id,
-        expiryInMinutes: 120,
-      });
-
-      if (response?.data?.url && response?.data?.password) {
-        setPublicUrl(response.data.url);
-        setPassword(response.data.password);
-        setOpenModal(true);
-      } else {
-        enqueueSnackbar('Failed to generate public URL', { variant: 'error' });
-      }
-    } catch (error) {
-      enqueueSnackbar('An error occurred while generating the public URL.', { variant: 'error' });
-    } finally {
-      loading.onFalse();
-    }
-  };
-
-  const handleCloseModal = () => {
-    setOpenModal(false);
-  };
-
-  const generateSpreadSheet = useCallback(async () => {
-    try {
-      loading.onTrue();
-      const res = await axiosInstance.post(endpoints.campaign.spreadsheet, {
-        campaignId: campaign?.id,
-      });
-      setUrl(res?.data?.url);
-      enqueueSnackbar(res?.data?.message);
-      copyDialog.onTrue();
-      campaignMutate();
-    } catch (error) {
-      enqueueSnackbar(error?.message, {
-        variant: 'error',
-      });
-    } finally {
-      loading.onFalse();
-    }
-  }, [loading, copyDialog, campaignMutate, campaign]);
-
   const renderTabContent = () => {
     switch (currentTab) {
       case 'overview':
@@ -797,7 +708,7 @@ const CampaignDetailView = ({
 
   const copyDialogContainer = (
     <Dialog
-      open={copyDialog.value}
+      open={copyDialog}
       maxWidth="md"
       fullWidth
       sx={{
@@ -832,139 +743,17 @@ const CampaignDetailView = ({
       </Box>
 
       <DialogActions>
-        <Button onClick={copyDialog.onFalse} size="small" variant="outlined" sx={{ mx: 'auto' }}>
+        <Button
+          onClick={() => setOpenCopyDialog(false)}
+          size="small"
+          variant="outlined"
+          sx={{ mx: 'auto' }}
+        >
           Done
         </Button>
       </DialogActions>
     </Dialog>
   );
-
-  const handleMenuOpen = (event) => {
-    setMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchorEl(null);
-  };
-
-  const isPendingCampaign = useMemo(
-    () =>
-      campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'PENDING_ADMIN_ACTIVATION',
-    [campaign]
-  );
-
-  const renderActionButtons = () => {
-    const adminRole = user?.admin?.role?.slug || user?.admin?.role?.name;
-    const userRole = user?.role;
-    const campaignAdmins = campaign?.campaignAdmin || [];
-
-    if (
-      userRole === 'admin' &&
-      adminRole === 'sales_and_marketing' &&
-      !campaignAdmins.some((a) => a.adminId === user?.id)
-    )
-      return null;
-
-    if (!isClient) {
-      // Admin buttons logic...
-      if (isPendingCampaign) {
-        return (
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
-            onClick={() => {
-              // For superadmin on pending campaigns: use initial activation (admin assignment only)
-              if (canInitialActivate && campaign?.status === 'PENDING_CSM_REVIEW') {
-                console.log('Opening InitialActivateDialog (admin assignment only)');
-                initialActivateDialog.onTrue();
-              } else {
-                // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
-                console.log('Opening ActivateDialog (full setup)');
-                activateDialog.onTrue();
-              }
-            }}
-            disabled={isDisabled}
-            sx={{
-              height: 42,
-              borderRadius: 1,
-              color: 'white',
-              backgroundColor: '#1340ff',
-              border: '1px solid #1340ff',
-              borderBottom: '4px solid #0e2fd6',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              px: 2,
-              whiteSpace: 'nowrap',
-              '&:hover': {
-                backgroundColor: '#0e2fd6',
-              },
-              '&.Mui-disabled': {
-                cursor: 'not-allowed',
-                pointerEvents: 'auto',
-              },
-            }}
-          >
-            Activate Campaign
-          </Button>
-        );
-      }
-
-      return (
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={
-            <img
-              src="/assets/icons/overview/editButton.svg"
-              alt="edit"
-              style={{
-                width: 18,
-                height: 18,
-                opacity: isDisabled ? 0.3 : 1,
-              }}
-            />
-          }
-          onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
-          disabled={isDisabled}
-          sx={{
-            height: 42,
-            borderRadius: 1,
-            color: isDisabled ? '#9e9e9e' : '#221f20',
-            border: '1px solid #e7e7e7',
-            borderBottom: '4px solid #e7e7e7',
-            fontWeight: 600,
-            fontSize: '0.95rem',
-            px: 2,
-            whiteSpace: 'nowrap',
-            opacity: isDisabled ? 0.6 : 1,
-            '&:hover': {
-              backgroundColor: 'rgba(34, 31, 32, 0.04)',
-              border: '1px solid #231F20',
-              borderBottom: '4px solid #231F20',
-            },
-            '&.Mui-disabled': {
-              cursor: 'not-allowed',
-              pointerEvents: 'auto',
-              color: '#9e9e9e',
-              border: '1px solid #e7e7e7',
-              borderBottom: '4px solid #e7e7e7',
-              backgroundColor: 'transparent',
-              '&:hover': {
-                backgroundColor: 'transparent',
-                border: '1px solid #e7e7e7',
-                borderBottom: '4px solid #e7e7e7',
-              },
-            },
-          }}
-        >
-          Edit Details
-        </Button>
-      );
-    }
-
-    return null;
-  };
 
   return (
     <Container
@@ -973,212 +762,14 @@ const CampaignDetailView = ({
         px: { xs: 2, sm: 4 },
       }}
     >
-      <Stack spacing={1}>
-        <Button
-          color="inherit"
-          startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-          onClick={handleBackNavigation}
-          sx={{
-            alignSelf: 'flex-start',
-            color: '#636366',
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-            mb: 1,
-          }}
-        >
-          Back
-        </Button>
-
-        {/* Campaign Tabs */}
-        <CampaignTabs filter={campaign?.status?.toLowerCase()} />
-
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          alignItems="center"
-          justifyContent="space-between"
-          spacing={2}
-          width="100%"
-          sx={{ mt: -1 }}
-        >
-          <Stack direction="row" alignItems="center" spacing={2} width="100%">
-            {campaign?.campaignBrief?.images?.[0] && (
-              <img
-                src={campaign?.campaignBrief.images[0]}
-                alt={campaign?.name}
-                style={{
-                  width: '100%',
-                  maxWidth: 80,
-                  height: 'auto',
-                  borderRadius: '12px',
-                  border: '1px solid #e0e0e0',
-                  objectFit: 'cover',
-                }}
-              />
-            )}
-            <Typography
-              variant="h5"
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.5rem', sm: '2rem' },
-                fontWeight: 550,
-              }}
-            >
-              {campaign?.name || 'Campaign Detail'}
-            </Typography>
-          </Stack>
-
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            alignItems={{ xs: 'stretch', sm: 'center' }}
-            spacing={{ xs: 1, sm: 0 }}
-            width={{ xs: '100%' }}
-            justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
-          >
-            <Stack
-              alignItems={{ xs: 'flex-start', sm: 'flex-end' }}
-              spacing={0}
-              justifyContent="center"
-              sx={{ minHeight: { sm: '76px' } }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  color: '#8e8e93',
-                  fontWeight: 500,
-                  fontSize: { xs: '0.75rem', sm: '0.9rem' },
-                  letterSpacing: '0.5px',
-                }}
-              >
-                CAMPAIGN PERIOD:
-              </Typography>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 500,
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {formatDate(campaign?.campaignBrief?.startDate)} -{' '}
-                {formatDate(campaign?.campaignBrief?.endDate)}
-              </Typography>
-            </Stack>
-
-            <Box
-              sx={{
-                height: '42px',
-                width: '1px',
-                backgroundColor: '#e7e7e7',
-                mx: 2,
-                display: { xs: 'none', sm: 'block' },
-              }}
-            />
-
-            <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-              {/* Only show action buttons for non-client users */}
-              {renderActionButtons()}
-
-              {!isClient && (
-                <Box
-                  onClick={isDisabled ? undefined : handleMenuOpen}
-                  component="button"
-                  disabled={isDisabled}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: 42,
-                    width: 42,
-                    borderRadius: 1,
-                    color: isDisabled ? '#9e9e9e' : '#221f20',
-                    border: '1px solid #e7e7e7',
-                    borderBottom: '4px solid #e7e7e7',
-                    padding: 0,
-                    backgroundColor: 'transparent',
-                    cursor: isDisabled ? 'not-allowed' : 'pointer',
-                    opacity: isDisabled ? 0.6 : 1,
-                    '&:hover': {
-                      backgroundColor: isDisabled ? 'transparent' : 'rgba(34, 31, 32, 0.04)',
-                      border: isDisabled ? '1px solid #e7e7e7' : '1px solid #231F20',
-                      borderBottom: isDisabled ? '4px solid #e7e7e7' : '4px solid #231F20',
-                    },
-                  }}
-                >
-                  <Iconify icon="eva:more-horizontal-fill" width={18} />
-                </Box>
-                // </>
-              )}
-
-              <Menu
-                anchorEl={menuAnchorEl}
-                open={menuOpen}
-                onClose={handleMenuClose}
-                PaperProps={{
-                  sx: {
-                    minWidth: 200,
-                    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.1)',
-                  },
-                }}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-              >
-                {!isCampaignHasSpreadSheet ? (
-                  <MenuItem
-                    onClick={() => {
-                      generateSpreadSheet();
-                      handleMenuClose();
-                    }}
-                    disabled={isDisabled || loading.value}
-                    sx={{ py: 1 }}
-                  >
-                    <Iconify icon="lucide:file-spreadsheet" width={16} sx={{ mr: 1.5 }} />
-                    Generate Spreadsheet
-                  </MenuItem>
-                ) : (
-                  <MenuItem
-                    onClick={() => {
-                      const a = document.createElement('a');
-                      a.href = campaign?.spreadSheetURL;
-                      a.target = '_blank';
-                      a.click();
-                      handleMenuClose();
-                    }}
-                    disabled={!campaign?.spreadSheetURL}
-                    sx={{ py: 1 }}
-                  >
-                    <Iconify icon="tabler:external-link" width={16} sx={{ mr: 1.5 }} />
-                    Google Spreadsheet
-                  </MenuItem>
-                )}
-                <MenuItem
-                  onClick={() => {
-                    generatePublicUrl();
-                    handleMenuClose();
-                  }}
-                  sx={{ py: 1 }}
-                >
-                  <img
-                    src="/assets/icons/overview/generateIcon.svg"
-                    alt="generate icon"
-                    style={{ width: 16, height: 16, marginRight: 12 }}
-                  />
-                  Generate URL
-                </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    campaignLog.onTrue();
-                    handleMenuClose();
-                  }}
-                  sx={{ py: 1 }}
-                >
-                  <Iconify icon="material-symbols:note-rounded" width={16} sx={{ mr: 1.5 }} />
-                  View Log
-                </MenuItem>
-              </Menu>
-            </Stack>
-          </Stack>
-        </Stack>
-      </Stack>
+      <CampaignHeader
+        campaign={campaign}
+        onBack={handleBackNavigation}
+        isClient={isClient}
+        openInitialActivateDialog={initialActivateDialog.onTrue}
+        openActivateDialog={activateDialog.onTrue}
+        handleOpenCampaignLog={campaignLog.onTrue}
+      />
 
       {/* View-only banner for CSMs viewing non-managed campaigns */}
       {isViewOnly && !isClient && <ViewOnlyBanner />}
@@ -1198,7 +789,7 @@ const CampaignDetailView = ({
 
       <PublicUrlModal
         open={openModal}
-        onClose={handleCloseModal}
+        onClose={() => setOpenModal(false)}
         publicUrl={publicUrl}
         password={password}
       />
