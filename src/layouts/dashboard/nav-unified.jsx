@@ -104,13 +104,15 @@ export default function NavUnified({ openNav, onCloseNav }) {
       </Stack>
 
       {isMini ? (
-        <NavSectionMini
-          data={navData}
-          slotProps={{
-            currentRole: user?.role,
-            onItemClick: onCloseNav,
-          }}
-        />
+        <Box sx={{ width: NAV.W_MINI }}>
+          <NavSectionMini
+            data={navData}
+            slotProps={{
+              currentRole: user?.role,
+              onItemClick: onCloseNav,
+            }}
+          />
+        </Box>
       ) : (
         <NavSectionVertical
           data={navData}
@@ -207,33 +209,41 @@ export default function NavUnified({ openNav, onCloseNav }) {
   }
 
   return (
-    <MotionBox
-      initial={false}
-      animate={{
-        width: isMini ? NAV.W_MINI : NAV.W_VERTICAL,
-      }}
-      onHoverStart={() => setOpen(true)}
-      onHoverEnd={() => setOpen(false)}
-      transition={{
-        duration: 0.2,
-        ease: 'easeInOut',
-      }}
+    <Box
       sx={{
         flexShrink: { lg: 0 },
-        position: 'relative',
-        zIndex: 100,
+        width: { lg: NAV.W_MINI },
       }}
     >
-      <Stack
-        sx={{
-          height: 1,
-          position: 'fixed',
+      <MotionBox
+        initial={false}
+        animate={{
           width: isMini ? NAV.W_MINI : NAV.W_VERTICAL,
+        }}
+        onHoverStart={() => setOpen(true)}
+        onHoverEnd={() => setOpen(false)}
+        transition={{
+          duration: 0.2,
+          ease: 'easeInOut',
+        }}
+        sx={{
+          top: 0,
+          left: 0,
+          height: 1,
+          display: 'flex',
+          position: 'fixed',
+          overflow: 'hidden',
+          flexDirection: 'column',
+          bgcolor: 'background.default',
+          zIndex: (theme) => theme.zIndex.appBar + 2,
+          ...(!isMini && {
+            boxShadow: (theme) => theme.customShadows.z8,
+          }),
         }}
       >
         {renderContent}
-      </Stack>
-    </MotionBox>
+      </MotionBox>
+    </Box>
   );
 }
 
