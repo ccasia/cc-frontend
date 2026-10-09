@@ -10,12 +10,29 @@ import { COLORS } from '../constants';
 
 const fillSx = { width: 1, height: 1, borderRadius: 1, objectFit: 'cover' };
 
+// Shared across instances so only one preview plays at a time
+let activeVideo = null;
+
 const MediaContent = ({ submission }) => {
   const video = submission?.video?.[0] ?? submission?.rawFootages?.[0];
   const photo = submission?.photos?.[0];
+  /** @type {React.MutableRefObject<HTMLVideoElement | null>} */
 
   if (video?.url)
-    return <Box component="video" src={video.url} controls preload="metadata" sx={fillSx} />;
+    return (
+      <Box
+        component="video"
+        src={video.url}
+        controls
+        preload="metadata"
+        onPlay={(e) => {
+          if (activeVideo && activeVideo !== e.currentTarget) activeVideo.pause();
+          activeVideo = e.currentTarget;
+        }}
+        sx={fillSx}
+      />
+    );
+
   if (photo?.url) return <Box component="img" src={photo.url} alt="" sx={fillSx} />;
 
   return (

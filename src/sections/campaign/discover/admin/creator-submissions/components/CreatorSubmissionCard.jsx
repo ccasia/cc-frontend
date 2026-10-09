@@ -1,4 +1,5 @@
 import React from 'react';
+import { m } from 'framer-motion';
 import PropTypes from 'prop-types';
 
 import { Box, Stack, Typography } from '@mui/material';
@@ -29,6 +30,8 @@ const captionOverlaySx = {
   borderRadius: '0 0 20px 20px',
   boxShadow: '0px 12px 16px -8px rgba(0, 0, 0, 0.12)',
 };
+
+// const MotionButton = m(Button);
 
 const CreatorSubmissionCard = ({ creator, submissions }) => {
   const selectedId = useCreatorSubmissionsStore((state) => state.selectedByCreator[creator.id]);
@@ -67,6 +70,7 @@ const CreatorSubmissionCard = ({ creator, submissions }) => {
 
       <Stack direction="row" alignItems="flex-start" spacing={2} sx={{ minHeight: 240 }}>
         <MediaPreview submission={selected} />
+
         <SubmissionList
           submissions={submissions}
           selectedId={selected?.id}
