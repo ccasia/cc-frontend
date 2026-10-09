@@ -590,7 +590,6 @@ function ReviewComposer({ submission }) {
   const { saveCaption, saving: captionSaving } = useCaptionEditor(submission);
   const {
     pending,
-    hasClient,
     canSendToClient,
     canApprove,
     canSendToCreator,
@@ -669,7 +668,7 @@ function ReviewComposer({ submission }) {
     },
     approve: {
       title: `Approve ${label}?`,
-      description: hasClient
+      description: canSendToClient
         ? `This approves ${label} straight away, without the client reviewing it.`
         : `This marks ${label} as approved and moves ${firstName} on to the next step.`,
       confirmLabel: 'Approve',
@@ -699,14 +698,16 @@ function ReviewComposer({ submission }) {
     </CtaButton>
   );
 
-  // Its own button, last in the footer: approve straight away (first review only)
+  // Approve straight away. Its own row under Send to client when that shows; otherwise
+  // (client feedback, campaigns without a client) it sits left of the send-back button.
+  const approveInRow = !canSendToClient;
   const approveButton = canApprove && (
     <CtaButton
       fullWidth
       size="large"
       variant="white"
       color={APPROVE_COLOR}
-      hint={hasClient ? 'without client review' : 'content is good to go'}
+      hint={canSendToClient ? 'without client review' : 'content is good to go'}
       disabled={busy}
       onClick={() => setConfirmingDecision('approve')}
     >
@@ -717,27 +718,23 @@ function ReviewComposer({ submission }) {
   const sendToCreatorLabel = pending === 'creator' ? 'Sending…' : 'Send to creator';
 
   // Photos / raw footage: "Request a change" first (like the posted-link review); the
-  // reasons and the send only show once sending back. Without an approve option (client
-  // feedback round) sending back is the only choice, so they show straight away.
-  const showReasons = !isVideo && canSendToCreator && (changeRequestOpen || !canApprove);
+  // reasons and the send only show once sending back.
+  const showReasons = !isVideo && canSendToCreator && changeRequestOpen;
 
   let actions;
   if (showReasons) {
     actions = (
       <Stack direction="row" gap={1.125}>
-        {/* Nothing to go back to when sending back is the only option */}
-        {canApprove && (
-          <CtaButton
-            fullWidth
-            size="large"
-            variant="white"
-            color={NEUTRAL_COLOR}
-            disabled={busy}
-            onClick={closeChangeRequest}
-          >
-            Cancel
-          </CtaButton>
-        )}
+        <CtaButton
+          fullWidth
+          size="large"
+          variant="white"
+          color={NEUTRAL_COLOR}
+          disabled={busy}
+          onClick={closeChangeRequest}
+        >
+          Cancel
+        </CtaButton>
         <CtaButton
           fullWidth
           size="large"
@@ -755,6 +752,7 @@ function ReviewComposer({ submission }) {
       <Stack gap={1.125}>
         <Stack direction="row" gap={1.125}>
           {sendToClientButton}
+          {approveInRow && approveButton}
           {canSendToCreator && isVideo && (
             <CtaButton
               fullWidth
@@ -782,7 +780,7 @@ function ReviewComposer({ submission }) {
             </CtaButton>
           )}
         </Stack>
-        {approveButton}
+        {!approveInRow && approveButton}
       </Stack>
     );
   }
