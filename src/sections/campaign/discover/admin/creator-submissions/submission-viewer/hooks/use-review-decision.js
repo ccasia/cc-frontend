@@ -16,7 +16,7 @@ const ADMIN_REVIEW_STATUSES = ['PENDING_REVIEW', 'CLIENT_FEEDBACK'];
  *
  * - Send to client (client campaigns, first review): video → send-to-client;
  *   photos / raw footage → /approve, which the backend routes through client review.
- * - Approve (first review only): approves outright — /approve, with `direct`
+ * - Approve (pending review or after client feedback): approves outright — /approve, with `direct`
  *   so photos / raw footage on client campaigns skip the client too.
  * - Send to creator: video → send-to-creator (forwards the unsent comment thread);
  *   photos / raw footage → /approve request_revision with the picked reasons.
@@ -34,8 +34,7 @@ export default function useReviewDecision(submission) {
 
   const isAdminsTurn = ADMIN_REVIEW_STATUSES.includes(submission.status);
   const canSendToClient = hasClient && submission.status === 'PENDING_REVIEW';
-  // Same as the current flow: approving is only for the first review
-  const canApprove = submission.status === 'PENDING_REVIEW';
+  const canApprove = isAdminsTurn;
   const canSendToCreator = isAdminsTurn;
 
   const run = async (kind, request, successMessage) => {
