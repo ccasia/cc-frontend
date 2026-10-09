@@ -1,10 +1,14 @@
-import { useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import useViewerData from './use-viewer-data';
 import useCaptionEditor from './use-caption-editor';
+import {
+  closeLinkChange,
+  setPendingDecision,
+  useCreatorSubmissionsStore,
+} from '../../store/use-creator-submissions-store';
 
 /**
  * Approve or send back a posted link (APPROVE_LINK). Same endpoint/payload as the legacy
@@ -13,15 +17,16 @@ import useCaptionEditor from './use-caption-editor';
 export default function useLinkReview(submission) {
   const { mutateSubmissions } = useViewerData();
   const { saveCaption } = useCaptionEditor(submission);
-  // 'approve' | 'reject' while a request is in flight
-  const [pending, setPending] = useState(null);
+  // 'link-approve' | 'link-reject' while a request is in flight
+  const pendingDecision = useCreatorSubmissionsStore((s) => s.pendingDecision);
+  const pending = pendingDecision?.startsWith('link-') ? pendingDecision.slice(5) : null;
 
   const review = async (action, reasons) => {
-    if (pending) return;
+    if (pendingDecision) return;
     // An unsaved caption edit goes out with the decision, like the other send actions
     if (!(await saveCaption())) return;
 
-    setPending(action);
+    setPendingDecision(`link-${action}`);
     try {
       await axiosInstance.post(endpoints.submission.v4.approvePostingLink, {
         submissionId: submission.id,
@@ -29,6 +34,7 @@ export default function useLinkReview(submission) {
         ...(action === 'reject' && { reasons }),
       });
       await mutateSubmissions();
+      closeLinkChange();
       enqueueSnackbar(
         action === 'approve' ? 'Posting link approved' : 'Change request sent to creator',
         { variant: 'success' }
@@ -36,7 +42,7 @@ export default function useLinkReview(submission) {
     } catch (error) {
       enqueueSnackbar(error?.message || 'Failed to update posting link', { variant: 'error' });
     } finally {
-      setPending(null);
+      setPendingDecision(null);
     }
   };
 

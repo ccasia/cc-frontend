@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { useRef, useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
+import { useRef, useState, useEffect, useLayoutEffect } from 'react';
 
 import {
   Box,
@@ -9,38 +9,60 @@ import {
   Stack,
   alpha,
   Avatar,
-  Button,
   darken,
-  MenuItem,
+  Tooltip,
   TextField,
+  ButtonBase,
   IconButton,
   Typography,
 } from '@mui/material';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
+import CtaButton from 'src/components/cta-button';
 
-import { posting_link_options_changes } from 'src/sections/campaign/discover/admin/submissions/v4/constants';
-
+import ReasonChips from './ReasonChips';
+import { sectionLabelSx } from '../styles';
+import PostingLinkForm from './PostingLinkForm';
+import FeedbackHistory from './FeedbackHistory';
 import useViewerData from '../hooks/use-viewer-data';
 import useLinkReview from '../hooks/use-link-review';
 import StatusChip from '../../components/StatusChip';
+import useReasonPicker from '../hooks/use-reason-picker';
 import useCaptionEditor from '../hooks/use-caption-editor';
 import DecisionConfirmDialog from './DecisionConfirmDialog';
 import useReviewDecision from '../hooks/use-review-decision';
 import useCommentComposer from '../hooks/use-comment-composer';
 import useViewerNavigation from '../hooks/use-viewer-navigation';
-import ViewerComments, { TimestampChip } from './ViewerComments';
+import ViewerComments, { timestampChipSx } from './ViewerComments';
+import useCaptionHistory, { getAdminCaptionEdit } from '../hooks/use-caption-history';
 import { getInitials, getStatusChip, getSubmittedAt, getSubmissionLabel } from '../../utils';
-import { STEPS, needsAction, getStepIndex, formatTimestamp, isChangesRequested } from '../utils';
-import { setVersionIndex, closeSubmissionViewer } from '../../store/use-creator-submissions-store';
-
-const sectionLabelSx = {
-  fontSize: 11.5,
-  fontWeight: 500,
-  color: '#8A8A92',
-  textTransform: 'uppercase',
-  letterSpacing: '0.03em',
-};
+import { isAdminAddedLink, canAddPostingLink, canApproveAdminAddedLinks } from '../posting-links';
+import {
+  STEPS,
+  needsAction,
+  getStepIndex,
+  formatTimestamp,
+  isChangesRequested,
+  REVIEW_SCROLL_ATTR,
+} from '../utils';
+import {
+  setItemIndex,
+  toggleHistory,
+  openLinkChange,
+  closeLinkChange,
+  setVersionIndex,
+  setFeedbackError,
+  openChangeRequest,
+  closeChangeRequest,
+  setLinkChangeError,
+  setCaptionOverflows,
+  toggleCaptionExpanded,
+  closeSubmissionViewer,
+  setConfirmingDecision,
+  useCreatorSubmissionsStore,
+} from '../../store/use-creator-submissions-store';
 
 const WAITING_TEXT = {
   SENT_TO_CLIENT: 'Sent to client · waiting on their approval',
@@ -51,18 +73,10 @@ const WAITING_TEXT = {
   REJECTED: 'Changes requested · waiting on the creator',
 };
 
-// Two-line decision buttons ("Approve link / marks as completed") shared by the footers
-const actionButtonSx = { height: 44, flexDirection: 'column', lineHeight: 1.2 };
-
-const primaryActionSx = {
-  ...actionButtonSx,
-  bgcolor: '#1304FF',
-  '&:hover': { bgcolor: '#0F03CC' },
-};
-
-const secondaryActionSx = { ...actionButtonSx, borderColor: '#D9D9DE' };
-
-const actionHintSx = { fontSize: 11, fontWeight: 400 };
+// Text colours for white CtaButtons
+const APPROVE_COLOR = '#1ABF66';
+const REQUEST_CHANGE_COLOR = '#D4321C';
+const NEUTRAL_COLOR = '#3A3A3C';
 
 const firstNameOf = (user) => user?.name?.split(' ')[0] || 'Creator';
 
@@ -84,10 +98,24 @@ function PostedLinks({ submission }) {
       </Typography>
       {links.map((link) => (
         <Stack key={link} direction="row" alignItems="center" gap={1.25}>
-          <Typography noWrap sx={{ flex: 1, minWidth: 0, fontFamily: 'monospace', fontSize: 12.5 }}>
+          <Typography
+            noWrap
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              fontFamily: 'monospace',
+              fontSize: 12,
+              letterSpacing: '-0.04em',
+            }}
+          >
             {link}
           </Typography>
-          <Link href={link} target="_blank" rel="noopener" sx={{ fontSize: 12, flexShrink: 0 }}>
+          <Link
+            href={link}
+            target="_blank"
+            rel="noopener"
+            sx={{ fontSize: 12, flexShrink: 0, color: '#1340FF' }}
+          >
             Open ↗
           </Link>
         </Stack>
@@ -100,15 +128,14 @@ PostedLinks.propTypes = {
   submission: PropTypes.object.isRequired,
 };
 
-// APPROVE_LINK footer: the link is the thing to act on. Sending back uses the same fixed
-// reasons as the legacy flow (no free-text feedback).
 function LinkReview({ submission }) {
   const { pending, approveLink, requestLinkChange } = useLinkReview(submission);
   const { saving: captionSaving } = useCaptionEditor(submission);
-  const [requesting, setRequesting] = useState(false);
-  const [reasons, setReasons] = useState([]);
-  const [showError, setShowError] = useState(false);
-  const [confirmingApprove, setConfirmingApprove] = useState(false);
+  const requesting = useCreatorSubmissionsStore((s) => s.linkChangeOpen);
+  const { selected: reasons } = useReasonPicker('link');
+  const confirmingApprove = useCreatorSubmissionsStore(
+    (s) => s.confirmingDecision === 'link-approve'
+  );
 
   const busy = Boolean(pending) || captionSaving;
   const label = getSubmissionLabel(submission);
@@ -116,18 +143,12 @@ function LinkReview({ submission }) {
 
   const confirmApprove = async () => {
     await approveLink();
-    setConfirmingApprove(false);
-  };
-
-  const cancelRequest = () => {
-    setRequesting(false);
-    setReasons([]);
-    setShowError(false);
+    setConfirmingDecision(null);
   };
 
   const handleSendBack = () => {
     if (!reasons.length) {
-      setShowError(true);
+      setLinkChangeError(true);
       return;
     }
     requestLinkChange(reasons);
@@ -136,94 +157,57 @@ function LinkReview({ submission }) {
   return (
     <Stack gap={1.25}>
       <PostedLinks submission={submission} />
+      <AddedByAdminNote submission={submission} />
 
-      {requesting && (
-        <TextField
-          select
-          fullWidth
-          size="small"
-          value={reasons}
-          disabled={busy}
-          error={showError}
-          helperText={showError ? 'Pick at least one reason.' : ''}
-          onChange={(event) => {
-            setReasons(event.target.value);
-            setShowError(false);
-          }}
-          SelectProps={{
-            multiple: true,
-            displayEmpty: true,
-            renderValue: (selected) =>
-              selected.length ? (
-                selected.join(', ')
-              ) : (
-                <Box component="span" sx={{ color: '#9A9AA2' }}>
-                  What&apos;s wrong with the link?
-                </Box>
-              ),
-          }}
-          InputProps={{ sx: { fontSize: 13 } }}
-        >
-          {posting_link_options_changes.map((option) => (
-            <MenuItem key={option} value={option} sx={{ fontSize: 13 }}>
-              {option}
-            </MenuItem>
-          ))}
-        </TextField>
-      )}
+      {requesting && <ReasonChips kind="link" />}
 
       {requesting ? (
         <Stack direction="row" gap={1.125}>
-          <Button
+          <CtaButton
             fullWidth
-            variant="outlined"
-            color="inherit"
+            size="large"
+            variant="white"
+            color={NEUTRAL_COLOR}
             disabled={busy}
-            onClick={cancelRequest}
-            sx={secondaryActionSx}
+            onClick={closeLinkChange}
           >
             Cancel
-          </Button>
-          <Button
+          </CtaButton>
+          <CtaButton
             fullWidth
-            variant="contained"
+            size="large"
+            variant="blue"
+            hint="to post a new link"
             disabled={busy}
             onClick={handleSendBack}
-            sx={primaryActionSx}
           >
             {pending === 'reject' ? 'Sending…' : 'Send to creator'}
-            <Box component="span" sx={{ ...actionHintSx, opacity: 0.8 }}>
-              to post a new link
-            </Box>
-          </Button>
+          </CtaButton>
         </Stack>
       ) : (
         <Stack direction="row" gap={1.125}>
-          <Button
+          <CtaButton
             fullWidth
-            variant="contained"
+            size="large"
+            variant="white"
+            color={APPROVE_COLOR}
+            hint="marks as completed"
             disabled={busy}
-            onClick={() => setConfirmingApprove(true)}
-            sx={primaryActionSx}
+            onClick={() => setConfirmingDecision('link-approve')}
           >
             {pending === 'approve' ? 'Approving…' : 'Approve link'}
-            <Box component="span" sx={{ ...actionHintSx, opacity: 0.8 }}>
-              marks as completed
-            </Box>
-          </Button>
-          <Button
+          </CtaButton>
+          <CtaButton
             fullWidth
-            variant="outlined"
-            color="inherit"
+            size="large"
+            variant="white"
+            color={REQUEST_CHANGE_COLOR}
+            hint="link is wrong"
             disabled={busy}
-            onClick={() => setRequesting(true)}
-            sx={secondaryActionSx}
+            onClick={openLinkChange}
           >
             Request a change
-            <Box component="span" sx={{ ...actionHintSx, color: '#6E6E76' }}>
-              link is wrong
-            </Box>
-          </Button>
+          </CtaButton>
         </Stack>
       )}
 
@@ -234,7 +218,7 @@ function LinkReview({ submission }) {
         confirmLabel="Approve link"
         loading={busy}
         onConfirm={confirmApprove}
-        onClose={() => setConfirmingApprove(false)}
+        onClose={() => setConfirmingDecision(null)}
       />
     </Stack>
   );
@@ -244,17 +228,39 @@ LinkReview.propTypes = {
   submission: PropTypes.object.isRequired,
 };
 
-const nextButtonSx = {
-  ml: 'auto',
-  flexShrink: 0,
-  height: 32,
-  px: 1.5,
-  fontSize: 12.5,
-  fontWeight: 500,
-  whiteSpace: 'nowrap',
-  color: 'common.white',
-  bgcolor: '#17171A',
-  '&:hover': { bgcolor: '#000' },
+// "Added by Sam" when an admin, not the creator, submitted the link
+function AddedByAdminNote({ submission }) {
+  if (!isAdminAddedLink(submission)) return null;
+  return (
+    <Typography sx={{ fontSize: 12, color: '#6E6E76' }}>
+      Added by {submission.admin?.user?.name || 'an admin'} for the creator
+    </Typography>
+  );
+}
+
+AddedByAdminNote.propTypes = {
+  submission: PropTypes.object.isRequired,
+};
+
+// What admins who can't approve see while an admin-added link waits for an approver
+function AwaitingLinkApproval({ submission }) {
+  return (
+    <Stack gap={1.25}>
+      <PostedLinks submission={submission} />
+      <Box sx={{ p: 1.5, borderRadius: 1.25, bgcolor: '#FFF6E5', color: '#8A5A00' }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 600 }}>
+          Waiting for a superadmin or CS lead to approve
+        </Typography>
+        <Typography sx={{ fontSize: 12, mt: 0.25 }}>
+          Added by {submission.admin?.user?.name || 'an admin'} for the creator.
+        </Typography>
+      </Box>
+    </Stack>
+  );
+}
+
+AwaitingLinkApproval.propTypes = {
+  submission: PropTypes.object.isRequired,
 };
 
 // Once a submission is decided: carry on with this creator, then the next creator with
@@ -293,9 +299,9 @@ function NextUp() {
   return (
     <Stack direction="row" alignItems="center" gap={1.5} sx={{ mt: 1.25 }}>
       <Typography sx={{ fontSize: 12.5, color: '#6E6E76' }}>{message}</Typography>
-      <Button variant="contained" onClick={action.onClick} sx={nextButtonSx}>
+      <CtaButton variant="dark" onClick={action.onClick} sx={{ ml: 'auto' }}>
         {action.label}
-      </Button>
+      </CtaButton>
     </Stack>
   );
 }
@@ -338,9 +344,101 @@ StepBar.propTypes = {
   status: PropTypes.string,
 };
 
+// Small CtaButton (28) + its 3px lip, so the field doesn't shift when Save appears
+const CAPTION_HEADER_HEIGHT = 31;
+// The edit box grows to this many lines, and the read-only caption is clamped to match
+const CAPTION_MAX_LINES = 8;
+
+const captionTextSx = { fontSize: 14, lineHeight: 1.6 };
+
+const PANEL_BODY_PAD_Y = 18;
+const CAPTION_GAP = 8;
+const CAPTION_TOGGLE_LINE_PX = 24;
+const CAPTION_CHROME_PX = CAPTION_HEADER_HEIGHT + CAPTION_GAP + CAPTION_TOGGLE_LINE_PX;
+const CAPTION_SECTION_ATTR = 'data-caption-section';
+
+// Read-only caption: same max height as the edit box, "See more" for the rest
+function CaptionText({ caption }) {
+  const textRef = useRef(null);
+  const expanded = useCreatorSubmissionsStore((s) => s.captionExpanded);
+  const overflows = useCreatorSubmissionsStore((s) => s.captionOverflows);
+
+  // Measured while clamped; re-measures when the panel is resized
+  useLayoutEffect(() => {
+    const element = textRef.current;
+    if (!element || expanded) return undefined;
+    const measure = () => setCaptionOverflows(element.scrollHeight > element.clientHeight + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [caption, expanded]);
+
+  const handleToggle = () => {
+    const willExpand = !expanded;
+    // The clamped view keeps the element's scroll position; collapse back to the first lines
+    if (!willExpand && textRef.current) textRef.current.scrollTop = 0;
+    toggleCaptionExpanded();
+    // Line the caption up with the top of the panel so it can run down to the footer
+    if (willExpand) {
+      requestAnimationFrame(() =>
+        textRef.current
+          ?.closest(`[${CAPTION_SECTION_ATTR}]`)
+          ?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+      );
+    }
+  };
+
+  return (
+    <Box>
+      <Typography
+        ref={textRef}
+        sx={{
+          ...captionTextSx,
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+          ...(expanded
+            ? {
+                // Desktop: the panel body is a size container, so cqh = its visible height.
+                // Mobile scrolls the whole page instead, so cap against the screen.
+                maxHeight: { xs: '60svh', md: `calc(100cqh - ${CAPTION_CHROME_PX}px)` },
+                overflowY: 'auto',
+                overscrollBehavior: 'contain',
+                pr: 0.5,
+              }
+            : {
+                display: '-webkit-box',
+                WebkitLineClamp: CAPTION_MAX_LINES,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }),
+        }}
+      >
+        {caption}
+      </Typography>
+      {(overflows || expanded) && (
+        <Link
+          component="button"
+          onClick={handleToggle}
+          sx={{ mt: 0.5, fontSize: 12, fontWeight: 500, color: '#1340FF' }}
+        >
+          {expanded ? 'See less' : 'See more'}
+        </Link>
+      )}
+    </Box>
+  );
+}
+
+CaptionText.propTypes = {
+  caption: PropTypes.string.isRequired,
+};
+
 function CaptionSection({ submission }) {
   const { caption, canEdit, isDirty, saving, changeCaption, discardCaption, saveCaption } =
     useCaptionEditor(submission);
+  const { captionHistory } = useCaptionHistory(submission.id);
+  // Stays "edited" after saving, for as long as the caption is the admin's version
+  const adminEdit = getAdminCaptionEdit(captionHistory, submission.caption);
 
   // Nothing to show or edit
   if (!canEdit && !caption) return null;
@@ -351,12 +449,33 @@ function CaptionSection({ submission }) {
   };
 
   return (
-    <Stack gap={1}>
-      <Stack direction="row" alignItems="center" gap={1}>
+    <Stack
+      {...{ [CAPTION_SECTION_ATTR]: '' }}
+      gap={`${CAPTION_GAP}px`}
+      sx={{ scrollMarginTop: PANEL_BODY_PAD_Y }}
+    >
+      {/* Fixed height = the Save button's, so the field doesn't shift when it appears */}
+      <Stack direction="row" alignItems="center" gap={1} sx={{ height: CAPTION_HEADER_HEIGHT }}>
         <Typography sx={sectionLabelSx}>Caption</Typography>
         {isDirty && (
-          <Typography sx={{ fontSize: 11.5, fontStyle: 'italic', color: '#9A9AA2' }}>
+          <Typography sx={{ fontSize: 12, fontStyle: 'italic', color: '#1340FF' }}>
             edited
+          </Typography>
+        )}
+        {!isDirty && adminEdit && (
+          <Tooltip
+            title={`Edited by ${adminEdit.authorName || 'an admin'} · ${dayjs(
+              adminEdit.createdAt
+            ).format('D MMM, h:mm A')}`}
+          >
+            <Typography sx={{ fontSize: 12, fontStyle: 'italic', color: '#1340FF' }}>
+              edited
+            </Typography>
+          </Tooltip>
+        )}
+        {!isDirty && !adminEdit && canEdit && (
+          <Typography sx={{ fontSize: 12, fontStyle: 'italic', color: '#9A9AA2' }}>
+            (editable)
           </Typography>
         )}
 
@@ -371,26 +490,13 @@ function CaptionSection({ submission }) {
               >
                 Discard
               </Link>
-              <Button
-                size="small"
-                variant="contained"
-                disabled={saving}
-                onClick={saveCaption}
-                sx={{
-                  minWidth: 0,
-                  height: 26,
-                  px: 1.25,
-                  fontSize: 12,
-                  bgcolor: '#1304FF',
-                  '&:hover': { bgcolor: '#0F03CC' },
-                }}
-              >
+              <CtaButton size="small" variant="blue" disabled={saving} onClick={saveCaption}>
                 {saving ? 'Saving…' : 'Save'}
-              </Button>
+              </CtaButton>
             </>
           ) : (
             caption && (
-              <Link component="button" onClick={handleCopy} sx={{ fontSize: 12 }}>
+              <Link component="button" onClick={handleCopy} sx={{ fontSize: 12, color: '#1340FF' }}>
                 Copy
               </Link>
             )
@@ -403,18 +509,16 @@ function CaptionSection({ submission }) {
           multiline
           fullWidth
           minRows={2}
-          maxRows={8}
+          maxRows={CAPTION_MAX_LINES}
           size="small"
           value={caption}
           disabled={saving}
           placeholder="Add a caption"
           onChange={(event) => changeCaption(event.target.value)}
-          InputProps={{ sx: { fontSize: 14, lineHeight: 1.6 } }}
+          InputProps={{ sx: captionTextSx }}
         />
       ) : (
-        <Typography sx={{ fontSize: 14, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-          {caption}
-        </Typography>
+        <CaptionText caption={caption} />
       )}
     </Stack>
   );
@@ -422,6 +526,53 @@ function CaptionSection({ submission }) {
 
 CaptionSection.propTypes = {
   submission: PropTypes.object.isRequired,
+};
+
+// Seconds of video per pixel dragged on the timestamp chip
+const DRAG_SECONDS_PER_PX = 0.15;
+
+// The feedback's timestamp; drag sideways to nudge it (and the video) to the right frame
+function DraftTimestamp({ time, onAdjust }) {
+  const dragRef = useRef(null);
+
+  return (
+    <Tooltip title="Drag to adjust" placement="top">
+      <Box
+        component="span"
+        onPointerDown={(event) => {
+          event.preventDefault();
+          event.currentTarget.setPointerCapture(event.pointerId);
+          dragRef.current = { startX: event.clientX, startTime: time };
+        }}
+        onPointerMove={(event) => {
+          const drag = dragRef.current;
+          if (!drag) return;
+          onAdjust(drag.startTime + (event.clientX - drag.startX) * DRAG_SECONDS_PER_PX);
+        }}
+        onPointerUp={() => {
+          dragRef.current = null;
+        }}
+        onPointerCancel={() => {
+          dragRef.current = null;
+        }}
+        sx={{
+          ...timestampChipSx,
+          mt: '1px',
+          cursor: 'ew-resize',
+          userSelect: 'none',
+          touchAction: 'none',
+          '&:hover': { bgcolor: '#DCD8FF' },
+        }}
+      >
+        {formatTimestamp(time)}
+      </Box>
+    </Tooltip>
+  );
+}
+
+DraftTimestamp.propTypes = {
+  time: PropTypes.number.isRequired,
+  onAdjust: PropTypes.func.isRequired,
 };
 
 function ReviewComposer({ submission }) {
@@ -433,22 +584,38 @@ function ReviewComposer({ submission }) {
     unsentComments,
     hasUnsentFeedback,
     changeDraft,
+    adjustDraftTime,
     postDraft,
   } = useCommentComposer(submission);
   const { saveCaption, saving: captionSaving } = useCaptionEditor(submission);
-  const { pending, hasClient, canApprove, canSendToCreator, approve, sendToCreator } =
-    useReviewDecision(submission);
+  const {
+    pending,
+    hasClient,
+    canSendToClient,
+    canApprove,
+    canSendToCreator,
+    sendToClient,
+    approve,
+    sendToCreator,
+  } = useReviewDecision(submission);
 
   const busy = sending || captionSaving || Boolean(pending);
-  const [showError, setShowError] = useState(false);
-  // Which decision is waiting for confirmation: 'approve' | 'creator' | null
-  const [confirming, setConfirming] = useState(null);
+  const showError = useCreatorSubmissionsStore((s) => s.feedbackError);
+  // Which decision is waiting for confirmation: 'client' | 'approve' | 'creator' | null
+  const confirmingDecision = useCreatorSubmissionsStore((s) => s.confirmingDecision);
+  const confirming = ['client', 'approve', 'creator'].includes(confirmingDecision)
+    ? confirmingDecision
+    : null;
   // Keeps the dialog's wording while it fades out after closing
   const lastConfirmingRef = useRef('approve');
   if (confirming) lastConfirmingRef.current = confirming;
   const dialogKind = confirming ?? lastConfirmingRef.current;
 
   const firstName = submission.user?.name?.split(' ')[0] || 'the creator';
+  // Photos / raw footage are sent back with reasons only (videos send their comment thread)
+  const changeRequestOpen = useCreatorSubmissionsStore((s) => s.changeRequestOpen);
+  const { selected: pickedReasons } = useReasonPicker('creator');
+  const reasons = isVideo ? [] : pickedReasons;
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -457,130 +624,207 @@ function ReviewComposer({ submission }) {
     }
   };
 
-  const confirmApprove = async () => {
-    // Unsaved caption edits and unposted feedback both go out with the decision
+  // Send to client / Approve: unsaved caption edits and unposted feedback go out first
+  const confirmDecision = async (kind) => {
     const saved = (await saveCaption()) && (await postDraft());
-    if (saved) await approve();
-    setConfirming(null);
+    if (saved) await (kind === 'client' ? sendToClient() : approve());
+    setConfirmingDecision(null);
   };
 
   // Validate first, so the dialog only opens for a send that can actually go out
   const handleSendToCreator = () => {
-    if (!draft.trim() && !hasUnsentFeedback) {
-      setShowError(true);
+    const hasFeedback = isVideo ? draft.trim() || hasUnsentFeedback : reasons.length;
+    if (!hasFeedback) {
+      setFeedbackError(true);
       return;
     }
-    setConfirming('creator');
+    setConfirmingDecision('creator');
   };
 
   const confirmSendToCreator = async () => {
-    // Photos/raw footage take feedback as text: everything not yet sent, incl. the draft.
-    // Videos forward their comment thread (the draft is posted to it first).
-    const feedbackText = [...unsentComments.map((comment) => comment.text), draft.trim()]
-      .filter(Boolean)
-      .join('\n\n');
+    // Videos forward their comment thread (the draft is posted to it first)
     const saved = (await saveCaption()) && (await postDraft());
-    if (saved) await sendToCreator(feedbackText);
-    setConfirming(null);
+    if (saved) await sendToCreator(reasons);
+    setConfirmingDecision(null);
   };
 
-  const placeholder = isVideo
-    ? `What ${firstName} should change at this moment`
-    : `Notes for the client, or what ${firstName} should change`;
+  // Client feedback rounds: comments can exist but all be left out of what goes to the creator
+  let emptyFeedbackError = `Add feedback so ${firstName} knows what to change.`;
+  if (submission.status === 'CLIENT_FEEDBACK') {
+    emptyFeedbackError = `Tick at least one comment for ${firstName}, or add feedback here.`;
+  }
 
-  // Client campaigns validate with the client first; otherwise the admin approves directly
-  const approveLabel = hasClient ? 'Send to client' : 'Approve';
-  const approveHint = hasClient ? 'for validation' : 'content is good to go';
+  const placeholder = `What ${firstName} should change at this moment`;
 
   const label = getSubmissionLabel(submission);
-  // Unsent comments plus the draft (which is posted on confirm)
-  const feedbackCount = unsentComments.length + (draft.trim() ? 1 : 0);
+  // Unsent comments plus the draft (which is posted on confirm); videos only
+  const feedbackCount = isVideo ? unsentComments.length + (draft.trim() ? 1 : 0) : 0;
 
   const confirmCopy = {
-    approve: hasClient
-      ? {
-          title: `Send ${label} to the client?`,
-          description:
-            "The client will review it and either approve it or send feedback. You can't edit it while it's with them.",
-          confirmLabel: 'Send to client',
-        }
-      : {
-          title: `Approve ${label}?`,
-          description: `This marks ${label} as approved and moves ${firstName} on to the next step.`,
-          confirmLabel: 'Approve',
-        },
+    client: {
+      title: `Send ${label} to the client?`,
+      description:
+        "The client will review it and either approve it or send feedback. You can't edit it while it's with them.",
+      confirmLabel: 'Send to client',
+    },
+    approve: {
+      title: `Approve ${label}?`,
+      description: hasClient
+        ? `This approves ${label} straight away, without the client reviewing it.`
+        : `This marks ${label} as approved and moves ${firstName} on to the next step.`,
+      confirmLabel: 'Approve',
+    },
     creator: {
       title: `Send feedback to ${firstName}?`,
-      description: `${feedbackCount} ${
-        feedbackCount === 1 ? 'piece' : 'pieces'
-      } of feedback will be sent and ${label} goes back to ${firstName} for changes.`,
+      description: `${[
+        feedbackCount && `${feedbackCount} ${feedbackCount === 1 ? 'piece' : 'pieces'} of feedback`,
+        reasons.length && `${reasons.length} ${reasons.length === 1 ? 'reason' : 'reasons'}`,
+      ]
+        .filter(Boolean)
+        .join(' and ')} will be sent and ${label} goes back to ${firstName} for changes.`,
       confirmLabel: 'Send to creator',
     },
   }[dialogKind];
 
+  const sendToClientButton = canSendToClient && (
+    <CtaButton
+      fullWidth
+      size="large"
+      variant="dark"
+      hint="for validation"
+      disabled={busy}
+      onClick={() => setConfirmingDecision('client')}
+    >
+      {pending === 'client' ? 'Sending…' : 'Send to client'}
+    </CtaButton>
+  );
+
+  // Its own button, last in the footer: approve straight away (first review only)
+  const approveButton = canApprove && (
+    <CtaButton
+      fullWidth
+      size="large"
+      variant="white"
+      color={APPROVE_COLOR}
+      hint={hasClient ? 'without client review' : 'content is good to go'}
+      disabled={busy}
+      onClick={() => setConfirmingDecision('approve')}
+    >
+      {pending === 'approve' ? 'Approving…' : 'Approve'}
+    </CtaButton>
+  );
+
+  const sendToCreatorLabel = pending === 'creator' ? 'Sending…' : 'Send to creator';
+
+  // Photos / raw footage: "Request a change" first (like the posted-link review); the
+  // reasons and the send only show once sending back. Without an approve option (client
+  // feedback round) sending back is the only choice, so they show straight away.
+  const showReasons = !isVideo && canSendToCreator && (changeRequestOpen || !canApprove);
+
+  let actions;
+  if (showReasons) {
+    actions = (
+      <Stack direction="row" gap={1.125}>
+        {/* Nothing to go back to when sending back is the only option */}
+        {canApprove && (
+          <CtaButton
+            fullWidth
+            size="large"
+            variant="white"
+            color={NEUTRAL_COLOR}
+            disabled={busy}
+            onClick={closeChangeRequest}
+          >
+            Cancel
+          </CtaButton>
+        )}
+        <CtaButton
+          fullWidth
+          size="large"
+          variant="blue"
+          hint="for resubmission"
+          disabled={busy}
+          onClick={handleSendToCreator}
+        >
+          {sendToCreatorLabel}
+        </CtaButton>
+      </Stack>
+    );
+  } else {
+    actions = (
+      <Stack gap={1.125}>
+        <Stack direction="row" gap={1.125}>
+          {sendToClientButton}
+          {canSendToCreator && isVideo && (
+            <CtaButton
+              fullWidth
+              size="large"
+              variant="white"
+              color={NEUTRAL_COLOR}
+              hint="for resubmission"
+              disabled={busy}
+              onClick={handleSendToCreator}
+            >
+              {sendToCreatorLabel}
+            </CtaButton>
+          )}
+          {canSendToCreator && !isVideo && (
+            <CtaButton
+              fullWidth
+              size="large"
+              variant="white"
+              color={REQUEST_CHANGE_COLOR}
+              hint="send back to creator"
+              disabled={busy}
+              onClick={openChangeRequest}
+            >
+              Request a change
+            </CtaButton>
+          )}
+        </Stack>
+        {approveButton}
+      </Stack>
+    );
+  }
+
   return (
     <Stack gap={1.25}>
-      <Stack direction="row" alignItems="center">
-        <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>Your feedback</Typography>
-        <Typography sx={{ ml: 'auto', fontSize: 11.5, color: '#9A9AA2' }}>
-          Enter to add · Shift+Enter for new line
-        </Typography>
-      </Stack>
+      {/* Typed, timestamped feedback is for videos; photos/raw footage use reasons only */}
+      {isVideo && (
+        <Stack direction="row" alignItems="center">
+          <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>Your feedback</Typography>
+          <Typography sx={{ ml: 'auto', fontSize: 11.5, color: '#9A9AA2' }}>
+            Enter to add · Shift+Enter for new line
+          </Typography>
+        </Stack>
+      )}
 
-      <TextField
-        multiline
-        minRows={2}
-        maxRows={6}
-        size="small"
-        value={draft}
-        disabled={sending}
-        onChange={(event) => {
-          changeDraft(event.target.value);
-          setShowError(false);
-        }}
-        onKeyDown={handleKeyDown}
-        error={showError}
-        helperText={showError ? `Add feedback so ${firstName} knows what to change.` : ''}
-        placeholder={placeholder}
-        InputProps={{
-          startAdornment: isVideo ? (
-            <TimestampChip timestamp={formatTimestamp(draftTime)} />
-          ) : undefined,
-          sx: { fontSize: 13, alignItems: 'flex-start' },
-        }}
-      />
+      {isVideo && (
+        <TextField
+          multiline
+          minRows={2}
+          maxRows={6}
+          size="small"
+          value={draft}
+          disabled={sending}
+          onChange={(event) => {
+            changeDraft(event.target.value);
+            setFeedbackError(false);
+          }}
+          onKeyDown={handleKeyDown}
+          error={showError}
+          helperText={showError ? emptyFeedbackError : ''}
+          placeholder={placeholder}
+          InputProps={{
+            startAdornment: <DraftTimestamp time={draftTime} onAdjust={adjustDraftTime} />,
+            sx: { fontSize: 13, alignItems: 'flex-start' },
+          }}
+        />
+      )}
 
-      <Stack direction="row" gap={1.125}>
-        {canApprove && (
-          <Button
-            fullWidth
-            variant="contained"
-            disabled={busy}
-            onClick={() => setConfirming('approve')}
-            sx={primaryActionSx}
-          >
-            {pending === 'approve' ? 'Sending…' : approveLabel}
-            <Box component="span" sx={{ ...actionHintSx, opacity: 0.8 }}>
-              {approveHint}
-            </Box>
-          </Button>
-        )}
-        {canSendToCreator && (
-          <Button
-            fullWidth
-            variant="outlined"
-            color="inherit"
-            disabled={busy}
-            onClick={handleSendToCreator}
-            sx={secondaryActionSx}
-          >
-            {pending === 'creator' ? 'Sending…' : 'Send to creator'}
-            <Box component="span" sx={{ ...actionHintSx, color: '#6E6E76' }}>
-              for resubmission
-            </Box>
-          </Button>
-        )}
-      </Stack>
+      {showReasons && <ReasonChips kind="creator" />}
+
+      {actions}
 
       <DecisionConfirmDialog
         open={Boolean(confirming)}
@@ -588,8 +832,10 @@ function ReviewComposer({ submission }) {
         description={confirmCopy.description}
         confirmLabel={confirmCopy.confirmLabel}
         loading={busy}
-        onConfirm={dialogKind === 'approve' ? confirmApprove : confirmSendToCreator}
-        onClose={() => setConfirming(null)}
+        onConfirm={
+          dialogKind === 'creator' ? confirmSendToCreator : () => confirmDecision(dialogKind)
+        }
+        onClose={() => setConfirmingDecision(null)}
       />
     </Stack>
   );
@@ -597,6 +843,151 @@ function ReviewComposer({ submission }) {
 
 ReviewComposer.propTypes = {
   submission: PropTypes.object.isRequired,
+};
+
+const CLIP_STATUS = {
+  REVISION_REQUESTED: { label: 'Changes requested', color: '#B42318', bgcolor: '#FEE4E2' },
+  REJECTED: { label: 'Changes requested', color: '#B42318', bgcolor: '#FEE4E2' },
+  APPROVED: { label: 'Approved', color: '#067647', bgcolor: '#DCFAE6' },
+};
+
+// Raw footage clips as a list; the one on screen is highlighted, clicking jumps to it
+function FilesReceived({ submission }) {
+  const itemIndex = useCreatorSubmissionsStore((s) => s.itemIndex);
+  const clips = (submission.rawFootages || []).filter((clip) => clip.url);
+  if (!clips.length) return null;
+
+  return (
+    <Stack gap={1}>
+      <Typography sx={sectionLabelSx}>Files received · {clips.length}</Typography>
+      <Stack sx={{ border: '1px solid #EDEDF0', borderRadius: 1.25, overflow: 'hidden' }}>
+        {clips.map((clip, index) => {
+          const isCurrent = index === Math.min(itemIndex, clips.length - 1);
+          const status = CLIP_STATUS[clip.status];
+          return (
+            <ButtonBase
+              key={clip.id}
+              onClick={() => setItemIndex(index)}
+              sx={{
+                gap: 1.25,
+                px: 1.5,
+                py: 1,
+                justifyContent: 'flex-start',
+                textAlign: 'left',
+                bgcolor: isCurrent ? '#EDEBFF' : 'transparent',
+                '&:not(:last-of-type)': { borderBottom: '1px solid #EDEDF0' },
+                '&:hover': { bgcolor: isCurrent ? '#EDEBFF' : '#F7F7F9' },
+              }}
+            >
+              <Iconify
+                icon={isCurrent ? 'eva:play-circle-fill' : 'eva:film-outline'}
+                width={18}
+                sx={{ flexShrink: 0, color: isCurrent ? '#1304FF' : '#8A8A92' }}
+              />
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: isCurrent ? 600 : 500 }}>
+                  Clip {index + 1}
+                </Typography>
+                {clip.createdAt && (
+                  <Typography sx={{ fontSize: 11.5, color: '#8A8A92' }}>
+                    Uploaded {dayjs(clip.createdAt).format('D MMM, h:mm A')}
+                  </Typography>
+                )}
+              </Box>
+              {status && (
+                <Box
+                  component="span"
+                  sx={{
+                    flexShrink: 0,
+                    px: 0.75,
+                    py: 0.25,
+                    borderRadius: 0.75,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: status.color,
+                    bgcolor: status.bgcolor,
+                  }}
+                >
+                  {status.label}
+                </Box>
+              )}
+            </ButtonBase>
+          );
+        })}
+      </Stack>
+    </Stack>
+  );
+}
+
+FilesReceived.propTypes = {
+  submission: PropTypes.object.isRequired,
+};
+
+// Swaps the panel body between the review thread and past feedback / caption edits
+function HistoryToggle() {
+  const historyOpen = useCreatorSubmissionsStore((s) => s.historyOpen);
+
+  return (
+    <Tooltip title={historyOpen ? 'Back to review' : 'Feedback & caption history'}>
+      <IconButton
+        size="small"
+        onClick={toggleHistory}
+        sx={{
+          flexShrink: 0,
+          border: '1px solid #E2E2E6',
+          borderRadius: 0.875,
+          color: historyOpen ? '#1304FF' : '#6E6E76',
+          bgcolor: historyOpen ? '#EDEBFF' : 'transparent',
+        }}
+      >
+        <Iconify icon={historyOpen ? 'eva:close-fill' : 'eva:clock-outline'} width={16} />
+      </IconButton>
+    </Tooltip>
+  );
+}
+
+const pad = (value) => String(value).padStart(2, '0');
+
+const formatCountdown = (totalSeconds) =>
+  `${pad(Math.floor(totalSeconds / 3600))}:${pad(Math.floor((totalSeconds % 3600) / 60))}:${pad(
+    totalSeconds % 60
+  )}`;
+
+// While the client's feedback round is open, how long they have left to add more
+function ClientFeedbackTimer({ deadline }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const secondsLeft = Math.max(0, Math.floor((new Date(deadline).getTime() - now) / 1000));
+  if (!secondsLeft) return null;
+
+  return (
+    <Tooltip
+      title="The client can still add feedback to this round until the timer runs out."
+      placement="bottom-start"
+    >
+      <Stack
+        direction="row"
+        alignItems="center"
+        gap={0.75}
+        sx={{ alignSelf: 'flex-start', fontSize: 12, fontWeight: 500, color: '#1340FF' }}
+      >
+        <Iconify icon="ic:sharp-timer" width={15} />
+        Client feedback window ·
+        <Box component="span" sx={{ fontFamily: 'monospace', fontWeight: 600 }}>
+          {formatCountdown(secondsLeft)}
+        </Box>
+      </Stack>
+    </Tooltip>
+  );
+}
+
+ClientFeedbackTimer.propTypes = {
+  deadline: PropTypes.string.isRequired,
 };
 
 // "Upload 2 of 3" with older/newer arrows; same as ← → and horizontal swipes
@@ -682,7 +1073,10 @@ OlderVersionNotice.propTypes = {
 
 export default function ViewerReviewPanel() {
   const { submission, creator } = useViewerData();
+  const { user } = useAuthContext();
   const { versionIndex } = useViewerNavigation();
+  const historyOpen = useCreatorSubmissionsStore((s) => s.historyOpen);
+  const isVideo = submission?.submissionType?.type === 'VIDEO';
 
   if (!submission) return <Box sx={{ flex: 1, bgcolor: 'background.paper' }} />;
 
@@ -690,11 +1084,14 @@ export default function ViewerReviewPanel() {
   const submittedAt = getSubmittedAt(submission);
   // Awaiting link approval → the link moves to the footer as the action
   const isLinkReview = submission.status === 'APPROVE_LINK';
+  // A link an admin added waits for a superadmin / CS lead; other admins just see it's pending
+  const awaitingApprover = isAdminAddedLink(submission) && !canApproveAdminAddedLinks(user);
+  const feedbackDeadline =
+    submission.status === 'CLIENT_FEEDBACK' ? submission.video?.[0]?.feedbackDeadline : null;
 
   const feedbackSection = (
     <Stack gap={1.25}>
-      <Typography sx={sectionLabelSx}>Feedback</Typography>
-      {/* key resets the thread when switching submissions */}
+      <Typography sx={sectionLabelSx}>Review Thread</Typography>
       <ViewerComments key={submission.id} submission={submission} />
     </Stack>
   );
@@ -723,22 +1120,43 @@ export default function ViewerReviewPanel() {
             </Typography>
           </Box>
           <StatusChip status={submission.status} />
+          <HistoryToggle />
         </Stack>
 
         <StepBar status={submission.status} />
+        {feedbackDeadline && <ClientFeedbackTimer deadline={feedbackDeadline} />}
         <VersionSwitcher />
       </Stack>
 
       {/* Body */}
-      <Stack gap={2.25} sx={{ flex: 1, overflow: 'auto', px: 2.75, py: 2.25 }}>
-        {submission.status === 'POSTED' && <PostedLinks submission={submission} />}
+      <Stack
+        {...{ [REVIEW_SCROLL_ATTR]: '' }}
+        gap={2.25}
+        sx={{
+          flex: 1,
+          overflow: 'auto',
+          px: 2.75,
+          py: `${PANEL_BODY_PAD_Y}px`,
+          containerType: { md: 'size' },
+        }}
+      >
+        {historyOpen ? (
+          <FeedbackHistory submission={submission} />
+        ) : (
+          <>
+            {submission.status === 'POSTED' && <PostedLinks submission={submission} />}
 
-        {/* key drops the caption section's state when switching submissions */}
-        <CaptionSection key={submission.id} submission={submission} />
+            {/* Videos only; key drops the caption section's state between submissions */}
+            {isVideo && <CaptionSection key={submission.id} submission={submission} />}
 
-        {/* TODO: "Files received" list for RAW_FOOTAGE */}
+            {submission.submissionType?.type === 'RAW_FOOTAGE' && (
+              <FilesReceived submission={submission} />
+            )}
 
-        {feedbackSection}
+            {/* Photos / raw footage are reviewed with reasons only, no comment thread */}
+            {isVideo && feedbackSection}
+          </>
+        )}
       </Stack>
 
       {/* Footer */}
@@ -747,7 +1165,10 @@ export default function ViewerReviewPanel() {
         {versionIndex > 0 && (
           <OlderVersionNotice submission={submission} versionIndex={versionIndex} />
         )}
-        {versionIndex === 0 && isLinkReview && (
+        {versionIndex === 0 && isLinkReview && awaitingApprover && (
+          <AwaitingLinkApproval submission={submission} />
+        )}
+        {versionIndex === 0 && isLinkReview && !awaitingApprover && (
           <LinkReview key={submission.id} submission={submission} />
         )}
         {versionIndex === 0 && needsAction(submission.status) && !isLinkReview && (
@@ -766,6 +1187,9 @@ export default function ViewerReviewPanel() {
               {WAITING_TEXT[submission.status] ?? getStatusChip(submission.status).label}
             </Typography>
           </Box>
+        )}
+        {versionIndex === 0 && canAddPostingLink(submission) && (
+          <PostingLinkForm key={submission.id} submission={submission} />
         )}
         {versionIndex === 0 && !needsAction(submission.status) && <NextUp />}
       </Box>

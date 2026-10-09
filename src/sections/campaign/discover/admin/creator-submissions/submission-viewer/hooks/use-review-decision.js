@@ -1,38 +1,46 @@
-import { useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import useViewerData from './use-viewer-data';
-import { useCreatorSubmissionsStore } from '../../store/use-creator-submissions-store';
+import {
+  setPendingDecision,
+  useCreatorSubmissionsStore,
+} from '../../store/use-creator-submissions-store';
+
+// The admin's part of the flow: first review, and after the client has given feedback
+const ADMIN_REVIEW_STATUSES = ['PENDING_REVIEW', 'CLIENT_FEEDBACK'];
 
 /**
  * Admin decisions on submitted content, mirroring the legacy flows:
  *
- * - Video:  client campaign → send-to-client; otherwise /approve. Sending back uses
- *           send-to-creator, which forwards the video's unsent comments (the feedback).
- * - Photos / raw footage: /approve with approve | request_revision (+ feedback text);
- *           the backend routes approval through client review when a client is attached.
+ * - Send to client (client campaigns, first review): video → send-to-client;
+ *   photos / raw footage → /approve, which the backend routes through client review.
+ * - Approve (first review only): approves outright — /approve, with `direct`
+ *   so photos / raw footage on client campaigns skip the client too.
+ * - Send to creator: video → send-to-creator (forwards the unsent comment thread);
+ *   photos / raw footage → /approve request_revision with the picked reasons.
  *
  * Decisions always apply to the latest upload.
  */
 export default function useReviewDecision(submission) {
   const { mutateSubmissions } = useViewerData();
   const hasClient = useCreatorSubmissionsStore((s) => s.campaignHasClient);
-  // 'approve' | 'creator' while a request is in flight
-  const [pending, setPending] = useState(null);
+  // 'client' | 'approve' | 'creator' while a request is in flight
+  const pending = useCreatorSubmissionsStore((s) => s.pendingDecision);
 
   const isVideo = submission.submissionType?.type === 'VIDEO';
   const videoId = isVideo ? submission.video?.[0]?.id : undefined;
 
-  // Same visibility as the legacy admin panel: approve/send-to-client only on first review;
-  // client feedback can only be forwarded to the creator
+  const isAdminsTurn = ADMIN_REVIEW_STATUSES.includes(submission.status);
+  const canSendToClient = hasClient && submission.status === 'PENDING_REVIEW';
+  // Same as the current flow: approving is only for the first review
   const canApprove = submission.status === 'PENDING_REVIEW';
-  const canSendToCreator = ['PENDING_REVIEW', 'CLIENT_FEEDBACK'].includes(submission.status);
+  const canSendToCreator = isAdminsTurn;
 
   const run = async (kind, request, successMessage) => {
     if (pending) return false;
-    setPending(kind);
+    setPendingDecision(kind);
     try {
       await request();
       await mutateSubmissions();
@@ -44,26 +52,39 @@ export default function useReviewDecision(submission) {
       });
       return false;
     } finally {
-      setPending(null);
+      setPendingDecision(null);
     }
   };
+
+  const sendToClient = () =>
+    run(
+      'client',
+      () =>
+        isVideo
+          ? axiosInstance.post(endpoints.submission.v4.sendToClient(submission.id), { videoId })
+          : axiosInstance.post(endpoints.submission.v4.approve, {
+              submissionId: submission.id,
+              action: 'approve',
+            }),
+      'Sent to client'
+    );
 
   const approve = () =>
     run(
       'approve',
       () =>
-        isVideo && hasClient
-          ? axiosInstance.post(endpoints.submission.v4.sendToClient(submission.id), { videoId })
-          : axiosInstance.post(endpoints.submission.v4.approve, {
-              submissionId: submission.id,
-              action: 'approve',
-              ...(videoId && { videoId }),
-            }),
-      hasClient ? 'Sent to client' : 'Submission approved'
+        axiosInstance.post(endpoints.submission.v4.approve, {
+          submissionId: submission.id,
+          action: 'approve',
+          direct: true,
+          ...(videoId && { videoId }),
+        }),
+      'Submission approved'
     );
 
-  // feedback: text for photos/raw footage (videos send their comment thread instead)
-  const sendToCreator = (feedback) =>
+  // reasons: photos/raw footage are sent back with reasons only (no typed feedback);
+  // videos forward their comment thread instead
+  const sendToCreator = (reasons = []) =>
     run(
       'creator',
       () =>
@@ -72,11 +93,20 @@ export default function useReviewDecision(submission) {
           : axiosInstance.post(endpoints.submission.v4.approve, {
               submissionId: submission.id,
               action: 'request_revision',
-              feedback,
-              reasons: [],
+              feedback: '',
+              reasons,
             }),
       'Sent to creator for changes'
     );
 
-  return { pending, hasClient, canApprove, canSendToCreator, approve, sendToCreator };
+  return {
+    pending,
+    hasClient,
+    canSendToClient,
+    canApprove,
+    canSendToCreator,
+    sendToClient,
+    approve,
+    sendToCreator,
+  };
 }

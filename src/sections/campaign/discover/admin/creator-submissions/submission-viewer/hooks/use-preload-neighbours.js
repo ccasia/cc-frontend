@@ -2,17 +2,19 @@ import { useEffect } from 'react';
 
 import useViewerData from './use-viewer-data';
 import { preloadMedia } from '../media-cache';
-import { getSubmissionMedia, firstActionableIndex } from '../utils';
+import { getItemCount, getSubmissionMedia, firstActionableIndex } from '../utils';
 
 // Warms this creator's other submissions and the submission up/down would open on
 // the previous/next creator, so those switches start with a known shape and a warm cache.
 export default function usePreloadNeighbours() {
   const { creators, creatorIndex, submission } = useViewerData();
 
-  // Every photo of the open set, so flipping through it is instant
+  // Every photo / clip of the open set, so stepping through it starts with a known
+  // shape (and, for clips, a known duration)
   useEffect(() => {
-    if (submission?.submissionType?.type !== 'PHOTO') return;
-    getSubmissionMedia(submission).urls.forEach((url) => preloadMedia({ kind: 'photo', url }));
+    if (getItemCount(submission) < 2) return;
+    const { kind, urls } = getSubmissionMedia(submission);
+    urls.forEach((url) => preloadMedia({ kind, url }));
   }, [submission]);
 
   useEffect(() => {
