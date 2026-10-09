@@ -134,11 +134,31 @@ export const getUnsentFeedback = (comments) =>
 // Thread rows carry this attribute so a comment can be scrolled into view after posting
 export const COMMENT_ID_ATTR = 'data-comment-id';
 
+// The review panel's scroll area (thread scrolling and the "new comments" pill measure it)
+export const REVIEW_SCROLL_ATTR = 'data-review-scroll';
+
+// New thread rows expand in from 0 height (~200ms); scrolling before that only brings a
+// sliver into view and stops at the comment above
+const REVEAL_DELAY_MS = 250;
+const REVEAL_MARGIN_PX = 16;
+
+// Scrolls the review panel so a comment is fully in view, once it has finished expanding.
+// Scrolls the panel itself: scrollIntoView would also scroll the rows' clipping wrappers.
 export const revealComment = (commentId) => {
   if (!commentId) return;
-  requestAnimationFrame(() =>
-    document
-      .querySelector(`[${COMMENT_ID_ATTR}="${commentId}"]`)
-      ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-  );
+  setTimeout(() => {
+    const element = document.querySelector(`[${COMMENT_ID_ATTR}="${commentId}"]`);
+    const scroller = element?.closest(`[${REVIEW_SCROLL_ATTR}]`);
+    if (!element || !scroller) return;
+
+    const box = element.getBoundingClientRect();
+    const view = scroller.getBoundingClientRect();
+    let offset = 0;
+    if (box.bottom > view.bottom - REVEAL_MARGIN_PX) {
+      offset = box.bottom - view.bottom + REVEAL_MARGIN_PX;
+    } else if (box.top < view.top + REVEAL_MARGIN_PX) {
+      offset = box.top - view.top - REVEAL_MARGIN_PX;
+    }
+    if (offset) scroller.scrollBy({ top: offset, behavior: 'smooth' });
+  }, REVEAL_DELAY_MS);
 };

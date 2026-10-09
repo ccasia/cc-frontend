@@ -9,7 +9,6 @@ import {
   Stack,
   alpha,
   Avatar,
-  Button,
   darken,
   Tooltip,
   TextField,
@@ -21,6 +20,7 @@ import {
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import CtaButton from 'src/components/cta-button';
 
 import ReasonChips from './ReasonChips';
 import { sectionLabelSx } from '../styles';
@@ -35,11 +35,18 @@ import DecisionConfirmDialog from './DecisionConfirmDialog';
 import useReviewDecision from '../hooks/use-review-decision';
 import useCommentComposer from '../hooks/use-comment-composer';
 import useViewerNavigation from '../hooks/use-viewer-navigation';
+import ViewerComments, { timestampChipSx } from './ViewerComments';
 import useCaptionHistory, { getAdminCaptionEdit } from '../hooks/use-caption-history';
-import ViewerComments, { timestampChipSx, REVIEW_SCROLL_ATTR } from './ViewerComments';
 import { getInitials, getStatusChip, getSubmittedAt, getSubmissionLabel } from '../../utils';
-import { STEPS, needsAction, getStepIndex, formatTimestamp, isChangesRequested } from '../utils';
 import { isAdminAddedLink, canAddPostingLink, canApproveAdminAddedLinks } from '../posting-links';
+import {
+  STEPS,
+  needsAction,
+  getStepIndex,
+  formatTimestamp,
+  isChangesRequested,
+  REVIEW_SCROLL_ATTR,
+} from '../utils';
 import {
   setItemIndex,
   toggleHistory,
@@ -66,18 +73,10 @@ const WAITING_TEXT = {
   REJECTED: 'Changes requested · waiting on the creator',
 };
 
-// Two-line decision buttons ("Approve link / marks as completed") shared by the footers
-const actionButtonSx = { height: 44, flexDirection: 'column', lineHeight: 1.2 };
-
-const primaryActionSx = {
-  ...actionButtonSx,
-  bgcolor: '#1304FF',
-  '&:hover': { bgcolor: '#0F03CC' },
-};
-
-const secondaryActionSx = { ...actionButtonSx, borderColor: '#D9D9DE' };
-
-const actionHintSx = { fontSize: 11, fontWeight: 400 };
+// Text colours for white CtaButtons
+const APPROVE_COLOR = '#1ABF66';
+const REQUEST_CHANGE_COLOR = '#D4321C';
+const NEUTRAL_COLOR = '#3A3A3C';
 
 const firstNameOf = (user) => user?.name?.split(' ')[0] || 'Creator';
 
@@ -164,56 +163,51 @@ function LinkReview({ submission }) {
 
       {requesting ? (
         <Stack direction="row" gap={1.125}>
-          <Button
+          <CtaButton
             fullWidth
-            variant="outlined"
-            color="inherit"
+            size="large"
+            variant="white"
+            color={NEUTRAL_COLOR}
             disabled={busy}
             onClick={closeLinkChange}
-            sx={secondaryActionSx}
           >
             Cancel
-          </Button>
-          <Button
+          </CtaButton>
+          <CtaButton
             fullWidth
-            variant="contained"
+            size="large"
+            variant="blue"
+            hint="to post a new link"
             disabled={busy}
             onClick={handleSendBack}
-            sx={primaryActionSx}
           >
             {pending === 'reject' ? 'Sending…' : 'Send to creator'}
-            <Box component="span" sx={{ ...actionHintSx, opacity: 0.8 }}>
-              to post a new link
-            </Box>
-          </Button>
+          </CtaButton>
         </Stack>
       ) : (
         <Stack direction="row" gap={1.125}>
-          <Button
+          <CtaButton
             fullWidth
-            variant="contained"
+            size="large"
+            variant="white"
+            color={APPROVE_COLOR}
+            hint="marks as completed"
             disabled={busy}
             onClick={() => setConfirmingDecision('link-approve')}
-            sx={primaryActionSx}
           >
             {pending === 'approve' ? 'Approving…' : 'Approve link'}
-            <Box component="span" sx={{ ...actionHintSx, opacity: 0.8 }}>
-              marks as completed
-            </Box>
-          </Button>
-          <Button
+          </CtaButton>
+          <CtaButton
             fullWidth
-            variant="outlined"
-            color="inherit"
+            size="large"
+            variant="white"
+            color={REQUEST_CHANGE_COLOR}
+            hint="link is wrong"
             disabled={busy}
             onClick={openLinkChange}
-            sx={secondaryActionSx}
           >
             Request a change
-            <Box component="span" sx={{ ...actionHintSx, color: '#6E6E76' }}>
-              link is wrong
-            </Box>
-          </Button>
+          </CtaButton>
         </Stack>
       )}
 
@@ -269,19 +263,6 @@ AwaitingLinkApproval.propTypes = {
   submission: PropTypes.object.isRequired,
 };
 
-const nextButtonSx = {
-  ml: 'auto',
-  flexShrink: 0,
-  height: 32,
-  px: 1.5,
-  fontSize: 12.5,
-  fontWeight: 500,
-  whiteSpace: 'nowrap',
-  color: 'common.white',
-  bgcolor: '#17171A',
-  '&:hover': { bgcolor: '#000' },
-};
-
 // Once a submission is decided: carry on with this creator, then the next creator with
 // something needing action, then back to the list when everything's done.
 function NextUp() {
@@ -318,9 +299,9 @@ function NextUp() {
   return (
     <Stack direction="row" alignItems="center" gap={1.5} sx={{ mt: 1.25 }}>
       <Typography sx={{ fontSize: 12.5, color: '#6E6E76' }}>{message}</Typography>
-      <Button variant="contained" onClick={action.onClick} sx={nextButtonSx}>
+      <CtaButton variant="dark" onClick={action.onClick} sx={{ ml: 'auto' }}>
         {action.label}
-      </Button>
+      </CtaButton>
     </Stack>
   );
 }
@@ -363,7 +344,8 @@ StepBar.propTypes = {
   status: PropTypes.string,
 };
 
-const CAPTION_HEADER_HEIGHT = 26;
+// Small CtaButton (28) + its 3px lip, so the field doesn't shift when Save appears
+const CAPTION_HEADER_HEIGHT = 31;
 // The edit box grows to this many lines, and the read-only caption is clamped to match
 const CAPTION_MAX_LINES = 8;
 
@@ -508,22 +490,9 @@ function CaptionSection({ submission }) {
               >
                 Discard
               </Link>
-              <Button
-                size="small"
-                variant="contained"
-                disabled={saving}
-                onClick={saveCaption}
-                sx={{
-                  minWidth: 0,
-                  height: CAPTION_HEADER_HEIGHT,
-                  px: 1.25,
-                  fontSize: 12,
-                  bgcolor: '#1304FF',
-                  '&:hover': { bgcolor: '#0F03CC' },
-                }}
-              >
+              <CtaButton size="small" variant="blue" disabled={saving} onClick={saveCaption}>
                 {saving ? 'Saving…' : 'Save'}
-              </Button>
+              </CtaButton>
             </>
           ) : (
             caption && (
@@ -619,14 +588,22 @@ function ReviewComposer({ submission }) {
     postDraft,
   } = useCommentComposer(submission);
   const { saveCaption, saving: captionSaving } = useCaptionEditor(submission);
-  const { pending, hasClient, canApprove, canSendToCreator, approve, sendToCreator } =
-    useReviewDecision(submission);
+  const {
+    pending,
+    hasClient,
+    canSendToClient,
+    canApprove,
+    canSendToCreator,
+    sendToClient,
+    approve,
+    sendToCreator,
+  } = useReviewDecision(submission);
 
   const busy = sending || captionSaving || Boolean(pending);
   const showError = useCreatorSubmissionsStore((s) => s.feedbackError);
-  // Which decision is waiting for confirmation: 'approve' | 'creator' | null
+  // Which decision is waiting for confirmation: 'client' | 'approve' | 'creator' | null
   const confirmingDecision = useCreatorSubmissionsStore((s) => s.confirmingDecision);
-  const confirming = ['approve', 'creator'].includes(confirmingDecision)
+  const confirming = ['client', 'approve', 'creator'].includes(confirmingDecision)
     ? confirmingDecision
     : null;
   // Keeps the dialog's wording while it fades out after closing
@@ -647,10 +624,10 @@ function ReviewComposer({ submission }) {
     }
   };
 
-  const confirmApprove = async () => {
-    // Unsaved caption edits and unposted feedback both go out with the decision
+  // Send to client / Approve: unsaved caption edits and unposted feedback go out first
+  const confirmDecision = async (kind) => {
     const saved = (await saveCaption()) && (await postDraft());
-    if (saved) await approve();
+    if (saved) await (kind === 'client' ? sendToClient() : approve());
     setConfirmingDecision(null);
   };
 
@@ -679,27 +656,24 @@ function ReviewComposer({ submission }) {
 
   const placeholder = `What ${firstName} should change at this moment`;
 
-  // Client campaigns validate with the client first; otherwise the admin approves directly
-  const approveLabel = hasClient ? 'Send to client' : 'Approve';
-  const approveHint = hasClient ? 'for validation' : 'content is good to go';
-
   const label = getSubmissionLabel(submission);
   // Unsent comments plus the draft (which is posted on confirm); videos only
   const feedbackCount = isVideo ? unsentComments.length + (draft.trim() ? 1 : 0) : 0;
 
   const confirmCopy = {
-    approve: hasClient
-      ? {
-          title: `Send ${label} to the client?`,
-          description:
-            "The client will review it and either approve it or send feedback. You can't edit it while it's with them.",
-          confirmLabel: 'Send to client',
-        }
-      : {
-          title: `Approve ${label}?`,
-          description: `This marks ${label} as approved and moves ${firstName} on to the next step.`,
-          confirmLabel: 'Approve',
-        },
+    client: {
+      title: `Send ${label} to the client?`,
+      description:
+        "The client will review it and either approve it or send feedback. You can't edit it while it's with them.",
+      confirmLabel: 'Send to client',
+    },
+    approve: {
+      title: `Approve ${label}?`,
+      description: hasClient
+        ? `This approves ${label} straight away, without the client reviewing it.`
+        : `This marks ${label} as approved and moves ${firstName} on to the next step.`,
+      confirmLabel: 'Approve',
+    },
     creator: {
       title: `Send feedback to ${firstName}?`,
       description: `${[
@@ -712,98 +686,103 @@ function ReviewComposer({ submission }) {
     },
   }[dialogKind];
 
-  const approveButton = canApprove && (
-    <Button
+  const sendToClientButton = canSendToClient && (
+    <CtaButton
       fullWidth
-      variant="contained"
+      size="large"
+      variant="dark"
+      hint="for validation"
+      disabled={busy}
+      onClick={() => setConfirmingDecision('client')}
+    >
+      {pending === 'client' ? 'Sending…' : 'Send to client'}
+    </CtaButton>
+  );
+
+  // Its own button, last in the footer: approve straight away (first review only)
+  const approveButton = canApprove && (
+    <CtaButton
+      fullWidth
+      size="large"
+      variant="white"
+      color={APPROVE_COLOR}
+      hint={hasClient ? 'without client review' : 'content is good to go'}
       disabled={busy}
       onClick={() => setConfirmingDecision('approve')}
-      sx={primaryActionSx}
     >
-      {pending === 'approve' ? 'Sending…' : approveLabel}
-      <Box component="span" sx={{ ...actionHintSx, opacity: 0.8 }}>
-        {approveHint}
-      </Box>
-    </Button>
+      {pending === 'approve' ? 'Approving…' : 'Approve'}
+    </CtaButton>
   );
 
   const sendToCreatorLabel = pending === 'creator' ? 'Sending…' : 'Send to creator';
 
-  // Photos / raw footage: approve or "Request a change" first (like the posted-link review);
-  // the reasons and the send only show once sending back. Without an approve option
-  // (client feedback round) they show straight away.
+  // Photos / raw footage: "Request a change" first (like the posted-link review); the
+  // reasons and the send only show once sending back. Without an approve option (client
+  // feedback round) sending back is the only choice, so they show straight away.
   const showReasons = !isVideo && canSendToCreator && (changeRequestOpen || !canApprove);
 
   let actions;
-  if (isVideo) {
+  if (showReasons) {
     actions = (
       <Stack direction="row" gap={1.125}>
-        {approveButton}
-        {canSendToCreator && (
-          <Button
-            fullWidth
-            variant="outlined"
-            color="inherit"
-            disabled={busy}
-            onClick={handleSendToCreator}
-            sx={secondaryActionSx}
-          >
-            {sendToCreatorLabel}
-            <Box component="span" sx={{ ...actionHintSx, color: '#6E6E76' }}>
-              for resubmission
-            </Box>
-          </Button>
-        )}
-      </Stack>
-    );
-  } else if (showReasons) {
-    actions = (
-      <Stack direction="row" gap={1.125}>
+        {/* Nothing to go back to when sending back is the only option */}
         {canApprove && (
-          <Button
+          <CtaButton
             fullWidth
-            variant="outlined"
-            color="inherit"
+            size="large"
+            variant="white"
+            color={NEUTRAL_COLOR}
             disabled={busy}
             onClick={closeChangeRequest}
-            sx={secondaryActionSx}
           >
             Cancel
-          </Button>
+          </CtaButton>
         )}
-        <Button
+        <CtaButton
           fullWidth
-          variant="contained"
+          size="large"
+          variant="blue"
+          hint="for resubmission"
           disabled={busy}
           onClick={handleSendToCreator}
-          sx={primaryActionSx}
         >
           {sendToCreatorLabel}
-          <Box component="span" sx={{ ...actionHintSx, opacity: 0.8 }}>
-            for resubmission
-          </Box>
-        </Button>
+        </CtaButton>
       </Stack>
     );
   } else {
     actions = (
-      <Stack direction="row" gap={1.125}>
+      <Stack gap={1.125}>
+        <Stack direction="row" gap={1.125}>
+          {sendToClientButton}
+          {canSendToCreator && isVideo && (
+            <CtaButton
+              fullWidth
+              size="large"
+              variant="white"
+              color={NEUTRAL_COLOR}
+              hint="for resubmission"
+              disabled={busy}
+              onClick={handleSendToCreator}
+            >
+              {sendToCreatorLabel}
+            </CtaButton>
+          )}
+          {canSendToCreator && !isVideo && (
+            <CtaButton
+              fullWidth
+              size="large"
+              variant="white"
+              color={REQUEST_CHANGE_COLOR}
+              hint="send back to creator"
+              disabled={busy}
+              onClick={openChangeRequest}
+            >
+              Request a change
+            </CtaButton>
+          )}
+        </Stack>
         {approveButton}
-        {canSendToCreator && (
-          <Button
-            fullWidth
-            variant="outlined"
-            color="inherit"
-            disabled={busy}
-            onClick={openChangeRequest}
-            sx={secondaryActionSx}
-          >
-            Request a change
-            <Box component="span" sx={{ ...actionHintSx, color: '#6E6E76' }}>
-              send back to creator
-            </Box>
-          </Button>
-        )}
       </Stack>
     );
   }
@@ -853,7 +832,9 @@ function ReviewComposer({ submission }) {
         description={confirmCopy.description}
         confirmLabel={confirmCopy.confirmLabel}
         loading={busy}
-        onConfirm={dialogKind === 'approve' ? confirmApprove : confirmSendToCreator}
+        onConfirm={
+          dialogKind === 'creator' ? confirmSendToCreator : () => confirmDecision(dialogKind)
+        }
         onClose={() => setConfirmingDecision(null)}
       />
     </Stack>

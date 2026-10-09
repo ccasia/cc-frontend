@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types';
 import { m, AnimatePresence } from 'framer-motion';
 
-import { Box, Stack, Button, Tooltip, TextField, IconButton, Typography } from '@mui/material';
+import { Box, Stack, Tooltip, TextField, IconButton, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
+import CtaButton from 'src/components/cta-button';
 
 import { sectionLabelSx } from '../styles';
 import { MAX_POSTING_LINKS } from '../posting-links';
@@ -108,15 +109,15 @@ export default function PostingLinkForm({ submission }) {
         <Typography sx={{ fontSize: 12, color: '#F04438' }}>{submitError}</Typography>
       )}
 
-      <Button
+      <CtaButton
         fullWidth
-        variant="contained"
+        variant="white"
+        color="#1ABF66"
         disabled={submitting || !hasText}
         onClick={submit}
-        sx={{ height: 40, bgcolor: '#1304FF', '&:hover': { bgcolor: '#0F03CC' } }}
       >
         {submitting ? 'Sending…' : submitLabel}
-      </Button>
+      </CtaButton>
       <Typography sx={{ fontSize: 11.5, color: '#8A8A92', textAlign: 'center' }}>
         Links added by an admin are approved by a superadmin or CS lead.
       </Typography>

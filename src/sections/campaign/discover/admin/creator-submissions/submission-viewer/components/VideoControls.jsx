@@ -7,14 +7,8 @@ import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 
 import Iconify from 'src/components/iconify';
 
-import { getCachedDuration } from '../media-cache';
-import {
-  getShownUrl,
-  parseTimestamp,
-  formatTimestamp,
-  getCommentVideoId,
-  isCommentResolved,
-} from '../utils';
+import useDisplayDuration from '../hooks/use-display-duration';
+import { parseTimestamp, formatTimestamp, getCommentVideoId, isCommentResolved } from '../utils';
 import {
   seekVideo,
   togglePlay,
@@ -39,18 +33,6 @@ export const VIDEO_FRAME_ATTR = 'data-video-frame';
 
 // Overlays on the media (toolbar, arrows, tags, spinner) sit above every stacked media layer
 export const OVERLAY_Z = 10;
-
-// The video's length, known before it loads when preloading already saw its metadata.
-// The store resets duration to 0 on every switch; without this the toolbar shows 00:00
-// and the feedback dots have nothing to position against until the new video loads.
-function useDisplayDuration(submission) {
-  const duration = useCreatorSubmissionsStore((s) => s.duration);
-  const versionIndex = useCreatorSubmissionsStore((s) => s.versionIndex);
-  const itemIndex = useCreatorSubmissionsStore((s) => s.itemIndex);
-
-  if (duration > 0) return duration;
-  return getCachedDuration(getShownUrl(submission, versionIndex, itemIndex)) ?? 0;
-}
 
 function Scrubber({ submission }) {
   const duration = useDisplayDuration(submission);

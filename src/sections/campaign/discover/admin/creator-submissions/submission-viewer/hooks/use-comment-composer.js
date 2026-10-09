@@ -6,6 +6,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import useCommentThread from './use-comment-thread';
+import useDisplayDuration from './use-display-duration';
 import { revealComment, formatTimestamp, getUnsentFeedback } from '../utils';
 import {
   seekVideo,
@@ -50,7 +51,8 @@ export default function useCommentComposer(submission) {
 
   const draft = useCreatorSubmissionsStore((s) => s.feedbackDraft);
   const currentTime = useCreatorSubmissionsStore((s) => s.currentTime);
-  const duration = useCreatorSubmissionsStore((s) => s.duration);
+  // Preloaded length when the video hasn't loaded yet, so the drag is always bounded
+  const duration = useDisplayDuration(submission);
 
   // Timestamp locked in when the admin starts typing
   const frozenTime = useCreatorSubmissionsStore((s) => s.feedbackFrozenTime);
@@ -81,7 +83,9 @@ export default function useCommentComposer(submission) {
 
   // Dragging the timestamp chip: moves the video, and the locked timestamp with it
   const adjustDraftTime = (seconds) => {
-    const time = Math.max(0, duration ? Math.min(seconds, duration) : seconds);
+    // Unknown length: nothing to bound against, so don't move it at all
+    if (!duration) return;
+    const time = Math.min(Math.max(0, seconds), Math.floor(duration));
     if (frozenTime != null) setFeedbackFrozenTime(time);
     seekVideo(time);
   };

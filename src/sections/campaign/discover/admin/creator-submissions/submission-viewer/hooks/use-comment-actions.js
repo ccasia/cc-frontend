@@ -3,11 +3,7 @@ import { enqueueSnackbar } from 'notistack';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import useCommentThread from './use-comment-thread';
-import {
-  revealComment,
-  isCommentResolved,
-  extractLeadingTimestamp,
-} from '../utils';
+import { revealComment, isCommentResolved, extractLeadingTimestamp } from '../utils';
 import {
   expandThread,
   closeCommentComposer,

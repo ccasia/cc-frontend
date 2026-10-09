@@ -9,7 +9,6 @@ import {
   Link,
   Stack,
   Avatar,
-  Button,
   Tooltip,
   TextField,
   Typography,
@@ -17,6 +16,7 @@ import {
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
+import CtaButton from 'src/components/cta-button';
 
 import { sectionLabelSx } from '../styles';
 import useCommentSocket from '../hooks/use-comment-socket';
@@ -24,7 +24,13 @@ import useCommentThread from '../hooks/use-comment-thread';
 import useNewCommentIds from '../hooks/use-new-comment-ids';
 import useViewerSubmission from '../hooks/use-viewer-submission';
 import useCommentActions, { DELETE_UNDO_MS } from '../hooks/use-comment-actions';
-import { revealComment, parseTimestamp, COMMENT_ID_ATTR, isCommentResolved } from '../utils';
+import {
+  revealComment,
+  parseTimestamp,
+  COMMENT_ID_ATTR,
+  isCommentResolved,
+  REVIEW_SCROLL_ATTR,
+} from '../utils';
 import {
   playFromFeedback,
   addIncomingComment,
@@ -38,9 +44,6 @@ import {
   useCreatorSubmissionsStore,
   toggleShowResolvedComments,
 } from '../../store/use-creator-submissions-store';
-
-// The review panel's scroll area; the "new comments" pill measures against it
-export const REVIEW_SCROLL_ATTR = 'data-review-scroll';
 
 const ACCENT = '#1304FF';
 
@@ -167,22 +170,9 @@ function InlineCommentInput({ comment }) {
         >
           Cancel
         </Link>
-        <Button
-          size="small"
-          variant="contained"
-          disabled={!value.trim() || busy}
-          onClick={submit}
-          sx={{
-            minWidth: 0,
-            height: 26,
-            px: 1.25,
-            fontSize: 12,
-            bgcolor: ACCENT,
-            '&:hover': { bgcolor: '#0F03CC' },
-          }}
-        >
+        <CtaButton size="small" variant="blue" disabled={!value.trim() || busy} onClick={submit}>
           {busy ? 'Saving…' : submitLabel}
-        </Button>
+        </CtaButton>
       </Stack>
     </Stack>
   );

@@ -1,6 +1,8 @@
 import PropTypes from 'prop-types';
 
-import { Stack, Button, Dialog, Typography } from '@mui/material';
+import { Stack, Dialog, Typography } from '@mui/material';
+
+import CtaButton from 'src/components/cta-button';
 
 // Confirms a review decision before it changes the submission's status
 export default function DecisionConfirmDialog({
@@ -27,25 +29,12 @@ export default function DecisionConfirmDialog({
       </Stack>
 
       <Stack direction="row" gap={1.125} sx={{ mt: 3 }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          color="inherit"
-          disabled={loading}
-          onClick={onClose}
-          sx={{ height: 40, borderColor: '#D9D9DE' }}
-        >
+        <CtaButton fullWidth variant="white" disabled={loading} onClick={onClose}>
           Cancel
-        </Button>
-        <Button
-          fullWidth
-          variant="contained"
-          disabled={loading}
-          onClick={onConfirm}
-          sx={{ height: 40, bgcolor: '#1304FF', '&:hover': { bgcolor: '#0F03CC' } }}
-        >
+        </CtaButton>
+        <CtaButton fullWidth variant="blue" disabled={loading} onClick={onConfirm}>
           {loading ? 'Sending…' : confirmLabel}
-        </Button>
+        </CtaButton>
       </Stack>
     </Dialog>
   );

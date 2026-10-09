@@ -1,7 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Button, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
+
+import CtaButton from 'src/components/cta-button';
 
 import MediaPreview from './MediaPreview';
 import CreatorHeader from './CreatorHeader';
@@ -87,15 +89,15 @@ const CreatorSubmissionCard = ({ creator, submissions }) => {
         )}
       </Box>
 
-      <Button
-        variant="contained"
+      <CtaButton
+        variant="dark"
         disabled={!canView || !selected}
         onClick={handleView}
-        sx={{ alignSelf: 'flex-start', bgcolor: COLORS.text, '&:hover': { bgcolor: '#000' } }}
+        sx={{ alignSelf: 'flex-start' }}
         fullWidth
       >
         View submission
-      </Button>
+      </CtaButton>
     </Stack>
   );
 };
