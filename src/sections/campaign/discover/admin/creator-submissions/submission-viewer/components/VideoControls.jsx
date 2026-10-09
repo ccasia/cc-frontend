@@ -38,8 +38,10 @@ function Scrubber({ submission }) {
   const duration = useDisplayDuration(submission);
   const currentTime = useCreatorSubmissionsStore((s) => s.currentTime);
   const versionIndex = useCreatorSubmissionsStore((s) => s.versionIndex);
+
   // Only creator videos have timestamped feedback (raw footage doesn't)
   const isVideoSubmission = submission.submissionType?.type === 'VIDEO';
+
   const { comments } = useSubmissionComments(
     isVideoSubmission ? submission.id : null,
     getCommentVideoId(submission, versionIndex),
@@ -157,7 +159,7 @@ function Scrubber({ submission }) {
                 component="span"
                 role="button"
                 aria-label={`Feedback at ${items[0].timestamp}`}
-                data-seconds={seconds}
+                // data-seconds={seconds}
                 sx={{
                   position: 'absolute',
                   top: '50%',

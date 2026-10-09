@@ -372,6 +372,7 @@ function CommentItem({ comment, isReply = false, isNew = false, threadRoot }) {
           <Typography noWrap sx={{ fontSize: 12, color: '#9A9AA2', flexShrink: 0 }}>
             {formatCommentTime(comment.createdAt)}
           </Typography>
+
           {isNew && (
             <Tooltip title="New since you last looked">
               <Box
@@ -379,6 +380,7 @@ function CommentItem({ comment, isReply = false, isNew = false, threadRoot }) {
               />
             </Tooltip>
           )}
+
           <CreatorDeliveryTag
             comment={comment}
             canToggle={canToggleForCreator}
@@ -404,6 +406,7 @@ function CommentItem({ comment, isReply = false, isNew = false, threadRoot }) {
                 onClick={() => playFromFeedback(parseTimestamp(timestamp))}
               />
             )}
+
             {text}
           </Typography>
         )}

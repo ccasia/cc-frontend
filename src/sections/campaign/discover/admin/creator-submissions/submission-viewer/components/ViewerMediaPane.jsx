@@ -348,6 +348,7 @@ function VideoLayer({ layer, isActive, isMobile, onReady, sx }) {
     if (!isActive) return undefined;
     const video = videoRef.current;
     registerVideoElement(video);
+
     if (video) {
       setCurrentTime(video.currentTime);
       setDuration(video.duration);
