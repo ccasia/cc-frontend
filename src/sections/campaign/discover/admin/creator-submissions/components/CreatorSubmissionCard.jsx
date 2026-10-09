@@ -46,7 +46,21 @@ const CreatorSubmissionCard = ({ creator, submissions }) => {
   };
 
   return (
-    <Stack spacing={2} sx={{ px: 2.5, py: 2, borderRadius: 2.5, bgcolor: COLORS.surface }}>
+    <Stack
+      spacing={2}
+      sx={{
+        px: 2.5,
+        py: 2,
+        borderRadius: 1.5,
+        bgcolor: COLORS.surface,
+        border: 1,
+        borderColor: (theme) => theme.palette.divider,
+        ':hover': {
+          boxShadow: '0 0 2px #CCC',
+          transition: 'all .3s ease',
+        },
+      }}
+    >
       <CreatorHeader creator={creator} submissions={submissions} onSelect={handlePillSelect} />
 
       <Stack direction="row" alignItems="flex-start" spacing={2} sx={{ minHeight: 240 }}>
@@ -78,6 +92,7 @@ const CreatorSubmissionCard = ({ creator, submissions }) => {
         disabled={!canView || !selected}
         onClick={handleView}
         sx={{ alignSelf: 'flex-start', bgcolor: COLORS.text, '&:hover': { bgcolor: '#000' } }}
+        fullWidth
       >
         View submission
       </Button>

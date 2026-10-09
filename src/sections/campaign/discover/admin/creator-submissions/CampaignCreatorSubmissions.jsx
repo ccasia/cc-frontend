@@ -41,8 +41,10 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
 
   return (
     <Stack spacing={3}>
-      <SubmissionViewer />
       <CreatorSubmissionsToolbar />
+
+      <SubmissionViewer />
+
       {isError && (
         <EmptyContent
           filled
@@ -51,10 +53,15 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
           sx={{ py: 10 }}
         />
       )}
+
       {!isPending && !isError && !creators.length && (
         <EmptyContent
           filled
-          title={isFiltering ? 'No matching submissions' : 'No submissions yet'}
+          title={
+            isFiltering
+              ? `No matching submissions with the given creator name ${search}`
+              : 'No submissions yet'
+          }
           description={
             isFiltering
               ? 'Try a different search or filter.'
@@ -63,6 +70,7 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
           sx={{ py: 10 }}
         />
       )}
+
       <Box
         sx={{
           display: 'grid',

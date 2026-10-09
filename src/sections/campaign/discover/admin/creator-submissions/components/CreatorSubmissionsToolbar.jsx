@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Box, Stack, TextField, InputAdornment } from '@mui/material';
+import { Box, Stack, TextField, InputAdornment, IconButton } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
@@ -68,6 +68,13 @@ const CreatorSubmissionsToolbar = () => {
             startAdornment: (
               <InputAdornment position="start">
                 <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
+              </InputAdornment>
+            ),
+            endAdornment: search && (
+              <InputAdornment position="end">
+                <IconButton onClick={() => setSearch('')}>
+                  <Iconify icon="fa7-solid:remove" width={14} sx={{ color: '#637381' }} />
+                </IconButton>
               </InputAdornment>
             ),
           }}
