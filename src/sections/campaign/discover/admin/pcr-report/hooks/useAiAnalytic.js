@@ -6,17 +6,25 @@ import axiosInstance from 'src/utils/axios';
 /**
  * Hook to generate AI analytics for a specific campaign
  * @param {string} campaignId - Campaign ID
- * @param {'campaign_summary' |'engagement_interactions' |'views_analysis' |'audience_sentiment' |'top_creator_personas' |'campaign_recommendations'} sections - Section name
+ 
  */
-const useAiAnalytic = (campaignId, sections) => {
+const useAiAnalytic = (campaignId) => {
   const controllerRef = useRef(null);
-
-  // eslint-disable-next-line no-nested-ternary
-  const s1 = sections ? (Array.isArray(sections) ? { sections } : { sections: [sections] }) : {};
 
   const mutation = useMutation({
     mutationKey: ['analytic', campaignId],
-    mutationFn: async () => {
+    /**
+     *
+     * @param {'campaign_summary' |'engagement_interactions' |'views_analysis' |'audience_sentiment' |'top_creator_personas' |'campaign_recommendations'} sections - Section name
+     */
+    mutationFn: async (sections) => {
+      // eslint-disable-next-line no-nested-ternary
+      const s1 = sections
+        ? Array.isArray(sections)
+          ? { sections }
+          : { sections: [sections] }
+        : {};
+
       controllerRef.current?.abort();
 
       const controller = new AbortController();
@@ -25,6 +33,7 @@ const useAiAnalytic = (campaignId, sections) => {
       const res = await axiosInstance.post(`/api/reports/generate/${campaignId}`, s1, {
         signal: controller.signal,
       });
+
       return res.data;
     },
     onSettled: () => {

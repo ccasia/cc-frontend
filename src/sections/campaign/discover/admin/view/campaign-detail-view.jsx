@@ -1,23 +1,19 @@
 import dayjs from 'dayjs';
-import { format } from 'date-fns';
 import PropTypes from 'prop-types';
 import { pdf } from '@react-pdf/renderer';
 import { Page, Document } from 'react-pdf';
 import { enqueueSnackbar } from 'notistack';
 import { useSearchParams } from 'react-router-dom';
-import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import { deepOrange } from '@mui/material/colors';
 import {
   Box,
-  Menu,
   Stack,
   Radio,
   Button,
   Dialog,
-  Divider,
-  MenuItem,
   Container,
   Typography,
   IconButton,
@@ -31,7 +27,6 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
-import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 import { useGetCampaignByIdScoped } from 'src/hooks/use-get-campaign-by-id';
 import { useCampaignPermissions } from 'src/hooks/use-campaign-permissions';
@@ -45,7 +40,6 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
-import CampaignTabs from 'src/components/campaign/CampaignTabs';
 import ViewOnlyBanner from 'src/components/banner/view-only-banner';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
@@ -54,22 +48,34 @@ import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
+import {
+  setOpenModal,
+  usePublicUrl,
+} from 'src/sections/campaign/discover/admin/store/use-public-url';
+import {
+  useSpreadSheet,
+  setOpenCopyDialog,
+} from 'src/sections/campaign/discover/admin/store/use-spreadsheet';
 
 import CampaignFAQ from '../campaign-faq';
+import { useTabs } from '../store/use-tabs';
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalysis from '../campaign-analytics';
+import CampaignTabs from '../components/campaign-tabs';
 import CampaignAgreements from '../campaign-agreements';
 import CampaignDetailBrand from '../campaign-detail-brand';
+import CampaignHeader from '../components/campaign-header';
 import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignOverviewClient from '../campaign-overview-client';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailContentClient from '../campaign-detail-content-client';
-import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
+import CampaignCreatorSubmissions from '../creator-submissions/CampaignCreatorSubmissions';
+import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -84,40 +90,6 @@ if (typeof window !== 'undefined') {
   }
 }
 
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  return format(new Date(dateString), 'MMMM d, yyyy');
-};
-
-const getAllowedTabs = (submissionVersion) => {
-  if (submissionVersion === 'v4') {
-    return clientAllowedTabs.filter((tab) => tab !== 'deliverables');
-  }
-  return clientAllowedTabs.filter((tab) => tab !== 'submissions-v4');
-};
-
-const clientAllowedTabs = [
-  'overview',
-  'campaign-content',
-  'creator-master-list',
-  'deliverables',
-  'submissions-v4',
-  'analytics',
-  'logistics', // allow client to access Logistics tab
-  'faq',
-];
-
-// Demo campaigns mirror the client layout (no Agreements/Invoices tabs). Data is fully mocked.
-const demoAllowedTabs = [
-  'overview',
-  'campaign-content',
-  'creator-master-list',
-  'submissions-v4',
-  'analytics',
-  'logistics',
-  'faq',
-];
-
 const CampaignDetailView = ({
   id,
   publicReadonly = false,
@@ -129,6 +101,13 @@ const CampaignDetailView = ({
   const router = useRouter();
   const [searchParams] = useSearchParams();
 
+  const publicUrl = usePublicUrl((state) => state.publicUrl);
+  const password = usePublicUrl((state) => state.password);
+  const openModal = usePublicUrl((state) => state.openModal);
+
+  const url = useSpreadSheet((state) => state.url);
+  const copyDialog = useSpreadSheet((state) => state.copyDialog);
+
   const {
     campaign,
     campaignLoading,
@@ -136,15 +115,9 @@ const CampaignDetailView = ({
   } = useGetCampaignByIdScoped(id, publicReadonly, isDemo);
 
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const loading = useBoolean();
-  const [url, setUrl] = useState('');
-  const copyDialog = useBoolean();
+
   const copy = useBoolean();
   const pdfModal = useBoolean();
-  const [publicUrl, setPublicUrl] = useState(null);
-  const [password, setPassword] = useState(null);
-  const [openModal, setOpenModal] = useState(false);
-  const [isOffset, setIsOffset] = useState({ left: false, right: false });
 
   const { user } = useAuthContext();
 
@@ -159,56 +132,11 @@ const CampaignDetailView = ({
   const smDown = useResponsive('down', 'sm');
   const templateModal = useBoolean();
   const linking = useBoolean();
-  const [menuAnchorEl, setMenuAnchorEl] = useState(null);
-  const menuOpen = Boolean(menuAnchorEl);
+
   const campaignLog = useBoolean();
   const activateDialog = useBoolean();
   const initialActivateDialog = useBoolean();
   const bulkAssign = useBoolean();
-
-  // Add this campaign to tabs and save to localStorage
-  // useEffect(() => {
-  //   if (id && window.campaignTabs) {
-  //     if (!window.campaignTabs.some(tab => tab.id === id)) {
-  //       // Wait for campaign data to get the name if available
-  //       const tabName = campaign ? campaign.name || 'Campaign Details' : 'Campaign Details';
-
-  //       window.campaignTabs.push({
-  //         id,
-  //         name: tabName
-  //       });
-
-  //       // Add status information to the global campaignTabsStatus
-  //       if (campaign && campaign.status) {
-  //         // Initialize campaignTabsStatus if it doesn't exist
-  //         if (!window.campaignTabsStatus) {
-  //           window.campaignTabsStatus = {};
-  //         }
-
-  //         // Store the campaign status
-  //         window.campaignTabsStatus[id] = {
-  //           status: campaign.status
-  //         };
-  //       }
-
-  //       // Save to localStorage
-  //       try {
-  //         localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
-  //       } catch (error) {
-  //         console.error('Error saving campaign tabs to localStorage:', error);
-  //       }
-  //     }
-  //   }
-  // }, [id, campaign]);
-
-  const isCampaignHasSpreadSheet = campaign?.spreadSheetURL;
-
-  const { data: campaignAgreements } = useGetAgreements(isDemo ? null : campaign?.id);
-
-  const agreementSubmissions = useMemo(
-    () => campaign?.submission?.filter((s) => s.submissionType?.type === 'AGREEMENT_FORM'),
-    [campaign?.submission]
-  );
 
   const generateNewAgreement = useCallback(async (template) => {
     try {
@@ -240,24 +168,19 @@ const CampaignDetailView = ({
     setSelectedTemplate(template);
   };
 
-  const [currentTab, setCurrentTab] = useState(
-    forcedTab ||
-      searchParams.get('tab') ||
-      localStorage.getItem('campaigndetail') ||
-      'campaign-content'
-  );
+  // const [currentTab, setCurrentTab] = useState(
+  //   forcedTab ||
+  //     searchParams.get('tab') ||
+  //     localStorage.getItem('campaigndetail') ||
+  //     'campaign-content'
+  // );
+
+  const currentTab = useTabs((state) => state.currentTab);
 
   // Check if user is client (demo sessions render the read-only client view)
   const isClient =
     publicReadonly || isDemo || user?.role === 'client' || user?.admin?.role?.name === 'Client';
 
-  const getClientAllowedTabs = useCallback(
-    () => (isDemo ? demoAllowedTabs : getAllowedTabs(campaign?.submissionVersion)),
-    [isDemo, campaign?.submissionVersion]
-  );
-
-  // Check user roles for activation
-  const isCSL = user?.admin?.role?.name === 'CSL';
   const isSuperAdmin = user?.admin?.mode === 'god';
 
   const returnTo = searchParams.get('returnTo');
@@ -284,57 +207,10 @@ const CampaignDetailView = ({
     }
   };
 
-  // Check if user can perform initial activation (CSL or Superadmin)
-  const canInitialActivate = isCSL || isSuperAdmin;
-
-  // Check if current tab is valid for client users
-  useEffect(() => {
-    const allowed = getClientAllowedTabs();
-    if (isClient && !allowed.includes(currentTab)) {
-      setCurrentTab('overview');
-      localStorage.setItem('campaigndetail', 'overview');
-    }
-  }, [currentTab, isClient, getClientAllowedTabs]);
-
-  // Approval public page can force a specific readonly background tab.
-  useEffect(() => {
-    if (!forcedTab) return;
-    const allowed = getClientAllowedTabs();
-    if (isClient && !allowed.includes(forcedTab)) return;
-    setCurrentTab(forcedTab);
-  }, [forcedTab, isClient, getClientAllowedTabs]);
-
-  const handleChangeTab = useCallback(
-    (event, newValue) => {
-      const allowed = getClientAllowedTabs();
-      if (isClient && !allowed.includes(newValue)) {
-        return;
-      }
-      localStorage.setItem('campaigndetail', newValue);
-      setCurrentTab(newValue);
-    },
-    [isClient, getClientAllowedTabs]
-  );
-
-  // Allow children to request tab switching via a window event
-  useEffect(() => {
-    const handleSwitchTab = (e) => {
-      const targetTab = e?.detail;
-      if (typeof targetTab !== 'string') return;
-      const allowed = getClientAllowedTabs();
-      if (isClient && !allowed.includes(targetTab)) return;
-      localStorage.setItem('campaigndetail', targetTab);
-      setCurrentTab(targetTab);
-    };
-    window.addEventListener('switchCampaignTab', handleSwitchTab);
-    return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
-  }, [isClient, getClientAllowedTabs]);
-
-  const { campaigns: campaignInvoices, mutate: mutateCampaignInvoices } = useGetInvoicesByCampId(
-    isDemo ? null : id
-  );
+  const { mutate: mutateCampaignInvoices } = useGetInvoicesByCampId(isDemo ? null : id);
 
   const { socket: invoiceSocket } = useSocketContext();
+
   useEffect(() => {
     if (!invoiceSocket || !id || isDemo) return undefined;
 
@@ -358,317 +234,6 @@ const CampaignDetailView = ({
       invoiceSocket.emit('leave-campaign', id);
     };
   }, [invoiceSocket, id, isDemo, mutateCampaignInvoices, campaignMutate]);
-
-  const tabsContainerRef = useRef(null);
-
-  useEffect(() => {
-    const container = tabsContainerRef.current;
-    if (!container) return () => {};
-
-    const handleWheel = (e) => {
-      if (container.scrollWidth > container.clientWidth) {
-        // Check if it's a horizontal scroll attempt (touchpad horizontal swipe)
-        // or if deltaX is significant, let it scroll naturally
-        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-          // Horizontal scroll - let it work naturally
-          return;
-        }
-
-        // For vertical scroll (mouse wheel), convert to horizontal
-        e.preventDefault();
-        container.scrollLeft += e.deltaY;
-      }
-    };
-
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    return () => container.removeEventListener('wheel', handleWheel);
-  }, []);
-
-  const getAgreementsLabel = (submissions, agreements, pitches, shortlisted) => {
-    // Get approved pitch user IDs
-    const approvedPitchUserIds = new Set(
-      (pitches || [])
-        .filter(
-          (pitch) =>
-            (pitch?.status === 'APPROVED' ||
-              pitch?.status === 'AGREEMENT_SUBMITTED' ||
-              pitch?.status === 'AGREEMENT_PENDING') &&
-            pitch?.userId
-        )
-        .map((pitch) => pitch.userId)
-    );
-
-    // Get shortlisted user IDs (for backwards compatibility) — only those without a pitch.
-    // V4 caveat: a ShortListedCreator row can exist BEFORE client approval (e.g. after admin
-    // uses Link Creator on a SENT_TO_CLIENT pitch); the pitch's approval gate is the source
-    // of truth when both exist.
-    const allPitchUserIds = new Set((pitches || []).map((pitch) => pitch?.userId).filter(Boolean));
-    const shortlistedUserIds = new Set(
-      (shortlisted || [])
-        .filter((s) => s?.userId && !allPitchUserIds.has(s.userId))
-        .map((s) => s.userId)
-    );
-
-    // Combine both sets for total agreements
-    const totalAgreementsUserIds = new Set([...approvedPitchUserIds, ...shortlistedUserIds]);
-
-    const totalAgreements = (agreements || []).filter((a) => {
-      if (!totalAgreementsUserIds.has(a.userId)) return false;
-      const isUnlinkedGuest = a?.user?.creator?.isGuest === true;
-      if (!isUnlinkedGuest) return true;
-      const hasSubmission = (submissions || []).some((s) => s.userId === a.userId);
-      return hasSubmission;
-    }).length;
-
-    return `Agreements (${totalAgreements})`;
-  };
-
-  useEffect(() => {
-    if (!tabsContainerRef.current) return;
-    const container = tabsContainerRef.current;
-
-    const handleScroll = (e) => {
-      setIsOffset(() => ({
-        left: e.target.scrollLeft > 5,
-        right: e.target.scrollLeft + e.target.clientWidth + 0.5 < e.target.scrollWidth,
-      }));
-    };
-
-    container.addEventListener('scroll', handleScroll);
-
-    // eslint-disable-next-line consistent-return
-    return () => {
-      container.removeEventListener('scroll', handleScroll);
-    };
-  }, [tabsContainerRef]);
-
-  const renderTabs = (
-    <Box
-      sx={{
-        mt: 2,
-        mb: 2.5,
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          display: !isOffset.left && 'none',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 32,
-          background: 'linear-gradient(to right, white, transparent)',
-          zIndex: 1,
-          pointerEvents: 'none',
-        },
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          display: !isOffset.right && 'none',
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: 32,
-          background: 'linear-gradient(to left, white, transparent)',
-          zIndex: 1,
-          pointerEvents: 'none',
-        },
-      }}
-      overflow="hidden"
-    >
-      <Divider sx={{ position: 'absolute', bottom: 0, left: 0, width: 1 }} />
-      <Stack
-        ref={tabsContainerRef}
-        direction="row"
-        spacing={2}
-        sx={{
-          width: 1,
-          overflowX: 'scroll',
-          overflowY: 'hidden',
-          scrollbarWidth: 'none',
-          '&::-webkit-scrollbar': {
-            display: 'none',
-          },
-        }}
-      >
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          sx={{
-            // width: { xs: '100%', sm: 'auto' },
-            width: 'max-content',
-          }}
-        >
-          {/* Show different tabs based on user role */}
-          {(user?.role === 'client' || isDemo
-            ? // Client user tabs (no Pitches tab)
-              [
-                { label: 'Overview', value: 'overview' },
-                { label: 'Campaign Details', value: 'campaign-content' },
-                { label: 'Creator Master List', value: 'creator-master-list' },
-                ...(campaign?.submissionVersion === 'v4'
-                  ? [{ label: 'Creator Submissions', value: 'submissions-v4' }]
-                  : [{ label: 'Creator Deliverables', value: 'deliverables' }]),
-                { label: 'Campaign Analytics', value: 'analytics' },
-                campaign?.logisticsType && campaign.logisticsType !== ''
-                  ? {
-                      label: 'Logistics',
-                      value: 'logistics',
-                    }
-                  : null,
-
-                { label: 'FAQ', value: 'faq' },
-              ]
-            : // Admin/other user tabs
-              [
-                { label: 'Overview', value: 'overview' },
-                { label: 'Campaign Details', value: 'campaign-content' },
-                {
-                  label: `Creator Master List (${campaign?.pitch?.length || 0})`,
-                  value: 'pitch',
-                },
-                {
-                  label: getAgreementsLabel(
-                    agreementSubmissions,
-                    campaignAgreements,
-                    campaign?.pitch,
-                    campaign?.shortlisted
-                  ),
-                  value: 'agreement',
-                },
-                ...(campaign?.submissionVersion === 'v4'
-                  ? [
-                      {
-                        label: 'Creator Submissions',
-                        value: 'submissions-v4',
-                      },
-                    ]
-                  : [
-                      {
-                        label: 'Creator Deliverables',
-                        value: 'deliverables',
-                      },
-                    ]),
-                {
-                  label: 'Campaign Analytics',
-                  value: 'analytics',
-                },
-                {
-                  label: `Invoices (${campaignInvoices?.length || 0})`,
-                  value: 'invoices',
-                },
-                campaign?.logisticsType && campaign.logisticsType !== ''
-                  ? {
-                      label: 'Logistics',
-                      value: 'logistics',
-                    }
-                  : null,
-
-                { label: 'FAQ', value: 'faq' },
-              ]
-          )
-            .filter(Boolean)
-            .filter((tab) => !isDemo || demoAllowedTabs.includes(tab.value))
-            .map((tab) => (
-              <Button
-                key={tab.value}
-                disableRipple
-                size="large"
-                onClick={() => handleChangeTab(null, tab.value)}
-                sx={{
-                  px: { xs: 1, sm: 1.2 },
-                  py: 0.5,
-                  pb: 1,
-                  minWidth: !lgUp && 'fit-content',
-                  color: currentTab === tab.value ? '#221f20' : '#8e8e93',
-                  position: 'relative',
-                  fontSize: { xs: '0.9rem', sm: '1.05rem' },
-                  fontWeight: 650,
-                  whiteSpace: 'nowrap',
-                  mr: { xs: 1, sm: 2 },
-                  transition: 'transform 0.1s ease-in-out',
-                  '&:focus': {
-                    outline: 'none',
-                    bgcolor: 'transparent',
-                  },
-                  '&:active': {
-                    transform: 'scale(0.95)',
-                    bgcolor: 'transparent',
-                  },
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '2px',
-                    width: currentTab === tab.value ? '100%' : '0%',
-                    bgcolor: '#1340ff',
-                    transition: 'all 0.3s ease-in-out',
-                    transform: 'scaleX(1)',
-                    transformOrigin: 'left',
-                  },
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                    '&::after': {
-                      width: '100%',
-                      opacity: currentTab === tab.value ? 1 : 0.5,
-                    },
-                  },
-                  // mr: 2,
-                }}
-              >
-                {tab.label}
-              </Button>
-            ))}
-        </Stack>
-      </Stack>
-    </Box>
-  );
-
-  const generatePublicUrl = async () => {
-    try {
-      loading.onTrue();
-      const response = await axiosInstance.post('/api/public/generate', {
-        campaignId: campaign?.id,
-        expiryInMinutes: 120,
-      });
-
-      if (response?.data?.url && response?.data?.password) {
-        setPublicUrl(response.data.url);
-        setPassword(response.data.password);
-        setOpenModal(true);
-      } else {
-        enqueueSnackbar('Failed to generate public URL', { variant: 'error' });
-      }
-    } catch (error) {
-      enqueueSnackbar('An error occurred while generating the public URL.', { variant: 'error' });
-    } finally {
-      loading.onFalse();
-    }
-  };
-
-  const handleCloseModal = () => {
-    setOpenModal(false);
-  };
-
-  const generateSpreadSheet = useCallback(async () => {
-    try {
-      loading.onTrue();
-      const res = await axiosInstance.post(endpoints.campaign.spreadsheet, {
-        campaignId: campaign?.id,
-      });
-      setUrl(res?.data?.url);
-      enqueueSnackbar(res?.data?.message);
-      copyDialog.onTrue();
-      campaignMutate();
-    } catch (error) {
-      enqueueSnackbar(error?.message, {
-        variant: 'error',
-      });
-    } finally {
-      loading.onFalse();
-    }
-  }, [loading, copyDialog, campaignMutate, campaign]);
 
   const renderTabContent = () => {
     switch (currentTab) {
@@ -736,12 +301,16 @@ const CampaignDetailView = ({
           <CampaignCreatorDeliverables campaign={campaign} isDisabled={isDisabled} />
         );
       case 'submissions-v4':
-        return (
+        // Clients (and demo / public read-only views) keep the legacy submissions UI;
+        // the new card list + viewer is admin-only
+        return isClient ? (
           <CampaignCreatorSubmissionsV4
             campaign={campaign}
             isDisabled={isDisabled || isDemo}
             onRated={campaignMutate}
           />
+        ) : (
+          <CampaignCreatorSubmissions campaign={campaign} />
         );
       case 'analytics':
         return (
@@ -795,7 +364,7 @@ const CampaignDetailView = ({
 
   const copyDialogContainer = (
     <Dialog
-      open={copyDialog.value}
+      open={copyDialog}
       maxWidth="md"
       fullWidth
       sx={{
@@ -830,139 +399,17 @@ const CampaignDetailView = ({
       </Box>
 
       <DialogActions>
-        <Button onClick={copyDialog.onFalse} size="small" variant="outlined" sx={{ mx: 'auto' }}>
+        <Button
+          onClick={() => setOpenCopyDialog(false)}
+          size="small"
+          variant="outlined"
+          sx={{ mx: 'auto' }}
+        >
           Done
         </Button>
       </DialogActions>
     </Dialog>
   );
-
-  const handleMenuOpen = (event) => {
-    setMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setMenuAnchorEl(null);
-  };
-
-  const isPendingCampaign = useMemo(
-    () =>
-      campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'PENDING_ADMIN_ACTIVATION',
-    [campaign]
-  );
-
-  const renderActionButtons = () => {
-    const adminRole = user?.admin?.role?.slug || user?.admin?.role?.name;
-    const userRole = user?.role;
-    const campaignAdmins = campaign?.campaignAdmin || [];
-
-    if (
-      userRole === 'admin' &&
-      adminRole === 'sales_and_marketing' &&
-      !campaignAdmins.some((a) => a.adminId === user?.id)
-    )
-      return null;
-
-    if (!isClient) {
-      // Admin buttons logic...
-      if (isPendingCampaign) {
-        return (
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<Iconify icon="mdi:rocket-launch" width={20} />}
-            onClick={() => {
-              // For superadmin on pending campaigns: use initial activation (admin assignment only)
-              if (canInitialActivate && campaign?.status === 'PENDING_CSM_REVIEW') {
-                console.log('Opening InitialActivateDialog (admin assignment only)');
-                initialActivateDialog.onTrue();
-              } else {
-                // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
-                console.log('Opening ActivateDialog (full setup)');
-                activateDialog.onTrue();
-              }
-            }}
-            disabled={isDisabled}
-            sx={{
-              height: 42,
-              borderRadius: 1,
-              color: 'white',
-              backgroundColor: '#1340ff',
-              border: '1px solid #1340ff',
-              borderBottom: '4px solid #0e2fd6',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              px: 2,
-              whiteSpace: 'nowrap',
-              '&:hover': {
-                backgroundColor: '#0e2fd6',
-              },
-              '&.Mui-disabled': {
-                cursor: 'not-allowed',
-                pointerEvents: 'auto',
-              },
-            }}
-          >
-            Activate Campaign
-          </Button>
-        );
-      }
-
-      return (
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={
-            <img
-              src="/assets/icons/overview/editButton.svg"
-              alt="edit"
-              style={{
-                width: 18,
-                height: 18,
-                opacity: isDisabled ? 0.3 : 1,
-              }}
-            />
-          }
-          onClick={() => router.push(paths.dashboard.campaign.adminCampaignManageDetail(id))}
-          disabled={isDisabled}
-          sx={{
-            height: 42,
-            borderRadius: 1,
-            color: isDisabled ? '#9e9e9e' : '#221f20',
-            border: '1px solid #e7e7e7',
-            borderBottom: '4px solid #e7e7e7',
-            fontWeight: 600,
-            fontSize: '0.95rem',
-            px: 2,
-            whiteSpace: 'nowrap',
-            opacity: isDisabled ? 0.6 : 1,
-            '&:hover': {
-              backgroundColor: 'rgba(34, 31, 32, 0.04)',
-              border: '1px solid #231F20',
-              borderBottom: '4px solid #231F20',
-            },
-            '&.Mui-disabled': {
-              cursor: 'not-allowed',
-              pointerEvents: 'auto',
-              color: '#9e9e9e',
-              border: '1px solid #e7e7e7',
-              borderBottom: '4px solid #e7e7e7',
-              backgroundColor: 'transparent',
-              '&:hover': {
-                backgroundColor: 'transparent',
-                border: '1px solid #e7e7e7',
-                borderBottom: '4px solid #e7e7e7',
-              },
-            },
-          }}
-        >
-          Edit Details
-        </Button>
-      );
-    }
-
-    return null;
-  };
 
   return (
     <Container
@@ -971,217 +418,24 @@ const CampaignDetailView = ({
         px: { xs: 2, sm: 4 },
       }}
     >
-      <Stack spacing={1}>
-        <Button
-          color="inherit"
-          startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-          onClick={handleBackNavigation}
-          sx={{
-            alignSelf: 'flex-start',
-            color: '#636366',
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-            mb: 1,
-          }}
-        >
-          Back
-        </Button>
-
-        {/* Campaign Tabs */}
-        <CampaignTabs filter={campaign?.status?.toLowerCase()} />
-
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          alignItems="center"
-          justifyContent="space-between"
-          spacing={2}
-          width="100%"
-          sx={{ mt: -1 }}
-        >
-          <Stack direction="row" alignItems="center" spacing={2} width="100%">
-            {campaign?.campaignBrief?.images?.[0] && (
-              <img
-                src={campaign?.campaignBrief.images[0]}
-                alt={campaign?.name}
-                style={{
-                  width: '100%',
-                  maxWidth: 80,
-                  height: 'auto',
-                  borderRadius: '12px',
-                  border: '1px solid #e0e0e0',
-                  objectFit: 'cover',
-                }}
-              />
-            )}
-            <Typography
-              variant="h5"
-              sx={{
-                fontFamily: 'Instrument Serif, serif',
-                fontSize: { xs: '1.5rem', sm: '2rem' },
-                fontWeight: 550,
-              }}
-            >
-              {campaign?.name || 'Campaign Detail'}
-            </Typography>
-          </Stack>
-
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            alignItems={{ xs: 'stretch', sm: 'center' }}
-            spacing={{ xs: 1, sm: 0 }}
-            width={{ xs: '100%' }}
-            justifyContent={{ xs: 'flex-start', sm: 'flex-end' }}
-          >
-            <Stack
-              alignItems={{ xs: 'flex-start', sm: 'flex-end' }}
-              spacing={0}
-              justifyContent="center"
-              sx={{ minHeight: { sm: '76px' } }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  color: '#8e8e93',
-                  fontWeight: 500,
-                  fontSize: { xs: '0.75rem', sm: '0.9rem' },
-                  letterSpacing: '0.5px',
-                }}
-              >
-                CAMPAIGN PERIOD:
-              </Typography>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  color: '#221f20',
-                  fontWeight: 500,
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {formatDate(campaign?.campaignBrief?.startDate)} -{' '}
-                {formatDate(campaign?.campaignBrief?.endDate)}
-              </Typography>
-            </Stack>
-
-            <Box
-              sx={{
-                height: '42px',
-                width: '1px',
-                backgroundColor: '#e7e7e7',
-                mx: 2,
-                display: { xs: 'none', sm: 'block' },
-              }}
-            />
-
-            <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-              {/* Only show action buttons for non-client users */}
-              {renderActionButtons()}
-
-              {!isClient && (
-                <Box
-                  onClick={isDisabled ? undefined : handleMenuOpen}
-                  component="button"
-                  disabled={isDisabled}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: 42,
-                    width: 42,
-                    borderRadius: 1,
-                    color: isDisabled ? '#9e9e9e' : '#221f20',
-                    border: '1px solid #e7e7e7',
-                    borderBottom: '4px solid #e7e7e7',
-                    padding: 0,
-                    backgroundColor: 'transparent',
-                    cursor: isDisabled ? 'not-allowed' : 'pointer',
-                    opacity: isDisabled ? 0.6 : 1,
-                    '&:hover': {
-                      backgroundColor: isDisabled ? 'transparent' : 'rgba(34, 31, 32, 0.04)',
-                      border: isDisabled ? '1px solid #e7e7e7' : '1px solid #231F20',
-                      borderBottom: isDisabled ? '4px solid #e7e7e7' : '4px solid #231F20',
-                    },
-                  }}
-                >
-                  <Iconify icon="eva:more-horizontal-fill" width={18} />
-                </Box>
-                // </>
-              )}
-
-              <Menu
-                anchorEl={menuAnchorEl}
-                open={menuOpen}
-                onClose={handleMenuClose}
-                PaperProps={{
-                  sx: {
-                    minWidth: 200,
-                    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.1)',
-                  },
-                }}
-                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-              >
-                {!isCampaignHasSpreadSheet ? (
-                  <MenuItem
-                    onClick={() => {
-                      generateSpreadSheet();
-                      handleMenuClose();
-                    }}
-                    disabled={isDisabled || loading.value}
-                    sx={{ py: 1 }}
-                  >
-                    <Iconify icon="lucide:file-spreadsheet" width={16} sx={{ mr: 1.5 }} />
-                    Generate Spreadsheet
-                  </MenuItem>
-                ) : (
-                  <MenuItem
-                    onClick={() => {
-                      const a = document.createElement('a');
-                      a.href = campaign?.spreadSheetURL;
-                      a.target = '_blank';
-                      a.click();
-                      handleMenuClose();
-                    }}
-                    disabled={!campaign?.spreadSheetURL}
-                    sx={{ py: 1 }}
-                  >
-                    <Iconify icon="tabler:external-link" width={16} sx={{ mr: 1.5 }} />
-                    Google Spreadsheet
-                  </MenuItem>
-                )}
-                <MenuItem
-                  onClick={() => {
-                    generatePublicUrl();
-                    handleMenuClose();
-                  }}
-                  sx={{ py: 1 }}
-                >
-                  <img
-                    src="/assets/icons/overview/generateIcon.svg"
-                    alt="generate icon"
-                    style={{ width: 16, height: 16, marginRight: 12 }}
-                  />
-                  Generate URL
-                </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    campaignLog.onTrue();
-                    handleMenuClose();
-                  }}
-                  sx={{ py: 1 }}
-                >
-                  <Iconify icon="material-symbols:note-rounded" width={16} sx={{ mr: 1.5 }} />
-                  View Log
-                </MenuItem>
-              </Menu>
-            </Stack>
-          </Stack>
-        </Stack>
-      </Stack>
+      <CampaignHeader
+        campaign={campaign}
+        onBack={handleBackNavigation}
+        isClient={isClient}
+        openInitialActivateDialog={initialActivateDialog.onTrue}
+        openActivateDialog={activateDialog.onTrue}
+        handleOpenCampaignLog={campaignLog.onTrue}
+      />
 
       {/* View-only banner for CSMs viewing non-managed campaigns */}
       {isViewOnly && !isClient && <ViewOnlyBanner />}
 
-      {renderTabs}
+      <CampaignTabs
+        campaign={campaign}
+        isDemo={isDemo}
+        publicReadonly={publicReadonly}
+        forcedTab={forcedTab}
+      />
 
       {!campaignLoading ? renderTabContent() : <LoadingScreen />}
 
@@ -1196,7 +450,7 @@ const CampaignDetailView = ({
 
       <PublicUrlModal
         open={openModal}
-        onClose={handleCloseModal}
+        onClose={() => setOpenModal(false)}
         publicUrl={publicUrl}
         password={password}
       />
