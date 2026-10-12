@@ -44,7 +44,7 @@ import {
   getDisplayName,
   getSubmittedAt,
   getSubmissionLabel,
-} from '../../utils';
+} from '../../utils/utils';
 import {
   STEPS,
   needsAction,

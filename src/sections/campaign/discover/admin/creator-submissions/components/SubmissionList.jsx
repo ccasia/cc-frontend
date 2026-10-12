@@ -12,7 +12,7 @@ import {
   VISIBLE_COUNT,
   EASE_IN_OUT_CSS,
   REDUCED_MOTION_MEDIA,
-} from '../constants';
+} from '../utils/constants';
 
 // More dots than this would overflow the button; the count already says how many
 const MAX_DOTS = 5;

@@ -4,7 +4,7 @@ import React, { useRef, useState, useLayoutEffect } from 'react';
 
 import { Box, Link, Typography, ClickAwayListener } from '@mui/material';
 
-import { COLORS, EASE_OUT } from '../constants';
+import { COLORS, EASE_OUT } from '../utils/constants';
 
 const ExpandableText = ({ text, lines = 2, maxHeight = 240, sx, expandedSx }) => {
   const ref = useRef(null);

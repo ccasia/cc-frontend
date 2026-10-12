@@ -6,7 +6,7 @@ import { Box, Stack, Typography, ButtonBase } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
-import { COLORS, EASE_OUT, HOVER_MEDIA, EASE_OUT_CSS } from '../constants';
+import { COLORS, EASE_OUT, HOVER_MEDIA, EASE_OUT_CSS } from '../utils/constants';
 
 const fillSx = { width: 1, height: 1, borderRadius: 1, objectFit: 'cover' };
 

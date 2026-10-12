@@ -4,8 +4,8 @@ import PropTypes from 'prop-types';
 import { Box, Stack, Tooltip, Typography } from '@mui/material';
 
 import StatusChip from './StatusChip';
-import { COLORS, HOVER_MEDIA } from '../constants';
-import { getStatusChip, getSubmissionLabel } from '../utils';
+import { COLORS, HOVER_MEDIA } from '../utils/constants';
+import { getStatusChip, getSubmissionLabel } from '../utils/utils';
 
 const tooltipSlotProps = {
   tooltip: {

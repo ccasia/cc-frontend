@@ -11,11 +11,11 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import EmptyContent from 'src/components/empty-content';
 
-import { MIN_CARD_WIDTH } from './constants';
+import { MIN_CARD_WIDTH } from './utils/constants';
 import useGetSubmissions from './hooks/use-get-submissions';
 import SubmissionViewer from './submission-viewer/SubmissionViewer';
 import CreatorSubmissionGrid from './components/CreatorSubmissionGrid';
-import { groupByCreator, getFilterCounts, filterSubmissions } from './utils';
+import { groupByCreator, getFilterCounts, filterSubmissions } from './utils/utils';
 import CreatorSubmissionsToolbar from './components/CreatorSubmissionsToolbar';
 import CreatorSubmissionCardSkeleton from './components/CreatorSubmissionCardSkeleton';
 import useV4SubmissionListSocket from '../submissions/v4/shared/use-v4-submission-list-socket';

@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect, useLayoutEffect } from 'react';
 
 import { Box } from '@mui/material';
 
-import { EASE_OUT_CSS, MIN_CARD_WIDTH } from '../constants';
+import { EASE_OUT_CSS, MIN_CARD_WIDTH } from '../utils/constants';
 import CreatorSubmissionCard from './CreatorSubmissionCard';
 
 const ROW_GAP = 24;

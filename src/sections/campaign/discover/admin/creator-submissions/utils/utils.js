@@ -27,12 +27,19 @@ export const groupByCreator = (submissions) => {
   return Object.values(groups);
 };
 
+// Name can be null in the DB; the email still identifies the creator
+export const getDisplayName = (user) => user?.name?.trim() || user?.email || 'Unnamed creator';
+
+// First letter of each word, by grapheme so emoji never split into half a character
+const firstLetter = (word) => Array.from(word).find((char) => /\p{L}/u.test(char));
+
 export const getInitials = (name) =>
   (name ?? '')
-    .split(' ')
+    .split(/\s+/)
+    .map(firstLetter)
     .filter(Boolean)
     .slice(0, 2)
-    .map((word) => word[0].toUpperCase())
+    .map((letter) => letter.toUpperCase())
     .join('');
 
 const PROFILE_URL = {
@@ -85,3 +92,22 @@ export const filterSubmissions = (submissions, { search, statusFilter, typeFilte
     return matchesStatus && matchesType && matchesSearch;
   });
 };
+
+const countBy = (items, getKey) =>
+  items.reduce((counts, item) => {
+    const key = getKey(item);
+    counts[key] = (counts[key] ?? 0) + 1;
+    return counts;
+  }, {});
+
+// Each filter's counts respect the other filter and the search, so a count matches the results
+export const getFilterCounts = (submissions, filters) => ({
+  status: countBy(
+    filterSubmissions(submissions, { ...filters, statusFilter: 'all' }),
+    (submission) => submission.status
+  ),
+  type: countBy(
+    filterSubmissions(submissions, { ...filters, typeFilter: 'all' }),
+    (submission) => submission.submissionType?.type
+  ),
+});

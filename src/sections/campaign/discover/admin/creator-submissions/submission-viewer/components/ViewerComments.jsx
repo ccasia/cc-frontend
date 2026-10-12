@@ -19,7 +19,7 @@ import Iconify from 'src/components/iconify';
 import CtaButton from 'src/components/cta-button';
 
 import { sectionLabelSx } from '../styles';
-import { EASE_OUT } from '../../constants';
+import { EASE_OUT } from '../../utils/constants';
 import useCommentSocket from '../hooks/use-comment-socket';
 import useCommentThread from '../hooks/use-comment-thread';
 import useNewCommentIds from '../hooks/use-new-comment-ids';

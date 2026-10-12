@@ -7,7 +7,7 @@ import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 
 import Iconify from 'src/components/iconify';
 
-import { EASE_OUT_CSS } from '../../constants';
+import { EASE_OUT_CSS } from '../../utils/constants';
 import useDisplayDuration from '../hooks/use-display-duration';
 import { parseTimestamp, formatTimestamp, getCommentVideoId, isCommentResolved } from '../utils';
 import {

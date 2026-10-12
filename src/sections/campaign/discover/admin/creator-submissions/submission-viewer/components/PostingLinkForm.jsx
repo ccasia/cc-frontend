@@ -7,7 +7,7 @@ import Iconify from 'src/components/iconify';
 import CtaButton from 'src/components/cta-button';
 
 import { sectionLabelSx } from '../styles';
-import { EASE_OUT } from '../../constants';
+import { EASE_OUT } from '../../utils/constants';
 import { MAX_POSTING_LINKS } from '../posting-links';
 import usePostingLinkForm from '../hooks/use-posting-link-form';
 

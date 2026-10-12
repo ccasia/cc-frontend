@@ -4,8 +4,8 @@ import PropTypes from 'prop-types';
 import { Link, Stack, Avatar, Typography } from '@mui/material';
 
 import StatusBar from './StatusBar';
-import { COLORS, NEEDS_ACTION } from '../constants';
-import { getInitials, getDisplayName, getCreatorHandle } from '../utils';
+import { COLORS, NEEDS_ACTION } from '../utils/constants';
+import { getInitials, getDisplayName, getCreatorHandle } from '../utils/utils';
 
 // Wraps the right-hand side onto its own line only when the card is too narrow for both
 const rowProps = {
