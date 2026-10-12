@@ -6,6 +6,9 @@ import { Box, Stack } from '@mui/material';
 
 import { campaignHasClient } from 'src/utils/campaign-flow';
 
+import { useAuthContext } from 'src/auth/hooks';
+import useSocketContext from 'src/socket/hooks/useSocketContext';
+
 import EmptyContent from 'src/components/empty-content';
 
 import { MIN_CARD_WIDTH } from './constants';
@@ -15,6 +18,7 @@ import CreatorSubmissionGrid from './components/CreatorSubmissionGrid';
 import { groupByCreator, getFilterCounts, filterSubmissions } from './utils';
 import CreatorSubmissionsToolbar from './components/CreatorSubmissionsToolbar';
 import CreatorSubmissionCardSkeleton from './components/CreatorSubmissionCardSkeleton';
+import useV4SubmissionListSocket from '../submissions/v4/shared/use-v4-submission-list-socket';
 import {
   setCampaign,
   resetCreatorSubmissions,
@@ -22,7 +26,9 @@ import {
 } from './store/use-creator-submissions-store';
 
 const CampaignCreatorSubmissions = ({ campaign }) => {
-  const { submissions, isPending, isError } = useGetSubmissions(campaign?.id);
+  const { submissions, isPending, isError, mutateSubmissions } = useGetSubmissions(campaign?.id);
+  const { user } = useAuthContext();
+  const { socket } = useSocketContext();
   const search = useCreatorSubmissionsStore((state) => state.search);
   const statusFilter = useCreatorSubmissionsStore((state) => state.statusFilter);
   const typeFilter = useCreatorSubmissionsStore((state) => state.typeFilter);
@@ -51,6 +57,13 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
   }, [campaign?.id, hasClient]);
 
   useEffect(() => () => resetCreatorSubmissions(), []);
+
+  useV4SubmissionListSocket({
+    socket,
+    campaignId: campaign?.id,
+    onUpdate: mutateSubmissions,
+    userId: user?.id,
+  });
 
   return (
     // Reduced motion keeps fades but drops movement, for the cards and the viewer

@@ -398,6 +398,7 @@ export const endpoints = {
     v4: {
       create: '/api/submissions/v4/create',
       getSubmissions: '/api/submissions/v4/submissions',
+      campaignOverview: '/api/submissions/v4/campaign-overview',
       getById: '/api/submissions/v4/submission',
       submitContent: '/api/submissions/v4/submit-content',
       approve: '/api/submissions/v4/approve',
