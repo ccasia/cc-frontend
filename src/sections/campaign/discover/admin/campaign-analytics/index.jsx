@@ -41,6 +41,7 @@ import PCRReportPage from '../pcr-report/pcr-report-page';
 import CoreMetricsSection from './components/CoreMetricsSection';
 import AnalyticsPageSkeleton from './components/AnalyticsPageSkeleton';
 import PlatformOverviewLayout from './components/PlatformOverviewLayout';
+import usePendingPostScrapes, { pendingScrapeKey } from './hooks/use-pending-post-scrapes';
 import {
   DEFAULT_SECTION_ORDER,
   DEFAULT_EDITABLE_CONTENT,
@@ -186,6 +187,28 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     mutate: refreshInsights,
   } = useSocialInsights(postingSubmissions, campaign?.id);
 
+  const { pendingByKey, failedByKey, refetchPending } = usePendingPostScrapes(campaign?.id);
+
+  // Posts seen scraping on this page. Their numbers play the Dia reveal when they arrive.
+  const scrapedOnPageRef = useRef(new Set());
+  useEffect(() => {
+    pendingByKey.forEach((_, key) => scrapedOnPageRef.current.add(key));
+  }, [pendingByKey]);
+
+  // A scrape can be pending for a submission this page loaded before it was
+  // POSTED (approved in another tab). Reload the campaign once per such set.
+  const requestedReloadFor = useRef('');
+  useEffect(() => {
+    const known = new Set(postingSubmissions.map((sub) => pendingScrapeKey(sub.id, sub.platform)));
+    const missing = [...pendingByKey.keys()]
+      .filter((key) => !known.has(key))
+      .sort()
+      .join('|');
+    if (!missing || missing === requestedReloadFor.current) return;
+    requestedReloadFor.current = missing;
+    campaignMutate?.();
+  }, [pendingByKey, postingSubmissions, campaignMutate]);
+
   const filteredInsightsData = useMemo(() => {
     if (selectedPlatform === 'ALL') {
       return insightsData;
@@ -313,7 +336,12 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       const insightData = insightsData.find(
         (data) => data.submissionId === submission.id && data.postUrl === submission.postUrl
       );
-      if (!insightData && !loadingInsights) {
+      const scrapeKey = pendingScrapeKey(submission.id, submission.platform);
+      const scrapeProgress = insightData ? null : pendingByKey.get(scrapeKey) || null;
+      // Admins see a failed scrape with its reason, so they can enter what is missing.
+      const scrapeFailure =
+        insightData || scrapeProgress || isClient ? null : failedByKey.get(scrapeKey) || null;
+      if (!insightData && !loadingInsights && !scrapeProgress && !scrapeFailure) {
         return;
       }
 
@@ -329,10 +357,17 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
         engagementRate,
         submission,
         insightData,
+        scrapeProgress,
+        scrapeFailure,
+        revealMetrics: Boolean(insightData) && scrapedOnPageRef.current.has(scrapeKey),
       });
     });
 
-    rows.sort((a, b) => b.engagementRate - a.engagementRate);
+    // Posts still being scraped, then failed scrapes, sit on top, where the admin who approved them looks.
+    const needsAttention = (row) => (row.scrapeProgress ? 2 : 0) + (row.scrapeFailure ? 1 : 0);
+    rows.sort(
+      (a, b) => needsAttention(b) - needsAttention(a) || b.engagementRate - a.engagementRate
+    );
 
     const seen = new Set();
 
@@ -341,7 +376,20 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       seen.add(row.dedupKey);
       return true;
     });
-  }, [filteredManualEntries, filteredSubmissions, insightsData, loadingInsights]);
+  }, [
+    filteredManualEntries,
+    filteredSubmissions,
+    insightsData,
+    loadingInsights,
+    pendingByKey,
+    failedByKey,
+    isClient,
+  ]);
+
+  const handleScrapeCompleted = useCallback(() => {
+    refetchPending();
+    refreshInsights();
+  }, [refetchPending, refreshInsights]);
 
   const handleDeleteClick = (entry) => {
     setEntryToDelete(entry);
@@ -460,15 +508,33 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       }
     };
 
+    // A posting link was approved and its scrape queued: load the newly POSTED
+    // submission so its row can show the loader.
+    const handleScrapeQueued = ({ campaignId }) => {
+      if (campaignId !== campaign?.id) return;
+      campaignMutate?.();
+      refetchPending();
+    };
+
+    const handleScrapeFinished = ({ campaignId }) => {
+      if (campaignId !== campaign?.id) return;
+      refetchPending();
+      refreshInsights();
+    };
+
     // Join campaign room and listen for analytics refresh events
     socket.joinCampaign(campaign?.id);
     socket.on('analytics:refresh', handleAnalyticsRefresh);
+    socket.on('analytics:post-scrape:queued', handleScrapeQueued);
+    socket.on('analytics:post-scrape:finished', handleScrapeFinished);
 
     return () => {
       socket.off('analytics:refresh', handleAnalyticsRefresh);
+      socket.off('analytics:post-scrape:queued', handleScrapeQueued);
+      socket.off('analytics:post-scrape:finished', handleScrapeFinished);
       socket.leaveCampaign(campaign?.id);
     };
-  }, [socket, campaign?.id, postingSubmissions]);
+  }, [socket, campaign?.id, postingSubmissions, campaignMutate, refetchPending, refreshInsights]);
 
   // No campaign
   if (!campaign) {
@@ -750,6 +816,7 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
                 handleDeleteClick={handleDeleteClick}
                 postingSubmissions={postingSubmissions ?? []}
                 manualEntries={manualEntries}
+                onScrapeCompleted={handleScrapeCompleted}
               />
             </>
           )}

@@ -289,6 +289,7 @@ export const submitAgreement = async ({ agreement, campaign, data, isSuperAdmin 
       isForSurfShark={campaign?.isForSurfShark}
       isSeedingAgreement={data.isSeedingAgreement}
       productValue={`${prefix}${parseFloat(data.product?.value).toFixed(2)}`}
+      currency={data.currency}
     />
   ).toBlob();
 
