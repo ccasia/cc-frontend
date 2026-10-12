@@ -7,6 +7,7 @@ import Iconify from 'src/components/iconify';
 import CtaButton from 'src/components/cta-button';
 
 import { sectionLabelSx } from '../styles';
+import { EASE_OUT } from '../../constants';
 import { MAX_POSTING_LINKS } from '../posting-links';
 import usePostingLinkForm from '../hooks/use-posting-link-form';
 
@@ -19,7 +20,7 @@ const fieldMotion = {
   initial: { opacity: 0, height: 0 },
   animate: { opacity: 1, height: 'auto' },
   exit: { opacity: 0, height: 0 },
-  transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
+  transition: { duration: 0.2, ease: EASE_OUT },
 };
 
 // Admin adds the creator's posting link(s); a superadmin or CS lead then approves them

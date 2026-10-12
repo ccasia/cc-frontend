@@ -29,8 +29,8 @@ const CreatorSubmissionsToolbar = () => {
   const typeFilter = useCreatorSubmissionsStore((state) => state.typeFilter);
 
   return (
-    <Stack direction="row" alignItems="center" spacing={1.5}>
-      <Box>
+    <Stack direction="row" alignItems="center" flexWrap="wrap" useFlexGap spacing={1.5}>
+      <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
         <TextField
           placeholder="Search creators..."
           value={search}

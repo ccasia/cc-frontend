@@ -37,8 +37,14 @@ import useCommentComposer from '../hooks/use-comment-composer';
 import useViewerNavigation from '../hooks/use-viewer-navigation';
 import ViewerComments, { timestampChipSx } from './ViewerComments';
 import useCaptionHistory, { getAdminCaptionEdit } from '../hooks/use-caption-history';
-import { getInitials, getStatusChip, getSubmittedAt, getSubmissionLabel } from '../../utils';
 import { isAdminAddedLink, canAddPostingLink, canApproveAdminAddedLinks } from '../posting-links';
+import {
+  getInitials,
+  getStatusChip,
+  getDisplayName,
+  getSubmittedAt,
+  getSubmissionLabel,
+} from '../../utils';
 import {
   STEPS,
   needsAction,
@@ -1103,14 +1109,19 @@ export default function ViewerReviewPanel() {
         <Stack direction="row" alignItems="center" gap={1.5}>
           <Avatar
             src={creator.user?.photoURL}
-            alt={creator.user?.name}
+            alt={getDisplayName(creator.user)}
             sx={{ width: 42, height: 42, fontSize: 14, fontWeight: 600 }}
           >
-            {getInitials(creator.user?.name)}
+            {getInitials(getDisplayName(creator.user))}
           </Avatar>
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography noWrap sx={{ fontSize: 15, fontWeight: 600 }}>
-              {creator.user?.name}
+            <Typography
+              noWrap
+              dir="auto"
+              title={getDisplayName(creator.user)}
+              sx={{ fontSize: 15, fontWeight: 600 }}
+            >
+              {getDisplayName(creator.user)}
             </Typography>
             <Typography sx={{ fontSize: 12.5, color: '#8A8A92' }}>
               {getSubmissionLabel(submission)}

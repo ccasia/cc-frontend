@@ -5,24 +5,29 @@ import { Link, Stack, Avatar, Typography } from '@mui/material';
 
 import StatusBar from './StatusBar';
 import { COLORS, NEEDS_ACTION } from '../constants';
-import { getInitials, getCreatorHandle } from '../utils';
+import { getInitials, getDisplayName, getCreatorHandle } from '../utils';
 
+// Wraps the right-hand side onto its own line only when the card is too narrow for both
 const rowProps = {
   direction: 'row',
   alignItems: 'center',
   justifyContent: 'space-between',
-  spacing: 2,
+  flexWrap: 'wrap',
+  columnGap: 2,
 };
+
+const leftSx = { flex: '1 1 120px', minWidth: 0 };
 
 const CreatorHeader = ({ creator, submissions, onSelect }) => {
   const needAction = submissions.filter((s) => NEEDS_ACTION.includes(s.status)).length;
   const handle = getCreatorHandle(creator);
+  const displayName = getDisplayName(creator);
 
   return (
     <Stack direction="row" alignItems="center" spacing={1.5}>
       <Avatar
         src={creator.photoURL}
-        alt={creator.name}
+        alt={displayName}
         sx={{
           width: 40,
           height: 40,
@@ -33,20 +38,28 @@ const CreatorHeader = ({ creator, submissions, onSelect }) => {
           fontWeight: 600,
         }}
       >
-        {getInitials(creator.name)}
+        {getInitials(displayName)}
       </Avatar>
 
       <Stack sx={{ flexGrow: 1, minWidth: 0 }}>
         <Stack {...rowProps}>
           <Typography
             noWrap
-            sx={{ fontSize: 16, fontWeight: 600, lineHeight: '20px', color: COLORS.text }}
+            dir="auto"
+            title={displayName}
+            sx={{
+              ...leftSx,
+              fontSize: 16,
+              fontWeight: 600,
+              lineHeight: '20px',
+              color: COLORS.text,
+            }}
           >
-            {creator.name}
+            {displayName}
           </Typography>
           <Typography
             noWrap
-            sx={{ flexShrink: 0, fontSize: 14, lineHeight: '20px', color: COLORS.textSecondary }}
+            sx={{ minWidth: 0, fontSize: 14, lineHeight: '20px', color: COLORS.textSecondary }}
           >
             <Typography
               component="span"
@@ -54,11 +67,11 @@ const CreatorHeader = ({ creator, submissions, onSelect }) => {
             >
               {submissions.length} {submissions.length === 1 ? 'submission' : 'submissions'}
             </Typography>
-            {needAction > 0 && ` · ${needAction} need action`}
+            {needAction > 0 && ` · ${needAction} ${needAction === 1 ? 'needs' : 'need'} action`}
           </Typography>
         </Stack>
 
-        <Stack {...rowProps} sx={{ minHeight: 16 }}>
+        <Stack {...rowProps} sx={{ minHeight: 16, rowGap: 0.5 }}>
           {handle ? (
             <Link
               href={handle.url}
@@ -66,7 +79,9 @@ const CreatorHeader = ({ creator, submissions, onSelect }) => {
               rel="noopener noreferrer"
               underline="hover"
               noWrap
+              title={`@${handle.username}`}
               sx={{
+                ...leftSx,
                 fontSize: 12,
                 lineHeight: '16px',
                 color: COLORS.textSecondary,
@@ -76,7 +91,7 @@ const CreatorHeader = ({ creator, submissions, onSelect }) => {
               @{handle.username}
             </Link>
           ) : (
-            <span />
+            <span style={leftSx} />
           )}
           <StatusBar submissions={submissions} onSelect={onSelect} />
         </Stack>

@@ -19,6 +19,7 @@ import Iconify from 'src/components/iconify';
 import CtaButton from 'src/components/cta-button';
 
 import { sectionLabelSx } from '../styles';
+import { EASE_OUT } from '../../constants';
 import useCommentSocket from '../hooks/use-comment-socket';
 import useCommentThread from '../hooks/use-comment-thread';
 import useNewCommentIds from '../hooks/use-new-comment-ids';
@@ -739,7 +740,7 @@ const listItemMotion = {
   initial: { opacity: 0, height: 0 },
   animate: { opacity: 1, height: 'auto' },
   exit: { opacity: 0, height: 0 },
-  transition: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
+  transition: { duration: 0.2, ease: EASE_OUT },
 };
 
 // Items collapse out / expand in instead of snapping, so the content below doesn't jump —

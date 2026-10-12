@@ -4,7 +4,7 @@ import React, { useRef, useState, useLayoutEffect } from 'react';
 
 import { Box, Link, Typography, ClickAwayListener } from '@mui/material';
 
-import { COLORS } from '../constants';
+import { COLORS, EASE_OUT } from '../constants';
 
 const ExpandableText = ({ text, lines = 2, maxHeight = 240, sx, expandedSx }) => {
   const ref = useRef(null);
@@ -47,7 +47,7 @@ const ExpandableText = ({ text, lines = 2, maxHeight = 240, sx, expandedSx }) =>
         <m.div
           initial={false}
           animate={{ height: expanded ? 'auto' : collapsedHeight }}
-          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          transition={{ duration: 0.3, ease: EASE_OUT }}
           onAnimationComplete={() => !expanded && setClampOn(true)}
           style={{ maxHeight, overflowY: expanded ? 'auto' : 'hidden' }}
         >

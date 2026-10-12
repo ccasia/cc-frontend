@@ -27,12 +27,19 @@ export const groupByCreator = (submissions) => {
   return Object.values(groups);
 };
 
+// Name can be null in the DB; the email still identifies the creator
+export const getDisplayName = (user) => user?.name?.trim() || user?.email || 'Unnamed creator';
+
+// First letter of each word, by grapheme so emoji never split into half a character
+const firstLetter = (word) => Array.from(word).find((char) => /\p{L}/u.test(char));
+
 export const getInitials = (name) =>
   (name ?? '')
-    .split(' ')
+    .split(/\s+/)
+    .map(firstLetter)
     .filter(Boolean)
     .slice(0, 2)
-    .map((word) => word[0].toUpperCase())
+    .map((letter) => letter.toUpperCase())
     .join('');
 
 const PROFILE_URL = {

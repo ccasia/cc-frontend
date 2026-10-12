@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { MotionConfig } from 'framer-motion';
 import React, { useMemo, useEffect } from 'react';
 
 import { Box, Stack } from '@mui/material';
@@ -7,10 +8,11 @@ import { campaignHasClient } from 'src/utils/campaign-flow';
 
 import EmptyContent from 'src/components/empty-content';
 
+import { MIN_CARD_WIDTH } from './constants';
 import { groupByCreator, filterSubmissions } from './utils';
 import useGetSubmissions from './hooks/use-get-submissions';
 import SubmissionViewer from './submission-viewer/SubmissionViewer';
-import CreatorSubmissionCard from './components/CreatorSubmissionCard';
+import CreatorSubmissionGrid from './components/CreatorSubmissionGrid';
 import CreatorSubmissionsToolbar from './components/CreatorSubmissionsToolbar';
 import CreatorSubmissionCardSkeleton from './components/CreatorSubmissionCardSkeleton';
 import {
@@ -25,6 +27,12 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
   const statusFilter = useCreatorSubmissionsStore((state) => state.statusFilter);
   const typeFilter = useCreatorSubmissionsStore((state) => state.typeFilter);
   const isFiltering = !!search.trim() || statusFilter !== 'all' || typeFilter !== 'all';
+  // eslint-disable-next-line no-nested-ternary
+  const emptyTitle = search.trim()
+    ? `No creators match "${search.trim()}"`
+    : isFiltering
+      ? 'No submissions match these filters'
+      : 'No submissions yet';
 
   const creators = useMemo(
     () => groupByCreator(filterSubmissions(submissions, { search, statusFilter, typeFilter })),
@@ -40,52 +48,53 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
   useEffect(() => () => resetCreatorSubmissions(), []);
 
   return (
-    <Stack spacing={3}>
-      <CreatorSubmissionsToolbar />
+    // Reduced motion keeps fades but drops movement, for the cards and the viewer
+    <MotionConfig reducedMotion="user">
+      <Stack spacing={3}>
+        <CreatorSubmissionsToolbar />
 
-      <SubmissionViewer />
+        <SubmissionViewer />
 
-      {isError && (
-        <EmptyContent
-          filled
-          title="Could not load submissions"
-          description="Please refresh the page to try again."
-          sx={{ py: 10 }}
-        />
-      )}
+        {isError && (
+          <EmptyContent
+            filled
+            title="Could not load submissions"
+            description="Please refresh the page to try again."
+            sx={{ py: 10 }}
+          />
+        )}
 
-      {!isPending && !isError && !creators.length && (
-        <EmptyContent
-          filled
-          title={
-            isFiltering
-              ? `No matching submissions with the given creator name ${search}`
-              : 'No submissions yet'
-          }
-          description={
-            isFiltering
-              ? 'Try a different search or filter.'
-              : 'Creator submissions will show here once creators are added to the campaign.'
-          }
-          sx={{ py: 10 }}
-        />
-      )}
+        {!isPending && !isError && !creators.length && (
+          <EmptyContent
+            filled
+            title={emptyTitle}
+            description={
+              isFiltering
+                ? 'Try a different search or filter.'
+                : 'Creator submissions will show here once creators are added to the campaign.'
+            }
+            sx={{ py: 10, '& .MuiTypography-root': { overflowWrap: 'anywhere' } }}
+          />
+        )}
 
-      <Box
-        sx={{
-          display: 'grid',
-          gap: 3,
-          alignItems: 'start',
-          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
-        }}
-      >
-        {isPending &&
-          [...Array(6)].map((_, index) => <CreatorSubmissionCardSkeleton key={index} />)}
-        {creators.map(({ user, submissions: items }) => (
-          <CreatorSubmissionCard key={user.id} creator={user} submissions={items} />
-        ))}
-      </Box>
-    </Stack>
+        {isPending ? (
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 3,
+              alignItems: 'start',
+              gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${MIN_CARD_WIDTH}px), 1fr))`,
+            }}
+          >
+            {[...Array(6)].map((_, index) => (
+              <CreatorSubmissionCardSkeleton key={index} />
+            ))}
+          </Box>
+        ) : (
+          <CreatorSubmissionGrid creators={creators} fadeKey={`${statusFilter}|${typeFilter}`} />
+        )}
+      </Stack>
+    </MotionConfig>
   );
 };
 
