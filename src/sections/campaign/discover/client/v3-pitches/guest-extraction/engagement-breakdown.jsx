@@ -215,7 +215,7 @@ BarTip.propTypes = {
 };
 
 /** A light card instead of the default dark tooltip, to match the modal. */
-const barTipProps = {
+export const barTipProps = {
   tooltip: {
     sx: {
       p: 1.25,
