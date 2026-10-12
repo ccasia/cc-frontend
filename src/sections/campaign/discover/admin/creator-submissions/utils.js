@@ -92,3 +92,22 @@ export const filterSubmissions = (submissions, { search, statusFilter, typeFilte
     return matchesStatus && matchesType && matchesSearch;
   });
 };
+
+const countBy = (items, getKey) =>
+  items.reduce((counts, item) => {
+    const key = getKey(item);
+    counts[key] = (counts[key] ?? 0) + 1;
+    return counts;
+  }, {});
+
+// Each filter's counts respect the other filter and the search, so a count matches the results
+export const getFilterCounts = (submissions, filters) => ({
+  status: countBy(
+    filterSubmissions(submissions, { ...filters, statusFilter: 'all' }),
+    (submission) => submission.status
+  ),
+  type: countBy(
+    filterSubmissions(submissions, { ...filters, typeFilter: 'all' }),
+    (submission) => submission.submissionType?.type
+  ),
+});

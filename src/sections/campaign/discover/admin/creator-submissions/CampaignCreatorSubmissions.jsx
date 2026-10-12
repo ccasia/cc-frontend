@@ -9,10 +9,10 @@ import { campaignHasClient } from 'src/utils/campaign-flow';
 import EmptyContent from 'src/components/empty-content';
 
 import { MIN_CARD_WIDTH } from './constants';
-import { groupByCreator, filterSubmissions } from './utils';
 import useGetSubmissions from './hooks/use-get-submissions';
 import SubmissionViewer from './submission-viewer/SubmissionViewer';
 import CreatorSubmissionGrid from './components/CreatorSubmissionGrid';
+import { groupByCreator, getFilterCounts, filterSubmissions } from './utils';
 import CreatorSubmissionsToolbar from './components/CreatorSubmissionsToolbar';
 import CreatorSubmissionCardSkeleton from './components/CreatorSubmissionCardSkeleton';
 import {
@@ -39,6 +39,11 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
     [submissions, search, statusFilter, typeFilter]
   );
 
+  const filterCounts = useMemo(
+    () => getFilterCounts(submissions, { search, statusFilter, typeFilter }),
+    [submissions, search, statusFilter, typeFilter]
+  );
+
   // The viewer reads the campaign from the store, so cards can open it without props
   const hasClient = campaignHasClient(campaign);
   useEffect(() => {
@@ -51,7 +56,7 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
     // Reduced motion keeps fades but drops movement, for the cards and the viewer
     <MotionConfig reducedMotion="user">
       <Stack spacing={3}>
-        <CreatorSubmissionsToolbar />
+        <CreatorSubmissionsToolbar counts={filterCounts} />
 
         <SubmissionViewer />
 
