@@ -1,35 +1,21 @@
-import { useSWRConfig } from 'swr';
+import { useQueryClient } from '@tanstack/react-query';
 import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
-import { notesKeys, markCreatorNotesRead, useCreatorNoteSummaries } from './api';
+import { creatorNoteKeys, useCreatorNoteSummaries, useMarkCreatorNotesRead } from './api';
 
 export default function useCreatorNotes({ campaignId, enabled }) {
   const { socket } = useSocketContext();
-  const { mutate } = useSWRConfig();
+  const queryClient = useQueryClient();
   const activeCampaignId = enabled ? campaignId : null;
-  const { byCreator, mutate: mutateSummary } = useCreatorNoteSummaries(activeCampaignId);
+  const byCreator = useCreatorNoteSummaries(activeCampaignId);
+  const { mutate: markRead, mutateAsync: markReadAsync } =
+    useMarkCreatorNotesRead(activeCampaignId);
 
   const [openCreatorId, setOpenCreatorId] = useState(null);
   const openCreatorRef = useRef(null);
   openCreatorRef.current = openCreatorId;
-
-  const markRead = useCallback(
-    async (creatorId) => {
-      // Clear the badge right away instead of waiting for the round trip.
-      mutateSummary(
-        (list) => list?.map((s) => (s.creatorId === creatorId ? { ...s, unreadCount: 0 } : s)),
-        { revalidate: false }
-      );
-      try {
-        await markCreatorNotesRead(campaignId, creatorId);
-      } catch {
-        mutateSummary();
-      }
-    },
-    [campaignId, mutateSummary]
-  );
 
   const openNotes = useCallback(
     (creatorId) => {
@@ -49,10 +35,14 @@ export default function useCreatorNotes({ campaignId, enabled }) {
 
     const sync = async ({ campaignId: eventCampaignId, creatorId }) => {
       if (eventCampaignId !== activeCampaignId) return;
-      mutate(notesKeys.thread(activeCampaignId, creatorId));
+      queryClient.invalidateQueries({
+        queryKey: creatorNoteKeys.thread(activeCampaignId, creatorId),
+      });
       // Mark read before refetching, or the open thread would come back unread.
-      if (openCreatorRef.current === creatorId) await markRead(creatorId);
-      mutateSummary();
+      if (openCreatorRef.current === creatorId) {
+        await markReadAsync(creatorId).catch(() => {});
+      }
+      queryClient.invalidateQueries({ queryKey: creatorNoteKeys.summary(activeCampaignId) });
     };
 
     join();
@@ -67,7 +57,7 @@ export default function useCreatorNotes({ campaignId, enabled }) {
       socket.off('creator-note:pin-updated', sync);
       socket.emit('leave-campaign-notes', activeCampaignId);
     };
-  }, [socket, activeCampaignId, mutate, mutateSummary, markRead]);
+  }, [socket, activeCampaignId, queryClient, markReadAsync]);
 
   const unreadTotal = useMemo(
     () => [...byCreator.values()].reduce((sum, s) => sum + (s.unreadCount || 0), 0),
@@ -81,6 +71,5 @@ export default function useCreatorNotes({ campaignId, enabled }) {
     openCreatorId,
     openNotes,
     closeNotes,
-    refreshSummary: mutateSummary,
   };
 }

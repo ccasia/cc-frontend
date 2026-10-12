@@ -1647,7 +1647,6 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
           campaignId={campaign?.id}
           creator={notesCreator}
           onClose={creatorNotes.closeNotes}
-          onChanged={() => creatorNotes.refreshSummary()}
         />
       )}
     </Box>

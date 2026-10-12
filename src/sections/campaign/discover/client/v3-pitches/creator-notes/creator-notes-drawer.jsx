@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 
 import {
   Box,
@@ -20,10 +20,10 @@ import Iconify from 'src/components/iconify';
 import NoteComposer from './note-composer';
 import { NoteText, NoteAvatar, NOTE_COLORS, formatNoteTime } from './note-parts';
 import {
-  postCreatorNote,
-  setCreatorNotePinned,
+  usePostCreatorNote,
   useCreatorNoteThread,
-  setCreatorNotesFollowing,
+  useSetCreatorNotePinned,
+  useSetCreatorNotesFollowing,
 } from './api';
 
 const labelSx = {
@@ -98,12 +98,7 @@ NoteItem.propTypes = {
   onPin: PropTypes.func.isRequired,
 };
 
-export default function CreatorNotesDrawer({
-  campaignId,
-  creator: creatorProp,
-  onClose,
-  onChanged,
-}) {
+export default function CreatorNotesDrawer({ campaignId, creator: creatorProp, onClose }) {
   const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
   // Keep showing the last creator while the drawer slides out.
@@ -111,8 +106,10 @@ export default function CreatorNotesDrawer({
   if (creatorProp) lastCreatorRef.current = creatorProp;
   const creator = lastCreatorRef.current;
   const creatorId = creator?.id;
-  const { thread, isLoading, error, mutate } = useCreatorNoteThread(campaignId, creatorId);
-  const [posting, setPosting] = useState(false);
+  const { thread, isLoading, error, refetch } = useCreatorNoteThread(campaignId, creatorId);
+  const postNote = usePostCreatorNote(campaignId, creatorId);
+  const setPinned = useSetCreatorNotePinned(campaignId, creatorId);
+  const setFollowing = useSetCreatorNotesFollowing(campaignId, creatorId);
   const scrollRef = useRef(null);
 
   const notes = thread?.notes ?? [];
@@ -127,41 +124,26 @@ export default function CreatorNotesDrawer({
 
   const fail = (message) => enqueueSnackbar(message, { variant: 'error' });
 
-  const handlePost = async ({ text, pinned: pin }) => {
-    setPosting(true);
+  const handlePost = async (body) => {
     try {
-      await postCreatorNote(campaignId, creatorId, { text, pinned: pin });
-      await mutate();
-      onChanged?.();
+      await postNote.mutateAsync(body);
       return true;
     } catch {
       fail('Could not post the note. Try again.');
       return false;
-    } finally {
-      setPosting(false);
     }
   };
 
-  const handlePin = async (note, nextPinned) => {
-    try {
-      await setCreatorNotePinned(campaignId, creatorId, note.id, nextPinned);
-      await mutate();
-      onChanged?.();
-    } catch {
-      fail(nextPinned ? 'Could not pin the note.' : 'Could not unpin the note.');
-    }
-  };
+  const handlePin = (note, pin) =>
+    setPinned.mutate(
+      { noteId: note.id, pinned: pin },
+      { onError: () => fail(pin ? 'Could not pin the note.' : 'Could not unpin the note.') }
+    );
 
-  const handleFollow = async () => {
-    const next = !following;
-    mutate((current) => current && { ...current, following: next }, { revalidate: false });
-    try {
-      await setCreatorNotesFollowing(campaignId, creatorId, next);
-    } catch {
-      mutate();
-      fail('Could not update notifications for this thread.');
-    }
-  };
+  const handleFollow = () =>
+    setFollowing.mutate(!following, {
+      onError: () => fail('Could not update notifications for this thread.'),
+    });
 
   const renderBody = () => {
     if (isLoading) {
@@ -173,7 +155,7 @@ export default function CreatorNotesDrawer({
         <Typography sx={{ m: 'auto', fontSize: 14, color: NOTE_COLORS.secondary }}>
           Could not load notes.{' '}
           <ButtonBase
-            onClick={() => mutate()}
+            onClick={() => refetch()}
             sx={{ fontSize: 'inherit', color: NOTE_COLORS.accent, verticalAlign: 'baseline' }}
           >
             Retry
@@ -333,7 +315,7 @@ export default function CreatorNotesDrawer({
       <NoteComposer
         key={creatorId}
         participants={participants}
-        posting={posting}
+        posting={postNote.isPending}
         onSubmit={handlePost}
       />
     </Drawer>
@@ -345,5 +327,4 @@ CreatorNotesDrawer.propTypes = {
   /** Null closes the drawer. */
   creator: PropTypes.object,
   onClose: PropTypes.func.isRequired,
-  onChanged: PropTypes.func,
 };
