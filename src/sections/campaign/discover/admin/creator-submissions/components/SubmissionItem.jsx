@@ -28,7 +28,7 @@ const SubmissionItem = forwardRef(({ submission, selected, onSelect }, ref) => {
 
     if (armed) {
       setArmed(false);
-      openSubmissionViewer({ userId: submission.userId, submissionId: submission.id });
+      openSubmissionViewer({ userId: submission.user.id, submissionId: submission.id });
       return;
     }
 
