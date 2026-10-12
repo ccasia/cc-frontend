@@ -16,10 +16,21 @@ export const STATUS_CHIP = {
 export const TYPE_LABEL = {
   VIDEO: 'Video',
   PHOTO: 'Photos',
-  RAW_FOOTAGE: 'Raw Footages',
+  RAW_FOOTAGE: 'Raw Footage',
 };
 
 export const VISIBLE_COUNT = 3;
+
+// Below this a card can't fit the thumbnail, the submission list and a status chip side by side
+export const MIN_CARD_WIDTH = 420;
+
+// Motion tokens: strong ease-out for enter/exit, ease-in-out for things moving on screen
+export const EASE_OUT = [0.23, 1, 0.32, 1];
+export const EASE_OUT_CSS = 'cubic-bezier(0.23, 1, 0.32, 1)';
+export const EASE_IN_OUT_CSS = 'cubic-bezier(0.77, 0, 0.175, 1)';
+
+export const HOVER_MEDIA = '@media (hover: hover) and (pointer: fine)';
+export const REDUCED_MOTION_MEDIA = '@media (prefers-reduced-motion: reduce)';
 
 export const TYPE_ORDER = ['VIDEO', 'RAW_FOOTAGE', 'PHOTO'];
 

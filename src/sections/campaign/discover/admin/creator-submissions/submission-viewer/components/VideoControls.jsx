@@ -7,6 +7,7 @@ import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 
 import Iconify from 'src/components/iconify';
 
+import { EASE_OUT_CSS } from '../../constants';
 import useDisplayDuration from '../hooks/use-display-duration';
 import { parseTimestamp, formatTimestamp, getCommentVideoId, isCommentResolved } from '../utils';
 import {
@@ -105,7 +106,7 @@ function Scrubber({ submission }) {
         height: 16,
         cursor: 'pointer',
         touchAction: 'none',
-        '&:hover .scrubber-track': { height: 6 },
+        '&:hover .scrubber-track': { transform: 'translateY(-50%) scaleY(1)' },
       }}
     >
       <Box
@@ -115,12 +116,13 @@ function Scrubber({ submission }) {
           left: 0,
           right: 0,
           top: '50%',
-          height: dragging ? 6 : 4,
-          transform: 'translateY(-50%)',
+          // Fixed 6px; the thin 4px state is a scale, so hover/drag never re-lays out
+          height: 6,
+          transform: `translateY(-50%) scaleY(${dragging ? 1 : 0.667})`,
           borderRadius: 99,
           bgcolor: 'rgba(255, 255, 255, 0.25)',
           overflow: 'hidden',
-          transition: 'height 0.15s',
+          transition: `transform 150ms ${EASE_OUT_CSS}`,
         }}
       >
         <Box sx={{ width: `${toPercent(currentTime)}%`, height: 1, bgcolor: 'common.white' }} />
@@ -164,15 +166,15 @@ function Scrubber({ submission }) {
                   position: 'absolute',
                   top: '50%',
                   left: `${toPercent(seconds)}%`,
-                  width: isActive ? 12 : 10,
-                  height: isActive ? 12 : 10,
+                  width: 12,
+                  height: 12,
                   borderRadius: '50%',
                   border: '1.5px solid rgba(0, 0, 0, 0.55)',
                   bgcolor: dotColor,
                   boxShadow: isActive ? `0 0 0 3px ${alpha(dotColor, 0.35)}` : 'none',
-                  transform: 'translate(-50%, -50%)',
-                  transition: 'all 0.15s',
-                  '&:hover': { width: 12, height: 12 },
+                  transform: `translate(-50%, -50%) scale(${isActive ? 1 : 0.833})`,
+                  transition: `transform 150ms ${EASE_OUT_CSS}`,
+                  '&:hover': { transform: 'translate(-50%, -50%) scale(1)' },
                 }}
               />
             </Tooltip>

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { Box, Stack, Tooltip, Typography } from '@mui/material';
 
 import StatusChip from './StatusChip';
-import { COLORS } from '../constants';
+import { COLORS, HOVER_MEDIA } from '../constants';
 import { getStatusChip, getSubmissionLabel } from '../utils';
 
 const tooltipSlotProps = {
@@ -26,9 +26,12 @@ const tooltipSlotProps = {
   },
 };
 
+// Campaigns can have many deliverables; past this the pills would push the handle off the card
+const MAX_PILLS = 8;
+
 const StatusBar = ({ submissions, onSelect }) => (
-  <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
-    {submissions.map((submission) => (
+  <Stack direction="row" alignItems="center" spacing={0.5} sx={{ flexShrink: 0 }}>
+    {submissions.slice(0, MAX_PILLS).map((submission) => (
       <Tooltip
         key={submission.id}
         arrow
@@ -45,7 +48,11 @@ const StatusBar = ({ submissions, onSelect }) => (
       >
         <Box
           onClick={() => onSelect(submission.id)}
-          sx={{ py: 0.5, cursor: 'pointer', '&:hover > span': { transform: 'scale(1.15, 1.6)' } }}
+          sx={{
+            py: 0.5,
+            cursor: 'pointer',
+            [HOVER_MEDIA]: { '&:hover > span': { transform: 'scale(1.15, 1.6)' } },
+          }}
         >
           <Box
             component="span"
@@ -61,6 +68,11 @@ const StatusBar = ({ submissions, onSelect }) => (
         </Box>
       </Tooltip>
     ))}
+    {submissions.length > MAX_PILLS && (
+      <Typography sx={{ fontSize: 11, fontWeight: 600, lineHeight: '16px', color: COLORS.muted }}>
+        +{submissions.length - MAX_PILLS}
+      </Typography>
+    )}
   </Stack>
 );
 

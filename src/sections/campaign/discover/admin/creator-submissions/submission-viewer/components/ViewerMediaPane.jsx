@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
-import { m, LayoutGroup } from 'framer-motion';
-import { useId, useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 import { keyframes } from '@mui/material/styles';
 import { Box, Stack, Tooltip, IconButton, Typography, CircularProgress } from '@mui/material';
@@ -678,7 +677,6 @@ export default function ViewerMediaPane() {
 
   usePreloadNeighbours();
   // Scopes the strip's sliding highlight (same pattern as the cards' SubmissionList)
-  const stripGroupId = useId();
 
   // Trackpad swipes mirror the arrow keys: vertical = creator, horizontal = upload version
   // Covers the whole pane; off in the stacked mobile layout so the page can scroll
@@ -808,57 +806,53 @@ export default function ViewerMediaPane() {
             p: 1,
           }}
         >
-          <LayoutGroup id={stripGroupId}>
-            {creator?.submissions.map((item, index) => {
-              const status = getStatusChip(item.status);
-              const isCurrent = index === submissionIndex;
+          {creator?.submissions.map((item, index) => {
+            const status = getStatusChip(item.status);
+            const isCurrent = index === submissionIndex;
 
-              return (
-                <Stack
-                  key={item.id}
-                  direction="row"
-                  alignItems="center"
-                  gap={1}
-                  onClick={() => goToSubmission(index)}
-                  sx={{
-                    position: 'relative',
-                    flexShrink: 0,
-                    p: 0.5,
-                    pr: 1,
-                    borderRadius: 1.125,
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: isCurrent ? 'transparent' : 'rgba(255, 255, 255, 0.04)' },
-                  }}
-                >
-                  {/* Shared layoutId slides this highlight to the current item */}
-                  {isCurrent && (
-                    <m.div
-                      layoutId="active-strip-submission"
-                      transition={{ type: 'spring', stiffness: 500, damping: 40 }}
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        borderRadius: 9,
-                        background: '#2C2C32',
-                        boxShadow: 'inset 0 0 0 1.5px #fff',
-                      }}
-                    />
-                  )}
-                  <Box sx={{ position: 'relative' }}>
-                    <StripThumbnail submission={item} />
-                  </Box>
-                  <Stack gap={0.25} sx={{ position: 'relative' }}>
-                    <Typography sx={{ fontSize: 11.5, whiteSpace: 'nowrap' }}>
-                      {getSubmissionLabel(item)}
-                    </Typography>
-                    <Typography sx={{ fontSize: 10.5, color: status.color }}>
-                      {status.label}
-                    </Typography>
-                  </Stack>
+            return (
+              <Stack
+                key={item.id}
+                direction="row"
+                alignItems="center"
+                gap={1}
+                onClick={() => goToSubmission(index)}
+                sx={{
+                  position: 'relative',
+                  flexShrink: 0,
+                  p: 0.5,
+                  pr: 1,
+                  borderRadius: 1.125,
+                  cursor: 'pointer',
+                  '&:hover': { bgcolor: isCurrent ? 'transparent' : 'rgba(255, 255, 255, 0.04)' },
+                }}
+              >
+                {/* Arrow keys move this many times a session, so the highlight jumps, not slides */}
+                {isCurrent && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '9px',
+                      bgcolor: '#2C2C32',
+                      boxShadow: 'inset 0 0 0 1.5px #fff',
+                    }}
+                  />
+                )}
+                <Box sx={{ position: 'relative' }}>
+                  <StripThumbnail submission={item} />
+                </Box>
+                <Stack gap={0.25} sx={{ position: 'relative' }}>
+                  <Typography sx={{ fontSize: 11.5, whiteSpace: 'nowrap' }}>
+                    {getSubmissionLabel(item)}
+                  </Typography>
+                  <Typography sx={{ fontSize: 10.5, color: status.color }}>
+                    {status.label}
+                  </Typography>
                 </Stack>
-              );
-            })}
-          </LayoutGroup>
+              </Stack>
+            );
+          })}
         </Stack>
       </Stack>
     </Stack>
