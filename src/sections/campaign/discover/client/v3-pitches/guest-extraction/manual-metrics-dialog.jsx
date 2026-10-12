@@ -30,7 +30,7 @@ import { hasSafeFollowerCount, hasSafeEngagementRate } from './creator-row-machi
 
 const toText = (value) => (value == null ? '' : String(value));
 
-const PRIMARY_BUTTON_SX = {
+export const PRIMARY_BUTTON_SX = {
   height: 44,
   minWidth: 120,
   px: 3,

@@ -313,7 +313,7 @@ const toInsightData = (submission, snapshot) => ({
   platform: submission.platform,
   user: submission.user,
   postUrl: submission.postUrl,
-  thumbnail: null,
+  thumbnail: snapshot.thumbnailUrl || null,
   insight: [
     { name: 'views', value: snapshot.views || 0 },
     { name: 'likes', value: snapshot.likes || 0 },
@@ -327,6 +327,7 @@ const toInsightData = (submission, snapshot) => ({
   createdAt: submission.createdAt,
   capturedAt: snapshot.capturedAt,
   snapshotDate: snapshot.snapshotDate,
+  source: snapshot.source,
 });
 
 export const useSocialInsights = (postingSubmissions, campaignId) => {

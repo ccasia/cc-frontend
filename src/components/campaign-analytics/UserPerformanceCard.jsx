@@ -20,8 +20,15 @@ import {
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 
 import { formatNumber, getMetricValue } from 'src/utils/socialMetricsCalculator';
+import { createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
+
+import DiaTextReveal from 'src/sections/campaign/discover/client/v3-pitches/dia-text-reveal';
+
+import ScrapeFixButton from './ScrapeFixButton';
+import ScrapeFailedMetrics from './ScrapeFailedMetrics';
+import ScrapeMetricsLoading from './ScrapeMetricsLoading';
 
 // ----------------------------------------------------------------------
 // ScrollingName — auto-scrolls text that overflows its container
@@ -105,6 +112,38 @@ ScrollingName.propTypes = {
   variant: PropTypes.string,
   fontWeight: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };
+
+// ----------------------------------------------------------------------
+// resolveCreatorHandle — the handle the creator master list shows
+// ----------------------------------------------------------------------
+
+const linkFor = (creator, platform) => {
+  const own = platform === 'instagram' ? creator?.instagramProfileLink : creator?.tiktokProfileLink;
+  if (own) return own;
+  const shared = creator?.profileLink;
+  return shared && shared.toLowerCase().includes(`${platform}.com`) ? shared : null;
+};
+
+/**
+ * The creator's own handle from their profile, as the master list reads it:
+ * the saved handle, else the one in their profile link. Never the posting
+ * link's owner. The post's platform comes first.
+ */
+export function resolveCreatorHandle(creator, postPlatform) {
+  if (!creator) return null;
+  const handles = ['instagram', 'tiktok'].map((platform) => ({
+    platform,
+    handle: (creator[platform] || extractUsernameFromProfileLink(linkFor(creator, platform)) || '')
+      .replace(/^@/, '')
+      .trim(),
+  }));
+  if (postPlatform === 'TikTok') handles.reverse();
+
+  const found = handles.find(({ handle }) => handle);
+  return found
+    ? { handle: found.handle, href: createSocialProfileUrl(found.handle, found.platform) }
+    : null;
+}
 
 // ----------------------------------------------------------------------
 // AnimatedNumber — count-up animation when value changes
@@ -263,6 +302,25 @@ MetricsSkeleton.propTypes = {
 };
 
 // ----------------------------------------------------------------------
+// MetricValue — Dia reveal when a scrape just finished, else count-up
+// ----------------------------------------------------------------------
+
+const REVEAL_STYLE = { lineHeight: 'inherit' };
+
+function MetricValue({ value, suffix = '', formatFn, reveal = false }) {
+  if (!reveal) return <AnimatedNumber value={value} suffix={suffix} formatFn={formatFn} />;
+  const text = `${formatFn ? formatFn(value) : value}${suffix}`;
+  return <DiaTextReveal text={text} textColor="#1340FF" duration={1.5} style={REVEAL_STYLE} />;
+}
+
+MetricValue.propTypes = {
+  value: PropTypes.number.isRequired,
+  suffix: PropTypes.string,
+  formatFn: PropTypes.func,
+  reveal: PropTypes.bool,
+};
+
+// ----------------------------------------------------------------------
 // UserPerformanceCard
 // ----------------------------------------------------------------------
 
@@ -271,18 +329,35 @@ export default function UserPerformanceCard({
   engagementRate,
   submission,
   insightData,
-  loadingInsights: isLoadingInsights,
+  loadingInsights,
+  scrapeProgress,
+  revealMetrics = false,
+  scrapeFailure = null,
+  campaignId,
+  canEnterMetrics = false,
+  onScrapeCompleted,
 }) {
+  // A post whose Bright Data scrape is still running loads like any other.
+  const isScraping = Boolean(scrapeProgress) && !insightData;
+  const isLoadingInsights = loadingInsights || isScraping;
+  const showScrapeFailure = Boolean(scrapeFailure) && !insightData && !isLoadingInsights;
+
   const { data: creator, isLoading: loadingCreator } = useGetCreatorById(submission.user);
 
-  const creatorHandle = creator?.user?.creator?.instagram || creator?.user?.creator?.tiktok;
-
-  const creatorHandleHref = creator?.user?.creator?.instagram
-    ? `https://instagram.com/${creator.user.creator.instagram.replace('@', '')}`
-    : `https://tiktok.com/@${(creator?.user?.creator?.tiktok || '').replace('@', '')}`;
+  const creatorSocial = resolveCreatorHandle(creator?.user?.creator, submission?.platform);
+  const creatorHandle = creatorSocial?.handle;
+  const creatorHandleHref = creatorSocial?.href;
 
   const isInstagram = submission?.platform === 'Instagram';
-  const postThumbnail = insightData?.thumbnail || insightData?.video?.media_url;
+  const isScraped = insightData?.source === 'brightdata';
+  // Instagram keeps shares and saves private, so a scraped post has neither.
+  const hidePrivateMetrics = isScraped && isInstagram;
+  // A failed scrape still saved the post's thumbnail, so its row shows the post too.
+  const postThumbnail =
+    insightData?.thumbnail || insightData?.video?.media_url || scrapeFailure?.thumbnailUrl;
+  const postLink = insightData?.postUrl || scrapeFailure?.postUrl;
+  const [brokenThumbnail, setBrokenThumbnail] = useState(null);
+  const thumbnailSrc = postThumbnail && postThumbnail !== brokenThumbnail ? postThumbnail : null;
 
   return (
     <Grid item xs={12}>
@@ -323,8 +398,7 @@ export default function UserPerformanceCard({
               direction="row"
               spacing={1.5}
               alignItems="center"
-              flex={1}
-              sx={{ maxWidth: 210, flexShrink: 0, overflow: 'hidden' }}
+              sx={{ width: 200, flexShrink: 0, overflow: 'hidden' }}
             >
               <Avatar
                 src={creator?.user?.photoURL}
@@ -388,9 +462,7 @@ export default function UserPerformanceCard({
                   sx={{ mx: 1, minWidth: 0, overflow: 'hidden' }}
                 >
                   {/* Engagement Rate */}
-                  <Box
-                    sx={{ textAlign: 'left', minWidth: { md: 0, lg: 110 }, pr: { md: 1, lg: 1.5 } }}
-                  >
+                  <Box sx={{ textAlign: 'left', minWidth: 110 }}>
                     <Typography
                       fontFamily="Aileron"
                       fontSize={{ md: 14, lg: 16, xl: 18 }}
@@ -412,7 +484,8 @@ export default function UserPerformanceCard({
                       color="#1340FF"
                       lineHeight={1.1}
                     >
-                      <AnimatedNumber
+                      <MetricValue
+                        reveal={revealMetrics}
                         value={parseFloat(engagementRate) || 0}
                         suffix="%"
                         formatFn={(val) => val.toFixed(2)}
@@ -442,7 +515,8 @@ export default function UserPerformanceCard({
                       color="#1340FF"
                       lineHeight={1.1}
                     >
-                      <AnimatedNumber
+                      <MetricValue
+                        reveal={revealMetrics}
                         value={getMetricValue(insightData.insight, 'views')}
                         formatFn={formatNumber}
                       />
@@ -471,7 +545,8 @@ export default function UserPerformanceCard({
                       color="#1340FF"
                       lineHeight={1.1}
                     >
-                      <AnimatedNumber
+                      <MetricValue
+                        reveal={revealMetrics}
                         value={getMetricValue(insightData.insight, 'likes')}
                         formatFn={formatNumber}
                       />
@@ -500,7 +575,8 @@ export default function UserPerformanceCard({
                       color="#1340FF"
                       lineHeight={1.1}
                     >
-                      <AnimatedNumber
+                      <MetricValue
+                        reveal={revealMetrics}
                         value={getMetricValue(insightData.insight, 'comments')}
                         formatFn={formatNumber}
                       />
@@ -535,10 +611,15 @@ export default function UserPerformanceCard({
                       color="#1340FF"
                       lineHeight={1.1}
                     >
-                      <AnimatedNumber
-                        value={getMetricValue(insightData.insight, 'shares')}
-                        formatFn={formatNumber}
-                      />
+                      {hidePrivateMetrics ? (
+                        '–'
+                      ) : (
+                        <MetricValue
+                          reveal={revealMetrics}
+                          value={getMetricValue(insightData.insight, 'shares')}
+                          formatFn={formatNumber}
+                        />
+                      )}
                     </Typography>
                   </Box>
 
@@ -572,10 +653,15 @@ export default function UserPerformanceCard({
                           color="#1340FF"
                           lineHeight={1.1}
                         >
-                          <AnimatedNumber
-                            value={getMetricValue(insightData.insight, 'saved')}
-                            formatFn={formatNumber}
-                          />
+                          {hidePrivateMetrics ? (
+                            '–'
+                          ) : (
+                            <MetricValue
+                              reveal={revealMetrics}
+                              value={getMetricValue(insightData.insight, 'saved')}
+                              formatFn={formatNumber}
+                            />
+                          )}
                         </Typography>
                       </Box>
                     </>
@@ -616,13 +702,35 @@ export default function UserPerformanceCard({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
+                  display="flex"
+                  flex={1}
+                  minWidth={0}
                 >
-                  <MetricsSkeleton showSaves={isInstagram} />
+                  {isScraping ? (
+                    <ScrapeMetricsLoading showSaves={isInstagram} progress={scrapeProgress} />
+                  ) : (
+                    <MetricsSkeleton showSaves={isInstagram} />
+                  )}
+                </Box>
+              )}
+
+              {/* Failed scrape: the reason, and what an admin can enter */}
+              {showScrapeFailure && (
+                <Box
+                  component={m.div}
+                  key="metrics-scrape-failed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  display="flex"
+                  flex={1}
+                  minWidth={0}
+                >
+                  <ScrapeFailedMetrics scrapeFailure={scrapeFailure} isInstagram={isInstagram} />
                 </Box>
               )}
 
               {/* Empty state */}
-              {!insightData && !isLoadingInsights && (
+              {!insightData && !isLoadingInsights && !scrapeFailure && (
                 <Box
                   component={m.div}
                   key="metrics-empty"
@@ -646,7 +754,7 @@ export default function UserPerformanceCard({
               sx={{ flexShrink: 0, minWidth: 0 }}
             >
               <AnimatePresence mode="wait">
-                {insightData && (
+                {(insightData || showScrapeFailure) && (
                   <Box
                     component={m.div}
                     key="thumbnail-content"
@@ -657,7 +765,7 @@ export default function UserPerformanceCard({
                     sx={{ flexShrink: 0 }}
                   >
                     <Link
-                      href={insightData.postUrl}
+                      href={postLink}
                       target="_blank"
                       rel="noopener"
                       sx={{
@@ -668,11 +776,12 @@ export default function UserPerformanceCard({
                         '&:hover img': { filter: 'brightness(1)', opacity: 1 },
                       }}
                     >
-                      {postThumbnail ? (
+                      {thumbnailSrc ? (
                         <Box
                           component="img"
-                          src={postThumbnail}
+                          src={thumbnailSrc}
                           alt="Post thumbnail"
+                          onError={() => setBrokenThumbnail(thumbnailSrc)}
                           sx={{
                             width: 140,
                             height: 80,
@@ -698,7 +807,10 @@ export default function UserPerformanceCard({
                             justifyContent: 'center',
                           }}
                         >
-                          <Iconify icon={isInstagram ? 'prime:instagram' : 'prime:tiktok'} width={30} />
+                          <Iconify
+                            icon={isInstagram ? 'prime:instagram' : 'prime:tiktok'}
+                            width={30}
+                          />
                         </Box>
                       )}
                       <Box
@@ -750,7 +862,7 @@ export default function UserPerformanceCard({
                   </Box>
                 )}
 
-                {!insightData && !isLoadingInsights && (
+                {!insightData && !isLoadingInsights && !showScrapeFailure && (
                   <Box
                     component={m.div}
                     key="thumbnail-fallback"
@@ -771,9 +883,20 @@ export default function UserPerformanceCard({
                     <Iconify icon="mdi:image-off-outline" width={24} sx={{ color: '#BDBDBD' }} />
                   </Box>
                 )}
-
-                <Box sx={{ width: 36 }} />
               </AnimatePresence>
+
+              {/* Same column as the manual rows' edit button */}
+              {showScrapeFailure && canEnterMetrics ? (
+                <ScrapeFixButton
+                  scrapeFailure={scrapeFailure}
+                  isInstagram={isInstagram}
+                  campaignId={campaignId}
+                  creatorName={creator?.user?.name}
+                  onSaved={onScrapeCompleted}
+                />
+              ) : (
+                <Box sx={{ width: 36 }} />
+              )}
             </Stack>
           </Box>
 
@@ -862,7 +985,8 @@ export default function UserPerformanceCard({
                       fontWeight={400}
                       color="#1340FF"
                     >
-                      <AnimatedNumber
+                      <MetricValue
+                        reveal={revealMetrics}
                         value={parseFloat(engagementRate) || 0}
                         suffix="%"
                         formatFn={(val) => val.toFixed(2)}
@@ -882,7 +1006,8 @@ export default function UserPerformanceCard({
                       fontWeight={400}
                       color="#1340FF"
                     >
-                      <AnimatedNumber
+                      <MetricValue
+                        reveal={revealMetrics}
                         value={getMetricValue(insightData.insight, 'views')}
                         formatFn={formatNumber}
                       />
@@ -901,7 +1026,8 @@ export default function UserPerformanceCard({
                       fontWeight={400}
                       color="#1340FF"
                     >
-                      <AnimatedNumber
+                      <MetricValue
+                        reveal={revealMetrics}
                         value={getMetricValue(insightData.insight, 'likes')}
                         formatFn={formatNumber}
                       />
@@ -920,7 +1046,8 @@ export default function UserPerformanceCard({
                       fontWeight={400}
                       color="#1340FF"
                     >
-                      <AnimatedNumber
+                      <MetricValue
+                        reveal={revealMetrics}
                         value={getMetricValue(insightData.insight, 'comments')}
                         formatFn={formatNumber}
                       />
@@ -939,10 +1066,15 @@ export default function UserPerformanceCard({
                       fontWeight={400}
                       color="#1340FF"
                     >
-                      <AnimatedNumber
-                        value={getMetricValue(insightData.insight, 'shares')}
-                        formatFn={formatNumber}
-                      />
+                      {hidePrivateMetrics ? (
+                        '–'
+                      ) : (
+                        <MetricValue
+                          reveal={revealMetrics}
+                          value={getMetricValue(insightData.insight, 'shares')}
+                          formatFn={formatNumber}
+                        />
+                      )}
                     </Typography>
                   </Box>
 
@@ -966,10 +1098,15 @@ export default function UserPerformanceCard({
                           fontWeight={400}
                           color="#1340FF"
                         >
-                          <AnimatedNumber
-                            value={getMetricValue(insightData.insight, 'saved')}
-                            formatFn={formatNumber}
-                          />
+                          {hidePrivateMetrics ? (
+                            '–'
+                          ) : (
+                            <MetricValue
+                              reveal={revealMetrics}
+                              value={getMetricValue(insightData.insight, 'saved')}
+                              formatFn={formatNumber}
+                            />
+                          )}
                         </Typography>
                       </Box>
                     </>
@@ -996,11 +1133,39 @@ export default function UserPerformanceCard({
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <MetricsSkeleton showSaves={isInstagram} isMobile />
+                  {isScraping ? (
+                    <ScrapeMetricsLoading
+                      showSaves={isInstagram}
+                      progress={scrapeProgress}
+                      isMobile
+                    />
+                  ) : (
+                    <MetricsSkeleton showSaves={isInstagram} isMobile />
+                  )}
                 </Box>
               )}
 
-              {!insightData && !isLoadingInsights && (
+              {showScrapeFailure && (
+                <Box
+                  component={m.div}
+                  key="mobile-metrics-scrape-failed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  width="100%"
+                >
+                  <ScrapeFailedMetrics
+                    scrapeFailure={scrapeFailure}
+                    isInstagram={isInstagram}
+                    campaignId={campaignId}
+                    canEnterMetrics={canEnterMetrics}
+                    onSaved={onScrapeCompleted}
+                    creatorName={creator?.user?.name}
+                    isMobile
+                  />
+                </Box>
+              )}
+
+              {!insightData && !isLoadingInsights && !scrapeFailure && (
                 <Box
                   component={m.div}
                   key="mobile-metrics-empty"
@@ -1016,7 +1181,7 @@ export default function UserPerformanceCard({
 
             {/* Thumbnail */}
             <AnimatePresence mode="wait">
-              {insightData && (
+              {(insightData || showScrapeFailure) && (
                 <Box
                   component={m.div}
                   key="mobile-thumbnail-content"
@@ -1028,7 +1193,7 @@ export default function UserPerformanceCard({
                   justifyContent="center"
                 >
                   <Link
-                    href={insightData.postUrl}
+                    href={postLink}
                     target="_blank"
                     rel="noopener"
                     sx={{
@@ -1039,11 +1204,12 @@ export default function UserPerformanceCard({
                       '&:hover img': { filter: 'brightness(1)', opacity: 1 },
                     }}
                   >
-                    {postThumbnail ? (
+                    {thumbnailSrc ? (
                       <Box
                         component="img"
-                        src={postThumbnail}
+                        src={thumbnailSrc}
                         alt="Post thumbnail"
+                        onError={() => setBrokenThumbnail(thumbnailSrc)}
                         sx={{
                           width: 280,
                           height: 80,
@@ -1069,7 +1235,10 @@ export default function UserPerformanceCard({
                           justifyContent: 'center',
                         }}
                       >
-                        <Iconify icon={isInstagram ? 'prime:instagram' : 'prime:tiktok'} width={30} />
+                        <Iconify
+                          icon={isInstagram ? 'prime:instagram' : 'prime:tiktok'}
+                          width={30}
+                        />
                       </Box>
                     )}
                     <Box
@@ -1117,7 +1286,7 @@ export default function UserPerformanceCard({
                 </Box>
               )}
 
-              {!insightData && !isLoadingInsights && (
+              {!insightData && !isLoadingInsights && !showScrapeFailure && (
                 <Box
                   component={m.div}
                   key="mobile-thumbnail-fallback"
@@ -1158,4 +1327,11 @@ UserPerformanceCard.propTypes = {
   }).isRequired,
   insightData: PropTypes.object,
   loadingInsights: PropTypes.bool,
+  /** `{ status, startedAt }` while this post's Bright Data scrape runs. */
+  scrapeProgress: PropTypes.object,
+  revealMetrics: PropTypes.bool,
+  scrapeFailure: PropTypes.object,
+  campaignId: PropTypes.string,
+  canEnterMetrics: PropTypes.bool,
+  onScrapeCompleted: PropTypes.func,
 };

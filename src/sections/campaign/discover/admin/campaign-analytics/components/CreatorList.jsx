@@ -27,6 +27,7 @@ const CreatorList = ({
   handleDeleteClick,
   postingSubmissions,
   manualEntries,
+  onScrapeCompleted,
 }) => {
   const formRef = useRef();
 
@@ -209,6 +210,12 @@ const CreatorList = ({
               insightData={row.insightData}
               engagementRate={row.engagementRate}
               loadingInsights={loadingInsights}
+              scrapeProgress={row.scrapeProgress}
+              revealMetrics={row.revealMetrics}
+              scrapeFailure={row.scrapeFailure}
+              campaignId={campaignId}
+              canEnterMetrics={!isDisabled}
+              onScrapeCompleted={onScrapeCompleted}
             />
           );
         })}
@@ -276,4 +283,5 @@ CreatorList.propTypes = {
   handleDeleteClick: PropTypes.array,
   postingSubmissions: PropTypes.array,
   manualEntries: PropTypes.array,
+  onScrapeCompleted: PropTypes.func,
 };
