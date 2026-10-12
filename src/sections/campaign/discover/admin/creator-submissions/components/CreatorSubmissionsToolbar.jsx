@@ -1,6 +1,7 @@
-import React from 'react';
+import PropTypes from 'prop-types';
+import React, { useMemo } from 'react';
 
-import { Box, Stack, TextField, InputAdornment, IconButton } from '@mui/material';
+import { Box, Stack, TextField, IconButton, InputAdornment } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
@@ -13,20 +14,34 @@ import {
   useCreatorSubmissionsStore,
 } from '../store/use-creator-submissions-store';
 
-const STATUS_OPTIONS = [
-  { value: 'all', label: 'All' },
-  ...Object.entries(STATUS_CHIP).map(([value, { label }]) => ({ value, label })),
-];
+const withCount = (label, count) => `${label} (${count ?? 0})`;
 
-const TYPE_OPTIONS = [
-  { value: 'all', label: 'All' },
-  ...TYPE_ORDER.map((value) => ({ value, label: TYPE_LABEL[value] })),
-];
-
-const CreatorSubmissionsToolbar = () => {
+const CreatorSubmissionsToolbar = ({ counts }) => {
   const search = useCreatorSubmissionsStore((state) => state.search);
   const statusFilter = useCreatorSubmissionsStore((state) => state.statusFilter);
   const typeFilter = useCreatorSubmissionsStore((state) => state.typeFilter);
+
+  const statusOptions = useMemo(
+    () => [
+      { value: 'all', label: 'All' },
+      ...Object.entries(STATUS_CHIP).map(([value, { label }]) => ({
+        value,
+        label: withCount(label, counts.status[value]),
+      })),
+    ],
+    [counts.status]
+  );
+
+  const typeOptions = useMemo(
+    () => [
+      { value: 'all', label: 'All' },
+      ...TYPE_ORDER.map((value) => ({
+        value,
+        label: withCount(TYPE_LABEL[value], counts.type[value]),
+      })),
+    ],
+    [counts.type]
+  );
 
   return (
     <Stack direction="row" alignItems="center" flexWrap="wrap" useFlexGap spacing={1.5}>
@@ -82,22 +97,29 @@ const CreatorSubmissionsToolbar = () => {
       </Box>
 
       <FilterDropdown
-        options={STATUS_OPTIONS}
+        options={statusOptions}
         value={statusFilter}
         onChange={setStatusFilter}
         clearLabel="Clear status filter"
-        fallbackLabel="Status"
+        fallbackLabel="Submission Status"
       />
 
       <FilterDropdown
-        options={TYPE_OPTIONS}
+        options={typeOptions}
         value={typeFilter}
         onChange={setTypeFilter}
         clearLabel="Clear type filter"
-        fallbackLabel="Type"
+        fallbackLabel="Submission Type"
       />
     </Stack>
   );
 };
 
 export default CreatorSubmissionsToolbar;
+
+CreatorSubmissionsToolbar.propTypes = {
+  counts: PropTypes.shape({
+    status: PropTypes.object.isRequired,
+    type: PropTypes.object.isRequired,
+  }).isRequired,
+};

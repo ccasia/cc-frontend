@@ -112,9 +112,10 @@ const FilterDropdown = ({ options, value, onChange, clearLabel, fallbackLabel, c
   const [anchorEl, setAnchorEl] = useState(null);
 
   const isActive = value !== clearValue;
+  // With no filter on, the pill shows its name instead of "All"
   const label = useMemo(
-    () => options.find((option) => option.value === value)?.label || fallbackLabel,
-    [options, value, fallbackLabel]
+    () => (isActive && options.find((option) => option.value === value)?.label) || fallbackLabel,
+    [isActive, options, value, fallbackLabel]
   );
 
   const handleClick = (event) => setAnchorEl(event.currentTarget);
