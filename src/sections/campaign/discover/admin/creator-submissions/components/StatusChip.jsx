@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { Stack, alpha, darken } from '@mui/material';
 
 import StatusDot from './StatusDot';
-import { getStatusChip } from '../utils';
+import { getStatusChip } from '../utils/utils';
 
 const StatusChip = ({ status }) => {
   const { label, color } = getStatusChip(status);

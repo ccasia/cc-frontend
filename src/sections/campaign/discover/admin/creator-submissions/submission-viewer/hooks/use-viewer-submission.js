@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { filterSubmissions } from '../../utils';
+import { filterSubmissions } from '../../utils/utils';
 import useGetSubmissions from '../../hooks/use-get-submissions';
 import { useCreatorSubmissionsStore } from '../../store/use-creator-submissions-store';
 

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import { Box } from '@mui/material';
 
-import { getStatusChip } from '../utils';
+import { getStatusChip } from '../utils/utils';
 
 const StatusDot = ({ status, size = 8 }) => (
   <Box

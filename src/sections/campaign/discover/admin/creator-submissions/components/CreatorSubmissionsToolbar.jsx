@@ -6,7 +6,7 @@ import { Box, Stack, TextField, IconButton, InputAdornment } from '@mui/material
 import Iconify from 'src/components/iconify';
 
 import FilterDropdown from './FilterDropdown';
-import { TYPE_LABEL, TYPE_ORDER, STATUS_CHIP } from '../constants';
+import { TYPE_LABEL, TYPE_ORDER, STATUS_CHIP } from '../utils/constants';
 import {
   setSearch,
   setTypeFilter,

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Stack, Skeleton } from '@mui/material';
 
-import { COLORS } from '../constants';
+import { COLORS } from '../utils/constants';
 
 const CreatorSubmissionCardSkeleton = () => (
   <Stack spacing={2} sx={{ px: 2.5, py: 2, borderRadius: 2.5, bgcolor: COLORS.surface }}>

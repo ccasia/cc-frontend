@@ -12,7 +12,7 @@ import useViewerData from '../hooks/use-viewer-data';
 import useReleaseMedia from '../hooks/use-release-media';
 import useSettledValue from '../hooks/use-settled-value';
 import useSwipeNavigation from '../hooks/use-swipe-navigation';
-import { getStatusChip, getSubmissionLabel } from '../../utils';
+import { getStatusChip, getSubmissionLabel } from '../../utils/utils';
 import useViewerNavigation from '../hooks/use-viewer-navigation';
 import usePreloadNeighbours from '../hooks/use-preload-neighbours';
 import VideoControls, { OVERLAY_Z, VIDEO_FRAME_ATTR } from './VideoControls';
