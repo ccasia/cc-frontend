@@ -1019,6 +1019,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
 
       const res = await axiosInstance.patch(endpoint, payload);
       mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
+      campaignMutate?.();
       enqueueSnackbar(res?.data?.message);
     } catch (error) {
       enqueueSnackbar(error?.message, { variant: 'error' });
