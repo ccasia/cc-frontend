@@ -41,6 +41,7 @@ import Iconify from 'src/components/iconify';
 import DiaTextReveal from './dia-text-reveal';
 import V3PitchActions from './v3-pitch-actions';
 import useJustFinished from './use-just-finished';
+import RowNotesPreview from './creator-notes/row-notes-preview';
 import { resolveRowMetrics } from './resolve-pitch-platform-stats';
 import { canEditFailedMetrics } from './guest-extraction/manual-metrics';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
@@ -390,6 +391,8 @@ const PitchRow = ({
   logistics,
   enterIndex = 0,
   isNew = false,
+  noteSummary,
+  onOpenNotes,
 }) => {
   const smUp = useResponsive('up', 'sm');
   const { user } = useAuthContext();
@@ -700,6 +703,8 @@ const PitchRow = ({
                 <Typography sx={PRODUCT_SX}>{displayProducts}</Typography>
               </Stack>
             )}
+
+            {onOpenNotes && <RowNotesPreview summary={noteSummary} onOpen={onOpenNotes} />}
           </Stack>
         </Stack>
       </TableCell>
@@ -1069,6 +1074,9 @@ PitchRow.propTypes = {
   enterIndex: PropTypes.number,
   /** Added after the list first loaded: enters at once and flashes. */
   isNew: PropTypes.bool,
+  noteSummary: PropTypes.object,
+  /** Omitted when the viewer has no access to admin notes. */
+  onOpenNotes: PropTypes.func,
 };
 
 export default PitchRow;
