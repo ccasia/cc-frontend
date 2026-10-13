@@ -2,6 +2,7 @@
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { FixedSizeList } from 'react-window';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { m, MotionConfig, AnimatePresence } from 'framer-motion';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
@@ -491,6 +492,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
   const { enabled: guestMetricsEnabled } = useGuestMetricsDecision();
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
+  const queryClient = useQueryClient();
   const [outreachStatusFilter, setOutreachStatusFilter] = useState([]);
   const [outreachFilterAnchorEl, setOutreachFilterAnchorEl] = useState(null);
   const [creatorFilterAnchorEl, setCreatorFilterAnchorEl] = useState(null);
@@ -723,6 +725,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   // Handler for outreach status update from row
   const handleOutreachUpdate = () => {
     onUpdate?.();
+    queryClient.invalidateQueries({ queryKey: ['agreements', campaign?.id] });
   };
 
   // Ids seen once the list first had rows. Anything after that is a new add,

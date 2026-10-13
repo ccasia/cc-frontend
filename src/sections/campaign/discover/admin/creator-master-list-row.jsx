@@ -25,10 +25,10 @@ import {
 import { getOutreachStatusConfig } from 'src/contants/outreach';
 
 import Iconify from 'src/components/iconify';
+import { StatusChip } from 'src/components/status-chip';
 
 import { resolveRowMetrics } from '../client/v3-pitches/resolve-pitch-platform-stats';
 import {
-  chipSx,
   CELL_SX,
   INDEX_SX,
   HANDLE_SX,
@@ -37,7 +37,6 @@ import {
   FieldBlock,
   PRODUCT_SX,
   AVATAR_SIZE,
-  emptyChipSx,
   NAME_LINK_SX,
   PlatformIcon,
   VALUE_MUTED_SX,
@@ -319,13 +318,13 @@ const CreatorMasterListRow = ({
       {/* Outreach Status — read-only here: the PATCH is admin-only */}
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.outreach }}>
         <FieldBlock label="Outreach status" minHeight={CHIP_ROW_HEIGHT}>
-          {outreachConfig ? (
-            <Box sx={{ ...chipSx(outreachConfig.color), alignSelf: 'flex-start' }}>
-              {outreachConfig.label}
-            </Box>
-          ) : (
-            <Box sx={{ ...emptyChipSx, alignSelf: 'flex-start' }}>Not Set</Box>
-          )}
+          <StatusChip
+            color={outreachConfig?.color}
+            empty={!outreachConfig}
+            sx={{ alignSelf: 'flex-start' }}
+          >
+            {outreachConfig?.label || 'Not set'}
+          </StatusChip>
         </FieldBlock>
       </TableCell>
 
@@ -400,7 +399,7 @@ const CreatorMasterListRow = ({
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.status }}>
         <Stack spacing={0.5}>
           <FieldBlock label="Creator status" minHeight={CHIP_ROW_HEIGHT}>
-            <Box sx={{ ...chipSx(statusInfo.color), alignSelf: 'flex-start' }}>
+            <StatusChip color={statusInfo.color} sx={{ alignSelf: 'flex-start' }}>
               {statusInfo.label}
               {statusInfo.normalizedStatus === 'SENT_TO_CLIENT' &&
                 pitch.adminComments?.trim().length > 0 && (
@@ -423,7 +422,7 @@ const CreatorMasterListRow = ({
                     </Box>
                   </Tooltip>
                 )}
-            </Box>
+            </StatusChip>
           </FieldBlock>
 
           {/* No label of its own, but it still sits on the value row. */}

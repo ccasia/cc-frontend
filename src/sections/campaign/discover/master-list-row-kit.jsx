@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Box, Stack, Tooltip, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
+import { CHIP_HEIGHT } from 'src/components/status-chip';
 
 /**
  * Shared design tokens for the tall creator master-list row.
@@ -114,15 +115,10 @@ export const FieldLabel = ({ children }) => <Typography sx={LABEL_SX}>{children}
 
 FieldLabel.propTypes = { children: PropTypes.node };
 
-// The chip's inset bottom bar paints over the last 3px of the chip, so equal
-// padding leaves the label riding low inside the white area above it. The extra
-// 2px underneath pushes the label back to the optical centre. (Half the 3px bar
-// is 1.5px; uppercase text already sits ~0.7px high in its line box, so 2px is
-// the whole correction.)
-export const CHIP_PAD_TOP = 5;
-export const CHIP_PAD_BOTTOM = 7;
-// Chip text, plus its vertical padding and its 1px top and bottom borders.
-export const CHIP_ROW_HEIGHT = SMALL_HEIGHT + CHIP_PAD_TOP + CHIP_PAD_BOTTOM + 2;
+// Status chips (Outreach, Creator status) come from the shared StatusChip in
+// src/components/status-chip, also used by the Agreements tab. Its one-line
+// height sets the chip row so fields beside a chip still line up.
+export const CHIP_ROW_HEIGHT = CHIP_HEIGHT;
 
 // One labelled field: a label row, a 2px gap, then the value.
 //
@@ -175,46 +171,6 @@ export const PlatformIcon = ({ platform, size = PLATFORM_ICON_SIZE }) => {
 };
 
 PlatformIcon.propTypes = { platform: PropTypes.string, size: PropTypes.number };
-
-// Chip shared by Outreach Status and Creator Status.
-export const chipSx = (color) => ({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 0.5,
-  px: 1,
-  pt: `${CHIP_PAD_TOP}px`,
-  pb: `${CHIP_PAD_BOTTOM}px`,
-  borderRadius: '6px',
-  bgcolor: '#FFFFFF',
-  fontSize: SMALL_SIZE,
-  fontWeight: 600,
-  lineHeight: `${SMALL_HEIGHT}px`,
-  textTransform: 'uppercase',
-  whiteSpace: 'nowrap',
-  color,
-  border: `1px solid ${color}`,
-  boxShadow: `inset 0px -3px 0px ${color}`,
-});
-
-// The "no status set" placeholder. No inset bar here, so the padding stays even
-// and a minHeight matches the coloured chips down the column.
-export const emptyChipSx = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 0.5,
-  px: 1,
-  py: 0.75,
-  minHeight: CHIP_ROW_HEIGHT,
-  boxSizing: 'border-box',
-  fontSize: SMALL_SIZE,
-  fontWeight: 600,
-  lineHeight: `${SMALL_HEIGHT}px`,
-  color: '#8E8E93',
-  border: '1px dashed #D0D0D0',
-  borderRadius: '6px',
-  bgcolor: 'white',
-  whiteSpace: 'nowrap',
-};
 
 // Shared shape for the row's action buttons: 8px radius with an inset bottom edge.
 export const ACTION_BUTTON_SX = {
