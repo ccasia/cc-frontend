@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
 import { useNavigate, useLocation } from 'react-router';
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { memo, useMemo, useState, useEffect, useCallback } from 'react';
 
 import { alpha } from '@mui/system';
 import { LoadingButton } from '@mui/lab';
@@ -18,7 +18,6 @@ import {
   Button,
   Dialog,
   Avatar,
-  Switch,
   Tooltip,
   Divider,
   Checkbox,
@@ -42,10 +41,13 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import { fDate } from 'src/utils/format-time';
+import { getCurrencyPrefix } from 'src/utils/currency';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { getCampaignBudget } from 'src/utils/campaign-budget';
 import { resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { OUTREACH_STATUS_OPTIONS } from 'src/contants/outreach';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
@@ -56,12 +58,24 @@ import { RHFTextField } from 'src/components/hook-form';
 import ScrollTabs from 'src/components/table/scroll-tabs';
 import SortableHeader from 'src/components/table/sortable-header';
 import FormProvider from 'src/components/hook-form/form-provider';
+import { StatusChip, useOneLineChipWidth } from 'src/components/status-chip';
 
 import { INDEX_SX } from '../master-list-row-kit';
+import AgreementBudgetCell from './agreement-budget-cell';
+import AgreementOutreachCell from './agreement-outreach-cell';
 import CampaignAgreementEdit from './campaign-agreement-edit';
+import ReceiptRequiredToggle from './receipt-required-toggle';
 import SendBulkAgreementModal from './send-bulk-agreement-modal';
 import RegenerateInvoiceDialog from './regenerate-invoice-dialog';
+import usePitchSocket from '../client/v3-pitches/use-pitch-socket';
 import SendAdditionalAgreementModal from './send-additional-agreement-modal';
+import OutreachFilterMenu, { OUTREACH_NOT_SET } from './outreach-filter-menu';
+import {
+  useColumnOrder,
+  REORDER_TABLE_ATTR,
+  ColumnReorderProvider,
+  DraggableColumnHeader,
+} from './agreement-column-reorder';
 
 const ROUND_LABELS = {
   1: 'First Agreement',
@@ -186,6 +200,17 @@ const checkboxIconSx = {
 };
 const uncheckedCheckboxIcon = <Box component="span" sx={checkboxIconSx} />;
 
+const CHECKBOX_CELL_SX = { width: 28, minWidth: 28, pl: 1.5, pr: 0 };
+const INDEX_CELL_SX = { width: 32, minWidth: 32, pl: 0.5, pr: 1.5, textAlign: 'center' };
+// Shared by the Status header and body cells: the column's measured width excludes padding, so
+// both must pad the same for the chips to line up and fit.
+const STATUS_CELL_PX = { xs: 0, sm: 2 };
+
+// The actions column is pinned to the right edge; when the table overflows, the other columns
+// scroll sideways underneath it. The shadow shows while there's content hidden beneath it.
+const CTA_CELL_SX = { position: 'sticky', right: 0, zIndex: 1, transition: 'box-shadow 0.2s' };
+const CTA_SHADOW = '-8px 0 8px -8px rgba(0, 0, 0, 0.18)';
+
 const checkedCheckboxIcon = (
   <Box
     component="span"
@@ -201,16 +226,36 @@ const checkedCheckboxIcon = (
   </Box>
 );
 
-const CURRENCY_PREFIXES = {
-  SGD: { prefix: '$', label: 'SGD' },
-  MYR: { prefix: 'RM', label: 'MYR' },
-  AUD: { prefix: '$', label: 'AUD' },
-  JPY: { prefix: '\u00a5', label: 'JPY' },
-  IDR: { prefix: 'Rp', label: 'IDR' },
-  USD: { prefix: '$', label: 'USD' },
-};
-
 const AMOUNT_TEXT_SX = { fontSize: { xs: '0.7rem', sm: '0.875rem' } };
+
+// White icon button with the same 3px lip as the text action buttons beside it. The row's Stack
+// stretches it to their height.
+const ICON_ACTION_SX = {
+  minWidth: 0,
+  px: 1.25,
+  py: 2,
+  bgcolor: '#ffffff',
+  color: '#221f20',
+  border: '1.5px solid',
+  borderColor: '#e7e7e7',
+  borderBottom: '3px solid',
+  borderBottomColor: '#e7e7e7',
+  borderRadius: 1.15,
+  '&:hover': {
+    bgcolor: '#f5f5f5',
+    border: '1.5px solid',
+    borderColor: '#221f20',
+    borderBottom: '3px solid',
+    borderBottomColor: '#221f20',
+  },
+  '&.Mui-disabled': {
+    bgcolor: '#ffffff',
+    border: '1.5px solid #e7e7e7',
+    borderBottom: '3px solid #e7e7e7',
+    cursor: 'not-allowed',
+    pointerEvents: 'auto',
+  },
+};
 
 function renderAmountText(content) {
   return (
@@ -219,6 +264,697 @@ function renderAmountText(content) {
     </Typography>
   );
 }
+
+const AMOUNT_FORMATTER = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
+// 'MYR' → 'RM', 'SGD' → 'S$', ...; unknown codes are shown as-is.
+const toCurrencySymbol = (code) => getCurrencyPrefix(code) || code;
+
+const formatMoney = (amount, code) =>
+  `${toCurrencySymbol(code)} ${AMOUNT_FORMATTER.format(amount)}`;
+
+const formatAmountsByCurrency = (amountsByCurrency) => {
+  const entries = Object.entries(amountsByCurrency);
+  if (entries.length === 0) return '0';
+  return entries.map(([code, amount]) => formatMoney(amount, code)).join(' | ');
+};
+
+// Price and budget for a row are both in the shortlisted creator's currency.
+// Returns the currency code (e.g. 'MYR'): the footer groups and compares budgets by code.
+const getRowCurrency = (item) =>
+  (item?.user?.shortlisted?.[0] || item?.shortlistedCreator)?.currency || 'MYR';
+
+// Guest creators must link a platform account before send; submissions merge by userId.
+// Platform creators often have no AGREEMENT_FORM row until after the agreement is sent (v4 flow).
+const guestNeedsLinkBeforeSend = (item) =>
+  item?.user?.creator?.isGuest === true && !item?.submission;
+
+// Label and colour of a row's agreement status chip.
+const getAgreementStatus = (item) => {
+  if (item?.submission?.status === 'PENDING_REVIEW') {
+    return { text: 'PENDING APPROVAL', color: '#FFC702' };
+  }
+  if (item?.submission?.status === 'APPROVED') return { text: 'APPROVED', color: '#1ABF66' };
+  if (item?.isSent) return { text: 'Sent To Creator', color: '#8A5AFE' };
+  return { text: 'Pending', color: '#f19f39' };
+};
+
+// Green above half left, orange at half or less, red at a quarter or less.
+const getRemainingColor = (remaining, total) => {
+  const remainingPct = total > 0 ? remaining / total : 0;
+  if (remainingPct <= 0) return '#FF5630';
+  if (remainingPct <= 0.5) return '#FFAB00';
+  return '#1ABF66';
+};
+
+function AgreementRowContent({
+  item,
+  index,
+  visibleColumns,
+  campaign,
+  isDisabled,
+  smUp,
+  ctaShadow,
+  isSelected,
+  selectionCategory,
+  isEligibleForAdditional,
+  isReceiptSaving,
+  approveLoading,
+  rejectLoading,
+  actions,
+}) {
+  const {
+    getTierDataForItem,
+    handleViewAgreement,
+    handleEditAgreement,
+    handleSendAgreement,
+    handleProfileClick,
+    handleOutreachSaved,
+    handleApproveAgreement,
+    handleOpenRejectDialog,
+    handleToggleReceiptRequired,
+    mutateAgreements,
+    onToggleSelect,
+  } = actions;
+
+  // The gap after the fixed index column is its own right padding, so whichever column comes
+  // first drops its left padding (Creator, by default).
+  const firstColumnSx = (id) => (id === visibleColumns[0] ? { pl: 0 } : {});
+
+  const isAmountValid = !Number.isNaN(
+    parseFloat(item?.user?.shortlisted[0]?.amount?.toString()) ||
+      parseFloat(item?.amount?.toString())
+  );
+
+  const isPendingReview = item?.submission?.status === 'PENDING_REVIEW';
+  const rowCategory = isEligibleForAdditional ? 'additional' : 'bulk';
+  const isCategoryLocked = selectionCategory && selectionCategory !== rowCategory;
+  const checkboxTooltip = isCategoryLocked
+    ? `Clear your current selection to pick a creator for ${
+        selectionCategory === 'bulk' ? 'a bulk' : 'an additional'
+      } agreement`
+    : '';
+
+  const product = item?.productSeeding?.length ? item.productSeeding[0] : null;
+  const agreementStatus = getAgreementStatus(item);
+
+  const displayValue = () => {
+    if (item.isSeeding) {
+      if (!product) return renderAmountText('Not assigned');
+
+      return (
+        <Typography variant="subtitle2" sx={{ fontSize: 13.5 }}>
+          {`${toCurrencySymbol(getRowCurrency(item))} ${parseFloat(
+            product?.value
+          ).toFixed(2)}`}
+        </Typography>
+      );
+    }
+
+    if (isAmountValid) {
+      return (
+        <Typography variant="subtitle2" sx={{ fontSize: 13.5 }}>
+          {`${toCurrencySymbol(getRowCurrency(item))} ${
+            parseFloat(item?.amount?.toString()).toFixed(2) ||
+            parseFloat(item?.user?.shortlisted[0]?.amount?.toString()).toFixed(2)
+          }`}
+        </Typography>
+      );
+    }
+
+    return renderAmountText('Not set');
+  };
+
+  // One body cell per reorderable column. data-column lets the dragged column fade.
+  const renderCell = (id) => {
+    switch (id) {
+      case 'creator':
+        return (
+          <TableCell key={id} data-column={id} sx={firstColumnSx(id)}>
+            <Stack direction="row" alignItems="center" spacing={{ xs: 1 }}>
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: { xs: 32, sm: 40 },
+                  height: { xs: 32, sm: 40 },
+                }}
+              >
+                <Avatar
+                  src={item?.user?.photoURL}
+                  alt={item?.user?.name}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    border: '2px solid',
+                    borderColor: 'background.paper',
+                    boxShadow: (theme) => theme.customShadows.z8,
+                  }}
+                >
+                  {item?.user?.name?.charAt(0).toUpperCase()}
+                </Avatar>
+              </Box>
+
+              <Stack spacing={0.5} flex={1}>
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Typography
+                    variant="body2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleProfileClick(item);
+                    }}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': { textDecoration: 'underline', color: '#1340FF' },
+                    }}
+                  >
+                    {item?.user?.name}
+                  </Typography>
+                  {item?.isSeeding && (
+                    <Tooltip title="Seeding agreement" arrow>
+                      <Iconify
+                        icon={
+                          isSelected
+                            ? 'mdi:seed'
+                            : 'mdi:seed-outline'
+                        }
+                        color="#1304FF"
+                        width={16}
+                        sx={{ flexShrink: 0 }}
+                      />
+                    </Tooltip>
+                  )}
+                </Stack>
+                {!item?.user?.email?.endsWith('@tempmail.com') && (
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    {item?.user?.email}
+                  </Typography>
+                )}
+              </Stack>
+            </Stack>
+          </TableCell>
+        );
+
+      case 'tier': {
+        const tierData = getTierDataForItem(item);
+        const tierPlatform = resolveTierPlatformForDisplay(item, campaign);
+
+        return (
+          <TableCell
+            key={id}
+            data-column={id}
+            sx={{
+              width: { xs: 90, sm: 'auto' },
+              py: { xs: 0.5, sm: 1 },
+              px: { xs: 1, sm: 2 },
+              ...firstColumnSx(id),
+            }}
+          >
+            {tierData ? (
+              <Stack alignItems="start">
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify
+                    icon={
+                      tierPlatform === 'tiktok'
+                        ? 'ic:baseline-tiktok'
+                        : 'mdi:instagram'
+                    }
+                    width={15}
+                    sx={{
+                      color: tierPlatform === 'tiktok' ? '#000000' : '#E4405F',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Typography fontSize={13.5} whiteSpace="nowrap">
+                    {tierData.name}
+                  </Typography>
+                </Stack>
+                <Typography
+                  variant="body2"
+                  fontSize={13.5}
+                  sx={{
+                    color: '#8e8e93',
+                    display: 'block',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {tierData.creditsPerVideo} credit
+                  {tierData.creditsPerVideo !== 1 ? 's' : ''}
+                </Typography>
+              </Stack>
+            ) : (
+              <Typography fontSize={13.5}>-</Typography>
+            )}
+          </TableCell>
+        );
+      }
+
+      case 'outreach':
+        return (
+          <TableCell key={id} data-column={id} sx={firstColumnSx(id)}>
+            <AgreementOutreachCell
+              agreement={item}
+              disabled={isDisabled}
+              onSaved={handleOutreachSaved}
+            />
+          </TableCell>
+        );
+
+      case 'status':
+        return (
+          <TableCell
+            key={id}
+            data-column={id}
+            sx={{ px: STATUS_CELL_PX, ...firstColumnSx(id) }}
+          >
+            <StatusChip wrap color={agreementStatus.color}>
+              {agreementStatus.text}
+            </StatusChip>
+          </TableCell>
+        );
+
+      case 'budget':
+        return (
+          <TableCell
+            key={id}
+            data-column={id}
+            sx={{
+              width: { xs: '20%', sm: 'auto' },
+              whiteSpace: 'nowrap',
+              ...firstColumnSx(id),
+            }}
+          >
+            <AgreementBudgetCell
+              agreement={item}
+              currency={getRowCurrency(item)}
+              disabled={isDisabled}
+              onSaved={mutateAgreements}
+            />
+          </TableCell>
+        );
+
+      case 'price':
+        return (
+          <TableCell
+            key={id}
+            data-column={id}
+            sx={{
+              width: { xs: '20%', sm: 'auto' },
+              whiteSpace: 'nowrap',
+              ...firstColumnSx(id),
+            }}
+          >
+            {displayValue()}
+          </TableCell>
+        );
+
+      case 'receipt': {
+        // An existing invoice no longer locks it (a draft is regenerated, a sent
+        // one gets a separate reimbursement invoice) — only billed receipts do.
+        const lockReason = item.receiptsBilled
+          ? 'Receipts for this agreement are already invoiced'
+          : item.isSeeding
+            ? 'Not available for seeding agreements'
+            : isDisabled
+              ? 'You do not have permission to change this'
+              : '';
+
+        return (
+          <TableCell key={id} data-column={id} sx={firstColumnSx(id)}>
+            {/* A flex box, not inline content, so the toggle isn't sat on a text
+                baseline and centres exactly in both directions */}
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Tooltip title={lockReason} disableHoverListener={!lockReason}>
+                <Box component="span" sx={{ display: 'flex' }}>
+                  <ReceiptRequiredToggle
+                    checked={Boolean(item.isReceiptRequired)}
+                    disabled={Boolean(lockReason)}
+                    loading={isReceiptSaving}
+                    onChange={(next) => handleToggleReceiptRequired(item, next)}
+                  />
+                </Box>
+              </Tooltip>
+            </Box>
+          </TableCell>
+        );
+      }
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <TableRow
+      sx={{
+        cursor: 'pointer',
+        '&:hover': {
+          bgcolor: alpha('#CCC', 0.1),
+          // The pinned cell is opaque, so it takes the same tint as a solid colour
+          '& .cta-cell': { bgcolor: '#FAFAFA' },
+        },
+      }}
+      component="div"
+      onClick={() => {
+        if (!item.isSent) {
+          handleEditAgreement(item);
+        } else {
+          handleViewAgreement(item?.agreementUrl, item);
+        }
+      }}
+    >
+      <TableCell
+        padding="checkbox"
+        onClick={(e) => e.stopPropagation()}
+        sx={CHECKBOX_CELL_SX}
+      >
+        <Tooltip title={checkboxTooltip}>
+          <span>
+            <Checkbox
+              icon={uncheckedCheckboxIcon}
+              checkedIcon={checkedCheckboxIcon}
+              checked={isSelected}
+              disabled={isDisabled || isCategoryLocked}
+              onChange={() => {
+                onToggleSelect(item.userId);
+              }}
+              sx={{ p: 0 }}
+            />
+          </span>
+        </Tooltip>
+      </TableCell>
+      <TableCell sx={INDEX_CELL_SX}>
+        <Typography sx={INDEX_SX}>{index + 1}</Typography>
+      </TableCell>
+      {visibleColumns.map(renderCell)}
+
+      <TableCell
+        className="cta-cell"
+        sx={{ ...CTA_CELL_SX, boxShadow: ctaShadow, bgcolor: '#FFFFFF', pr: 0 }}
+      >
+        {smUp ? (
+          <Stack direction="row" gap={1}>
+            {item?.agreementUrl && (
+              <Tooltip title="View agreement" arrow>
+                <Button
+                  onClick={() => handleViewAgreement(item?.agreementUrl, item)}
+                  size="small"
+                  variant="contained"
+                  sx={ICON_ACTION_SX}
+                >
+                  <Iconify icon="basil:document-outline" width={20} />
+                </Button>
+              </Tooltip>
+            )}
+
+            {!item.isSent ? (
+              // For pending (not sent) agreements, show Send Agreement button
+              <Tooltip
+                title={
+                  guestNeedsLinkBeforeSend(item)
+                    ? 'Link creator before sending agreement'
+                    : ''
+                }
+                arrow
+              >
+                <span>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditAgreement(item);
+                    }}
+                    disabled={isDisabled || guestNeedsLinkBeforeSend(item)}
+                    size="small"
+                    variant="contained"
+                    startIcon={
+                      <Iconify
+                        icon="bx:send"
+                        sx={{
+                          color: '#fff',
+                        }}
+                      />
+                    }
+                    sx={{
+                      px: 2,
+                      py: 2,
+                      bgcolor: '#1340FF',
+                      color: '#ffffff',
+                      border: '1.5px solid #1340FF',
+                      borderBottom: '3px solid',
+                      borderBottomColor: '#00000073',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      whiteSpace: 'nowrap',
+                      '&:hover': {
+                        bgcolor: '#0a2dd9',
+                      },
+                      '&.Mui-disabled': {
+                        bgcolor: 'rgba(19, 64, 255, 0.5)',
+                        border: '1px solid rgba(19, 64, 255, 0.5)',
+                        color: '#ffffff',
+                        cursor: 'not-allowed',
+                        pointerEvents: 'auto',
+                      },
+                    }}
+                  >
+                    Send Agreement
+                  </Button>
+                </span>
+              </Tooltip>
+            ) : (
+              // For sent agreements, show Edit Amount and action buttons
+              <>
+                {isPendingReview ? (
+                  <>
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenRejectDialog(item);
+                      }}
+                      size="small"
+                      variant="contained"
+                      disabled={isDisabled || rejectLoading}
+                      sx={{
+                        px: 2,
+                        py: 2,
+                        bgcolor: '#ffffff',
+                        color: '#D4321C',
+                        border: '1.5px solid',
+                        borderColor: '#e7e7e7',
+                        borderBottom: '3px solid',
+                        borderBottomColor: '#e7e7e7',
+                        borderRadius: 1,
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          border: '1.5px solid',
+                          borderColor: '#D4321C',
+                          borderBottom: '3px solid',
+                          borderBottomColor: '#D4321C',
+                        },
+                        '&.Mui-disabled': {
+                          border: '1.5px solid #e7e7e7',
+                          borderBottom: '3px solid #e7e7e7',
+                          cursor: 'not-allowed',
+                          pointerEvents: 'auto',
+                        },
+                      }}
+                    >
+                      Reject
+                    </Button>
+                    <LoadingButton
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApproveAgreement(item);
+                      }}
+                      size="small"
+                      variant="contained"
+                      loading={approveLoading}
+                      disabled={isDisabled}
+                      sx={{
+                        px: 2,
+                        py: 2,
+                        bgcolor: '#FFFFFF',
+                        color: '#1ABF66',
+                        border: '1.5px solid',
+                        borderColor: '#E7E7E7',
+                        borderBottom: '3px solid',
+                        borderBottomColor: '#E7E7E7',
+                        borderRadius: 1,
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        '&:hover': {
+                          bgcolor: '#f5f5f5',
+                          border: '1.5px solid',
+                          borderColor: '#1ABF66',
+                          borderBottom: '3px solid',
+                          borderBottomColor: '#1ABF66',
+                        },
+                        '&.Mui-disabled': {
+                          border: '1.5px solid #e7e7e7',
+                          borderBottom: '3px solid #e7e7e7',
+                          cursor: 'not-allowed',
+                          pointerEvents: 'auto',
+                        },
+                      }}
+                    >
+                      Approve
+                    </LoadingButton>
+                  </>
+                ) : (
+                  <>
+                    <Tooltip title="Edit amount" arrow>
+                      <span style={{ display: 'flex' }}>
+                        <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditAgreement(item);
+                          }}
+                          disabled={isDisabled}
+                          size="small"
+                          variant="contained"
+                          sx={ICON_ACTION_SX}
+                        >
+                          <Iconify icon="eva:edit-2-outline" width={20} />
+                        </Button>
+                      </span>
+                    </Tooltip>
+                    <Tooltip title="Resend agreement" arrow>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSendAgreement(item);
+                        }}
+                        size="small"
+                        variant="contained"
+                        disabled={isDisabled || !isAmountValid}
+                        sx={ICON_ACTION_SX}
+                      >
+                        <Iconify
+                          icon="bx:send"
+                          sx={{
+                            color:
+                              isDisabled || !isAmountValid
+                                ? 'rgba(19, 64, 255, 0.5)'
+                                : '#1340FF',
+                          }}
+                          width={20}
+                        />
+                      </Button>
+                    </Tooltip>
+                  </>
+                )}
+              </>
+            )}
+          </Stack>
+        ) : (
+          <Stack direction="row" gap={1}>
+            <IconButton
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewAgreement(item?.agreementUrl, item);
+              }}
+            >
+              <Iconify icon="hugeicons:view" />
+            </IconButton>
+            <IconButton
+              color="warning"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditAgreement(item);
+              }}
+              disabled={isDisabled}
+              sx={{
+                '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' },
+              }}
+            >
+              <Iconify icon="iconamoon:edit-light" />
+            </IconButton>
+
+            {isPendingReview ? (
+              <>
+                <IconButton
+                  color="error"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenRejectDialog(item);
+                  }}
+                  disabled={isDisabled || rejectLoading}
+                  sx={{
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
+                  }}
+                >
+                  <Iconify icon="solar:close-circle-bold" />
+                </IconButton>
+                <IconButton
+                  color="success"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleApproveAgreement(item);
+                  }}
+                  disabled={isDisabled}
+                  sx={{
+                    '&.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
+                  }}
+                >
+                  <Iconify icon="solar:check-circle-bold" />
+                </IconButton>
+              </>
+            ) : (
+              <IconButton
+                color={item.isSent ? 'warning' : 'primary'}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSendAgreement(item);
+                }}
+                disabled={isDisabled || !isAmountValid}
+                sx={{
+                  '&.Mui-disabled': {
+                    cursor: 'not-allowed',
+                    pointerEvents: 'auto',
+                  },
+                }}
+              >
+                <Iconify icon="bx:send" />
+              </IconButton>
+            )}
+          </Stack>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}
+
+AgreementRowContent.propTypes = {
+  item: PropTypes.object.isRequired,
+  index: PropTypes.number,
+  visibleColumns: PropTypes.arrayOf(PropTypes.string),
+  campaign: PropTypes.object,
+  isDisabled: PropTypes.bool,
+  smUp: PropTypes.bool,
+  ctaShadow: PropTypes.string,
+  isSelected: PropTypes.bool,
+  selectionCategory: PropTypes.string,
+  isEligibleForAdditional: PropTypes.bool,
+  isReceiptSaving: PropTypes.bool,
+  approveLoading: PropTypes.bool,
+  rejectLoading: PropTypes.bool,
+  actions: PropTypes.object.isRequired,
+};
+
+const AgreementRow = memo(AgreementRowContent);
 
 // Convert AgreementDialog to a full component with approve/reject functionality
 const AgreementDialog = ({
@@ -399,6 +1135,11 @@ const AgreementDialog = ({
                 }}
               >
                 SENT TO CREATOR
+              </Typography>
+            )}
+            {agreement?.updatedAt && (
+              <Typography variant="body2" sx={{ color: '#8e8e93', mt: 1.5 }}>
+                {`Issued ${fDate(agreement.updatedAt)}, ${dayjs(agreement.updatedAt).format('LT')}`}
               </Typography>
             )}
 
@@ -599,6 +1340,9 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
 
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [agreementFilterAnchorEl, setAgreementFilterAnchorEl] = useState(null);
+  // Multi-select, like the master list's: outreach status values plus OUTREACH_NOT_SET.
+  const [outreachFilter, setOutreachFilter] = useState([]);
+  const [outreachFilterAnchorEl, setOutreachFilterAnchorEl] = useState(null);
   const [activeRound, setActiveRound] = useState(1);
   const [receiptToggleId, setReceiptToggleId] = useState(null);
   // { item, invoiceNumber, amount, agreementAmount, currency, wasEdited } from the 409 response
@@ -643,39 +1387,59 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
 
   const smUp = useResponsive('up', 'sm');
 
-  // Guest creators must link a platform account before send; submissions merge by userId.
-  // Platform creators often have no AGREEMENT_FORM row until after the agreement is sent (v4 flow).
-  const guestNeedsLinkBeforeSend = (item) =>
-    item?.user?.creator?.isGuest === true && !item?.submission;
+  // Tracks whether columns are hidden beneath the pinned actions column, to show its shadow.
+  const [tableScrollEl, setTableScrollEl] = useState(null);
+  const [isCtaOverlapping, setIsCtaOverlapping] = useState(false);
+
+  const updateCtaOverlap = useCallback(() => {
+    if (!tableScrollEl) return;
+    const { scrollLeft, clientWidth, scrollWidth } = tableScrollEl;
+    setIsCtaOverlapping(scrollLeft + clientWidth < scrollWidth - 1);
+  }, [tableScrollEl]);
+
+  useEffect(() => {
+    if (!tableScrollEl) return undefined;
+    updateCtaOverlap();
+    // Re-check when the container resizes or the table's own width changes (rows, filters).
+    const observer = new ResizeObserver(updateCtaOverlap);
+    observer.observe(tableScrollEl);
+    if (tableScrollEl.firstElementChild) observer.observe(tableScrollEl.firstElementChild);
+    return () => observer.disconnect();
+  }, [tableScrollEl, updateCtaOverlap]);
+
+  const ctaShadow = isCtaOverlapping ? CTA_SHADOW : 'none';
 
   // Get tier data for an agreement item
-  const getTierDataForItem = (item) => {
-    if (!campaign?.isCreditTier) return null;
+  const getTierDataForItem = useCallback(
+    (item) => {
+      if (!campaign?.isCreditTier) return null;
 
-    // Only ever show the tier agreed for THIS campaign. The creator's live tier tracks their
-    // media kit and drifts as they grow, so falling back to it would misreport what we pay.
-    const shortlisted = item?.user?.shortlisted?.[0] || item?.shortlistedCreator;
-    if (shortlisted?.creditTier) {
-      return {
-        name: shortlisted.creditTier?.name || 'Unknown Tier',
-        creditsPerVideo: shortlisted.creditPerVideo ?? shortlisted.creditTier?.creditsPerVideo ?? 1,
-      };
-    }
+      // Only ever show the tier agreed for THIS campaign. The creator's live tier tracks their
+      // media kit and drifts as they grow, so falling back to it would misreport what we pay.
+      const shortlisted = item?.user?.shortlisted?.[0] || item?.shortlistedCreator;
+      if (shortlisted?.creditTier) {
+        return {
+          name: shortlisted.creditTier?.name || 'Unknown Tier',
+          creditsPerVideo: shortlisted.creditPerVideo ?? shortlisted.creditTier?.creditsPerVideo ?? 1,
+        };
+      }
 
-    const campaignShortlisted = campaign?.shortlisted?.find((s) => s.userId === item?.user?.id);
+      const campaignShortlisted = campaign?.shortlisted?.find((s) => s.userId === item?.user?.id);
 
-    if (campaignShortlisted?.creditTier) {
-      return {
-        name: campaignShortlisted.creditTier?.name || 'Unknown Tier',
-        creditsPerVideo:
-          campaignShortlisted.creditPerVideo ??
-          campaignShortlisted.creditTier?.creditsPerVideo ??
-          1,
-      };
-    }
+      if (campaignShortlisted?.creditTier) {
+        return {
+          name: campaignShortlisted.creditTier?.name || 'Unknown Tier',
+          creditsPerVideo:
+            campaignShortlisted.creditPerVideo ??
+            campaignShortlisted.creditTier?.creditsPerVideo ??
+            1,
+        };
+      }
 
-    return null;
-  };
+      return null;
+    },
+    [campaign]
+  );
 
   // Handle column sort click
   const handleColumnSort = (column) => {
@@ -754,6 +1518,21 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       socket.off('campaign:agreement:updated', handleAgreementUpdated);
     };
   }, [socket, campaign?.id, mutateAgreements, fetchSubmissions]);
+
+  // Outreach status is shared with the master list (it lives on the pitch). Pick up changes other
+  // admins make there; the event skips our own changes, which handleOutreachSaved covers.
+  usePitchSocket({
+    socket,
+    campaignId: campaign?.id,
+    onOutreachUpdate: mutateAgreements,
+    userId: user?.id,
+  });
+
+  const handleOutreachSaved = useCallback(() => {
+    // Refresh the master list's pitches too, so the change is there when switching tabs.
+    mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
+    return mutateAgreements();
+  }, [campaign?.id, mutateAgreements]);
 
   // Combine the agreements data with submission status
   const combinedData = useMemo(() => {
@@ -903,6 +1682,12 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       result = roundScopedAgreements;
     }
 
+    if (outreachFilter.length > 0) {
+      result = result.filter((item) =>
+        outreachFilter.includes(item.outreachStatus || OUTREACH_NOT_SET)
+      );
+    }
+
     // Search functionality
     if (searchQuery?.trim()) {
       const query = searchQuery.toLowerCase().trim();
@@ -949,11 +1734,152 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
 
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [selectedFilter, sortColumn, sortDirection, roundScopedAgreements, searchQuery]);
+  }, [
+    selectedFilter,
+    outreachFilter,
+    sortColumn,
+    sortDirection,
+    roundScopedAgreements,
+    searchQuery,
+  ]);
+
+  const statusLabels = useMemo(
+    () => [...new Set(filteredData.map((item) => getAgreementStatus(item).text))],
+    [filteredData]
+  );
+  const [statusColumnWidth, statusSizer] = useOneLineChipWidth(statusLabels);
+
+  // Experimental column reordering: the admin's saved order, minus columns this campaign hides.
+  const { columnOrder, moveColumn } = useColumnOrder();
+  const visibleColumns = useMemo(
+    () =>
+      columnOrder.filter(
+        (id) => (id !== 'tier' || campaign?.isCreditTier) && (id !== 'receipt' || showReceiptColumn)
+      ),
+    [columnOrder, campaign?.isCreditTier, showReceiptColumn]
+  );
+
+  // The gap after the fixed index column is its own right padding, so whichever column comes
+  // first drops its left padding (Creator, by default).
+  const firstColumnSx = (id) => (id === visibleColumns[0] ? { pl: 0 } : {});
+
+  const renderColumnHeader = (id, dragProps) => {
+    const headerSx = {
+      py: 1,
+      color: '#221f20',
+      fontWeight: 600,
+      bgcolor: '#f5f5f5',
+      whiteSpace: 'nowrap',
+    };
+
+    switch (id) {
+      case 'creator':
+        return (
+          <TableCell
+            {...dragProps}
+            sx={{
+              ...headerSx,
+              py: { xs: 0.5, sm: 1 },
+              px: { xs: 1, sm: 2 },
+              width: { xs: '25%', sm: 'auto' },
+              minWidth: { xs: 120, sm: 'auto' },
+              ...firstColumnSx(id),
+            }}
+          >
+            Creator
+          </TableCell>
+        );
+
+      case 'tier':
+        return (
+          <TableCell
+            {...dragProps}
+            sx={{
+              ...headerSx,
+              py: { xs: 0.5, sm: 1 },
+              px: { xs: 1, sm: 2 },
+              width: { xs: 90, sm: 'auto' },
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              ...firstColumnSx(id),
+            }}
+          >
+            Tier
+          </TableCell>
+        );
+
+      case 'outreach':
+        return (
+          <TableCell {...dragProps} sx={{ ...headerSx, ...firstColumnSx(id) }}>
+            Outreach
+          </TableCell>
+        );
+
+      case 'status':
+        return (
+          <SortableHeader
+            {...dragProps}
+            column="status"
+            label="Status"
+            sortColumn={sortColumn}
+            sortDirection={sortDirection}
+            onSort={handleColumnSort}
+            sx={{
+              // Exactly the widest status on one line (content-box, so the cell padding matches
+              // the body cells'); auto until it's been measured.
+              width: {
+                xs: '15%',
+                sm: statusColumnWidth ? `${statusColumnWidth}px` : 'auto',
+              },
+              minWidth: { xs: 90, sm: 'auto' },
+              boxSizing: 'content-box',
+              px: STATUS_CELL_PX,
+              ...firstColumnSx(id),
+            }}
+          />
+        );
+
+      case 'budget':
+      case 'price':
+        return (
+          <TableCell
+            {...dragProps}
+            sx={{ ...headerSx, width: { xs: '20%', sm: 'auto' }, ...firstColumnSx(id) }}
+          >
+            {id === 'budget' ? 'Budget' : 'Price'}
+          </TableCell>
+        );
+
+      case 'receipt':
+        return (
+          <TableCell {...dragProps} sx={{ ...headerSx, ...firstColumnSx(id) }}>
+            <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5}>
+              <span>Receipt</span>
+              <Tooltip
+                arrow
+                title="When on, the creator uploads reimbursement receipts. The invoice is generated only after the video(s) and every receipt are approved, with each receipt as its own line."
+              >
+                <Iconify
+                  icon="mdi:help-circle-outline"
+                  width={16}
+                  sx={{ color: '#8E8E93', cursor: 'help' }}
+                />
+              </Tooltip>
+            </Stack>
+          </TableCell>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  const campaignBudget = useMemo(() => getCampaignBudget(campaign), [campaign]);
+  const campaignBudgetCurrency = campaign?.subscription?.currency ?? 'RM';
 
   const footerTotals = useMemo(() => {
     const totalCreators = filteredData.length;
     const amountsByCurrency = {};
+    const budgetsByCurrency = {};
 
     const creditsUsed = campaign?.creditsUtilized ?? 0;
     const creditsTotal = campaign?.campaignCredits ?? 0;
@@ -961,139 +1887,220 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
 
     filteredData.forEach((item) => {
       const shortlisted = item?.user?.shortlisted?.[0] || item?.shortlistedCreator;
+      const currency = getRowCurrency(item);
+
       const rawAmount =
         parseFloat(item?.amount?.toString()) || parseFloat(shortlisted?.amount?.toString()) || 0;
       if (rawAmount && !Number.isNaN(rawAmount)) {
-        const currency = shortlisted?.currency || 'MYR';
         amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + rawAmount;
+      }
+
+      const budget = parseFloat(item?.budgetAmount?.toString());
+      if (budget && !Number.isNaN(budget)) {
+        budgetsByCurrency[currency] = (budgetsByCurrency[currency] || 0) + budget;
       }
     });
 
-    const remainingPct = creditsTotal > 0 ? creditsRemaining / creditsTotal : 0;
-    let creditsRemainingColor = '#1ABF66'; // green
-    if (remainingPct <= 0.25)
-      creditsRemainingColor = '#FF5630'; // red
-    else if (remainingPct <= 0.5) creditsRemainingColor = '#FFAB00'; // orange
+    // Available = campaign budget − agreement prices (the footer's Total); left = available −
+    // planned budgets. Only amounts in the campaign budget's currency count.
+    const budgetAvailable =
+      campaignBudget != null
+        ? campaignBudget - (amountsByCurrency[campaignBudgetCurrency] || 0)
+        : null;
+    const budgetRemaining =
+      budgetAvailable != null
+        ? budgetAvailable - (budgetsByCurrency[campaignBudgetCurrency] || 0)
+        : null;
 
     return {
       totalCreators,
       creditsUsed,
       creditsTotal,
       creditsRemaining,
-      creditsRemainingColor,
+      creditsRemainingColor: getRemainingColor(creditsRemaining, creditsTotal),
       amountsByCurrency,
+      budgetsByCurrency,
+      budgetAvailable,
+      budgetRemaining,
+      budgetRemainingColor: getRemainingColor(budgetRemaining, budgetAvailable),
     };
-  }, [filteredData, campaign?.creditsUtilized, campaign?.campaignCredits]);
+  }, [
+    filteredData,
+    campaign?.creditsUtilized,
+    campaign?.campaignCredits,
+    campaignBudget,
+    campaignBudgetCurrency,
+  ]);
 
-  const formattedAmounts = useMemo(() => {
-    const { amountsByCurrency } = footerTotals;
-    const entries = Object.entries(amountsByCurrency);
-    if (entries.length === 0) return '0';
+  const formattedAmounts = useMemo(
+    () => formatAmountsByCurrency(footerTotals.amountsByCurrency),
+    [footerTotals]
+  );
 
-    const formatter = new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    });
+  const formattedBudgets = useMemo(
+    () =>
+      Object.keys(footerTotals.budgetsByCurrency).length
+        ? formatAmountsByCurrency(footerTotals.budgetsByCurrency)
+        : formatMoney(0, campaignBudgetCurrency),
+    [footerTotals, campaignBudgetCurrency]
+  );
 
-    return entries
-      .map(([code, amount]) => {
-        const config = CURRENCY_PREFIXES[code];
-        const prefix = config ? config.prefix : code;
-        return `${prefix} ${formatter.format(amount)}`;
-      })
-      .join(' | ');
-  }, [footerTotals]);
+  // Row handlers are stable (useCallback) so memoised rows don't re-render on unrelated changes.
+  const openViewDialog = dialog.onTrue;
+  const openEditDialog = editDialog.onTrue;
+  const openFeedbackDialog = feedbackDialog.onTrue;
 
-  const handleViewAgreement = (url, item) => {
-    setSelectedUrl(url);
-    setSelectedAgreement(item);
-    dialog.onTrue();
-  };
+  const handleViewAgreement = useCallback(
+    (url, item) => {
+      setSelectedUrl(url);
+      setSelectedAgreement(item);
+      openViewDialog();
+    },
+    [openViewDialog]
+  );
 
-  const handleEditAgreement = (agreement) => {
-    setSelectedAgreement(agreement);
-    editDialog.onTrue();
-  };
+  const handleEditAgreement = useCallback(
+    (agreement) => {
+      setSelectedAgreement(agreement);
+      openEditDialog();
+    },
+    [openEditDialog]
+  );
 
-  const handleSendAgreement = async (item) => {
-    try {
-      // Use different endpoints based on whether it's a resend or initial send
-      const endpoint = item.isSent
-        ? endpoints.campaign.resendAgreement
-        : endpoints.campaign.sendAgreement;
+  const handleSendAgreement = useCallback(
+    async (item) => {
+      try {
+        // Use different endpoints based on whether it's a resend or initial send
+        const endpoint = item.isSent
+          ? endpoints.campaign.resendAgreement
+          : endpoints.campaign.sendAgreement;
 
-      // For resend, use different payload format
-      const payload = item.isSent ? { userId: item.userId, campaignId: item.campaignId } : item;
+        // For resend, use different payload format
+        const payload = item.isSent ? { userId: item.userId, campaignId: item.campaignId } : item;
 
-      const res = await axiosInstance.patch(endpoint, payload);
-      mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
-      campaignMutate?.();
-      enqueueSnackbar(res?.data?.message);
-    } catch (error) {
-      enqueueSnackbar(error?.message, { variant: 'error' });
-    }
-  };
+        const res = await axiosInstance.patch(endpoint, payload);
+        mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
+        campaignMutate?.();
+        enqueueSnackbar(res?.data?.message);
+      } catch (error) {
+        enqueueSnackbar(error?.message, { variant: 'error' });
+      }
+    },
+    [campaignMutate]
+  );
 
   // `confirmRegenerate` is sent only after the admin accepted the "draft will be regenerated" warning
-  const handleToggleReceiptRequired = async (item, required, confirmRegenerate = false) => {
-    try {
-      setReceiptToggleId(item.id);
-      const res = await axiosInstance.patch(endpoints.reimbursement.setRequired(item.id), {
-        required,
-        ...(confirmRegenerate && { confirmRegenerate: true }),
-      });
-      setRegenerateWarning(null);
-      // This table reads from React Query, so refresh it directly (SWR `mutate` won't).
-      await mutateAgreements();
-      enqueueSnackbar(res?.data?.message);
-    } catch (error) {
-      // The round's invoice is still a draft: warn before the backend deletes and regenerates it
-      if (error?.code === 'DRAFT_INVOICE_EXISTS') {
-        setRegenerateWarning({ item, ...error });
-        return;
+  const handleToggleReceiptRequired = useCallback(
+    async (item, required, confirmRegenerate = false) => {
+      try {
+        setReceiptToggleId(item.id);
+        const res = await axiosInstance.patch(endpoints.reimbursement.setRequired(item.id), {
+          required,
+          ...(confirmRegenerate && { confirmRegenerate: true }),
+        });
+        setRegenerateWarning(null);
+        // This table reads from React Query, so refresh it directly (SWR `mutate` won't).
+        await mutateAgreements();
+        enqueueSnackbar(res?.data?.message);
+      } catch (error) {
+        // The round's invoice is still a draft: warn before the backend deletes and regenerates it
+        if (error?.code === 'DRAFT_INVOICE_EXISTS') {
+          setRegenerateWarning({ item, ...error });
+          return;
+        }
+        enqueueSnackbar(error?.message || 'Failed to update receipt requirement', {
+          variant: 'error',
+        });
+      } finally {
+        setReceiptToggleId(null);
       }
-      enqueueSnackbar(error?.message || 'Failed to update receipt requirement', {
-        variant: 'error',
-      });
-    } finally {
-      setReceiptToggleId(null);
-    }
-  };
+    },
+    [mutateAgreements]
+  );
 
-  const handleApproveAgreement = async (item) => {
-    try {
-      setApproveLoading(true);
-      const res = await axiosInstance.patch(endpoints.submission.admin.agreement, {
-        campaignId: campaign?.id,
-        status: 'approve',
-        userId: item?.userId,
-        submissionId: item?.submission?.id,
-        submission: item?.submission,
-      });
-      mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
-      // Also refresh V3 pitches data to update pitch status
-      mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
-      // Also refresh submissions data
-      const response = await axiosInstance.get(
-        `${endpoints.submission.root}?campaignId=${campaign.id}`
-      );
-      setSubmissions(response.data);
-      enqueueSnackbar(res?.data?.message || 'Agreement approved successfully');
-    } catch (error) {
-      enqueueSnackbar(error?.message || 'Failed to approve agreement', { variant: 'error' });
-    } finally {
-      setApproveLoading(false);
-    }
-  };
+  const handleApproveAgreement = useCallback(
+    async (item) => {
+      try {
+        setApproveLoading(true);
+        const res = await axiosInstance.patch(endpoints.submission.admin.agreement, {
+          campaignId: campaign?.id,
+          status: 'approve',
+          userId: item?.userId,
+          submissionId: item?.submission?.id,
+          submission: item?.submission,
+        });
+        mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
+        // Also refresh V3 pitches data to update pitch status
+        mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
+        // Also refresh submissions data
+        const response = await axiosInstance.get(
+          `${endpoints.submission.root}?campaignId=${campaign?.id}`
+        );
+        setSubmissions(response.data);
+        enqueueSnackbar(res?.data?.message || 'Agreement approved successfully');
+      } catch (error) {
+        enqueueSnackbar(error?.message || 'Failed to approve agreement', { variant: 'error' });
+      } finally {
+        setApproveLoading(false);
+      }
+    },
+    [campaign?.id]
+  );
 
-  const handleOpenRejectDialog = (agreement) => {
-    setSelectedAgreement(agreement);
-    feedbackDialog.onTrue();
-  };
+  const handleOpenRejectDialog = useCallback(
+    (agreement) => {
+      setSelectedAgreement(agreement);
+      openFeedbackDialog();
+    },
+    [openFeedbackDialog]
+  );
 
-  const handleProfileClick = (creator) => {
-    navigate(`/dashboard/creator/profile/${creator.userId}`);
-  };
+  const handleProfileClick = useCallback(
+    (creator) => {
+      navigate(`/dashboard/creator/profile/${creator.userId}`);
+    },
+    [navigate]
+  );
+
+  // table.onSelectRow changes identity with every selection, which would re-render every row;
+  // this toggle is built on the stable state setter instead.
+  const { setSelected } = table;
+  const toggleSelectRow = useCallback(
+    (userId) =>
+      setSelected((prev) =>
+        prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+      ),
+    [setSelected]
+  );
+
+  const rowActions = useMemo(
+    () => ({
+      getTierDataForItem,
+      handleViewAgreement,
+      handleEditAgreement,
+      handleSendAgreement,
+      handleProfileClick,
+      handleOutreachSaved,
+      handleApproveAgreement,
+      handleOpenRejectDialog,
+      handleToggleReceiptRequired,
+      mutateAgreements,
+      onToggleSelect: toggleSelectRow,
+    }),
+    [
+      getTierDataForItem,
+      handleViewAgreement,
+      handleEditAgreement,
+      handleSendAgreement,
+      handleProfileClick,
+      handleOutreachSaved,
+      handleApproveAgreement,
+      handleOpenRejectDialog,
+      handleToggleReceiptRequired,
+      mutateAgreements,
+      toggleSelectRow,
+    ]
+  );
 
   const onSubmitFeedback = handleSubmit(async (formData) => {
     try {
@@ -1206,6 +2213,29 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
   const handleAgreementFilterClear = () => {
     setSelectedFilter('all');
     setAgreementFilterAnchorEl(null);
+  };
+
+  const isOutreachFilterActive = outreachFilter.length > 0;
+  let outreachFilterLabel = 'Outreach Status';
+  if (outreachFilter.length > 1) {
+    outreachFilterLabel = `Outreach Status (${outreachFilter.length})`;
+  } else if (outreachFilter[0] === OUTREACH_NOT_SET) {
+    outreachFilterLabel = 'Not Set';
+  } else if (outreachFilter.length === 1) {
+    outreachFilterLabel =
+      OUTREACH_STATUS_OPTIONS.find((option) => option.value === outreachFilter[0])?.label ||
+      outreachFilterLabel;
+  }
+
+  const handleOutreachFilterToggle = (value) => {
+    setOutreachFilter((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  };
+
+  const handleOutreachFilterClear = () => {
+    setOutreachFilter([]);
+    setOutreachFilterAnchorEl(null);
   };
 
   // Eligible for an additional agreement: this round has already been sent to the creator.
@@ -1402,6 +2432,22 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
               <Button
                 variant="text"
                 disableElevation
+                onClick={(e) => setOutreachFilterAnchorEl(e.currentTarget)}
+                endIcon={
+                  <FilterPillEndIcons
+                    isActive={isOutreachFilterActive}
+                    isOpen={Boolean(outreachFilterAnchorEl)}
+                    onClear={handleOutreachFilterClear}
+                    clearLabel="Clear outreach status filters"
+                  />
+                }
+                sx={getFilterPillSx(isOutreachFilterActive)}
+              >
+                {outreachFilterLabel}
+              </Button>
+              <Button
+                variant="text"
+                disableElevation
                 onClick={handleAgreementFilterClick}
                 endIcon={
                   <FilterPillEndIcons
@@ -1459,6 +2505,13 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                   </MenuItem>
                 ))}
               </Menu>
+              <OutreachFilterMenu
+                anchorEl={outreachFilterAnchorEl}
+                onClose={() => setOutreachFilterAnchorEl(null)}
+                selected={outreachFilter}
+                onToggle={handleOutreachFilterToggle}
+                onClear={handleOutreachFilterClear}
+              />
             </Stack>
 
             <Stack direction="row" alignItems="center" spacing={1} sx={{ flexShrink: 0 }}>
@@ -1637,6 +2690,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
           <EmptyContent title="No agreements found" />
         ) : (
           <TableContainer
+            ref={setTableScrollEl}
+            onScroll={updateCtaOverlap}
             sx={{
               width: '100%',
               position: 'relative',
@@ -1644,861 +2699,92 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
               overflow: 'auto',
             }}
           >
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell
-                    padding="checkbox"
-                    sx={{ borderRadius: '10px 0 0 10px', bgcolor: '#f5f5f5', pl: 1.5 }}
-                  >
-                    <Checkbox
-                      icon={uncheckedCheckboxIcon}
-                      checkedIcon={checkedCheckboxIcon}
-                      indeterminateIcon={checkedCheckboxIcon}
-                      indeterminate={
-                        table.selected.length > 0 &&
-                        table.selected.length < eligibleForAdditionalIds.size
-                      }
-                      checked={
-                        eligibleForAdditionalIds.size > 0 &&
-                        table.selected.length === eligibleForAdditionalIds.size
-                      }
-                      disabled={
-                        isDisabled ||
-                        selectionCategory === 'bulk' ||
-                        eligibleForAdditionalIds.size === 0
-                      }
-                      onChange={(e) => {
-                        table.onSelectAllRows(e.target.checked, [...eligibleForAdditionalIds]);
-                      }}
-
-                      sx={{ p: 0.5 }}
-                    />
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      width: 40,
-                      minWidth: 40,
-                      px: 1,
-                      bgcolor: '#f5f5f5',
-                    }}
-                  />
-                  <TableCell
-                    sx={{
-                      py: { xs: 0.5, sm: 1 },
-                      px: { xs: 1, sm: 2 },
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: { xs: '25%', sm: 280 },
-                      minWidth: { xs: 120, sm: 280 },
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Creator
-                  </TableCell>
-                  {campaign?.isCreditTier && (
+            <ColumnReorderProvider
+              columns={visibleColumns}
+              onMove={moveColumn}
+            >
+              <Table size="small" {...{ [REORDER_TABLE_ATTR]: '' }}>
+                <TableHead>
+                  <TableRow>
                     <TableCell
-                      sx={{
-                        py: { xs: 0.5, sm: 1 },
-                        px: { xs: 1, sm: 2 },
-                        color: '#221f20',
-                        fontWeight: 600,
-                        width: { xs: 90, sm: '12%' },
-                        minWidth: { xs: 90, sm: 'auto' },
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
-                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                      }}
+                      padding="checkbox"
+                      sx={{ ...CHECKBOX_CELL_SX, borderRadius: '10px 0 0 10px', bgcolor: '#f5f5f5' }}
                     >
-                      Tier
-                    </TableCell>
-                  )}
-
-                  <SortableHeader
-                    column="date"
-                    label="Issue Date"
-                    width={{ xs: '25%', sm: 120 }}
-                    minWidth={{ xs: 110, sm: 120 }}
-                    sortColumn={sortColumn}
-                    sortDirection={sortDirection}
-                    onSort={handleColumnSort}
-                  />
-
-                  <SortableHeader
-                    column="status"
-                    label="Status"
-                    sortColumn={sortColumn}
-                    sortDirection={sortDirection}
-                    onSort={handleColumnSort}
-                    sx={{ width: { xs: '15%', sm: 75 }, minWidth: { xs: 90, sm: 75 } }}
-                  />
-
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: { xs: '20%', sm: 95 },
-                      minWidth: { xs: 85, sm: 95 },
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Price
-                  </TableCell>
-                  {showReceiptColumn && (
-                    <TableCell
-                      sx={{
-                        py: 1,
-                        color: '#221f20',
-                        fontWeight: 600,
-                        minWidth: 150,
-                        bgcolor: '#f5f5f5',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <span>Receipt required</span>
-                        <Tooltip
-                          arrow
-                          title="When on, the creator uploads reimbursement receipts. The invoice is generated only after the video(s) and every receipt are approved, with each receipt as its own line."
-                        >
-                          <Iconify
-                            icon="mdi:help-circle-outline"
-                            width={16}
-                            sx={{ color: '#8E8E93', cursor: 'help' }}
-                          />
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  )}
-                  <TableCell
-                    sx={{
-                      py: 1,
-                      color: '#221f20',
-                      fontWeight: 600,
-                      width: { xs: '15%', sm: 80 },
-                      minWidth: { xs: 70, sm: 80 },
-                      borderRadius: '0 10px 10px 0',
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Agreement PDF
-                  </TableCell>
-                  {/* <TableCell
-                    sx={{
-                      color: '#221f20',
-                      borderRadius: '0 10px 10px 0',
-                      bgcolor: '#f5f5f5',
-                      whiteSpace: 'nowrap',
-                    }}
-                  /> */}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredData.map((item, index) => {
-                  const isAmountValid = !Number.isNaN(
-                    parseFloat(item?.user?.shortlisted[0]?.amount?.toString()) ||
-                      parseFloat(item?.amount?.toString())
-                  );
-
-                  const isPendingReview = item?.submission?.status === 'PENDING_REVIEW';
-                  const isEligibleForAdditional = eligibleForAdditionalIds.has(item.userId);
-                  const rowCategory = isEligibleForAdditional ? 'additional' : 'bulk';
-                  const isCategoryLocked = selectionCategory && selectionCategory !== rowCategory;
-                  const checkboxTooltip = isCategoryLocked
-                    ? `Clear your current selection to pick a creator for ${
-                        selectionCategory === 'bulk' ? 'a bulk' : 'an additional'
-                      } agreement`
-                    : '';
-
-                  const product = item?.productSeeding?.length ? item.productSeeding[0] : null;
-
-                  const displayValue = () => {
-                    if (item.isSeeding) {
-                      if (!product) return renderAmountText('Not assigned');
-
-                      return (
-                        <Typography variant="subtitle2" sx={{ fontSize: 15 }}>
-                          {`${item.currency} ${parseFloat(product?.value).toFixed(2)}`}
-                        </Typography>
-                      );
-                    }
-
-                    if (isAmountValid) {
-                      return (
-                        <Typography variant="subtitle2" sx={{ fontSize: 15 }}>
-                          {`${item?.user?.shortlisted[0]?.currency} ${
-                            parseFloat(item?.amount?.toString()).toFixed(2) ||
-                            parseFloat(item?.user?.shortlisted[0]?.amount?.toString()).toFixed(2)
-                          }`}
-                        </Typography>
-                      );
-                    }
-
-                    return renderAmountText('Not set');
-                  };
-
-                  return (
-                    <TableRow
-                      key={item.id}
-                      sx={{
-                        cursor: 'pointer',
-                        '&:hover': {
-                          bgcolor: alpha('#CCC', 0.1),
-                        },
-                      }}
-                      component="div"
-                      onClick={() => {
-                        if (!item.isSent) {
-                          handleEditAgreement(item);
-                        } else {
-                          handleViewAgreement(item?.agreementUrl, item);
+                      <Checkbox
+                        icon={uncheckedCheckboxIcon}
+                        checkedIcon={checkedCheckboxIcon}
+                        indeterminateIcon={checkedCheckboxIcon}
+                        indeterminate={
+                          table.selected.length > 0 &&
+                          table.selected.length < eligibleForAdditionalIds.size
                         }
+                        checked={
+                          eligibleForAdditionalIds.size > 0 &&
+                          table.selected.length === eligibleForAdditionalIds.size
+                        }
+                        disabled={
+                          isDisabled ||
+                          selectionCategory === 'bulk' ||
+                          eligibleForAdditionalIds.size === 0
+                        }
+                        onChange={(e) => {
+                          table.onSelectAllRows(e.target.checked, [...eligibleForAdditionalIds]);
+                        }}
+                        sx={{ p: 0 }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ ...INDEX_CELL_SX, bgcolor: '#f5f5f5' }} />
+                    {visibleColumns.map((id) => (
+                      <DraggableColumnHeader key={id} id={id}>
+                        {(dragProps) => renderColumnHeader(id, dragProps)}
+                      </DraggableColumnHeader>
+                    ))}
+                    <TableCell
+                      sx={{
+                        ...CTA_CELL_SX,
+                        zIndex: 2,
+                        boxShadow: ctaShadow,
+                        py: 1,
+                        pr: 1,
+                        color: '#221f20',
+                        fontWeight: 600,
+                        width: { xs: '15%', sm: 'auto' },
+                        minWidth: { xs: 70, sm: 'auto' },
+                        borderRadius: '0 10px 10px 0',
+                        bgcolor: '#f5f5f5',
+                        whiteSpace: 'nowrap',
                       }}
                     >
-                      <TableCell
-                        padding="checkbox"
-                        sx={{ pl: 1.5 }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Tooltip title={checkboxTooltip}>
-                          <span>
-                            <Checkbox
-                              icon={uncheckedCheckboxIcon}
-                              checkedIcon={checkedCheckboxIcon}
-                              checked={table.selected.includes(item.userId)}
-                              disabled={isDisabled || isCategoryLocked}
-                              onChange={() => {
-                                table.onSelectRow(item.userId);
-                              }}
-                              sx={{ p: 0 }}
-                            />
-                          </span>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell sx={{ width: 10, px: 1, textAlign: 'center' }}>
-                        <Stack direction="row" alignItems="center" spacing={2}>
-                          <Typography sx={INDEX_SX}>{index + 1}</Typography>
-                          {item?.isSeeding && (
-                            <Iconify
-                              icon={
-                                table.selected.includes(item.userId)
-                                  ? 'mdi:seed'
-                                  : 'mdi:seed-outline'
-                              }
-                              color="#1304FF"
-                              width={18}
-                            />
-                          )}
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" alignItems="center" spacing={{ xs: 1 }}>
-                          <Box
-                            sx={{
-                              position: 'relative',
-                              width: { xs: 32, sm: 40 },
-                              height: { xs: 32, sm: 40 },
-                            }}
-                          >
-                            <Avatar
-                              src={item?.user?.photoURL}
-                              alt={item?.user?.name}
-                              sx={{
-                                width: '100%',
-                                height: '100%',
-                                border: '2px solid',
-                                borderColor: 'background.paper',
-                                boxShadow: (theme) => theme.customShadows.z8,
-                              }}
-                            >
-                              {item?.user?.name?.charAt(0).toUpperCase()}
-                            </Avatar>
-                          </Box>
-
-                          <Stack spacing={0.5} flex={1}>
-                            <Typography
-                              variant="body2"
-                              onClick={() => handleProfileClick(item)}
-                              sx={{
-                                cursor: 'pointer',
-                                '&:hover': { textDecoration: 'underline', color: '#1340FF' },
-                              }}
-                            >
-                              {item?.user?.name}
-                            </Typography>
-                            {!item?.user?.email?.endsWith('@tempmail.com') && (
-                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                {item?.user?.email}
-                              </Typography>
-                            )}
-
-                            {/* {item?.isSeeding && (
-                              <Stack
-                                sx={{
-                                  bgcolor: alpha('#1304FF', 0.1),
-                                  border: 0.5,
-                                  borderColor: alpha('#1304FF', 0.6),
-                                  borderRadius: 999,
-                                  color: alpha('#1304FF', 0.8),
-                                  pointerEvents: 'none',
-                                  px: 1,
-                                  position: 'relative',
-                                  height: 23,
-                                }}
-                                flexDirection="row"
-                                alignItems="center"
-                                justifyContent="center"
-                                spacing={1}
-                                alignSelf="flex-start"
-                              >
-                                <m.svg
-                                  width={7}
-                                  height={7}
-                                  animate={{
-                                    transform: ['scale(1.3)', 'scale(1)', 'scale(1.3)'],
-                                    opacity: [1, 0.5, 1],
-                                  }}
-                                  transition={{
-                                    repeat: Infinity,
-                                    duration: 1.2,
-                                  }}
-                                >
-                                  <circle cx={3.5} cy={3.5} r={3} fill={alpha('#1304FF', 0.8)} />
-                                </m.svg>
-
-                                <Typography
-                                  variant="subtitle2"
-                                  fontWeight={500}
-                                  fontSize={12}
-                                  letterSpacing={0.3}
-                                  fontFamily="Inter Tight, sans-serif"
-                                >
-                                  Seeded
-                                </Typography>
-                              </Stack>
-                            )} */}
-                          </Stack>
-                        </Stack>
-                      </TableCell>
-
-                      {campaign?.isCreditTier && (
-                        <TableCell sx={{ py: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2 } }}>
-                          {(() => {
-                            const tierData = getTierDataForItem(item);
-                            if (!tierData) {
-                              return <Typography fontSize={13.5}>-</Typography>;
-                            }
-                            const tierPlatform = resolveTierPlatformForDisplay(item, campaign);
-                            return (
-                              <Stack alignItems="start">
-                                <Stack direction="row" alignItems="center" spacing={0.5}>
-                                  <Iconify
-                                    icon={
-                                      tierPlatform === 'tiktok'
-                                        ? 'ic:baseline-tiktok'
-                                        : 'mdi:instagram'
-                                    }
-                                    width={15}
-                                    sx={{
-                                      color: tierPlatform === 'tiktok' ? '#000000' : '#E4405F',
-                                      flexShrink: 0,
-                                    }}
-                                  />
-                                  <Typography fontSize={13.5} whiteSpace="nowrap">
-                                    {tierData.name}
-                                  </Typography>
-                                </Stack>
-                                <Typography
-                                  variant="body2"
-                                  fontSize={13.5}
-                                  sx={{
-                                    color: '#8e8e93',
-                                    display: 'block',
-                                    whiteSpace: 'nowrap',
-                                  }}
-                                >
-                                  {tierData.creditsPerVideo} credit
-                                  {tierData.creditsPerVideo !== 1 ? 's' : ''}
-                                </Typography>
-                              </Stack>
-                            );
-                          })()}
-                        </TableCell>
-                      )}
-                      <TableCell
-                        sx={{
-                          width: { xs: '25%', sm: 120 },
-                          minWidth: { xs: 110, sm: 120 },
-                        }}
-                      >
-                        <Stack spacing={0.5} alignItems="start">
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                            }}
-                          >
-                            {fDate(item?.updatedAt)}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: '#8e8e93',
-                              display: 'block',
-                              fontSize: { xs: '0.7rem', sm: '0.875rem' },
-                              mt: '-2px',
-                            }}
-                          >
-                            {dayjs(item?.updatedAt).format('LT')}
-                          </Typography>
-                        </Stack>
-                      </TableCell>
-
-                      <TableCell>
-                        {(() => {
-                          let statusText = 'Pending';
-                          let statusStyles = {
-                            color: '#f19f39',
-                            borderColor: '#f19f39',
-                          };
-
-                          if (isPendingReview) {
-                            statusText = 'PENDING APPROVAL';
-                            statusStyles = {
-                              color: '#FFC702',
-                              borderColor: '#FFC702',
-                            };
-                          } else if (item?.submission?.status === 'APPROVED') {
-                            statusText = 'APPROVED';
-                            statusStyles = {
-                              color: '#1ABF66',
-                              borderColor: '#1ABF66',
-                            };
-                          } else if (item?.isSent) {
-                            statusText = 'Sent To Creator';
-                            statusStyles = {
-                              color: '#8A5AFE',
-                              borderColor: '#8A5AFE',
-                            };
-                          }
-
-                          return (
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                textTransform: 'uppercase',
-                                fontWeight: 700,
-                                display: 'inline-block',
-                                px: { xs: 0.6, sm: 1 },
-                                py: { xs: 0.2, sm: 0.5 },
-                                fontSize: { xs: '0.6rem', sm: '0.75rem' },
-                                border: '1px solid',
-                                borderBottom: '3px solid',
-                                borderRadius: 0.8,
-                                bgcolor: 'white',
-                                whiteSpace: 'nowrap',
-                                ...statusStyles,
-                              }}
-                            >
-                              {statusText}
-                            </Typography>
-                          );
-                        })()}
-                      </TableCell>
-
-                      <TableCell
-                        sx={{
-                          width: { xs: '20%', sm: 95 },
-                          minWidth: { xs: 85, sm: 95 },
-                        }}
-                      >
-                        {displayValue()}
-                      </TableCell>
-
-                      {showReceiptColumn &&
-                        (() => {
-                          // An existing invoice no longer locks it (a draft is regenerated, a sent
-                          // one gets a separate reimbursement invoice) — only billed receipts do.
-                          const lockReason = item.receiptsBilled
-                            ? 'Receipts for this agreement are already invoiced'
-                            : item.isSeeding
-                              ? 'Not available for seeding agreements'
-                              : isDisabled
-                                ? 'You do not have permission to change this'
-                                : '';
-                          const required = Boolean(item.isReceiptRequired);
-
-                          return (
-                            <TableCell onClick={(e) => e.stopPropagation()}>
-                              <Tooltip title={lockReason} disableHoverListener={!lockReason}>
-                                <Stack direction="row" alignItems="center" spacing={1}>
-                                  <Switch
-                                    size="small"
-                                    checked={required}
-                                    disabled={Boolean(lockReason) || receiptToggleId === item.id}
-                                    onChange={(e) =>
-                                      handleToggleReceiptRequired(item, e.target.checked)
-                                    }
-                                    sx={{
-                                      '& .MuiSwitch-switchBase.Mui-checked': { color: '#fff' },
-                                      '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                                        bgcolor: '#1340FF',
-                                        opacity: 1,
-                                      },
-                                    }}
-                                  />
-                                  <Typography
-                                    variant="body2"
-                                    sx={{ color: required ? '#221f20' : '#8E8E93' }}
-                                  >
-                                    {required ? 'Required' : 'Not required'}
-                                  </Typography>
-                                </Stack>
-                              </Tooltip>
-                            </TableCell>
-                          );
-                        })()}
-
-                      <TableCell>
-                        {smUp ? (
-                          <Stack direction="row" gap={1}>
-                            {item?.agreementUrl && (
-                              <Button
-                                onClick={() => handleViewAgreement(item?.agreementUrl, item)}
-                                size="small"
-                                variant="contained"
-                                sx={{
-                                  px: 1.5,
-                                  py: 2,
-                                  bgcolor: '#ffffff',
-                                  color: '#221f20',
-                                  border: '1.5px solid',
-                                  borderColor: '#e7e7e7',
-                                  borderBottom: '3px solid',
-                                  borderBottomColor: '#e7e7e7',
-                                  borderRadius: 1.15,
-                                  fontSize: '0.85rem',
-                                  fontWeight: 600,
-                                  textTransform: 'none',
-                                  '&:hover': {
-                                    bgcolor: '#f5f5f5',
-                                    border: '1.5px solid',
-                                    borderColor: '#221f20',
-                                    borderBottom: '3px solid',
-                                    borderBottomColor: '#221f20',
-                                  },
-                                }}
-                              >
-                                View
-                              </Button>
-                            )}
-
-                            {!item.isSent ? (
-                              // For pending (not sent) agreements, show Send Agreement button
-                              <Tooltip
-                                title={
-                                  guestNeedsLinkBeforeSend(item)
-                                    ? 'Link creator before sending agreement'
-                                    : ''
-                                }
-                                arrow
-                              >
-                                <span>
-                                  <Button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEditAgreement(item);
-                                    }}
-                                    disabled={isDisabled || guestNeedsLinkBeforeSend(item)}
-                                    size="small"
-                                    variant="contained"
-                                    startIcon={
-                                      <Iconify
-                                        icon="bx:send"
-                                        sx={{
-                                          color: '#fff',
-                                        }}
-                                      />
-                                    }
-                                    sx={{
-                                      px: 2,
-                                      py: 2,
-                                      bgcolor: '#1340FF',
-                                      color: '#ffffff',
-                                      border: '1.5px solid #1340FF',
-                                      borderBottom: '3px solid',
-                                      borderBottomColor: '#00000073',
-                                      fontSize: '0.85rem',
-                                      fontWeight: 600,
-                                      textTransform: 'none',
-                                      whiteSpace: 'nowrap',
-                                      '&:hover': {
-                                        bgcolor: '#0a2dd9',
-                                      },
-                                      '&.Mui-disabled': {
-                                        bgcolor: 'rgba(19, 64, 255, 0.5)',
-                                        border: '1px solid rgba(19, 64, 255, 0.5)',
-                                        color: '#ffffff',
-                                        cursor: 'not-allowed',
-                                        pointerEvents: 'auto',
-                                      },
-                                    }}
-                                  >
-                                    Send Agreement
-                                  </Button>
-                                </span>
-                              </Tooltip>
-                            ) : (
-                              // For sent agreements, show Edit Amount and action buttons
-                              <>
-                                <Button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditAgreement(item);
-                                  }}
-                                  disabled={isDisabled}
-                                  size="small"
-                                  variant="contained"
-                                  sx={{
-                                    px: 1.5,
-                                    py: 2,
-                                    bgcolor: '#ffffff',
-                                    color: '#221f20',
-                                    border: '1.5px solid',
-                                    borderColor: '#e7e7e7',
-                                    borderBottom: '3px solid',
-                                    borderBottomColor: '#e7e7e7',
-                                    borderRadius: 1.15,
-                                    fontSize: '0.85rem',
-                                    fontWeight: 600,
-                                    textTransform: 'none',
-                                    whiteSpace: 'nowrap',
-                                    '&:hover': {
-                                      bgcolor: '#f5f5f5',
-                                      border: '1.5px solid',
-                                      borderColor: '#221f20',
-                                      borderBottom: '3px solid',
-                                      borderBottomColor: '#221f20',
-                                    },
-                                    '&.Mui-disabled': {
-                                      border: '1.5px solid #e7e7e7',
-                                      borderBottom: '3px solid #e7e7e7',
-                                      cursor: 'not-allowed',
-                                      pointerEvents: 'auto',
-                                    },
-                                  }}
-                                >
-                                  Edit Amount
-                                </Button>
-
-                                {isPendingReview ? (
-                                  <>
-                                    <Button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleOpenRejectDialog(item);
-                                      }}
-                                      size="small"
-                                      variant="contained"
-                                      disabled={isDisabled || rejectLoading}
-                                      sx={{
-                                        px: 2,
-                                        py: 2,
-                                        bgcolor: '#ffffff',
-                                        color: '#D4321C',
-                                        border: '1.5px solid',
-                                        borderColor: '#e7e7e7',
-                                        borderBottom: '3px solid',
-                                        borderBottomColor: '#e7e7e7',
-                                        borderRadius: 1,
-                                        fontSize: '0.85rem',
-                                        fontWeight: 600,
-                                        textTransform: 'none',
-                                        '&:hover': {
-                                          bgcolor: '#f5f5f5',
-                                          border: '1.5px solid',
-                                          borderColor: '#D4321C',
-                                          borderBottom: '3px solid',
-                                          borderBottomColor: '#D4321C',
-                                        },
-                                        '&.Mui-disabled': {
-                                          border: '1.5px solid #e7e7e7',
-                                          borderBottom: '3px solid #e7e7e7',
-                                          cursor: 'not-allowed',
-                                          pointerEvents: 'auto',
-                                        },
-                                      }}
-                                    >
-                                      Reject
-                                    </Button>
-                                    <LoadingButton
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleApproveAgreement(item);
-                                      }}
-                                      size="small"
-                                      variant="contained"
-                                      loading={approveLoading}
-                                      disabled={isDisabled}
-                                      sx={{
-                                        px: 2,
-                                        py: 2,
-                                        bgcolor: '#FFFFFF',
-                                        color: '#1ABF66',
-                                        border: '1.5px solid',
-                                        borderColor: '#E7E7E7',
-                                        borderBottom: '3px solid',
-                                        borderBottomColor: '#E7E7E7',
-                                        borderRadius: 1,
-                                        fontSize: '0.85rem',
-                                        fontWeight: 600,
-                                        textTransform: 'none',
-                                        '&:hover': {
-                                          bgcolor: '#f5f5f5',
-                                          border: '1.5px solid',
-                                          borderColor: '#1ABF66',
-                                          borderBottom: '3px solid',
-                                          borderBottomColor: '#1ABF66',
-                                        },
-                                        '&.Mui-disabled': {
-                                          border: '1.5px solid #e7e7e7',
-                                          borderBottom: '3px solid #e7e7e7',
-                                          cursor: 'not-allowed',
-                                          pointerEvents: 'auto',
-                                        },
-                                      }}
-                                    >
-                                      Approve
-                                    </LoadingButton>
-                                  </>
-                                ) : (
-                                  <Button
-                                    onClick={() => handleSendAgreement(item)}
-                                    size="small"
-                                    variant="contained"
-                                    startIcon={
-                                      <Iconify
-                                        icon="bx:send"
-                                        sx={{
-                                          color:
-                                            isDisabled || !isAmountValid
-                                              ? 'rgba(19, 64, 255, 0.5)'
-                                              : '#1340FF',
-                                        }}
-                                      />
-                                    }
-                                    disabled={isDisabled || !isAmountValid}
-                                    sx={{
-                                      px: 1.5,
-                                      py: 2,
-                                      bgcolor: '#FFFFFF',
-                                      color: '#1340FF',
-                                      border: '1.5px solid',
-                                      borderColor: '#E7E7E7',
-                                      borderBottom: '3px solid',
-                                      borderBottomColor: '#E7E7E7',
-                                      borderRadius: 1.15,
-                                      fontSize: '0.85rem',
-                                      fontWeight: 600,
-                                      textTransform: 'none',
-                                      '&:hover': {
-                                        bgcolor: '#f5f5f5',
-                                        border: '1.5px solid',
-                                        borderColor: '#1340FF',
-                                        borderBottom: '3px solid',
-                                        borderBottomColor: '#1340FF',
-                                      },
-                                      '&.Mui-disabled': {
-                                        border: '1.5px solid #e7e7e7',
-                                        borderBottom: '3px solid #e7e7e7',
-                                        color: 'rgba(19, 64, 255, 0.5)',
-                                        cursor: 'not-allowed',
-                                        pointerEvents: 'auto',
-                                      },
-                                    }}
-                                  >
-                                    {item.isSent ? 'Resend' : 'Send'}
-                                  </Button>
-                                )}
-                              </>
-                            )}
-                          </Stack>
-                        ) : (
-                          <Stack direction="row" gap={1}>
-                            <IconButton
-                              onClick={() => handleViewAgreement(item?.agreementUrl, item)}
-                            >
-                              <Iconify icon="hugeicons:view" />
-                            </IconButton>
-                            <IconButton
-                              color="warning"
-                              onClick={() => handleEditAgreement(item)}
-                              disabled={isDisabled}
-                              sx={{
-                                '&.Mui-disabled': { cursor: 'not-allowed', pointerEvents: 'auto' },
-                              }}
-                            >
-                              <Iconify icon="iconamoon:edit-light" />
-                            </IconButton>
-
-                            {isPendingReview ? (
-                              <>
-                                <IconButton
-                                  color="error"
-                                  onClick={() => handleOpenRejectDialog(item)}
-                                  disabled={isDisabled || rejectLoading}
-                                  sx={{
-                                    '&.Mui-disabled': {
-                                      cursor: 'not-allowed',
-                                      pointerEvents: 'auto',
-                                    },
-                                  }}
-                                >
-                                  <Iconify icon="solar:close-circle-bold" />
-                                </IconButton>
-                                <IconButton
-                                  color="success"
-                                  onClick={() => handleApproveAgreement(item)}
-                                  disabled={isDisabled}
-                                  sx={{
-                                    '&.Mui-disabled': {
-                                      cursor: 'not-allowed',
-                                      pointerEvents: 'auto',
-                                    },
-                                  }}
-                                >
-                                  <Iconify icon="solar:check-circle-bold" />
-                                </IconButton>
-                              </>
-                            ) : (
-                              <IconButton
-                                color={item.isSent ? 'warning' : 'primary'}
-                                onClick={() => handleSendAgreement(item)}
-                                disabled={isDisabled || !isAmountValid}
-                                sx={{
-                                  '&.Mui-disabled': {
-                                    cursor: 'not-allowed',
-                                    pointerEvents: 'auto',
-                                  },
-                                }}
-                              >
-                                <Iconify icon="bx:send" />
-                              </IconButton>
-                            )}
-                          </Stack>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      Agreement PDF
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredData.map((item, index) => (
+                    <AgreementRow
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      visibleColumns={visibleColumns}
+                      campaign={campaign}
+                      isDisabled={isDisabled}
+                      smUp={smUp}
+                      ctaShadow={ctaShadow}
+                      isSelected={table.selected.includes(item.userId)}
+                      selectionCategory={selectionCategory}
+                      isEligibleForAdditional={eligibleForAdditionalIds.has(item.userId)}
+                      isReceiptSaving={receiptToggleId === item.id}
+                      approveLoading={approveLoading}
+                      rejectLoading={rejectLoading}
+                      actions={rowActions}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </ColumnReorderProvider>
           </TableContainer>
         )}
+        {statusSizer}
       </Stack>
 
       <AgreementDialog
@@ -2680,15 +2966,6 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
               }}
             >
               <Stack direction="row" alignItems="center" spacing={0.75}>
-                <Iconify icon="mdi:account-group-outline" width={18} sx={{ color: '#8e8e93' }} />
-                <Typography variant="body2" sx={{ color: '#8e8e93', fontWeight: 500 }}>
-                  Creators:
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 700 }}>
-                  {footerTotals.totalCreators}
-                </Typography>
-              </Stack>
-              <Stack direction="row" alignItems="center" spacing={0.75}>
                 <Iconify icon="mdi:star-four-points-outline" width={18} sx={{ color: '#8e8e93' }} />
                 <Typography variant="body2" sx={{ color: '#8e8e93', fontWeight: 500 }}>
                   Credits:
@@ -2704,6 +2981,21 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                 </Typography>
               </Stack>
               <Stack direction="row" alignItems="center" spacing={0.75}>
+                <Iconify
+                  icon="mdi:calculator-variant-outline"
+                  width={18}
+                  sx={{ color: '#8e8e93' }}
+                />
+                <Typography variant="body2" sx={{ color: '#8e8e93', fontWeight: 500 }}>
+                  Budget:
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 700 }}>
+                  {campaignBudget != null
+                    ? `${formattedBudgets}/${formatMoney(campaignBudget, campaignBudgetCurrency)}`
+                    : formattedBudgets}
+                </Typography>
+              </Stack>
+              <Stack direction="row" alignItems="center" spacing={0.75}>
                 <Iconify icon="mdi:wallet-outline" width={18} sx={{ color: '#8e8e93' }} />
                 <Typography variant="body2" sx={{ color: '#8e8e93', fontWeight: 500 }}>
                   Total:
@@ -2711,6 +3003,17 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                 <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 700 }}>
                   {formattedAmounts}
                 </Typography>
+                {footerTotals.budgetRemaining != null && (
+                  <Typography
+                    variant="body2"
+                    sx={{ color: footerTotals.budgetRemainingColor, fontWeight: 500 }}
+                  >
+                    {`(${formatMoney(
+                      Math.abs(footerTotals.budgetRemaining),
+                      campaignBudgetCurrency
+                    )} ${footerTotals.budgetRemaining >= 0 ? 'left' : 'over'})`}
+                  </Typography>
+                )}
               </Stack>
             </Stack>
           </Box>,

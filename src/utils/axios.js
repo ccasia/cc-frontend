@@ -371,6 +371,7 @@ export const endpoints = {
     creatorAgreement: (id) => `/api/campaign/creatorAgreements/${id}`,
     allcreatorAgreement: '/api/campaign/getCreatorAgreements',
     updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
+    agreementBudget: (agreementId) => `/api/campaign/agreement/${agreementId}/budget`,
     sendAgreement: `/api/campaign/sendAgreement`,
     sendAdditionalAgreement: `/api/campaign/sendAdditionalAgreement`,
     resendAgreement: `/api/campaign/resendAgreement`,

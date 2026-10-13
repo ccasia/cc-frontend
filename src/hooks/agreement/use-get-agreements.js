@@ -21,9 +21,10 @@ export const useGetAgreements = (campaignId) => {
     enabled: !!campaignId,
   });
 
-  const mutate = useCallback(() => {
-    query.invalidateQueries({ queryKey: ['agreements', campaignId] });
-  }, [query, campaignId]);
+  const mutate = useCallback(
+    () => query.invalidateQueries({ queryKey: ['agreements', campaignId] }),
+    [query, campaignId]
+  );
 
   const memoizedValue = useMemo(
     () => ({

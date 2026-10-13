@@ -1,73 +1,70 @@
-import React from 'react';
 import PropTypes from 'prop-types';
+import React, { forwardRef } from 'react';
 
 import Stack from '@mui/material/Stack';
 import TableCell from '@mui/material/TableCell';
 
 import Iconify from 'src/components/iconify';
 
-const SortableHeader = ({
-  column,
-  label,
-  width,
-  minWidth,
-  sortColumn,
-  sortDirection,
-  onSort,
-  sx = {},
-  align,
-}) => {
-  const isActive = sortColumn === column;
+// Extra props (and the ref) go to the TableCell, e.g. drag handlers from a column-reorder wrapper.
+const SortableHeader = forwardRef(
+  (
+    { column, label, width, minWidth, sortColumn, sortDirection, onSort, sx = {}, align, ...other },
+    ref
+  ) => {
+    const isActive = sortColumn === column;
 
-  // If width/minWidth are provided as props (non-object), use them; otherwise let sx handle it
-  const baseStyles = {
-    py: { xs: 0.5, sm: 1 },
-    px: { xs: 1, sm: 2 },
-    color: '#221f20',
-    fontWeight: 600,
-    whiteSpace: 'nowrap',
-    bgcolor: '#f5f5f5',
-    cursor: 'pointer',
-    userSelect: 'none',
-    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-    '&:hover': {
-      bgcolor: '#ebebeb',
-    },
-  };
+    // If width/minWidth are provided as props (non-object), use them; otherwise let sx handle it
+    const baseStyles = {
+      py: { xs: 0.5, sm: 1 },
+      px: { xs: 1, sm: 2 },
+      color: '#221f20',
+      fontWeight: 600,
+      whiteSpace: 'nowrap',
+      bgcolor: '#f5f5f5',
+      cursor: 'pointer',
+      userSelect: 'none',
+      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+      '&:hover': {
+        bgcolor: '#ebebeb',
+      },
+    };
 
-  // Add width/minWidth if they're simple values (not responsive objects)
-  if (width && typeof width !== 'object') {
-    baseStyles.width = width;
+    // Add width/minWidth if they're simple values (not responsive objects)
+    if (width && typeof width !== 'object') {
+      baseStyles.width = width;
+    }
+    if (minWidth && typeof minWidth !== 'object') {
+      baseStyles.minWidth = minWidth;
+    }
+
+    return (
+      <TableCell
+        ref={ref}
+        onClick={() => onSort(column)}
+        {...other}
+        sx={{
+          ...baseStyles,
+          ...sx,
+        }}
+      >
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+          <span>{label}</span>
+          <Iconify
+            icon={
+              isActive && sortDirection === 'desc' ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'
+            }
+            width={16}
+            sx={{
+              color: isActive ? '#203ff5' : '#8E8E93',
+              transition: 'color 0.2s',
+            }}
+          />
+        </Stack>
+      </TableCell>
+    );
   }
-  if (minWidth && typeof minWidth !== 'object') {
-    baseStyles.minWidth = minWidth;
-  }
-
-  return (
-    <TableCell
-      onClick={() => onSort(column)}
-
-      sx={{
-        ...baseStyles,
-        ...sx,
-      }}
-    >
-      <Stack direction="row" alignItems="center" spacing={0.5}>
-        <span>{label}</span>
-        <Iconify
-          icon={
-            isActive && sortDirection === 'desc' ? 'eva:chevron-up-fill' : 'eva:chevron-down-fill'
-          }
-          width={16}
-          sx={{
-            color: isActive ? '#203ff5' : '#8E8E93',
-            transition: 'color 0.2s',
-          }}
-        />
-      </Stack>
-    </TableCell>
-  );
-};
+);
 
 SortableHeader.propTypes = {
   column: PropTypes.string.isRequired,
