@@ -29,7 +29,7 @@ export default function RowNotesPreview({ summary, onOpen }) {
     onOpen();
   };
 
-  const latest = summary?.lastNote ?? summary?.pinned;
+  const latest = summary?.pinned ?? summary?.lastNote;
 
   if (!latest) {
     return (

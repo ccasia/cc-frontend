@@ -34,6 +34,8 @@ export const encodeMentions = (draft, participants = []) =>
 // The @word being typed just before the caret, if any.
 export const getMentionQuery = (value, caret) => {
   const match = /(^|\s)@([^\s@]*)$/.exec(value.slice(0, caret));
+
   if (!match) return null;
+
   return { start: caret - match[2].length - 1, query: match[2] };
 };

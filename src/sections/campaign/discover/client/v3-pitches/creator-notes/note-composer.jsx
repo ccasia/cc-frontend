@@ -180,6 +180,8 @@ export default function NoteComposer({ participants, posting, onSubmit }) {
             <Stack
               key={participant.id}
               id={`${listId}-${index}`}
+              initial={{ x: 100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
               role="option"
               aria-selected={index === active}
               direction="row"

@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import React, { useRef, useEffect } from 'react';
+import { m, MotionConfig, AnimatePresence } from 'framer-motion';
 
 import {
   Box,
@@ -33,15 +34,35 @@ const labelSx = {
   color: NOTE_COLORS.secondary,
 };
 
+const EASE = [0.4, 0, 0.2, 1];
+
+// Rises in with a short accent tint, so a note that lands mid-read is easy to spot.
+const enterFrom = { opacity: 0, y: 8, backgroundColor: 'rgba(243, 245, 255, 1)' };
+const enterTo = {
+  opacity: 1,
+  y: 0,
+  backgroundColor: 'rgba(243, 245, 255, 0)',
+  transition: {
+    duration: 0.28,
+    ease: EASE,
+    backgroundColor: { duration: 1.4, delay: 0.3, ease: 'easeOut' },
+  },
+};
+const exitTo = { opacity: 0, scale: 0.98, transition: { duration: 0.18 } };
+
 const getHandle = (user) => {
   const creator = user?.creator;
   const username = creator?.instagramUser?.username || creator?.tiktokUser?.username;
   return username ? `@${username}` : '';
 };
 
+const MotionStack = m(Stack);
+
 function NoteItem({ note, isMine, onPin }) {
   return (
-    <Stack
+    <MotionStack
+      initial={{ opacity: 0, y: 100 }}
+      animate={{ opacity: 1, y: 0 }}
       direction="row"
       spacing={1.25}
       sx={{
@@ -88,7 +109,7 @@ function NoteItem({ note, isMine, onPin }) {
           <NoteText text={note.text} />
         </Typography>
       </Box>
-    </Stack>
+    </MotionStack>
   );
 }
 
@@ -117,10 +138,26 @@ export default function CreatorNotesDrawer({ campaignId, creator: creatorProp, o
   const participants = thread?.participants ?? [];
   const following = thread?.following ?? true;
 
+  // Whatever was there when this creator's thread first loaded does not animate.
+  const loadedRef = useRef({ creatorId: null, noteIds: new Set(), pinnedId: null });
+  if (thread && loadedRef.current.creatorId !== creatorId) {
+    loadedRef.current = {
+      creatorId,
+      noteIds: new Set([...notes, pinned].filter(Boolean).map((n) => n.id)),
+      pinnedId: pinned?.id ?? null,
+    };
+  }
+  const isFresh = (id) => !loadedRef.current.noteIds.has(id);
+
+  const scrolledForRef = useRef(null);
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [notes.length, creatorId]);
+    if (!el || !thread) return;
+    // Jump on open, glide when a note arrives.
+    const firstForCreator = scrolledForRef.current !== creatorId;
+    scrolledForRef.current = creatorId;
+    el.scrollTo({ top: el.scrollHeight, behavior: firstForCreator ? 'auto' : 'smooth' });
+  }, [notes.length, creatorId, thread]);
 
   const fail = (message) => enqueueSnackbar(message, { variant: 'error' });
 
@@ -183,9 +220,19 @@ export default function CreatorNotesDrawer({ campaignId, creator: creatorProp, o
     }
 
     return (
-      <>
+      <AnimatePresence initial={false} mode="popLayout">
         {pinned && (
-          <Box sx={{ bgcolor: NOTE_COLORS.surface, borderRadius: 1.25, px: 1.75, py: 1.5 }}>
+          <Box
+            key={`pinned-${pinned.id}`}
+            component={m.div}
+            layout
+            initial={
+              pinned.id === loadedRef.current.pinnedId ? false : { opacity: 0, y: -6, scale: 0.98 }
+            }
+            animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.25, ease: EASE } }}
+            exit={exitTo}
+            sx={{ bgcolor: NOTE_COLORS.surface, borderRadius: 1.25, px: 1.75, py: 1.5 }}
+          >
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography sx={labelSx}>Sidenote · Pinned</Typography>
               <ButtonBase
@@ -214,14 +261,24 @@ export default function CreatorNotesDrawer({ campaignId, creator: creatorProp, o
         )}
 
         {notes.map((note) => (
-          <NoteItem
+          <Box
             key={note.id}
-            note={note}
-            isMine={note.author?.id === user?.id}
-            onPin={(n) => handlePin(n, true)}
-          />
+            component={m.div}
+            layout="position"
+            initial={isFresh(note.id) ? enterFrom : false}
+            animate={enterTo}
+            exit={exitTo}
+            // Room for the tint to show around the text.
+            sx={{ mx: -1, px: 1, py: 0.5, borderRadius: 1 }}
+          >
+            <NoteItem
+              note={note}
+              isMine={note.author?.id === user?.id}
+              onPin={(n) => handlePin(n, true)}
+            />
+          </Box>
         ))}
-      </>
+      </AnimatePresence>
     );
   };
 
@@ -308,9 +365,16 @@ export default function CreatorNotesDrawer({ campaignId, creator: creatorProp, o
         )}
       </Box>
 
-      <Stack ref={scrollRef} spacing={2.25} sx={{ flex: 1, overflowY: 'auto', px: 3, py: 2 }}>
-        {renderBody()}
-      </Stack>
+      <MotionConfig reducedMotion="user">
+        <Stack
+          ref={scrollRef}
+          spacing={1.25}
+          // popLayout positions exiting notes against this box.
+          sx={{ position: 'relative', flex: 1, overflowY: 'auto', px: 3, py: 2 }}
+        >
+          {renderBody()}
+        </Stack>
+      </MotionConfig>
 
       <NoteComposer
         key={creatorId}
