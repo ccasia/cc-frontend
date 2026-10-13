@@ -75,13 +75,14 @@ const CampaignPerformanceTable = () => {
 
         if (!isInstagramPost && !isTiktokPost) return false;
 
-        // Only show creators who have connected their media kit for the relevant platform
-        if (isInstagramPost && !submission.isInstagramConnected) return false;
-        if (isTiktokPost && !isInstagramPost && !submission.isTiktokConnected) return false;
+        // Stored metrics (scraped or API snapshots) work without a connected account
+        if (!submission.hasStoredMetrics) {
+          if (isInstagramPost && !submission.isInstagramConnected) return false;
+          if (isTiktokPost && !isInstagramPost && !submission.isTiktokConnected) return false;
 
-        // Exclude reports where token validation already failed on backend
-        if (isInstagramPost && submission.isInstagramTokenValid === false) return false;
-        if (isTiktokPost && !isInstagramPost && submission.isTiktokTokenValid === false) return false;
+          if (isInstagramPost && submission.isInstagramTokenValid === false) return false;
+          if (isTiktokPost && !isInstagramPost && submission.isTiktokTokenValid === false) return false;
+        }
 
         // Filter by company/client association
         if (user?.role === 'client') {
@@ -1195,7 +1196,7 @@ const CampaignPerformanceTable = () => {
                 }}
               >
                 {selectedCampaign === 'all'
-                  ? 'Campaigns with completed submissions from creators with connected social accounts will appear here'
+                  ? 'Campaigns with posted content and performance data will appear here'
                   : 'Try selecting a different campaign or check "All Campaigns"'}
               </Typography>
             </Box>

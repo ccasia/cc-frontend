@@ -161,9 +161,12 @@ export const PostViewsLineChart = ({
       }
     });
 
-    const padding = (maxViews - minViews) * 0.1;
-    const yMin = minViews === Infinity ? 0 : Math.floor(minViews);
-    const yMax = maxViews === -Infinity ? 100 : Math.ceil(maxViews + padding);
+    // A flat line (or one point) has no range, so pad around the value instead
+    const hasViews = maxViews !== -Infinity;
+    const range = maxViews - minViews;
+    const padding = range > 0 ? range * 0.1 : Math.max(maxViews * 0.1, 10);
+    const yMin = hasViews ? Math.max(0, Math.floor(minViews - (range > 0 ? 0 : padding))) : 0;
+    const yMax = hasViews ? Math.ceil(maxViews + padding) : 100;
 
     return {
       weekData,
@@ -269,7 +272,7 @@ export const PostViewsLineChart = ({
 
       {/* Line Chart */}
       <ResponsiveContainer width="100%" height={500}>
-        <LineChart data={chartData.weekData} margin={{ top: 30, right: 5, left: -10, bottom: 40 }}>
+        <LineChart data={chartData.weekData} margin={{ top: 30, right: 20, left: 0, bottom: 0 }}>
           <XAxis
             dataKey="day"
             tick={<CustomXAxisTick chartData={chartData} />}
@@ -286,6 +289,7 @@ export const PostViewsLineChart = ({
             axisLine={{ stroke: 'none' }}
             tickLine={{ stroke: 'none' }}
             tickFormatter={formatViews}
+            width={Math.max(formatViews(chartData.yMin).length, formatViews(chartData.yMax).length) * 10 + 8}
           />
 
           <Tooltip content={<CustomTooltip />} />

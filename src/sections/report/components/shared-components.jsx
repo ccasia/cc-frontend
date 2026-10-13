@@ -1,6 +1,10 @@
 /* eslint-disable react/prop-types */
 // components/reporting/SharedComponents.jsx
-import { Box, Divider, Typography } from '@mui/material';
+import { Box, Button, Divider, Typography } from '@mui/material';
+
+import Iconify from 'src/components/iconify';
+
+import PostMediaPlayer from './post-media-player';
 
 export const ContentInfoHeader = ({ content }) => (
   <Box
@@ -69,63 +73,45 @@ export const ContentInfoHeader = ({ content }) => (
 );
 
 export const ContentImageCard = ({ content }) => (
-  <Box
-    component="a"
-    href={content.pathname || '#'}
-    target="_blank"
-    rel="noopener noreferrer"
-    sx={{
-      height: 'auto',
-      boxShadow: 'none',
-      display: 'flex',
-      flexDirection: 'column',
-      textDecoration: 'none',
-      cursor: content.pathname ? 'pointer' : 'default',
-    }}
-  >
-    <Box
-      sx={{
-        overflow: 'hidden',
-        height: 623,
-        '&:hover .media-el': { transform: 'scale(1.05)' },
-      }}
-    >
+  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ overflow: 'hidden', height: 623, bgcolor: 'black' }}>
       {content.videoDraftLink ? (
-        <Box
-          component="video"
+        <PostMediaPlayer
           src={content.videoDraftLink}
-          controls
-          autoPlay
-          muted
-          loop
-          onClick={(e) => e.stopPropagation()}
-          className="media-el"
-          sx={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: 'block',
-            transition: 'transform 0.4s ease',
-          }}
+          poster={content.mediaUrl}
+          label={`${content.creatorName || 'Creator'} post video`}
+          postUrl={content.pathname}
+          platform={content.account}
         />
       ) : (
         <Box
           component="img"
           src={content.mediaUrl}
           alt={content.caption || 'Content'}
-          className="media-el"
-          sx={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: 'block',
-            transition: 'transform 0.4s ease',
-          }}
+          sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
         />
       )}
     </Box>
 
-    <Box sx={{ height: 75, overflow: 'hidden' }}>
+    {/* The video player carries its own post link */}
+    {content.pathname && !content.videoDraftLink && (
+      <Button
+        component="a"
+        href={content.pathname}
+        target="_blank"
+        rel="noopener noreferrer"
+        variant="outlined"
+        startIcon={
+          <Iconify icon={content.account === 'TikTok' ? 'ic:baseline-tiktok' : 'mdi:instagram'} />
+        }
+        endIcon={<Iconify icon="eva:external-link-fill" width={16} />}
+        sx={{ mt: 2, alignSelf: 'flex-start', borderRadius: 1, color: '#231F20', borderColor: '#E7E7E7' }}
+      >
+        View on {content.account || 'platform'}
+      </Button>
+    )}
+
+    {content.caption && (
       <Typography
         sx={{
           fontSize: 14,
@@ -134,15 +120,13 @@ export const ContentImageCard = ({ content }) => (
           lineHeight: 1.4,
           display: '-webkit-box',
           overflow: 'hidden',
-          textOverflow: 'ellipsis',
           WebkitLineClamp: 3,
           WebkitBoxOrient: 'vertical',
         }}
       >
-        {content.caption ||
-          'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna.'}
+        {content.caption}
       </Typography>
-    </Box>
+    )}
   </Box>
 );
 
