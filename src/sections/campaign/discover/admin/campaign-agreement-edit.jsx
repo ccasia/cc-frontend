@@ -653,9 +653,16 @@ const CampaignAgreementEdit = ({
     }
   });
 
+  const handleClose = () => {
+    if (loading.value) return;
+    handleSavedValue();
+    dialog.onFalse();
+  };
+
   return (
     <Dialog
       open={dialog.value}
+      onClose={handleClose}
       fullWidth
       maxWidth="sm"
       PaperProps={{
@@ -669,10 +676,7 @@ const CampaignAgreementEdit = ({
         <Box position="relative">
           <IconButton
             sx={{ position: 'absolute', top: 20, right: 10, zIndex: 10 }}
-            onClick={() => {
-              handleSavedValue();
-              dialog.onFalse();
-            }}
+            onClick={handleClose}
           >
             <Iconify icon="ci:close-md" width={20} />
           </IconButton>
