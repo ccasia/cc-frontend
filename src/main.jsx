@@ -10,11 +10,6 @@ import App from './app';
 // ----------------------------------------------------------------------
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-// const tagManagerArgs = {
-//   gtmId: "GTM-WQB496XK", 
-// };
-
-// TagManager.initialize(tagManagerArgs);
 
 root.render(
   <HelmetProvider>
