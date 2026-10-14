@@ -13,6 +13,7 @@ import {
   Dialog,
   Divider,
   TextField,
+  ButtonBase,
   IconButton,
   Typography,
   InputAdornment,
@@ -262,9 +263,44 @@ ReceiptFormDialog.propTypes = {
 
 // ----------------------------------------------------------------------
 
-// Flat section in the video card's right column — same label style and white surfaces as
-// the "Post Caption" field above it, so it reads as part of the card rather than a box in a box.
-export default function ReimbursementSection({ reimbursement, campaign }) {
+// Status pill: tinted background + readable text (the raw yellow is too light for text)
+const STATUS_PILL = {
+  DRAFT: { bg: COLORS.surfaceSubtle, color: COLORS.textSecondary },
+  PENDING_REVIEW: { bg: COLORS.noteBg, color: COLORS.noteText },
+  APPROVED: { bg: `${COLORS.success}1A`, color: '#0E8A47' },
+  REJECTED: { bg: `${COLORS.danger}14`, color: COLORS.dangerText },
+};
+
+function StatusPill({ status, label }) {
+  const pill = STATUS_PILL[status] || STATUS_PILL.DRAFT;
+  return (
+    <Box
+      component="span"
+      sx={{
+        px: 1,
+        py: 0.25,
+        borderRadius: 10,
+        fontFamily: FONTS.body,
+        fontSize: 12,
+        fontWeight: 600,
+        whiteSpace: 'nowrap',
+        bgcolor: pill.bg,
+        color: pill.color,
+      }}
+    >
+      {label}
+    </Box>
+  );
+}
+
+StatusPill.propTypes = {
+  status: PropTypes.string,
+  label: PropTypes.string,
+};
+
+// Receipts tab layout: receipt list on the left, sticky summary (total, breakdown, submit) on the right.
+// `title` is the round name when the creator has more than one round with receipts.
+export default function ReimbursementSection({ reimbursement, campaign, title }) {
   const [formState, setFormState] = useState({ open: false, mode: 'add', receipt: null });
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -277,7 +313,17 @@ export default function ReimbursementSection({ reimbursement, campaign }) {
   // (receipts required late) — then they're paid on a separate reimbursement invoice.
   const isLocked = Boolean(reimbursement?.billed);
   const paidSeparately = Boolean(reimbursement?.invoice || reimbursement?.reimbursementInvoice);
-  const summary = getReimbursementSummaryStatus(reimbursement);
+  const summaryStatus = getReimbursementSummaryStatus(reimbursement);
+  // Same pill colours as the receipt rows, picked from the round-level status colour
+  const summary = {
+    label: summaryStatus.label,
+    status:
+      {
+        [COLORS.success]: 'APPROVED',
+        [COLORS.danger]: 'REJECTED',
+        [COLORS.pending]: 'PENDING_REVIEW',
+      }[summaryStatus.color] || 'DRAFT',
+  };
 
   // Same key as useGetReimbursements(campaign.id) on the activity page
   const refresh = () => mutate(endpoints.reimbursement.list(campaign?.id));
@@ -321,33 +367,67 @@ export default function ReimbursementSection({ reimbursement, campaign }) {
         : 'Submitted for review. Each approved receipt is paid on the same invoice as your video.'
       : 'Add each receipt with its amount, then submit them all for review.';
 
+  const canAdd = !isSubmitted && !isLocked;
+  // What the creator stands to be paid — rejected receipts don't count
+  const claimedTotal = sumReceipts(receipts.filter((receipt) => receipt.status !== 'REJECTED'));
+  const breakdown = ['APPROVED', 'PENDING_REVIEW', 'REJECTED', 'DRAFT']
+    .map((status) => {
+      const items = receipts.filter((receipt) => receipt.status === status);
+      return { status, count: items.length, amount: sumReceipts(items) };
+    })
+    .filter((row) => row.count > 0);
+
+  // The invoice the receipts were billed on, once they are
+  const billedInvoiceId = receipts.find((receipt) => receipt.invoiceId)?.invoiceId;
+  const billedInvoice = [reimbursement?.invoice, reimbursement?.reimbursementInvoice].find(
+    (invoice) => invoice && invoice.id === billedInvoiceId
+  );
+
   const renderReceipt = (receipt, index) => {
     const status = RECEIPT_STATUS[receipt.status] || RECEIPT_STATUS.DRAFT;
     const canEditDraft = !isLocked && receipt.status === 'DRAFT';
     const canFixRejected = !isLocked && receipt.status === 'REJECTED';
 
+    const isRejected = receipt.status === 'REJECTED';
+
     return (
-      <Box key={receipt.id} sx={{ px: 1.25, py: 1, borderRadius: 1, bgcolor: COLORS.white }}>
-        <Stack direction="row" alignItems="center" spacing={1.25}>
+      <Box
+        key={receipt.id}
+        sx={{
+          p: 1.5,
+          borderRadius: 1.5,
+          bgcolor: COLORS.white,
+          border: `1px solid ${isRejected ? `${COLORS.danger}40` : COLORS.border}`,
+        }}
+      >
+        <Stack direction="row" alignItems="center" spacing={2}>
+          {/* Thumbnail — opens the file */}
           <Box
             component="a"
             href={receipt.fileUrl}
             target="_blank"
             rel="noopener"
             sx={{
-              width: 36,
-              height: 36,
+              width: 56,
+              height: 56,
               flexShrink: 0,
-              borderRadius: 0.75,
+              borderRadius: 1,
               overflow: 'hidden',
               bgcolor: COLORS.surfaceSubtle,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              transition: 'opacity .15s ease',
+              '&:hover': { opacity: 0.8 },
             }}
           >
             {isPdfReceipt(receipt) ? (
-              <Iconify icon="solar:document-text-bold" width={18} sx={{ color: COLORS.danger }} />
+              <Stack alignItems="center" spacing={0.25}>
+                <Iconify icon="solar:document-text-bold" width={22} sx={{ color: COLORS.danger }} />
+                <Typography sx={{ fontFamily: FONTS.body, fontSize: 9, fontWeight: 700, color: COLORS.textMuted }}>
+                  PDF
+                </Typography>
+              </Stack>
             ) : (
               <Box
                 component="img"
@@ -358,121 +438,253 @@ export default function ReimbursementSection({ reimbursement, campaign }) {
             )}
           </Box>
 
+          {/* Description wraps in full; receipt number + file name underneath */}
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography noWrap sx={{ fontSize: 14, fontWeight: 600, color: COLORS.ink }}>
+            <Typography
+              sx={{ fontFamily: FONTS.body, fontSize: 15, fontWeight: 600, color: COLORS.ink, wordBreak: 'break-word' }}
+            >
               {receipt.description}
             </Typography>
-            <Stack direction="row" alignItems="center" spacing={0.75}>
-              <Typography sx={{ fontSize: 12, color: COLORS.textSecondary }}>
-                {formatReceiptAmount(receipt.amount, currency)}
-              </Typography>
-              <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: COLORS.idle }} />
-              <Typography sx={{ fontSize: 12, fontWeight: 600, color: status.color }}>
-                {status.label}
-              </Typography>
-            </Stack>
+            <Typography noWrap sx={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted, mt: 0.25 }}>
+              Receipt {index + 1} · {receipt.fileName}
+            </Typography>
           </Box>
+
+          <Stack alignItems="flex-end" spacing={0.75} sx={{ flexShrink: 0 }}>
+            <Typography
+              sx={{
+                fontFamily: FONTS.body,
+                fontSize: 15,
+                fontWeight: 600,
+                color: isRejected ? COLORS.textMuted : COLORS.ink,
+                textDecoration: isRejected ? 'line-through' : 'none',
+              }}
+            >
+              {formatReceiptAmount(receipt.amount, currency)}
+            </Typography>
+            <StatusPill status={receipt.status} label={status.label} />
+          </Stack>
 
           {canEditDraft && (
             <Stack direction="row" sx={{ flexShrink: 0 }}>
               <IconButton size="small" onClick={() => openForm('edit', receipt)}>
-                <Iconify icon="solar:pen-linear" width={16} />
+                <Iconify icon="solar:pen-linear" width={18} />
               </IconButton>
               <IconButton
                 size="small"
                 onClick={() => handleRemove(receipt)}
                 disabled={removingId === receipt.id}
               >
-                <Iconify icon="solar:trash-bin-trash-linear" width={16} />
+                <Iconify icon="solar:trash-bin-trash-linear" width={18} />
               </IconButton>
             </Stack>
           )}
         </Stack>
 
-        {receipt.status === 'REJECTED' && (
-          <Box sx={{ mt: 1, pl: 6 }}>
-            <Typography sx={{ fontSize: 12, color: COLORS.dangerText }}>{receipt.rejectionReason}</Typography>
+        {/* Rejection reason + fix actions, inside the same card */}
+        {isRejected && (
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ sm: 'center' }}
+            spacing={1.5}
+            sx={{ mt: 1.5, px: 1.5, py: 1.25, borderRadius: 1, bgcolor: `${COLORS.danger}0D` }}
+          >
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography sx={{ fontFamily: FONTS.body, fontSize: 12, fontWeight: 700, color: COLORS.dangerText }}>
+                Rejected by admin
+              </Typography>
+              <Typography sx={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.ink, wordBreak: 'break-word' }}>
+                {receipt.rejectionReason}
+              </Typography>
+            </Box>
             {canFixRejected && (
-              <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
-                <Typography
-                  component="button"
-                  onClick={() => openForm('replace', receipt)}
-                  sx={{ p: 0, border: 0, bgcolor: 'transparent', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: COLORS.brand }}
-                >
-                  Replace
-                </Typography>
-                <Typography
-                  component="button"
+              <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+                <Button
                   onClick={() => handleRemove(receipt)}
                   disabled={removingId === receipt.id}
-                  sx={{ p: 0, border: 0, bgcolor: 'transparent', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: COLORS.textMuted }}
+                  sx={{ ...SECONDARY_BUTTON_SX, height: 36, minWidth: 0 }}
                 >
                   Remove
-                </Typography>
+                </Button>
+                <Button onClick={() => openForm('replace', receipt)} sx={{ ...PRIMARY_BUTTON_SX, height: 36, minWidth: 0 }}>
+                  Replace
+                </Button>
               </Stack>
             )}
-          </Box>
+          </Stack>
         )}
       </Box>
     );
   };
 
   return (
-    <Box sx={{ mb: 2 }}>
-      {/* Label row — same style as "Post Caption" */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
-        <Typography variant="body2" fontWeight="bold" color={COLORS.textSecondary}>
-          Reimbursement Receipts
-        </Typography>
-        {receipts.length > 0 && (
-          <Stack direction="row" alignItems="center" spacing={0.75}>
-            <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: summary.color }} />
-            <Typography variant="caption" fontWeight={600} sx={{ color: summary.color }}>
-              {summary.label}
+    <Box>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 3,
+          alignItems: 'start',
+          gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 320px' },
+        }}
+      >
+        {/* ---------------- Left: heading + receipts */}
+        <Box sx={{ minWidth: 0 }}>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Typography sx={{ fontFamily: FONTS.serif, fontSize: 32, fontWeight: 400, lineHeight: 1.1, color: COLORS.ink }}>
+              {title || 'Your receipts'}
             </Typography>
+            {receipts.length > 0 && <StatusPill status={summary.status} label={summary.label} />}
           </Stack>
-        )}
-      </Stack>
-      <Typography variant="caption" color={COLORS.textMuted} display="block" sx={{ mt: 0.25, mb: 1 }}>
-        {helperText}
-      </Typography>
+          <Typography sx={{ fontFamily: FONTS.body, fontSize: 14, color: COLORS.textSecondary, mt: 0.5, mb: 2.5 }}>
+            {helperText}
+          </Typography>
 
-      {receipts.length > 0 && (
-        <Stack spacing={0.75}>
-          {receipts.map(renderReceipt)}
-          {receipts.length > 1 && (
-            <Stack direction="row" justifyContent="space-between" sx={{ px: 0.5, pt: 0.25 }}>
-              <Typography variant="caption" color={COLORS.textSecondary}>
-                Total
+          {receipts.length > 0 ? (
+            <Stack spacing={1.25}>
+              {receipts.map(renderReceipt)}
+
+              {canAdd && (
+                <ButtonBase
+                  onClick={() => openForm('add')}
+                  sx={{
+                    py: 1.75,
+                    borderRadius: 1.5,
+                    border: `1.5px dashed ${COLORS.borderStrong}`,
+                    fontFamily: FONTS.body,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: COLORS.brand,
+                    gap: 0.75,
+                    transition: 'border-color .15s ease, background-color .15s ease',
+                    '&:hover': { borderColor: COLORS.brand, bgcolor: COLORS.brandTint },
+                  }}
+                >
+                  <Iconify icon="mingcute:add-line" width={18} />
+                  Add another receipt
+                </ButtonBase>
+              )}
+            </Stack>
+          ) : (
+            // Empty state — the whole tile opens the upload dialog
+            <ButtonBase
+              disabled={!canAdd}
+              onClick={() => openForm('add')}
+              sx={{
+                width: '100%',
+                py: 6,
+                px: 3,
+                borderRadius: 2,
+                flexDirection: 'column',
+                border: `1.5px dashed ${COLORS.borderStrong}`,
+                bgcolor: COLORS.white,
+                transition: 'border-color .15s ease, background-color .15s ease',
+                '&:hover': { borderColor: COLORS.brand, bgcolor: COLORS.brandTint },
+              }}
+            >
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  mb: 1.5,
+                  borderRadius: '50%',
+                  bgcolor: COLORS.brandTint,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Iconify icon="solar:bill-list-linear" width={28} sx={{ color: COLORS.brand }} />
+              </Box>
+              <Typography sx={{ fontFamily: FONTS.body, fontSize: 16, fontWeight: 600, color: COLORS.ink }}>
+                Add your first receipt
               </Typography>
-              <Typography variant="caption" fontWeight={700}>
-                {formatReceiptAmount(sumReceipts(receipts), currency)}
+              <Typography sx={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.textMuted, mt: 0.5 }}>
+                A photo or PDF of each receipt, up to 10MB
+              </Typography>
+            </ButtonBase>
+          )}
+        </Box>
+
+        {/* ---------------- Right: summary */}
+        <Box
+          sx={{
+            p: 3,
+            borderRadius: 2,
+            bgcolor: COLORS.paper,
+            position: { md: 'sticky' },
+            top: { md: 24 },
+          }}
+        >
+          <Typography sx={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.textSecondary }}>
+            Total claimed
+          </Typography>
+          <Typography sx={{ fontFamily: FONTS.serif, fontSize: 44, lineHeight: 1.1, color: COLORS.ink, mt: 0.5 }}>
+            {formatReceiptAmount(claimedTotal, currency)}
+          </Typography>
+          <Typography sx={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.textMuted, mt: 0.5 }}>
+            {receipts.length} receipt{receipts.length === 1 ? '' : 's'}
+          </Typography>
+
+          {breakdown.length > 0 && (
+            <>
+              <Divider sx={{ my: 2, borderStyle: 'dashed', borderColor: COLORS.divider }} />
+              <Stack spacing={1}>
+                {breakdown.map((row) => (
+                  <Stack key={row.status} direction="row" alignItems="center" spacing={1}>
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        flexShrink: 0,
+                        bgcolor: (RECEIPT_STATUS[row.status] || RECEIPT_STATUS.DRAFT).color,
+                      }}
+                    />
+                    <Typography sx={{ flex: 1, fontFamily: FONTS.body, fontSize: 13, color: COLORS.textSecondary }}>
+                      {(RECEIPT_STATUS[row.status] || RECEIPT_STATUS.DRAFT).label} ({row.count})
+                    </Typography>
+                    <Typography sx={{ fontFamily: FONTS.body, fontSize: 13, fontWeight: 600, color: COLORS.ink }}>
+                      {formatReceiptAmount(row.amount, currency)}
+                    </Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            </>
+          )}
+
+          {billedInvoice && (
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1}
+              sx={{ mt: 2, px: 1.5, py: 1, borderRadius: 1, bgcolor: COLORS.white }}
+            >
+              <Iconify icon="solar:check-circle-bold" width={18} sx={{ color: COLORS.success, flexShrink: 0 }} />
+              <Typography sx={{ fontFamily: FONTS.body, fontSize: 13, color: COLORS.ink }}>
+                Billed on <b>{billedInvoice.invoiceNumber}</b>
               </Typography>
             </Stack>
           )}
-        </Stack>
-      )}
 
-      {!isSubmitted && !isLocked && (
-        <Stack direction="row" spacing={1} sx={{ mt: receipts.length ? 1.25 : 0 }}>
-          <Button
-            fullWidth
-            startIcon={<Iconify icon="mingcute:add-line" width={16} />}
-            onClick={() => openForm('add')}
-            sx={{ ...SECONDARY_BUTTON_SX, height: 40 }}
-          >
-            Add Receipt
-          </Button>
-          <Button
-            fullWidth
-            disabled={!receipts.length}
-            onClick={() => setConfirmSubmit(true)}
-            sx={{ ...PRIMARY_BUTTON_SX, height: 40 }}
-          >
-            Submit{receipts.length ? ` (${receipts.length})` : ''}
-          </Button>
-        </Stack>
-      )}
+          {canAdd && (
+            <>
+              <Button
+                fullWidth
+                disabled={!receipts.length}
+                onClick={() => setConfirmSubmit(true)}
+                sx={{ ...PRIMARY_BUTTON_SX, mt: 2.5 }}
+              >
+                {receipts.length
+                  ? `Submit ${receipts.length} receipt${receipts.length > 1 ? 's' : ''}`
+                  : 'Submit receipts'}
+              </Button>
+              <Typography sx={{ fontFamily: FONTS.body, fontSize: 12, color: COLORS.textMuted, mt: 1, textAlign: 'center' }}>
+                You can&apos;t add more receipts after submitting.
+              </Typography>
+            </>
+          )}
+        </Box>
+      </Box>
 
       <ReceiptFormDialog
         open={formState.open}
@@ -507,4 +719,5 @@ export default function ReimbursementSection({ reimbursement, campaign }) {
 ReimbursementSection.propTypes = {
   reimbursement: PropTypes.object.isRequired,
   campaign: PropTypes.object,
+  title: PropTypes.string,
 };

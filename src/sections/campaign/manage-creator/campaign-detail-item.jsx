@@ -10,6 +10,7 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+import { useGetReimbursements } from 'src/hooks/use-get-reimbursements';
 import { useGetCreatorLogistic } from 'src/hooks/use-get-creator-logistic';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -21,6 +22,7 @@ import ConfirmReservationModal from 'src/sections/logistics/dialogs/confirm-rese
 import CampaignInfo from './campaign-info';
 import CampaignMyTasks from './campaign-myTask';
 import CampaignV4Activity from './v4/campaign-v4-activity';
+import CampaignV4Receipts from './v4/campaign-v4-receipts';
 
 const CampaignDetailItem = ({ campaign, mutate }) => {
   const router = useRouter();
@@ -54,6 +56,11 @@ const CampaignDetailItem = ({ campaign, mutate }) => {
   const needsAction = isReservation && resolvedLogistic && resolvedLogistic.status === 'NOT_STARTED';
   const hasLogistics =
     !!resolvedLogistic || campaign?.logistics?.some((item) => item.creatorId === user?.id);
+
+  // Receipts tab: v4 only, and only once admin has made receipts required on one of my rounds
+  const isV4 = campaign?.submissionVersion === 'v4';
+  const { reimbursementRounds } = useGetReimbursements(isV4 ? campaign?.id : null);
+  const hasReceipts = reimbursementRounds.some((round) => round.required);
 
   const openLogisticTab = () => {
     setCurrentTab('logistics');
@@ -118,6 +125,7 @@ const CampaignDetailItem = ({ campaign, mutate }) => {
               ...(campaign?.submissionVersion === 'v4'
                 ? [{ value: 'tasks-v4', label: 'Submissions' }]
                 : [{ value: 'tasks', label: 'Activity' }]),
+              ...(hasReceipts ? [{ value: 'receipts', label: 'Receipts' }] : []),
               { value: 'info', label: 'Campaign Details' },
               // HIDE: logistics from creator
               ...(hasLogistics ? [{ value: 'logistics', label: 'Logistics' }] : []),
@@ -216,6 +224,7 @@ const CampaignDetailItem = ({ campaign, mutate }) => {
               logisticLoading={resolvedLogisticLoading}
             />
           )}
+          {currentTab === 'receipts' && <CampaignV4Receipts campaign={campaign} />}
           {currentTab === 'info' && <CampaignInfo campaign={campaign} />}
           {/* {currentTab === 'admin' && <CampaignAdmin campaign={campaign} />} */}
           {/* HIDE: logistics */}

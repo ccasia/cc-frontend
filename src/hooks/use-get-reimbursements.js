@@ -53,31 +53,6 @@ export const useGetReimbursements = (campaignId, userId) => {
 // Pending yellow — shared by every "waiting" state in the reimbursement UI
 export const PENDING_COLOR = COLORS.pending;
 
-export const getRoundReimbursement = (rounds, round) =>
-  (rounds || []).find((entry) => entry.round === (round || 1) && entry.required) || null;
-
-// { [round]: videoId } — a round's receipts live on its first video (lowest contentOrder).
-export const getFirstVideoIdByRound = (videos) => {
-  const firstByRound = {};
-
-  (videos || []).forEach((video) => {
-    const round = video.round || 1;
-    const current = firstByRound[round];
-    if (!current || (video.contentOrder || 0) < (current.contentOrder || 0)) {
-      firstByRound[round] = video;
-    }
-  });
-
-  return Object.fromEntries(Object.entries(firstByRound).map(([round, video]) => [round, video.id]));
-};
-
-// The round's reimbursement if `video` is that round's first video, otherwise null.
-export const getVideoReimbursement = (rounds, firstVideoIdByRound, video) => {
-  const round = video?.round || 1;
-  if (firstVideoIdByRound[round] !== video?.id) return null;
-  return getRoundReimbursement(rounds, round);
-};
-
 export const sumReceipts = (receipts) =>
   (receipts || []).reduce((total, receipt) => total + (Number(receipt.amount) || 0), 0);
 
