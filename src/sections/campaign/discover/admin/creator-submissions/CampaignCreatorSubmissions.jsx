@@ -89,7 +89,7 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
             description={
               isFiltering
                 ? 'Try a different search or filter.'
-                : 'Creator submissions will show here once creators are added to the campaign.'
+                : 'Creator submissions will show here once their agreement is approved.'
             }
             sx={{ py: 10, '& .MuiTypography-root': { overflowWrap: 'anywhere' } }}
           />
