@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useRef, useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
-import { Box, Stack, Tooltip, InputBase, Typography, CircularProgress } from '@mui/material';
+import { Box, Stack, InputBase, Typography, CircularProgress } from '@mui/material';
 
 import { getCurrencyPrefix } from 'src/utils/currency';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -122,17 +122,8 @@ export default function AgreementBudgetCell({
   if (isSaving) {
     trailingIcon = <CircularProgress size={14} sx={{ color: '#8E8E93' }} />;
   } else if (isLocked) {
-    trailingIcon = (
-      <Tooltip title="Locked once the agreement is approved" arrow>
-        <Box sx={{ display: 'flex' }}>
-          <Iconify
-            icon="solar:lock-keyhole-minimalistic-linear"
-            width={14}
-            sx={{ color: '#8E8E93' }}
-          />
-        </Box>
-      </Tooltip>
-    );
+    // A locked (approved) budget shows no icon at all, not the pencil.
+    trailingIcon = null;
   } else if (hasBudget) {
     trailingIcon = <Iconify icon="solar:pen-linear" width={14} sx={{ color: '#8E8E93' }} />;
   } else if (!isReadOnly) {
@@ -152,7 +143,6 @@ export default function AgreementBudgetCell({
       direction="row"
       alignItems="center"
       spacing={0.75}
-      // Read-only cells let the click through to the row (which opens the agreement).
       onClick={(e) => {
         if (isReadOnly) return;
         e.stopPropagation();
