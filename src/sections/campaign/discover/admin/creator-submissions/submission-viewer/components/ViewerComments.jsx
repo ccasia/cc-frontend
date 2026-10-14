@@ -268,7 +268,7 @@ function CreatorDeliveryTag({ comment, canToggle, onToggle }) {
 
   return (
     <Typography sx={{ ml: 'auto', fontSize: 11, color: '#9A9AA2', whiteSpace: 'nowrap' }}>
-      {comment.isSentToCreator ? 'Sent to creator' : 'Not sent yet'}
+      {comment.isSentToCreator ? 'Sent to creator' : ''}
     </Typography>
   );
 }

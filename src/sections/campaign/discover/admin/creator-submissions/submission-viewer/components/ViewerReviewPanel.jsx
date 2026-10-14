@@ -183,7 +183,6 @@ function LinkReview({ submission }) {
             fullWidth
             size="large"
             variant="blue"
-            hint="to post a new link"
             disabled={busy}
             onClick={handleSendBack}
           >
@@ -197,7 +196,6 @@ function LinkReview({ submission }) {
             size="large"
             variant="white"
             color={APPROVE_COLOR}
-            hint="marks as completed"
             disabled={busy}
             onClick={() => setConfirmingDecision('link-approve')}
           >
@@ -208,7 +206,6 @@ function LinkReview({ submission }) {
             size="large"
             variant="white"
             color={REQUEST_CHANGE_COLOR}
-            hint="link is wrong"
             disabled={busy}
             onClick={openLinkChange}
           >
@@ -696,7 +693,6 @@ function ReviewComposer({ submission }) {
       fullWidth
       size="large"
       variant="dark"
-      hint="for validation"
       disabled={busy}
       onClick={() => setConfirmingDecision('client')}
     >
@@ -713,7 +709,6 @@ function ReviewComposer({ submission }) {
       size="large"
       variant="white"
       color={APPROVE_COLOR}
-      hint={canSendToClient ? 'without client review' : 'content is good to go'}
       disabled={busy}
       onClick={() => setConfirmingDecision('approve')}
     >
@@ -745,7 +740,6 @@ function ReviewComposer({ submission }) {
           fullWidth
           size="large"
           variant="blue"
-          hint="for resubmission"
           disabled={busy}
           onClick={handleSendToCreator}
         >
@@ -765,7 +759,6 @@ function ReviewComposer({ submission }) {
               size="large"
               variant="white"
               color={NEUTRAL_COLOR}
-              hint="for resubmission"
               disabled={busy}
               onClick={handleSendToCreator}
             >
@@ -778,7 +771,6 @@ function ReviewComposer({ submission }) {
               size="large"
               variant="white"
               color={REQUEST_CHANGE_COLOR}
-              hint="send back to creator"
               disabled={busy}
               onClick={openChangeRequest}
             >
@@ -797,9 +789,6 @@ function ReviewComposer({ submission }) {
       {isVideo && (
         <Stack direction="row" alignItems="center">
           <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>Your feedback</Typography>
-          <Typography sx={{ ml: 'auto', fontSize: 11.5, color: '#9A9AA2' }}>
-            Enter to add · Shift+Enter for new line
-          </Typography>
         </Stack>
       )}
 
