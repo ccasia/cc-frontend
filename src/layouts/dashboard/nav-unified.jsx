@@ -79,7 +79,7 @@ export default function NavUnified({ openNav, onCloseNav }) {
     >
       <Stack
         sx={{
-          p: 3,
+          p: 2,
           width: NAV.W_VERTICAL,
         }}
         direction="row"
@@ -119,6 +119,7 @@ export default function NavUnified({ openNav, onCloseNav }) {
           slotProps={{
             currentRole: user?.role,
             onItemClick: onCloseNav,
+            gutter: `${(NAV.W_MINI - 48) / 2}px`,
           }}
         />
       )}
