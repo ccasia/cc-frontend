@@ -371,9 +371,7 @@ function AgreementRowContent({
 
       return (
         <Typography variant="subtitle2" sx={{ fontSize: 13.5 }}>
-          {`${toCurrencySymbol(getRowCurrency(item))} ${parseFloat(
-            product?.value
-          ).toFixed(2)}`}
+          {`${toCurrencySymbol(getRowCurrency(item))} ${parseFloat(product?.value).toFixed(2)}`}
         </Typography>
       );
     }
@@ -425,10 +423,7 @@ function AgreementRowContent({
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Typography
                     variant="body2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleProfileClick(item);
-                    }}
+                    onClick={() => handleProfileClick(item)}
                     sx={{
                       cursor: 'pointer',
                       '&:hover': { textDecoration: 'underline', color: '#1340FF' },
@@ -439,11 +434,7 @@ function AgreementRowContent({
                   {item?.isSeeding && (
                     <Tooltip title="Seeding agreement" arrow>
                       <Iconify
-                        icon={
-                          isSelected
-                            ? 'mdi:seed'
-                            : 'mdi:seed-outline'
-                        }
+                        icon={isSelected ? 'mdi:seed' : 'mdi:seed-outline'}
                         color="#1304FF"
                         width={16}
                         sx={{ flexShrink: 0 }}
@@ -480,11 +471,7 @@ function AgreementRowContent({
               <Stack alignItems="start">
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify
-                    icon={
-                      tierPlatform === 'tiktok'
-                        ? 'ic:baseline-tiktok'
-                        : 'mdi:instagram'
-                    }
+                    icon={tierPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
                     width={15}
                     sx={{
                       color: tierPlatform === 'tiktok' ? '#000000' : '#E4405F',
@@ -528,11 +515,7 @@ function AgreementRowContent({
 
       case 'status':
         return (
-          <TableCell
-            key={id}
-            data-column={id}
-            sx={{ px: STATUS_CELL_PX, ...firstColumnSx(id) }}
-          >
+          <TableCell key={id} data-column={id} sx={{ px: STATUS_CELL_PX, ...firstColumnSx(id) }}>
             <StatusChip wrap color={agreementStatus.color}>
               {agreementStatus.text}
             </StatusChip>
@@ -614,7 +597,6 @@ function AgreementRowContent({
   return (
     <TableRow
       sx={{
-        cursor: 'pointer',
         '&:hover': {
           bgcolor: alpha('#CCC', 0.1),
           // The pinned cell is opaque, so it takes the same tint as a solid colour
@@ -622,19 +604,8 @@ function AgreementRowContent({
         },
       }}
       component="div"
-      onClick={() => {
-        if (!item.isSent) {
-          handleEditAgreement(item);
-        } else {
-          handleViewAgreement(item?.agreementUrl, item);
-        }
-      }}
     >
-      <TableCell
-        padding="checkbox"
-        onClick={(e) => e.stopPropagation()}
-        sx={CHECKBOX_CELL_SX}
-      >
+      <TableCell padding="checkbox" sx={CHECKBOX_CELL_SX}>
         <Tooltip title={checkboxTooltip}>
           <span>
             <Checkbox
@@ -678,9 +649,7 @@ function AgreementRowContent({
               // For pending (not sent) agreements, show Send Agreement button
               <Tooltip
                 title={
-                  guestNeedsLinkBeforeSend(item)
-                    ? 'Link creator before sending agreement'
-                    : ''
+                  guestNeedsLinkBeforeSend(item) ? 'Link creator before sending agreement' : ''
                 }
                 arrow
               >
@@ -845,9 +814,7 @@ function AgreementRowContent({
                           icon="bx:send"
                           sx={{
                             color:
-                              isDisabled || !isAmountValid
-                                ? 'rgba(19, 64, 255, 0.5)'
-                                : '#1340FF',
+                              isDisabled || !isAmountValid ? 'rgba(19, 64, 255, 0.5)' : '#1340FF',
                           }}
                           width={20}
                         />
@@ -1425,7 +1392,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       if (shortlisted?.creditTier) {
         return {
           name: shortlisted.creditTier?.name || 'Unknown Tier',
-          creditsPerVideo: shortlisted.creditPerVideo ?? shortlisted.creditTier?.creditsPerVideo ?? 1,
+          creditsPerVideo:
+            shortlisted.creditPerVideo ?? shortlisted.creditTier?.creditsPerVideo ?? 1,
         };
       }
 
@@ -1628,11 +1596,6 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
         approvedCreatorSet.has(agreement.userId) && !guestNeedsLinkBeforeSend(agreement)
     );
   }, [combinedData, campaign?.pitch, campaign?.shortlisted]);
-
-  const pendingCount = useMemo(
-    () => pitchApprovedAgreements?.filter((item) => !item.isSent).length || 0,
-    [pitchApprovedAgreements]
-  );
 
   // Rounds are independent per creator (not a campaign-wide batch) — a round tab only shows
   // up if at least one creator actually has a row for it.
@@ -2046,7 +2009,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
           submissionId: item?.submission?.id,
           submission: item?.submission,
         });
-        mutate(endpoints.campaign.creatorAgreement(item?.campaignId));
+        mutateAgreements();
         // Also refresh V3 pitches data to update pitch status
         mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
         // Also refresh submissions data
@@ -2061,7 +2024,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
         setApproveLoading(false);
       }
     },
-    [campaign?.id]
+    [campaign?.id, mutateAgreements]
   );
 
   const handleOpenRejectDialog = useCallback(
@@ -2716,16 +2679,17 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
               overflow: 'auto',
             }}
           >
-            <ColumnReorderProvider
-              columns={visibleColumns}
-              onMove={moveColumn}
-            >
+            <ColumnReorderProvider columns={visibleColumns} onMove={moveColumn}>
               <Table size="small" {...{ [REORDER_TABLE_ATTR]: '' }}>
                 <TableHead>
                   <TableRow>
                     <TableCell
                       padding="checkbox"
-                      sx={{ ...CHECKBOX_CELL_SX, borderRadius: '10px 0 0 10px', bgcolor: '#f5f5f5' }}
+                      sx={{
+                        ...CHECKBOX_CELL_SX,
+                        borderRadius: '10px 0 0 10px',
+                        bgcolor: '#f5f5f5',
+                      }}
                     >
                       <Checkbox
                         icon={uncheckedCheckboxIcon}
@@ -2812,6 +2776,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
         campaign={campaign}
         isDisabled={isDisabled}
         onApprove={async () => {
+          mutateAgreements();
           // Refresh V3 pitches data to update pitch status
           mutate(`/api/pitch/v3?campaignId=${campaign?.id}`);
           // Refresh submissions data
@@ -3011,15 +2976,6 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                     ? `${formattedBudgets}/${formatMoney(campaignBudget, campaignBudgetCurrency)}`
                     : formattedBudgets}
                 </Typography>
-              </Stack>
-              <Stack direction="row" alignItems="center" spacing={0.75}>
-                <Iconify icon="mdi:wallet-outline" width={18} sx={{ color: '#8e8e93' }} />
-                <Typography variant="body2" sx={{ color: '#8e8e93', fontWeight: 500 }}>
-                  Total:
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 700 }}>
-                  {formattedAmounts}
-                </Typography>
                 {footerTotals.budgetRemaining != null && (
                   <Typography
                     variant="body2"
@@ -3031,6 +2987,15 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                     )} ${footerTotals.budgetRemaining >= 0 ? 'left' : 'over'})`}
                   </Typography>
                 )}
+              </Stack>
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <Iconify icon="mdi:wallet-outline" width={18} sx={{ color: '#8e8e93' }} />
+                <Typography variant="body2" sx={{ color: '#8e8e93', fontWeight: 500 }}>
+                  Total:
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#221f20', fontWeight: 700 }}>
+                  {formattedAmounts}
+                </Typography>
               </Stack>
             </Stack>
           </Box>,
