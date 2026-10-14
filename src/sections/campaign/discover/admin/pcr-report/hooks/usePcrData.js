@@ -43,7 +43,12 @@ function applyLoadedContent(loadedContent, setters, cardOverrides) {
     setShowFifthCard,
   } = setters;
 
-  setEditableContent({ ...DEFAULT_EDITABLE_CONTENT, ...loadedContent });
+  const content = { ...DEFAULT_EDITABLE_CONTENT, ...loadedContent };
+  // Older Redis drafts stored empty arrays as {}. Restore the array default.
+  Object.entries(DEFAULT_EDITABLE_CONTENT).forEach(([key, fallback]) => {
+    if (Array.isArray(fallback) && !Array.isArray(content[key])) content[key] = fallback;
+  });
+  setEditableContent(content);
   setSectionOrder(loadedContent.sectionOrder || DEFAULT_SECTION_ORDER);
   setSectionVisibility({
     ...DEFAULT_SECTION_VISIBILITY,

@@ -311,6 +311,9 @@ export default function usePcrAutosave({
       );
       acceptedDraftRevisionRef.current = remoteDraftMatches ? draftRevisionRef.current : 0;
       if (draftRevisionRef.current > 0) {
+        // Redis may already hold this revision. Re-sending it at the same revision
+        // is rejected with a 409, which blocks autosave for the tab.
+        if (!remoteDraftMatches) draftRevisionRef.current += 1;
         const restoredEnvelope = {
           content: JSON.parse(draftJson),
           json: draftJson,

@@ -128,9 +128,15 @@ const handlePlainTextPaste = (e) => {
     const end = target.selectionEnd;
     const { value } = target;
 
-    // Insert plain text at cursor position
+    // Insert plain text at cursor position. Use the native value setter: assigning
+    // `target.value` directly updates React's value tracker, so React ignores the
+    // input event below and the controlled state never receives the pasted text.
     const newValue = value.substring(0, start) + text + value.substring(end);
-    target.value = newValue;
+    const nativeValueSetter = Object.getOwnPropertyDescriptor(
+      Object.getPrototypeOf(target),
+      'value'
+    ).set;
+    nativeValueSetter.call(target, newValue);
 
     // Set cursor position after pasted text
     const newCursorPos = start + text.length;
