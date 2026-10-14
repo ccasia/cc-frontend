@@ -249,7 +249,7 @@ export function useNavData() {
             roles: ['superadmin', 'BD', 'god', 'sales_and_marketing', 'CSL', 'CSM'],
             title: 'Draft Brief',
             path: paths.dashboard.campaign.briefs,
-            icon: <Iconify icon="line-md:briefcase" width={25} />,
+            icon: <Iconify icon="material-symbols:work-outline" width={25} />,
           },
         ],
       },
