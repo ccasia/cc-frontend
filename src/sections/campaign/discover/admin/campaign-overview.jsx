@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
-import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -26,6 +26,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
+import useSyncCampaignCredits from 'src/hooks/use-sync-campaign-credits';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
@@ -134,10 +135,6 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
   const approveCreditModal = useBoolean();
   const { mutate } = useGetCampaignById(campaign?.id);
 
-  // Ref to track if credits have been synced for this campaign
-  const creditsSyncedRef = useRef(false);
-  const lastCampaignIdRef = useRef(null);
-
   // const creditAssignModal = useBoolean();
   // const [campaigns, setCampaigns] = useState(null);
 
@@ -168,41 +165,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
     setLocalCampaign(campaign);
   }, [campaign]);
 
-  // Sync credits on mount - runs once per campaign
-  const syncCredits = useCallback(async () => {
-    if (!campaign?.id || campaign?.campaignCredits == null) return;
-
-    // Only sync if this is a new campaign or hasn't been synced yet
-    if (creditsSyncedRef.current && lastCampaignIdRef.current === campaign.id) {
-      return;
-    }
-
-    try {
-      const response = await axiosInstance.post(`/api/campaign/syncCredits/${campaign.id}`);
-      console.log('Credits synced:', response.data);
-
-      // Mark as synced for this campaign
-      creditsSyncedRef.current = true;
-      lastCampaignIdRef.current = campaign.id;
-
-      // Refresh campaign data to get updated credits
-      if (mutate) {
-        mutate();
-      }
-    } catch (err) {
-      console.error('Error syncing credits:', err);
-      // Don't show error toast - this is a background sync
-    }
-  }, [campaign?.id, campaign?.campaignCredits, mutate]);
-
-  useEffect(() => {
-    // Reset sync state if campaign changes
-    if (campaign?.id !== lastCampaignIdRef.current) {
-      creditsSyncedRef.current = false;
-    }
-
-    syncCredits();
-  }, [syncCredits, campaign?.id]);
+  useSyncCampaignCredits(campaign, mutate);
 
   const handleDecline = async (pitch) => {
     try {

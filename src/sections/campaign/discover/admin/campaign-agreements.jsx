@@ -38,6 +38,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useSyncCampaignCredits from 'src/hooks/use-sync-campaign-credits';
 import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import { fDate } from 'src/utils/format-time';
@@ -1512,6 +1513,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       if (payload?.campaignId !== campaign?.id) return;
       mutateAgreements();
       fetchSubmissions();
+      campaignMutate?.();
     };
 
     socket.on('agreementReady', handleAgreementReady);
@@ -1521,14 +1523,24 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       socket.off('agreementReady', handleAgreementReady);
       socket.off('campaign:agreement:updated', handleAgreementUpdated);
     };
-  }, [socket, campaign?.id, mutateAgreements, fetchSubmissions]);
+  }, [socket, campaign?.id, mutateAgreements, fetchSubmissions, campaignMutate]);
+
+  // Saved counters can be stale (older data, or changes made before every path recounted)
+  useSyncCampaignCredits(campaign, campaignMutate);
 
   // Outreach status is shared with the master list (it lives on the pitch). Pick up changes other
   // admins make there; the event skips our own changes, which handleOutreachSaved covers.
+  // Withdraw/remove also changes the agreement list and the credit counters.
+  const handlePitchStatusUpdate = useCallback(() => {
+    mutateAgreements();
+    campaignMutate?.();
+  }, [mutateAgreements, campaignMutate]);
+
   usePitchSocket({
     socket,
     campaignId: campaign?.id,
     onOutreachUpdate: mutateAgreements,
+    onPitchStatusUpdate: handlePitchStatusUpdate,
     userId: user?.id,
   });
 
