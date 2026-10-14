@@ -267,7 +267,7 @@ const ReportingView = () => {
     const campaignName = searchParams.get('campaignName');
     const userId = searchParams.get('userId');
     const creatorId = searchParams.get('creatorId');
-    const video = searchParams.get('video')
+    const video = searchParams.get('video');
 
     if (urlParam && userId) {
       setUrl(urlParam);
@@ -482,7 +482,15 @@ const ReportingView = () => {
     );
   };
 
-  const renderEngagementCard = ({ height, title, value, metricKey }) => {
+  // comparison: overrides the campaign comparison; caption: replaces the comparison lines
+  const renderEngagementCard = ({
+    height,
+    title,
+    value,
+    metricKey,
+    comparison: override,
+    caption,
+  }) => {
     let changeDisplay = '+100%';
     let changeIsPositive = true;
     let comparisonText = 'campaign average';
@@ -492,6 +500,9 @@ const ReportingView = () => {
     if (isUnavailable) {
       comparisonText = 'not public';
       changeDisplay = '--';
+    } else if (override) {
+      changeDisplay = override.changeText;
+      changeIsPositive = override.isAboveAverage;
     } else if (
       content.hasCampaignData &&
       content.campaignComparison &&
@@ -547,72 +558,80 @@ const ReportingView = () => {
               {title}
             </Typography>
 
-            {/* Comparison section */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
-            >
-              {content.hasCampaignData &&
-                changeDisplay !== '--' &&
-                !changeDisplay.startsWith('0%') && (
-                  <Iconify
-                    icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
+            {caption ? (
+              <Typography sx={{ fontWeight: 500, fontSize: 16, color: '#636366' }}>
+                {caption}
+              </Typography>
+            ) : (
+              <>
+                {/* Comparison section */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}
+                >
+                  {content.hasCampaignData &&
+                    changeDisplay !== '--' &&
+                    !changeDisplay.startsWith('0%') && (
+                      <Iconify
+                        icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
+                        sx={{
+                          width: 18,
+                          height: 17,
+                          color: changeIsPositive ? '#1ABF66' : '#F44336',
+                        }}
+                      />
+                    )}
+                  <Typography
                     sx={{
-                      width: 18,
-                      height: 17,
-                      color: changeIsPositive ? '#1ABF66' : '#F44336',
+                      fontWeight: 500,
+                      fontSize: 16,
+                      color: (() => {
+                        if (!content.hasCampaignData) return '#999';
+                        if (changeDisplay.startsWith('0%')) return '#636366';
+                        return changeIsPositive ? '#1ABF66' : '#F44336';
+                      })(),
                     }}
-                  />
-                )}
-              <Typography
-                sx={{
-                  fontWeight: 500,
-                  fontSize: 16,
-                  color: (() => {
-                    if (!content.hasCampaignData) return '#999';
-                    if (changeDisplay.startsWith('0%')) return '#636366';
-                    return changeIsPositive ? '#1ABF66' : '#F44336';
-                  })(),
-                }}
-              >
-                {changeDisplay}
-              </Typography>
-              <Typography
-                sx={{
-                  fontWeight: 500,
-                  fontSize: 16,
-                  textAlign: 'right',
-                  color: '#636366',
-                  ml: 1,
-                }}
-              >
-                from
-              </Typography>
-            </Box>
+                  >
+                    {changeDisplay}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontWeight: 500,
+                      fontSize: 16,
+                      textAlign: 'right',
+                      color: '#636366',
+                      ml: 1,
+                    }}
+                  >
+                    from
+                  </Typography>
+                </Box>
 
-            {/* "campaign average" text */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                height: 20,
-              }}
-            >
-              <Typography
-                sx={{
-                  height: 20,
-                  fontWeight: 500,
-                  fontSize: 16,
-                  lineHeight: '20px',
-                  color: '#636366',
-                }}
-              >
-                {comparisonText}
-              </Typography>
-            </Box>
+                {/* "campaign average" text */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    height: 20,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      height: 20,
+                      fontWeight: 500,
+                      fontSize: 16,
+                      lineHeight: '20px',
+                      color: '#636366',
+                    }}
+                  >
+                    {comparisonText}
+                  </Typography>
+                </Box>
+              </>
+            )}
           </Box>
 
           {/* Right side - Icon and value */}
@@ -660,7 +679,8 @@ const ReportingView = () => {
 
         {content.source === 'brightdata' && (
           <Typography sx={{ fontSize: 14, color: '#636366', mb: 2 }}>
-            Public data, updated {fDate(content.capturedAt)}. Saves, shares and reach are not public.
+            Public data, updated {fDate(content.capturedAt)}. Saves, shares and reach are not
+            public.
           </Typography>
         )}
 
@@ -682,7 +702,7 @@ const ReportingView = () => {
     );
   };
 
-  console.log('Content report: ', content)
+  console.log('Content report: ', content);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
@@ -732,7 +752,7 @@ const ReportingView = () => {
                   textDecoration: 'none',
                   '&:hover': {
                     textDecoration: 'underline',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
                   },
                 }}
               >

@@ -1,6 +1,8 @@
+import PropTypes from "prop-types";
+
 import { Box, Typography } from "@mui/material";
 
-export default function ReportLanding() {
+export default function ReportLanding({ sx }) {
 	return (
 		<Box
 			sx={{
@@ -10,6 +12,7 @@ export default function ReportLanding() {
 				justifyContent: 'center',
 				minHeight: '60vh',
 				gap: 4,
+				...sx,
 			}}
 		>
 			<Typography
@@ -33,4 +36,8 @@ export default function ReportLanding() {
 			/>
 		</Box>
 	);
+};
+
+ReportLanding.propTypes = {
+	sx: PropTypes.object,
 };
