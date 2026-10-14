@@ -48,7 +48,7 @@ const lipShadow = (depth, color) => `0 ${depth}px 0 0 ${color}`;
 
 const CtaButton = forwardRef(
   (
-    { variant = 'dark', size = 'medium', color, hint, fullWidth = false, children, sx, ...other },
+    { variant = 'dark', size = 'medium', color, fullWidth = false, children, sx, ...other },
     ref
   ) => {
     const palette = VARIANTS[variant] ?? VARIANTS.dark;
@@ -65,7 +65,6 @@ const CtaButton = forwardRef(
         sx={{
           flexDirection: 'column',
           justifyContent: 'center',
-          gap: hint ? 0.125 : 0,
           minHeight: height,
           px,
           mb: `${lip}px`,
@@ -100,11 +99,6 @@ const CtaButton = forwardRef(
         {...other}
       >
         {children}
-        {hint && (
-          <Box component="span" sx={{ fontSize: 11, fontWeight: 400, opacity: 0.8 }}>
-            {hint}
-          </Box>
-        )}
       </ButtonBase>
     );
   }
