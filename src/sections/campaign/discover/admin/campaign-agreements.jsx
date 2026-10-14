@@ -38,6 +38,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useSyncCampaignCredits from 'src/hooks/use-sync-campaign-credits';
 import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import { fDate } from 'src/utils/format-time';
@@ -746,6 +747,9 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       socket.off('campaign:agreement:updated', handleAgreementUpdated);
     };
   }, [socket, campaign?.id, mutateAgreements, fetchSubmissions]);
+
+  // Saved counters can be stale (older data, or changes made before every path recounted)
+  useSyncCampaignCredits(campaign, campaignMutate);
 
   // Combine the agreements data with submission status
   const combinedData = useMemo(() => {
