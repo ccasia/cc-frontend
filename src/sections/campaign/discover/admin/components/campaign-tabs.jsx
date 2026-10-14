@@ -1,13 +1,16 @@
 import PropTypes from 'prop-types';
+import { m, useScroll, useMotionValueEvent } from 'framer-motion';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Stack, Button, Divider } from '@mui/material';
+import { Box, Stack, Button, Divider, useTheme } from '@mui/material';
 
 import { useResponsive } from 'src/hooks/use-responsive';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
+import { bgBlur } from 'src/theme/css';
 import { useAuthContext } from 'src/auth/hooks';
+import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import { useTabs, setCurrentTab } from '../store/use-tabs';
 
@@ -41,6 +44,9 @@ const getAllowedTabs = (submissionVersion) => {
 
 const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab }) => {
   const { user } = useAuthContext();
+  const { mainRef } = useMainContext();
+  const theme = useTheme();
+
   const lgUp = useResponsive('up', 'lg');
 
   const [isOffset, setIsOffset] = useState();
@@ -114,6 +120,19 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab }) => {
 
     return `Agreements (${totalAgreements})`;
   };
+
+  const stickyRef = useRef(null);
+  const [isStuck, setIsStuck] = useState(false);
+  const { scrollY } = useScroll({ container: mainRef });
+
+  useMotionValueEvent(scrollY, 'change', (cur) => {
+    const bar = stickyRef.current?.getBoundingClientRect();
+    const main = mainRef.current?.getBoundingClientRect();
+    setIsStuck(cur > 100);
+    // if(cur > 100)setIsStuck(true);
+
+    // if (bar && main) setIsStuck(bar.top <= main.top + 1);
+  });
 
   useEffect(() => {
     const container = tabsContainerRef.current;
@@ -190,184 +209,215 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab }) => {
 
   return (
     <Box
+      ref={stickyRef}
       sx={{
-        mt: 2,
-        mb: 2.5,
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          display: !isOffset?.left && 'none',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 32,
-          background: 'linear-gradient(to right, white, transparent)',
-          zIndex: 1,
-          pointerEvents: 'none',
-        },
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          display: !isOffset?.right && 'none',
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: 32,
-          background: 'linear-gradient(to left, white, transparent)',
-          zIndex: 1,
-          pointerEvents: 'none',
-        },
+        position: 'sticky',
+        top: 0,
+        zIndex: theme.zIndex.appBar - 1,
+        border: 1,
+        borderColor: 'transparent',
+        borderRadius: 2,
+        transition: theme.transitions.create(['background-color', 'border-color', 'box-shadow']),
+        ...(isStuck && {
+          ...bgBlur({ color: theme.palette.background.paper }),
+          borderColor: 'divider',
+          boxShadow: theme.customShadows?.z8,
+        }),
       }}
-      overflow="hidden"
     >
-      <Divider sx={{ position: 'absolute', bottom: 0, left: 0, width: 1 }} />
-      <Stack
-        ref={tabsContainerRef}
-        direction="row"
-        spacing={2}
+      <Box
         sx={{
-          width: 1,
-          overflowX: 'scroll',
-          overflowY: 'hidden',
-          scrollbarWidth: 'none',
-          '&::-webkit-scrollbar': {
-            display: 'none',
+          mt: isStuck ? 0 : 2,
+          mb: isStuck ? 0 : 2.5,
+          transition: theme.transitions.create(['margin']),
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            display: !isOffset?.left && 'none',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 32,
+            background: 'linear-gradient(to right, white, transparent)',
+            zIndex: 1,
+            pointerEvents: 'none',
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            display: !isOffset?.right && 'none',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: 32,
+            background: 'linear-gradient(to left, white, transparent)',
+            zIndex: 1,
+            pointerEvents: 'none',
           },
         }}
+        overflow="hidden"
       >
-        <Stack
-          direction="row"
-          justifyContent="space-between"
+        <Divider
           sx={{
-            // width: { xs: '100%', sm: 'auto' },
-            width: 'max-content',
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: 1,
+            opacity: isStuck ? 0 : 1,
+            transition: theme.transitions.create(['opacity']),
+          }}
+        />
+        <Stack
+          ref={tabsContainerRef}
+          direction="row"
+          spacing={2}
+          sx={{
+            width: 1,
+            overflowX: 'scroll',
+            overflowY: 'hidden',
+            scrollbarWidth: 'none',
+            '&::-webkit-scrollbar': {
+              display: 'none',
+            },
           }}
         >
-          {/* Show different tabs based on user role */}
-          {(user?.role === 'client' || isDemo
-            ? // Client user tabs (no Pitches tab)
-              [
-                { label: 'Overview', value: 'overview' },
-                { label: 'Campaign Details', value: 'campaign-content' },
-                { label: 'Creator Master List', value: 'creator-master-list' },
-                ...(campaign?.submissionVersion === 'v4'
-                  ? [{ label: 'Creator Submissions', value: 'submissions-v4' }]
-                  : [{ label: 'Creator Deliverables', value: 'deliverables' }]),
-                { label: 'Campaign Analytics', value: 'analytics' },
-                campaign?.logisticsType && campaign.logisticsType !== ''
-                  ? {
-                      label: 'Logistics',
-                      value: 'logistics',
-                    }
-                  : null,
+          {/* Auto margins centre the tabs; layout animates the slide since margins can't transition. */}
+          <Stack
+            component={m.div}
+            layout="position"
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            direction="row"
+            justifyContent="space-between"
+            sx={{
+              width: 'max-content',
+              mx: isStuck ? 'auto' : 0,
+            }}
+          >
+            {(user?.role === 'client' || isDemo
+              ? // Client user tabs (no Pitches tab)
+                [
+                  { label: 'Overview', value: 'overview' },
+                  { label: 'Campaign Details', value: 'campaign-content' },
+                  { label: 'Creator Master List', value: 'creator-master-list' },
+                  ...(campaign?.submissionVersion === 'v4'
+                    ? [{ label: 'Creator Submissions', value: 'submissions-v4' }]
+                    : [{ label: 'Creator Deliverables', value: 'deliverables' }]),
+                  { label: 'Campaign Analytics', value: 'analytics' },
+                  campaign?.logisticsType && campaign.logisticsType !== ''
+                    ? {
+                        label: 'Logistics',
+                        value: 'logistics',
+                      }
+                    : null,
 
-                { label: 'FAQ', value: 'faq' },
-              ]
-            : // Admin/other user tabs
-              [
-                { label: 'Overview', value: 'overview' },
-                { label: 'Campaign Details', value: 'campaign-content' },
-                {
-                  label: `Creator Master List (${campaign?.pitch?.length || 0})`,
-                  value: 'pitch',
-                },
-                {
-                  label: getAgreementsLabel(
-                    agreementSubmissions,
-                    campaignAgreements,
-                    campaign?.pitch,
-                    campaign?.shortlisted
-                  ),
-                  value: 'agreement',
-                },
-                ...(campaign?.submissionVersion === 'v4'
-                  ? [
-                      {
-                        label: 'Creator Submissions',
-                        value: 'submissions-v4',
-                      },
-                    ]
-                  : [
-                      {
-                        label: 'Creator Deliverables',
-                        value: 'deliverables',
-                      },
-                    ]),
-                {
-                  label: 'Campaign Analytics',
-                  value: 'analytics',
-                },
-                {
-                  label: `Invoices (${campaignInvoices?.length || 0})`,
-                  value: 'invoices',
-                },
-                campaign?.logisticsType && campaign.logisticsType !== ''
-                  ? {
-                      label: 'Logistics',
-                      value: 'logistics',
-                    }
-                  : null,
+                  { label: 'FAQ', value: 'faq' },
+                ]
+              : // Admin/other user tabs
+                [
+                  { label: 'Overview', value: 'overview' },
+                  { label: 'Campaign Details', value: 'campaign-content' },
+                  {
+                    label: `Creator Master List (${campaign?.pitch?.length || 0})`,
+                    value: 'pitch',
+                  },
+                  {
+                    label: getAgreementsLabel(
+                      agreementSubmissions,
+                      campaignAgreements,
+                      campaign?.pitch,
+                      campaign?.shortlisted
+                    ),
+                    value: 'agreement',
+                  },
+                  ...(campaign?.submissionVersion === 'v4'
+                    ? [
+                        {
+                          label: 'Creator Submissions',
+                          value: 'submissions-v4',
+                        },
+                      ]
+                    : [
+                        {
+                          label: 'Creator Deliverables',
+                          value: 'deliverables',
+                        },
+                      ]),
+                  {
+                    label: 'Campaign Analytics',
+                    value: 'analytics',
+                  },
+                  {
+                    label: `Invoices (${campaignInvoices?.length || 0})`,
+                    value: 'invoices',
+                  },
+                  campaign?.logisticsType && campaign.logisticsType !== ''
+                    ? {
+                        label: 'Logistics',
+                        value: 'logistics',
+                      }
+                    : null,
 
-                { label: 'FAQ', value: 'faq' },
-              ]
-          )
-            .filter(Boolean)
-            .filter((tab) => !isDemo || demoAllowedTabs.includes(tab.value))
-            .map((tab) => (
-              <Button
-                key={tab.value}
-                disableRipple
-                size="large"
-                onClick={() => handleChangeTab(null, tab.value)}
-                sx={{
-                  px: { xs: 1, sm: 1.2 },
-                  py: 0.5,
-                  pb: 1,
-                  minWidth: !lgUp && 'fit-content',
-                  color: currentTab === tab.value ? '#221f20' : '#8e8e93',
-                  position: 'relative',
-                  fontSize: { xs: '0.9rem', sm: '1.05rem' },
-                  fontWeight: 650,
-                  whiteSpace: 'nowrap',
-                  mr: { xs: 1, sm: 2 },
-                  transition: 'transform 0.1s ease-in-out',
-                  '&:focus': {
-                    outline: 'none',
-                    bgcolor: 'transparent',
-                  },
-                  '&:active': {
-                    transform: 'scale(0.95)',
-                    bgcolor: 'transparent',
-                  },
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '2px',
-                    width: currentTab === tab.value ? '100%' : '0%',
-                    bgcolor: '#1340ff',
-                    transition: 'all 0.3s ease-in-out',
-                    transform: 'scaleX(1)',
-                    transformOrigin: 'left',
-                  },
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                    '&::after': {
-                      width: '100%',
-                      opacity: currentTab === tab.value ? 1 : 0.5,
+                  { label: 'FAQ', value: 'faq' },
+                ]
+            )
+              .filter(Boolean)
+              .filter((tab) => !isDemo || demoAllowedTabs.includes(tab.value))
+              .map((tab) => (
+                <Button
+                  key={tab.value}
+                  disableRipple
+                  size="large"
+                  onClick={() => handleChangeTab(null, tab.value)}
+                  sx={{
+                    px: { xs: 1, sm: 1.2 },
+                    py: 0.5,
+                    pb: 1,
+                    minWidth: !lgUp && 'fit-content',
+                    color: currentTab === tab.value ? '#221f20' : '#8e8e93',
+                    position: 'relative',
+                    fontSize: { xs: '0.9rem', sm: '1.05rem' },
+                    fontWeight: 650,
+                    whiteSpace: 'nowrap',
+                    mr: { xs: 1, sm: 2 },
+                    transition: 'transform 0.1s ease-in-out',
+                    '&:focus': {
+                      outline: 'none',
+                      bgcolor: 'transparent',
                     },
-                  },
-                  // mr: 2,
-                }}
-              >
-                {tab.label}
-              </Button>
-            ))}
+                    '&:active': {
+                      transform: 'scale(0.95)',
+                      bgcolor: 'transparent',
+                    },
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: '2px',
+                      width: currentTab === tab.value ? '100%' : '0%',
+                      bgcolor: '#1340ff',
+                      transition: 'all 0.3s ease-in-out',
+                      transform: 'scaleX(1)',
+                      transformOrigin: 'left',
+                    },
+                    '&:hover': {
+                      bgcolor: 'transparent',
+                      '&::after': {
+                        width: '100%',
+                        opacity: currentTab === tab.value ? 1 : 0.5,
+                      },
+                    },
+                    // mr: 2,
+                  }}
+                >
+                  {tab.label}
+                </Button>
+              ))}
+          </Stack>
         </Stack>
-      </Stack>
+      </Box>
     </Box>
   );
 };

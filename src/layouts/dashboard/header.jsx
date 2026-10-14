@@ -27,8 +27,8 @@ import { useSettingsContext } from 'src/components/settings';
 import { HEADER } from '../config-layout';
 import ChatPopover from '../common/chat-popover';
 import AccountPopover from '../common/account-popover';
-import NotificationsPopover from '../common/notifications-popover';
 import ReleaseNotesButton from '../common/release-notes-button';
+import NotificationsPopover from '../common/notifications-popover';
 // import LanguagePopover from '../common/language-popover';
 
 // ----------------------------------------------------------------------
