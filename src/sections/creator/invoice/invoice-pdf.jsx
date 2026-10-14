@@ -116,6 +116,22 @@ const InvoicePDF = ({ data }) => {
   const isReimbursementInvoice = data?.invoiceType === 'REIMBURSEMENT';
   const firstLineNumber = isReimbursementInvoice ? 1 : 2;
 
+  const currencyLabel =
+    data?.task?.currencySymbol ||
+    data?.task?.currency ||
+    data?.campaign?.creatorAgreement?.[0]?.currency ||
+    data?.campaign?.subscription?.currency ||
+    'RM';
+  const formatMoney = (value) =>
+    `${currencyLabel} ${Number(value || 0).toLocaleString('en-MY', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+  // Breakdown: invoice amount = content fee + receipts, so the fee is whatever isn't receipts
+  const reimbursementTotal = reimbursementLines.reduce((sum, line) => sum + (Number(line.amount) || 0), 0);
+  const contentFee = Number(data?.amount || 0) - reimbursementTotal;
+
   return (
     <Document>
       <Page style={styles.page}>
@@ -238,7 +254,7 @@ const InvoicePDF = ({ data }) => {
                       <Text style={styles.tableItem}>Campaign</Text>
                       <Text style={styles.tableItem}>Deliverables</Text>
                       <Text style={styles.tableItem}>Quantity</Text>
-                      {/* <Text style={styles.tableItem}>Amount (MYR)</Text> */}
+                      <Text style={[styles.tableItem, { textAlign: 'right' }]}>Amount</Text>
                     </View>
                   </View>
                   {/* Fee row — a REIMBURSEMENT invoice has none, its receipts are the only lines */}
@@ -299,7 +315,7 @@ const InvoicePDF = ({ data }) => {
                         <Text style={styles.tableItem}>1</Text>
                       )}
                       {/* <Text style={styles.tableItem}>{data.campaign.description}</Text> */}
-                      {/* <Text style={styles.tableItem}>RM {data.amount}</Text> */}
+                      <Text style={[styles.tableItem, { textAlign: 'right' }]}>{formatMoney(contentFee)}</Text>
                     </View>
                   </View>
                   )}
@@ -316,6 +332,7 @@ const InvoicePDF = ({ data }) => {
                           <Text style={{ color: '#8E8E93', marginTop: 2 }}>{line.description}</Text>
                         </View>
                         <Text style={styles.tableItem}>1</Text>
+                        <Text style={[styles.tableItem, { textAlign: 'right' }]}>{formatMoney(line.amount)}</Text>
                       </View>
                     </View>
                   ))}
@@ -324,6 +341,29 @@ const InvoicePDF = ({ data }) => {
 
               {/* Overview */}
               <View style={styles.overview}>
+                {/* Breakdown of the total when it includes receipts (a receipts-only invoice has no fee) */}
+                {reimbursementLines.length > 0 && !isReimbursementInvoice && (
+                  <View style={{ fontSize: '6px', color: '#636366', paddingBottom: 6 }}>
+                    <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text>Content fee</Text>
+                      <Text>{formatMoney(contentFee)}</Text>
+                    </View>
+                    <View
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        marginTop: 3,
+                      }}
+                    >
+                      <Text>
+                        Reimbursement ({reimbursementLines.length} receipt
+                        {reimbursementLines.length > 1 ? 's' : ''})
+                      </Text>
+                      <Text>{formatMoney(reimbursementTotal)}</Text>
+                    </View>
+                  </View>
+                )}
                 <View style={styles.amount}>
                   <Text>Amount Due / Total</Text>
                   <Text
@@ -331,7 +371,7 @@ const InvoicePDF = ({ data }) => {
                       fontSize: '10px',
                     }}
                   >
-                    {data?.task?.currencySymbol || data?.task?.currency || data?.campaign?.creatorAgreement?.[0]?.currency || data?.campaign?.subscription?.currency || 'RM'} {data?.amount}
+                    {formatMoney(data?.amount)}
                   </Text>
                 </View>
 

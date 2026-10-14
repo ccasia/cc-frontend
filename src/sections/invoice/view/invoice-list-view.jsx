@@ -29,6 +29,11 @@ import { useResponsive } from 'src/hooks/use-responsive';
 import useGetInvoiceStats from 'src/hooks/use-get-invoice-stats';
 import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
+import {
+  sumReceipts,
+  formatReceiptAmount,
+  useGetReimbursements,
+} from 'src/hooks/use-get-reimbursements';
 
 import { formatCurrencyAmount } from 'src/utils/currency';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -52,6 +57,9 @@ import {
   TableSelectedAction,
   TablePaginationCustom,
 } from 'src/components/table';
+
+import { COLORS } from 'src/sections/campaign/reimbursement/reimbursement-styles';
+import ReceiptReviewDrawer from 'src/sections/campaign/reimbursement/receipt-review-drawer';
 
 import NewInvoiceModal from '../new-invoice-modal';
 import InvoiceTableFiltersResult from '../invoice-table-filters-result';
@@ -122,6 +130,37 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
     endDate: filters.endDate ? filters.endDate.toISOString() : undefined,
   });
 
+  // ---- Reimbursement receipts (campaign Invoices tab only — skipped when there's no campId) ----
+  const { reimbursementRounds } = useGetReimbursements(campId);
+  const [reviewAgreementId, setReviewAgreementId] = useState(null);
+  // Read from the live list so the drawer updates after each approve/reject
+  const reviewRound = reimbursementRounds.find((round) => round.agreementId === reviewAgreementId) || null;
+
+  // Every round with receipts, keyed by its invoice(s) — the fee invoice and, for late receipts,
+  // the receipts-only child — so each of those rows can open the drawer (read-only once billed)
+  const roundByInvoiceId = useMemo(() => {
+    const map = new Map();
+    reimbursementRounds
+      .filter((round) => round.receipts.length > 0)
+      .forEach((round) => {
+        if (round.invoice) map.set(round.invoice.id, round);
+        if (round.reimbursementInvoice) map.set(round.reimbursementInvoice.id, round);
+      });
+    return map;
+  }, [reimbursementRounds]);
+
+  // Creators whose invoice is held until their submitted receipts are approved — no invoice row
+  // exists yet, so they get an "On hold" row of their own
+  const heldRounds = useMemo(
+    () =>
+      reimbursementRounds.filter(
+        (round) => round.required && !round.billed && !round.invoice && round.submittedAt
+      ),
+    [reimbursementRounds]
+  );
+
+  const hasPending = (round) => round?.receipts.some((receipt) => receipt.status === 'PENDING_REVIEW');
+
   const { socket } = useSocketContext();
   useEffect(() => {
     if (!socket || !campId) return undefined;
@@ -186,6 +225,9 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
     return filteredData;
   }, [filteredData, alphabetical, sortDirection]);
 
+  // "On hold" rows render above the invoices on the first page of "All"
+  const showHeldRows = Boolean(campId) && filters.status === 'all' && heldRounds.length > 0;
+
   const dataInPage = dataFiltered?.slice(
     table.page * table.rowsPerPage,
     table.page * table.rowsPerPage + table.rowsPerPage
@@ -199,7 +241,7 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
     filters.status !== 'all' ||
     (!!filters.startDate && !!filters.endDate);
 
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
+  const notFound = !dataFiltered.length && !showHeldRows;
 
   // OPTIMIZED: Use stats from backend if available, otherwise calculate client-side
   const getInvoiceLength = useCallback(
@@ -941,6 +983,108 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                 </TableHead>
 
                 <TableBody>
+                  {/* "On hold" rows: invoice not generated yet, waiting on this creator's receipts.
+                      Shown on the first page of "All" (or the receipts filter). */}
+                  {showHeldRows &&
+                    table.page === 0 &&
+                    heldRounds.map((round) => {
+                        const claimed = sumReceipts(
+                          round.receipts.filter((receipt) => receipt.status !== 'REJECTED')
+                        );
+                        return (
+                          <TableRow
+                            key={`held-${round.agreementId}`}
+                            sx={{
+                              bgcolor: hasPending(round) ? '#FFFBF2' : 'transparent',
+                              borderBottom: '1px solid',
+                              borderColor: 'divider',
+                              '& td': { py: 2 },
+                            }}
+                          >
+                            <TableCell sx={{ width: 300, display: 'flex', alignItems: 'center' }}>
+                              <Avatar src={round.user?.photoURL} alt={round.user?.name} sx={{ mr: 2 }}>
+                                {round.user?.name?.charAt(0).toUpperCase()}
+                              </Avatar>
+                              <ListItemText
+                                disableTypography
+                                primary={
+                                  <Typography variant="body2" noWrap sx={{ mt: 1 }}>
+                                    {round.user?.name}
+                                  </Typography>
+                                }
+                                secondary={
+                                  <Typography variant="body2" sx={{ color: 'text.disabled', mt: 0.5 }}>
+                                    Invoice not generated yet
+                                  </Typography>
+                                }
+                              />
+                            </TableCell>
+                            <TableCell sx={{ width: 120, color: 'text.disabled' }}>—</TableCell>
+                            <TableCell sx={{ width: 120, color: 'text.disabled' }}>—</TableCell>
+                            <TableCell sx={{ width: 100 }}>
+                              <Typography variant="body2">
+                                {formatReceiptAmount(claimed, round.currency)}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                Reimbursement
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={{ width: 100 }}>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  textTransform: 'uppercase',
+                                  fontWeight: 700,
+                                  display: 'inline-block',
+                                  px: 1.5,
+                                  py: 0.5,
+                                  fontSize: '0.75rem',
+                                  border: '1px solid',
+                                  borderBottom: '3px solid',
+                                  borderRadius: 0.8,
+                                  bgcolor: 'white',
+                                  color: '#B7791F',
+                                  borderColor: '#B7791F',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                On hold
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={{ width: 240, py: 2, px: 2 }}>
+                              <Button
+                                onClick={() => setReviewAgreementId(round.agreementId)}
+                                sx={{
+                                  textTransform: 'none',
+                                  fontWeight: 700,
+                                  px: 1.5,
+                                  fontSize: '0.85rem',
+                                  height: '32px',
+                                  minWidth: '65px',
+                                  borderRadius: 0.8,
+                                  ...(hasPending(round)
+                                    ? {
+                                        bgcolor: COLORS.brand,
+                                        color: COLORS.white,
+                                        border: `1px solid ${COLORS.brand}`,
+                                        borderBottom: `3px solid ${COLORS.brandDark}`,
+                                        '&:hover': { bgcolor: COLORS.brandDark },
+                                      }
+                                    : {
+                                        bgcolor: 'white',
+                                        color: '#221f20',
+                                        border: '1px solid #e0e0e0',
+                                        borderBottom: '3px solid #e0e0e0',
+                                      }),
+                                }}
+                              >
+                                {hasPending(round) ? 'Review' : 'Receipts'}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+
                   {dataFiltered
                     ?.slice(
                       table.page * table.rowsPerPage,
@@ -948,13 +1092,20 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                     )
                     .map((row) => {
                       const selected = table.selected.includes(row.id);
+                      // This invoice's round receipts; needsReview = some still waiting (late receipts)
+                      const receiptRound = roundByInvoiceId.get(row.id);
+                      const needsReview = !receiptRound?.billed && hasPending(receiptRound);
+
+                      const reimbursementLines = Array.isArray(row.reimbursements) ? row.reimbursements : [];
+                      const reimbursementAmount = sumReceipts(reimbursementLines);
+
                       return (
                         <TableRow
                           key={row.id}
                           hover
                           selected={selected}
                           sx={{
-                            bgcolor: 'transparent',
+                            bgcolor: needsReview ? '#FFFBF2' : 'transparent',
                             borderBottom: '1px solid',
                             borderColor: 'divider',
                             '& td': {
@@ -1025,6 +1176,18 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                               row.currency,
                               row.task?.currencySymbol || row.currencySymbol
                             )}
+                            {/* Breakdown when the invoice carries reimbursement lines */}
+                            {reimbursementLines.length > 0 && (
+                              <Typography
+                                variant="caption"
+                                display="block"
+                                sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}
+                              >
+                                {row.invoiceType === 'REIMBURSEMENT'
+                                  ? 'Receipts only'
+                                  : `Incl. reimb. ${formatReceiptAmount(reimbursementAmount, row.currency || 'MYR')}`}
+                              </Typography>
+                            )}
                           </TableCell>
 
                           <TableCell sx={{ width: 100 }}>
@@ -1079,6 +1242,37 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                             }}
                           >
                             <Stack direction="row" spacing={1} alignItems="center">
+                              {/* Review (blue) when receipts are waiting, otherwise Receipts to look back */}
+                              {receiptRound && (
+                                <Button
+                                  onClick={() => setReviewAgreementId(receiptRound.agreementId)}
+                                  sx={{
+                                    textTransform: 'none',
+                                    fontWeight: 700,
+                                    px: 1.5,
+                                    fontSize: '0.85rem',
+                                    height: '32px',
+                                    minWidth: '65px',
+                                    borderRadius: 0.8,
+                                    ...(needsReview
+                                      ? {
+                                          bgcolor: COLORS.brand,
+                                          color: COLORS.white,
+                                          border: `1px solid ${COLORS.brand}`,
+                                          borderBottom: `3px solid ${COLORS.brandDark}`,
+                                          '&:hover': { bgcolor: COLORS.brandDark },
+                                        }
+                                      : {
+                                          bgcolor: 'white',
+                                          color: '#221f20',
+                                          border: '1px solid #e0e0e0',
+                                          borderBottom: '3px solid #e0e0e0',
+                                        }),
+                                  }}
+                                >
+                                  {needsReview ? 'Review' : 'Receipts'}
+                                </Button>
+                              )}
                               {/* View Button */}
                               <Button
                                 sx={{
@@ -1200,6 +1394,16 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
         onSubmit={handleCreateInvoice}
         campId={campId}
       />
+
+      {campId && (
+        <ReceiptReviewDrawer
+          open={Boolean(reviewRound)}
+          onClose={() => setReviewAgreementId(null)}
+          round={reviewRound}
+          campaignId={campId}
+          isDisabled={isDisabled}
+        />
+      )}
 
       <ConfirmDialog
         open={confirm.value}
