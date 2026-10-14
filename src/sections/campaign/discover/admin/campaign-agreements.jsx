@@ -292,6 +292,9 @@ const getRowCurrency = (item) =>
 const guestNeedsLinkBeforeSend = (item) =>
   item?.user?.creator?.isGuest === true && !item?.submission;
 
+// The admin's keyed-in budget can't be edited once the agreement is approved.
+const isBudgetLocked = (item) => item?.submission?.status === 'APPROVED';
+
 // Label and colour of a row's agreement status chip.
 const getAgreementStatus = (item) => {
   if (item?.submission?.status === 'PENDING_REVIEW') {
@@ -550,6 +553,7 @@ function AgreementRowContent({
               agreement={item}
               currency={getRowCurrency(item)}
               disabled={isDisabled}
+              locked={isBudgetLocked(item)}
               onSaved={mutateAgreements}
             />
           </TableCell>
@@ -1880,6 +1884,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
     const totalCreators = filteredData.length;
     const amountsByCurrency = {};
     const budgetsByCurrency = {};
+    const spendByCurrency = {};
 
     const creditsUsed = campaign?.creditsUtilized ?? 0;
     const creditsTotal = campaign?.campaignCredits ?? 0;
@@ -1896,20 +1901,21 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       }
 
       const budget = parseFloat(item?.budgetAmount?.toString());
-      if (budget && !Number.isNaN(budget)) {
+      if (budget) {
         budgetsByCurrency[currency] = (budgetsByCurrency[currency] || 0) + budget;
+      }
+
+      const spend = rawAmount || budget;
+      if (spend) {
+        spendByCurrency[currency] = (spendByCurrency[currency] || 0) + spend;
       }
     });
 
-    // Available = campaign budget − agreement prices (the footer's Total); left = available −
-    // planned budgets. Only amounts in the campaign budget's currency count.
-    const budgetAvailable =
-      campaignBudget != null
-        ? campaignBudget - (amountsByCurrency[campaignBudgetCurrency] || 0)
-        : null;
+    // Left = campaign budget − each creator's price (or budget, until they have a price). Only
+    // amounts in the campaign budget's currency count.
     const budgetRemaining =
-      budgetAvailable != null
-        ? budgetAvailable - (budgetsByCurrency[campaignBudgetCurrency] || 0)
+      campaignBudget != null
+        ? campaignBudget - (spendByCurrency[campaignBudgetCurrency] || 0)
         : null;
 
     return {
@@ -1920,9 +1926,8 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
       creditsRemainingColor: getRemainingColor(creditsRemaining, creditsTotal),
       amountsByCurrency,
       budgetsByCurrency,
-      budgetAvailable,
       budgetRemaining,
-      budgetRemainingColor: getRemainingColor(budgetRemaining, budgetAvailable),
+      budgetRemainingColor: getRemainingColor(budgetRemaining, campaignBudget),
     };
   }, [
     filteredData,

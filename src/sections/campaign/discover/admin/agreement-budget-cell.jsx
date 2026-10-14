@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useRef, useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 
-import { Box, Stack, InputBase, Typography, CircularProgress } from '@mui/material';
+import { Box, Stack, Tooltip, InputBase, Typography, CircularProgress } from '@mui/material';
 
 import { getCurrencyPrefix } from 'src/utils/currency';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -12,8 +12,17 @@ import Iconify from 'src/components/iconify';
 const FRAME_SX = { borderRadius: 1, px: 0.75, py: 0.5, mx: -0.75, my: -0.5 };
 const LINE_HEIGHT = '22px';
 
-export default function AgreementBudgetCell({ agreement, currency, disabled, onSaved }) {
+export default function AgreementBudgetCell({
+  agreement,
+  currency,
+  disabled,
+  locked,
+  onSaved,
+}) {
   const currencySymbol = getCurrencyPrefix(currency) || currency;
+  const isLocked = Boolean(locked);
+  const isReadOnly = disabled || isLocked;
+
   const storedValue = agreement?.budgetAmount == null ? '' : String(agreement.budgetAmount);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -26,7 +35,7 @@ export default function AgreementBudgetCell({ agreement, currency, disabled, onS
   const savedValue = pendingValue ?? storedValue;
 
   const startEditing = () => {
-    if (disabled || isSaving) return;
+    if (isReadOnly || isSaving) return;
     setEditorWidth(valueRef.current?.offsetWidth ?? null);
     setDraft(savedValue);
     setIsEditing(true);
@@ -106,15 +115,27 @@ export default function AgreementBudgetCell({ agreement, currency, disabled, onS
 
   const hasBudget = savedValue !== '';
   // An empty, editable budget gets a resting grey fill so "Set budget" reads as clickable.
-  const isPrompt = !disabled && !hasBudget;
+  const isPrompt = !isReadOnly && !hasBudget;
 
   // One trailing slot: the spinner takes the pencil's place while saving (same 14px footprint).
   let trailingIcon = null;
   if (isSaving) {
     trailingIcon = <CircularProgress size={14} sx={{ color: '#8E8E93' }} />;
+  } else if (isLocked) {
+    trailingIcon = (
+      <Tooltip title="Locked once the agreement is approved" arrow>
+        <Box sx={{ display: 'flex' }}>
+          <Iconify
+            icon="solar:lock-keyhole-minimalistic-linear"
+            width={14}
+            sx={{ color: '#8E8E93' }}
+          />
+        </Box>
+      </Tooltip>
+    );
   } else if (hasBudget) {
     trailingIcon = <Iconify icon="solar:pen-linear" width={14} sx={{ color: '#8E8E93' }} />;
-  } else if (!disabled) {
+  } else if (!isReadOnly) {
     trailingIcon = (
       <Box
         className="budget-edit-icon"
@@ -133,17 +154,17 @@ export default function AgreementBudgetCell({ agreement, currency, disabled, onS
       spacing={0.75}
       // Read-only cells let the click through to the row (which opens the agreement).
       onClick={(e) => {
-        if (disabled) return;
+        if (isReadOnly) return;
         e.stopPropagation();
         startEditing();
       }}
       sx={{
         width: 'fit-content',
-        cursor: disabled ? 'inherit' : 'text',
+        cursor: isReadOnly ? 'inherit' : 'text',
         ...FRAME_SX,
         bgcolor: isPrompt ? '#F5F5F5' : 'transparent',
         transition: 'background-color 0.15s',
-        '&:hover': disabled
+        '&:hover': isReadOnly
           ? {}
           : { bgcolor: isPrompt ? '#EBEBEB' : '#F5F5F5', '& .budget-edit-icon': { opacity: 1 } },
       }}
@@ -164,7 +185,7 @@ export default function AgreementBudgetCell({ agreement, currency, disabled, onS
             lineHeight: LINE_HEIGHT,
           }}
         >
-          {disabled ? 'Not set' : 'Set budget'}
+          {isReadOnly ? 'Not set' : 'Set budget'}
         </Typography>
       )}
       {trailingIcon}
@@ -176,5 +197,6 @@ AgreementBudgetCell.propTypes = {
   agreement: PropTypes.object,
   currency: PropTypes.string,
   disabled: PropTypes.bool,
+  locked: PropTypes.bool,
   onSaved: PropTypes.func,
 };
