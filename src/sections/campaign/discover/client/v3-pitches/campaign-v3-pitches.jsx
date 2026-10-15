@@ -2,6 +2,7 @@
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { FixedSizeList } from 'react-window';
+import { useQueryClient } from '@tanstack/react-query';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { m, MotionConfig, AnimatePresence } from 'framer-motion';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
@@ -48,7 +49,9 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import usePitchSocket from './use-pitch-socket';
+import useCreatorNotes from './creator-notes/use-creator-notes';
 import { resolveRowMetrics } from './resolve-pitch-platform-stats';
+import CreatorNotesDrawer from './creator-notes/creator-notes-drawer';
 import useGuestExtraction from './guest-extraction/use-guest-extraction';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 import { extractionErrorCopy } from './guest-extraction/extraction-error-copy';
@@ -489,6 +492,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const [nonPlatformOpen, setNonPlatformOpen] = useState(false);
   const { enabled: guestMetricsEnabled } = useGuestMetricsDecision();
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
+  const queryClient = useQueryClient();
   const [outreachStatusFilter, setOutreachStatusFilter] = useState([]);
   const [outreachFilterAnchorEl, setOutreachFilterAnchorEl] = useState(null);
   const [creatorFilterAnchorEl, setCreatorFilterAnchorEl] = useState(null);
@@ -518,6 +522,16 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   ]);
 
   const isDisabled = propIsDisabled || financeDisabled || salesAndMarketingDisabled;
+
+  // Same access rule the notes API enforces.
+  const canUseNotes =
+    user?.role === 'superadmin' ||
+    ['god', 'advanced'].includes(user?.admin?.mode) ||
+    (user?.role === 'admin' &&
+      (campaign?.campaignAdmin || []).some((a) => a.adminId === user?.id));
+
+  const creatorNotes = useCreatorNotes({ campaignId: campaign?.id, enabled: canUseNotes });
+  const [unreadNotesOnly, setUnreadNotesOnly] = useState(false);
 
   const smUp = useResponsive('up', 'sm');
   const mdUp = useResponsive('up', 'md');
@@ -587,6 +601,15 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
 
     return [...pitchesWithShortlistedSnapshot, ...shortlistedWithoutPitch];
   }, [pitches, shortlistedCreators, campaign?.id]);
+
+  const openNotesCreatorId = creatorNotes.openCreatorId;
+  const notesCreator = useMemo(() => {
+    if (!openNotesCreatorId) return null;
+    const match = mergedPitchesAndShortlisted.find(
+      (pitch) => (pitch.userId || pitch.user?.id) === openNotesCreatorId
+    );
+    return match?.user ? { ...match.user, id: openNotesCreatorId } : null;
+  }, [openNotesCreatorId, mergedPitchesAndShortlisted]);
 
   // Count pitches by display status (using merged array)
   const pendingReviewCount = countPitchesByStatus(mergedPitchesAndShortlisted, ['PENDING_REVIEW']);
@@ -702,6 +725,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   // Handler for outreach status update from row
   const handleOutreachUpdate = () => {
     onUpdate?.();
+    queryClient.invalidateQueries({ queryKey: ['agreements', campaign?.id] });
   };
 
   // Ids seen once the list first had rows. Anything after that is a new add,
@@ -820,6 +844,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
       });
     }
 
+    if (unreadNotesOnly) {
+      filtered = filtered?.filter(
+        (pitch) => creatorNotes.byCreator.get(pitch.userId || pitch.user?.id)?.unreadCount > 0
+      );
+    }
+
     // Outreach status filter (multi-select)
     if (outreachStatusFilter.length > 0) {
       filtered = filtered?.filter((pitch) => {
@@ -901,6 +931,8 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
     campaign,
     searchQuery,
     outreachStatusFilter,
+    unreadNotesOnly,
+    creatorNotes.byCreator,
   ]);
 
   // Reopen modal when returning from media kit if state indicates
@@ -1404,6 +1436,18 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
             ))}
           </Menu>
 
+          {creatorNotes.enabled && (
+            <Button
+              variant="text"
+              disableElevation
+              aria-pressed={unreadNotesOnly}
+              onClick={() => setUnreadNotesOnly((v) => !v)}
+              sx={getFilterPillSx(unreadNotesOnly)}
+            >
+              Unread notes · {creatorNotes.unreadTotal}
+            </Button>
+          )}
+
           <Box
             sx={{
               display: 'flex',
@@ -1522,6 +1566,12 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                         logistics={logistics}
                         enterIndex={index}
                         isNew={newPitchIds.has(pitch.id)}
+                        noteSummary={creatorNotes.byCreator.get(pitch.userId || pitch.user?.id)}
+                        onOpenNotes={
+                          creatorNotes.enabled
+                            ? () => creatorNotes.openNotes(pitch.userId || pitch.user?.id)
+                            : undefined
+                        }
                       />
                     );
                   })}
@@ -1594,6 +1644,14 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         onUpdate={handlePitchUpdate}
         isDisabled={isDisabled}
       />
+
+      {creatorNotes.enabled && (
+        <CreatorNotesDrawer
+          campaignId={campaign?.id}
+          creator={notesCreator}
+          onClose={creatorNotes.closeNotes}
+        />
+      )}
     </Box>
   );
 };

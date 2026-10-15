@@ -371,6 +371,7 @@ export const endpoints = {
     creatorAgreement: (id) => `/api/campaign/creatorAgreements/${id}`,
     allcreatorAgreement: '/api/campaign/getCreatorAgreements',
     updateAmountAgreement: `/api/campaign/updateAmountAgreement`,
+    agreementBudget: (agreementId) => `/api/campaign/agreement/${agreementId}/budget`,
     sendAgreement: `/api/campaign/sendAgreement`,
     sendAdditionalAgreement: `/api/campaign/sendAdditionalAgreement`,
     resendAgreement: `/api/campaign/resendAgreement`,
@@ -398,6 +399,7 @@ export const endpoints = {
     v4: {
       create: '/api/submissions/v4/create',
       getSubmissions: '/api/submissions/v4/submissions',
+      campaignOverview: '/api/submissions/v4/campaign-overview',
       getById: '/api/submissions/v4/submission',
       submitContent: '/api/submissions/v4/submit-content',
       approve: '/api/submissions/v4/approve',
@@ -480,6 +482,15 @@ export const endpoints = {
     inviteCreators: '/api/discovery/invite-creators',
     bookmarkLists: '/api/discovery/bookmark-lists',
     bookmarkListCreators: '/api/discovery/bookmark-lists/creators',
+  },
+  reimbursement: {
+    root: '/api/reimbursements',
+    list: (campaignId, userId) =>
+      `/api/reimbursements?campaignId=${campaignId}${userId ? `&userId=${userId}` : ''}`,
+    setRequired: (agreementId) => `/api/reimbursements/agreement/${agreementId}/required`,
+    submit: (agreementId) => `/api/reimbursements/agreement/${agreementId}/submit`,
+    receipt: (id) => `/api/reimbursements/${id}`,
+    review: (id) => `/api/reimbursements/${id}/review`,
   },
   invoice: {
     getAll: '/api/invoice/',

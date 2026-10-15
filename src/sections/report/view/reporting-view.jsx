@@ -16,6 +16,16 @@ import TikTokLayout from '../components/TikTokLayout';
 // Import platform-specific layout components
 import InstagramLayout from '../components/InstagramLayout';
 
+const UNAVAILABLE = '–';
+
+// Stored (scraped or snapshot) responses carry their own post URL, so the trend charts match it
+const readStoredInfo = ({ source, capturedAt, unavailableMetrics, postUrl }, fallbackUrl) => ({
+  pathname: postUrl || fallbackUrl,
+  source: source || 'live',
+  capturedAt: capturedAt || null,
+  unavailableMetrics: unavailableMetrics || [],
+});
+
 const ReportingView = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -143,8 +153,14 @@ const ReportingView = () => {
         const response = await axiosInstance.get(apiUrl);
 
         if (response.data?.video && response.data?.insight) {
-          const { video, insight, campaignAverages, campaignComparison, hasCampaignData } =
-            response.data;
+          const {
+            video,
+            insight,
+            campaignAverages,
+            campaignComparison,
+            hasCampaignData,
+            ...storedInfo
+          } = response.data;
 
           const currentMetricsMap = {};
           insight.forEach((item) => {
@@ -163,9 +179,9 @@ const ReportingView = () => {
 
           setContent((prev) => ({
             ...prev,
+            ...readStoredInfo(storedInfo, parsedUrl.url),
             account: 'Instagram',
             contentType: parsedUrl.type,
-            pathname: parsedUrl.url,
             datePosted: fDate(video.timestamp),
             mediaUrl: video.thumbnail_url || video.media_url,
             caption: video.caption,
@@ -189,8 +205,14 @@ const ReportingView = () => {
         const response = await axiosInstance.get(apiUrl);
 
         if (response.data?.video && response.data?.insight) {
-          const { video, insight, campaignAverages, campaignComparison, hasCampaignData } =
-            response.data;
+          const {
+            video,
+            insight,
+            campaignAverages,
+            campaignComparison,
+            hasCampaignData,
+            ...storedInfo
+          } = response.data;
 
           const metricsMap = {};
           insight.forEach((item) => {
@@ -199,9 +221,9 @@ const ReportingView = () => {
 
           setContent((prev) => ({
             ...prev,
+            ...readStoredInfo(storedInfo, parsedUrl.url),
             account: 'TikTok',
             contentType: parsedUrl.type,
-            pathname: parsedUrl.url,
             datePosted: fDate(video.timestamp),
             mediaUrl: video.cover_image_url,
             caption: video.description,
@@ -245,7 +267,7 @@ const ReportingView = () => {
     const campaignName = searchParams.get('campaignName');
     const userId = searchParams.get('userId');
     const creatorId = searchParams.get('creatorId');
-    const video = searchParams.get('video')
+    const video = searchParams.get('video');
 
     if (urlParam && userId) {
       setUrl(urlParam);
@@ -301,7 +323,8 @@ const ReportingView = () => {
   };
 
   const renderCircularStat = ({ width, label, value, metricKey }) => {
-    const displayValue = value || 0;
+    const isUnavailable = content.unavailableMetrics?.includes(metricKey);
+    const displayValue = isUnavailable ? 0 : value || 0;
 
     // Use campaign averages if available, otherwise fallback to hardcoded values
     let avgValue = 0;
@@ -340,6 +363,8 @@ const ReportingView = () => {
         : 0;
 
     const comparisonText = content.hasCampaignData ? 'campaign avg' : 'average creator';
+
+    if (isUnavailable) percentageDiff = 0;
 
     return (
       <Box
@@ -410,10 +435,10 @@ const ReportingView = () => {
                 color: '#1340FF',
               }}
             >
-              {formatNumber(displayValue)}
+              {isUnavailable ? UNAVAILABLE : formatNumber(displayValue)}
             </Typography>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+            <Box sx={{ display: isUnavailable ? 'none' : 'flex', alignItems: 'center', mt: 1 }}>
               {percentageDiff !== 0 && (
                 <Iconify
                   icon={isAboveAverage ? 'mdi:arrow-up' : 'mdi:arrow-down'}
@@ -449,7 +474,7 @@ const ReportingView = () => {
                 textAlign: 'center',
               }}
             >
-              {comparisonText}
+              {isUnavailable ? 'not public' : comparisonText}
             </Typography>
           </Box>
         </Box>
@@ -457,13 +482,28 @@ const ReportingView = () => {
     );
   };
 
-  const renderEngagementCard = ({ height, title, value, metricKey }) => {
+  // comparison: overrides the campaign comparison; caption: replaces the comparison lines
+  const renderEngagementCard = ({
+    height,
+    title,
+    value,
+    metricKey,
+    comparison: override,
+    caption,
+  }) => {
     let changeDisplay = '+100%';
     let changeIsPositive = true;
     let comparisonText = 'campaign average';
 
-    // Use campaign comparison data if available
-    if (
+    const isUnavailable = content.unavailableMetrics?.includes(metricKey);
+
+    if (isUnavailable) {
+      comparisonText = 'not public';
+      changeDisplay = '--';
+    } else if (override) {
+      changeDisplay = override.changeText;
+      changeIsPositive = override.isAboveAverage;
+    } else if (
       content.hasCampaignData &&
       content.campaignComparison &&
       content.campaignComparison[metricKey]
@@ -518,72 +558,80 @@ const ReportingView = () => {
               {title}
             </Typography>
 
-            {/* Comparison section */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}
-            >
-              {content.hasCampaignData &&
-                changeDisplay !== '--' &&
-                !changeDisplay.startsWith('0%') && (
-                  <Iconify
-                    icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
+            {caption ? (
+              <Typography sx={{ fontWeight: 500, fontSize: 16, color: '#636366' }}>
+                {caption}
+              </Typography>
+            ) : (
+              <>
+                {/* Comparison section */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                  }}
+                >
+                  {content.hasCampaignData &&
+                    changeDisplay !== '--' &&
+                    !changeDisplay.startsWith('0%') && (
+                      <Iconify
+                        icon={changeIsPositive ? 'mdi:arrow-up' : 'mdi:arrow-down'}
+                        sx={{
+                          width: 18,
+                          height: 17,
+                          color: changeIsPositive ? '#1ABF66' : '#F44336',
+                        }}
+                      />
+                    )}
+                  <Typography
                     sx={{
-                      width: 18,
-                      height: 17,
-                      color: changeIsPositive ? '#1ABF66' : '#F44336',
+                      fontWeight: 500,
+                      fontSize: 16,
+                      color: (() => {
+                        if (!content.hasCampaignData) return '#999';
+                        if (changeDisplay.startsWith('0%')) return '#636366';
+                        return changeIsPositive ? '#1ABF66' : '#F44336';
+                      })(),
                     }}
-                  />
-                )}
-              <Typography
-                sx={{
-                  fontWeight: 500,
-                  fontSize: 16,
-                  color: (() => {
-                    if (!content.hasCampaignData) return '#999';
-                    if (changeDisplay.startsWith('0%')) return '#636366';
-                    return changeIsPositive ? '#1ABF66' : '#F44336';
-                  })(),
-                }}
-              >
-                {changeDisplay}
-              </Typography>
-              <Typography
-                sx={{
-                  fontWeight: 500,
-                  fontSize: 16,
-                  textAlign: 'right',
-                  color: '#636366',
-                  ml: 1,
-                }}
-              >
-                from
-              </Typography>
-            </Box>
+                  >
+                    {changeDisplay}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontWeight: 500,
+                      fontSize: 16,
+                      textAlign: 'right',
+                      color: '#636366',
+                      ml: 1,
+                    }}
+                  >
+                    from
+                  </Typography>
+                </Box>
 
-            {/* "campaign average" text */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'row',
-                height: 20,
-              }}
-            >
-              <Typography
-                sx={{
-                  height: 20,
-                  fontWeight: 500,
-                  fontSize: 16,
-                  lineHeight: '20px',
-                  color: '#636366',
-                }}
-              >
-                {comparisonText}
-              </Typography>
-            </Box>
+                {/* "campaign average" text */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    height: 20,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      height: 20,
+                      fontWeight: 500,
+                      fontSize: 16,
+                      lineHeight: '20px',
+                      color: '#636366',
+                    }}
+                  >
+                    {comparisonText}
+                  </Typography>
+                </Box>
+              </>
+            )}
           </Box>
 
           {/* Right side - Icon and value */}
@@ -605,7 +653,8 @@ const ReportingView = () => {
                 color: '#FFFFFF',
               }}
             >
-              {typeof value === 'number' ? formatNumber(value) : value}
+              {isUnavailable && UNAVAILABLE}
+              {!isUnavailable && (typeof value === 'number' ? formatNumber(value) : value)}
             </Typography>
           </Box>
         </Box>
@@ -628,6 +677,13 @@ const ReportingView = () => {
             </Typography>
           </Card> */}
 
+        {content.source === 'brightdata' && (
+          <Typography sx={{ fontSize: 14, color: '#636366', mb: 2 }}>
+            Public data, updated {fDate(content.capturedAt)}. Saves, shares and reach are not
+            public.
+          </Typography>
+        )}
+
         {/* Conditionally render platform-specific layouts */}
         {content.account === 'Instagram' ? (
           <InstagramLayout
@@ -646,7 +702,7 @@ const ReportingView = () => {
     );
   };
 
-  console.log('Content report: ', content)
+  console.log('Content report: ', content);
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'}>
@@ -696,7 +752,7 @@ const ReportingView = () => {
                   textDecoration: 'none',
                   '&:hover': {
                     textDecoration: 'underline',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
                   },
                 }}
               >

@@ -1,16 +1,28 @@
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router';
 import React, { useMemo, useState } from 'react';
 import { useLocation, useSearchParams, Link as RouterLink } from 'react-router-dom';
 
-import { Clear, Search , ArrowUpward, ArrowDownward, ChevronLeftRounded, ChevronRightRounded } from '@mui/icons-material';
+import {
+  Clear,
+  Search,
+  ArrowUpward,
+  ArrowDownward,
+  ChevronLeftRounded,
+  ChevronRightRounded,
+} from '@mui/icons-material';
 import {
   Box,
   Stack,
   Avatar,
   Button,
   Select,
+  Divider,
   MenuItem,
+  InputBase,
   TextField,
+  ButtonBase,
+  IconButton,
   Typography,
   FormControl,
   InputAdornment,
@@ -27,6 +39,388 @@ import { createSocialProfileUrl } from 'src/utils/media-kit-utils';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Iconify from 'src/components/iconify';
+
+import ReportLanding from './report-landing';
+
+const rowNumberSx = {
+  minWidth: 24,
+  flexShrink: 0,
+  fontSize: 14,
+  color: '#999',
+  textAlign: 'right',
+  fontVariantNumeric: 'tabular-nums',
+};
+
+const formatNumber = (value) => value.toLocaleString();
+
+// First grapheme, so emoji and accented names never show half a character
+const segmenter = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter() : null;
+const initialOf = (text = '') => {
+  const trimmed = text.trim();
+  if (!trimmed) return '';
+  const first = segmenter
+    ? segmenter.segment(trimmed)[Symbol.iterator]().next().value.segment
+    : [...trimmed][0];
+  return first.toLocaleUpperCase();
+};
+
+// Handles are stored as "name", "@name" or a pasted profile URL
+const cleanHandle = (value) =>
+  value
+    ?.trim()
+    .replace(/^(?:https?:\/\/)?(?:www\.)?(?:instagram|tiktok)\.com\//i, '')
+    .replace(/^@+/, '')
+    .replace(/[/?#].*$/, '') || null;
+
+// Creators can paste text around the link, so take the post URL out of the field
+const POST_URL_REGEX =
+  /(?:https?:\/\/)?(?:[\w-]+\.)?(?:instagram\.com\/(?:p|reel|tv)\/[\w-]+|tiktok\.com\/@[^/\s]+\/(?:video|photo)\/\d+|(?:vt|vm|m)\.tiktok\.com\/[\w-]+)[^\s]*/i;
+const extractPostUrl = (text) => {
+  const match = text?.match(POST_URL_REGEX)?.[0];
+  if (!match) return text;
+  return /^https?:\/\//i.test(match) ? match : `https://${match}`;
+};
+
+const PAGE_SIZE = 8;
+
+// 1 … 4 5 6 … 161, always 7 slots or fewer
+const getPageItems = (current, total) => {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const start = Math.max(2, Math.min(current - 1, total - 4));
+  const end = Math.min(total - 1, Math.max(current + 1, 5));
+  const middle = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  // A gap that would hide a single page shows that page instead
+  const before = start === 3 ? [2] : [];
+  const after = end === total - 2 ? [total - 1] : [];
+  return [
+    1,
+    ...(start > 3 ? ['start-gap'] : before),
+    ...middle,
+    ...(end < total - 2 ? ['end-gap'] : after),
+    total,
+  ];
+};
+
+const pageButtonSx = {
+  minWidth: 32,
+  width: 'auto',
+  height: 32,
+  px: 1,
+  borderRadius: '8px',
+  fontSize: 14,
+  fontWeight: 500,
+  lineHeight: '32px',
+  color: '#636366',
+  fontVariantNumeric: 'tabular-nums',
+  transition: 'background-color 160ms ease-out, color 160ms ease-out',
+  '&:hover': { bgcolor: '#F5F5F5' },
+  '&.Mui-focusVisible': { outline: '2px solid #1340FF', outlineOffset: 2 },
+};
+
+const activePageSx = {
+  bgcolor: '#1340FF',
+  color: '#FFFFFF',
+  '&:hover': { bgcolor: '#1340FF' },
+};
+
+// "…" turns into a page-number input on click; Enter jumps, Esc or blur cancels
+const PageJump = ({ totalPages, onJump }) => {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState('');
+
+  const close = () => {
+    setEditing(false);
+    setValue('');
+  };
+
+  const submit = () => {
+    const page = Number.parseInt(value, 10);
+    if (page >= 1 && page <= totalPages) onJump(page);
+    close();
+  };
+
+  if (!editing) {
+    return (
+      <ButtonBase
+        aria-label="Go to page"
+        disableRipple
+        title="Go to page"
+        onClick={() => setEditing(true)}
+        sx={{ ...pageButtonSx, color: '#8E8E93' }}
+      >
+        …
+      </ButtonBase>
+    );
+  }
+
+  return (
+    <InputBase
+      autoFocus
+      value={value}
+      placeholder={`1–${formatNumber(totalPages)}`}
+      onChange={(event) => setValue(event.target.value.replace(/\D/g, ''))}
+      onBlur={close}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') submit();
+        if (event.key === 'Escape') close();
+      }}
+      inputProps={{ inputMode: 'numeric', 'aria-label': `Page number, 1 to ${totalPages}` }}
+      sx={{
+        width: 64,
+        height: 32,
+        px: 1,
+        borderRadius: '8px',
+        border: '1px solid #1340FF',
+        fontSize: 14,
+        fontVariantNumeric: 'tabular-nums',
+        '& input': { p: 0, textAlign: 'center' },
+        '& input::placeholder': { color: '#AEAEB2', opacity: 1, fontSize: 12 },
+      }}
+    />
+  );
+};
+
+PageJump.propTypes = {
+  totalPages: PropTypes.number,
+  onJump: PropTypes.func,
+};
+
+const PaginationBar = ({ currentPage, totalPages, totalItems, onPageChange }) => {
+  const first = (currentPage - 1) * PAGE_SIZE + 1;
+  const last = Math.min(currentPage * PAGE_SIZE, totalItems);
+
+  return (
+    <Box
+      component="nav"
+      aria-label="Report pages"
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 1.5,
+        mt: 2,
+        pb: 1,
+      }}
+    >
+      <Typography sx={{ fontSize: 13, color: '#8E8E93', fontVariantNumeric: 'tabular-nums' }}>
+        Showing {formatNumber(first)}–{formatNumber(last)} of {formatNumber(totalItems)} posts
+      </Typography>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <IconButton
+          aria-label="Previous page"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          disableRipple
+          sx={{ ...pageButtonSx, p: 0 }}
+        >
+          <ChevronLeftRounded sx={{ fontSize: 20 }} />
+        </IconButton>
+
+        {getPageItems(currentPage, totalPages).map((item) =>
+          typeof item === 'number' ? (
+            <ButtonBase
+              key={item}
+              onClick={() => item !== currentPage && onPageChange(item)}
+              aria-current={item === currentPage ? 'page' : undefined}
+              disableRipple
+              sx={{ ...pageButtonSx, ...(item === currentPage && activePageSx) }}
+            >
+              {formatNumber(item)}
+            </ButtonBase>
+          ) : (
+            <PageJump key={item} totalPages={totalPages} onJump={onPageChange} />
+          )
+        )}
+
+        <IconButton
+          aria-label="Next page"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          disableRipple
+          sx={{ ...pageButtonSx, p: 0 }}
+        >
+          <ChevronRightRounded sx={{ fontSize: 20 }} />
+        </IconButton>
+      </Box>
+    </Box>
+  );
+};
+
+PaginationBar.propTypes = {
+  currentPage: PropTypes.number,
+  totalPages: PropTypes.number,
+  totalItems: PropTypes.number,
+  onPageChange: PropTypes.func,
+};
+
+// One column template for the header and every row, so they always line up
+const DESKTOP_GRID = {
+  gridTemplateColumns:
+    '44px minmax(0, 1.3fr) minmax(0, 1.5fr) 96px 120px 112px minmax(0, 1fr) 216px',
+  columnGap: 3,
+  alignItems: 'center',
+  px: 2.5,
+};
+
+const headLabelSx = { fontWeight: 600, fontSize: 14, color: '#666' };
+const cellTextSx = { fontSize: 14, color: '#231F20', lineHeight: 1.4 };
+const subTextSx = { fontSize: 13, color: '#8E8E93', lineHeight: 1.4 };
+const ellipsisSx = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
+
+const formatCredits = (row) => {
+  const credits = row.isCreditTier ? row.creditTierCredits || 1 : 1;
+  return `${credits} ${credits === 1 ? 'credit' : 'credits'}`;
+};
+
+const SortHeader = ({ label, column, sortBy, sortDirection, onSort, descFirst = false }) => {
+  const isActive = sortBy === column;
+  // Posting Date shows newest first, so its arrows point the other way
+  const pointsUp = isActive ? (sortDirection === 'asc') !== descFirst : !descFirst;
+  const ArrowIcon = pointsUp ? ArrowUpward : ArrowDownward;
+
+  return (
+    <Box
+      onClick={() => onSort(column)}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        cursor: 'pointer',
+        userSelect: 'none',
+      }}
+    >
+      <Typography sx={{ ...headLabelSx, color: isActive ? '#1340FF' : '#666' }}>{label}</Typography>
+      <ArrowIcon sx={{ fontSize: 14, color: isActive ? '#1340FF' : '#bbb' }} />
+    </Box>
+  );
+};
+
+SortHeader.propTypes = {
+  label: PropTypes.string,
+  column: PropTypes.string,
+  sortBy: PropTypes.string,
+  sortDirection: PropTypes.string,
+  onSort: PropTypes.func,
+  descFirst: PropTypes.bool,
+};
+
+const filterFieldSx = {
+  bgcolor: '#FFFFFF',
+  borderRadius: '8px',
+  height: 44,
+  fontSize: 14,
+  color: '#231F20',
+  '& .MuiSelect-select': { display: 'flex', alignItems: 'center', py: 0, pl: 1.25 },
+  '& .MuiOutlinedInput-notchedOutline, & fieldset': { borderColor: '#E7E7E7', borderRadius: '8px' },
+  '&:hover .MuiOutlinedInput-notchedOutline, &:hover fieldset': { borderColor: '#C7C7CC' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline, &.Mui-focused fieldset': {
+    borderColor: '#1340FF',
+    borderWidth: '1px',
+  },
+};
+
+// Without a name it is the "All Campaigns" option
+const CampaignOption = ({ name, image, count, selected = false }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, width: '100%', minWidth: 0 }}>
+    <Avatar
+      variant="rounded"
+      src={name ? image : undefined}
+      sx={{
+        width: 28,
+        height: 28,
+        borderRadius: '6px',
+        bgcolor: '#F0F3FF',
+        color: '#1340FF',
+        fontSize: 12,
+        fontWeight: 600,
+      }}
+    >
+      {name ? initialOf(name) : <Iconify icon="mingcute:grid-line" width={16} />}
+    </Avatar>
+    <Typography
+      sx={{
+        ...ellipsisSx,
+        flex: 1,
+        fontSize: 14,
+        fontWeight: selected ? 600 : 400,
+        color: selected ? '#1340FF' : '#231F20',
+      }}
+    >
+      <span dir="auto" title={name}>
+        {name || 'All Campaigns'}
+      </span>
+    </Typography>
+    {count !== undefined && (
+      <Box
+        component="span"
+        sx={{
+          minWidth: 24,
+          px: 0.75,
+          py: 0.25,
+          borderRadius: '999px',
+          bgcolor: selected ? '#E0E7FF' : '#F5F5F5',
+          color: selected ? '#1340FF' : '#8E8E93',
+          fontSize: 12,
+          fontWeight: 600,
+          textAlign: 'center',
+          lineHeight: '18px',
+        }}
+      >
+        {formatNumber(count)}
+      </Box>
+    )}
+    {count !== undefined && (
+      <Iconify
+        icon="eva:checkmark-fill"
+        width={18}
+        sx={{ flexShrink: 0, color: '#1340FF', visibility: selected ? 'visible' : 'hidden' }}
+      />
+    )}
+  </Box>
+);
+
+CampaignOption.propTypes = {
+  name: PropTypes.string,
+  image: PropTypes.string,
+  count: PropTypes.number,
+  selected: PropTypes.bool,
+};
+
+const PostLink = ({ url }) =>
+  url ? (
+    <Typography
+      component="a"
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={url}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.5,
+        fontSize: 13,
+        color: '#1340FF',
+        textDecoration: 'none',
+        '&:hover': { textDecoration: 'underline' },
+      }}
+    >
+      <Box component="span" sx={ellipsisSx}>
+        {url
+          .replace(/^https?:\/\/(www\.)?[^/]+\//, '')
+          .replace(/[?#].*$/, '')
+          .replace(/\/$/, '')}
+      </Box>
+      <Iconify icon="eva:external-link-fill" width={14} sx={{ flexShrink: 0 }} />
+    </Typography>
+  ) : null;
+
+PostLink.propTypes = {
+  url: PropTypes.string,
+};
+
 const CampaignPerformanceTable = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,14 +435,10 @@ const CampaignPerformanceTable = () => {
     () => searchParams.get('campaign') || 'all'
   );
 
-  const [searchQuery, setSearchQuery] = useState(
-    () => searchParams.get('search') || ''
-  );
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
 
   const [sortBy, setSortBy] = useState('campaignName');
   const [sortDirection, setSortDirection] = useState('asc');
-
-  const itemsPerPage = 8;
 
   const { user } = useAuthContext();
   const { company } = useGetClientCredits();
@@ -66,8 +456,7 @@ const CampaignPerformanceTable = () => {
           /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
         const tiktokPostRegex =
           /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/i;
-        const tiktokMobileRegex =
-          /(?:https?:\/\/)?(?:vt|vm|m)\.tiktok\.com\/[A-Za-z0-9_-]+/i;
+        const tiktokMobileRegex = /(?:https?:\/\/)?(?:vt|vm|m)\.tiktok\.com\/[A-Za-z0-9_-]+/i;
 
         const isInstagramPost = instagramPostRegex.test(submission.content);
         const isTiktokPost =
@@ -75,13 +464,15 @@ const CampaignPerformanceTable = () => {
 
         if (!isInstagramPost && !isTiktokPost) return false;
 
-        // Only show creators who have connected their media kit for the relevant platform
-        if (isInstagramPost && !submission.isInstagramConnected) return false;
-        if (isTiktokPost && !isInstagramPost && !submission.isTiktokConnected) return false;
+        // Stored metrics (scraped or API snapshots) work without a connected account
+        if (!submission.hasStoredMetrics) {
+          if (isInstagramPost && !submission.isInstagramConnected) return false;
+          if (isTiktokPost && !isInstagramPost && !submission.isTiktokConnected) return false;
 
-        // Exclude reports where token validation already failed on backend
-        if (isInstagramPost && submission.isInstagramTokenValid === false) return false;
-        if (isTiktokPost && !isInstagramPost && submission.isTiktokTokenValid === false) return false;
+          if (isInstagramPost && submission.isInstagramTokenValid === false) return false;
+          if (isTiktokPost && !isInstagramPost && submission.isTiktokTokenValid === false)
+            return false;
+        }
 
         // Filter by company/client association
         if (user?.role === 'client') {
@@ -103,8 +494,9 @@ const CampaignPerformanceTable = () => {
         return {
           id: submission.id,
           creatorId: submission.user?.creator?.id,
-          creatorName: submission.user?.name || 'N/A',
+          creatorName: submission.user?.name?.trim() || null,
           campaignName: submission.campaign?.name || 'N/A',
+          campaignImage: submission.campaign?.campaignBrief?.images?.[0] || null,
           isCreditTier: submission.campaign.isCreditTier || false,
           creditTier: submission.user?.creator?.creditTier?.name || null,
           creditTierCredits: submission.user?.creator?.creditTier?.creditsPerVideo || null,
@@ -113,22 +505,27 @@ const CampaignPerformanceTable = () => {
           instagramUsername: submission.user?.creator?.instagram || null,
           video: submission.video || null,
           platform: isInstagram ? 'Instagram' : 'TikTok',
-          socialUsername: isInstagram
-            ? submission.user?.creator?.instagram
-            : submission.user?.creator?.tiktok,
-          socialProfileUrl: createSocialProfileUrl(
-            isInstagram
-              ? submission.user?.creator?.instagram
-              : submission.user?.creator?.tiktok,
-            isInstagram ? 'instagram' : 'tiktok'
+          socialUsername: cleanHandle(
+            isInstagram ? submission.user?.creator?.instagram : submission.user?.creator?.tiktok
           ),
-          content: submission.content,
+          content: extractPostUrl(submission.content),
           submissionId: submission.id,
           campaignId: submission.campaignId,
           userId: submission.user?.id,
           updatedAt: submission.updatedAt,
+          postedAt: submission.postingDate || submission.updatedAt,
         };
       })
+      .map((row) => ({
+        ...row,
+        // No name on the account: the handle still identifies the creator
+        creatorName:
+          row.creatorName || (row.socialUsername ? `@${row.socialUsername}` : 'Unknown creator'),
+        socialProfileUrl: createSocialProfileUrl(
+          row.socialUsername,
+          row.platform === 'Instagram' ? 'instagram' : 'tiktok'
+        ),
+      }))
       .sort((a, b) => {
         const campaignCompare = a.campaignName.localeCompare(b.campaignName);
         return campaignCompare === 0 ? a.creatorName.localeCompare(b.creatorName) : campaignCompare;
@@ -136,29 +533,49 @@ const CampaignPerformanceTable = () => {
   }, [submissionData, user, company]);
 
   // Get unique campaigns for filter dropdown
+  // Keyed by id: two brands can both run a campaign called "Ramadan Sale"
   const uniqueCampaigns = useMemo(() => {
-    const campaigns = [...new Set(reportList.map((item) => item.campaignName))];
-    return campaigns.filter((name) => name !== 'N/A').sort();
+    const byId = new Map();
+    reportList.forEach(({ campaignId, campaignName, campaignImage }) => {
+      const entry = byId.get(campaignId) || {
+        id: campaignId,
+        name: campaignName,
+        image: null,
+        count: 0,
+      };
+      byId.set(campaignId, {
+        ...entry,
+        image: entry.image || campaignImage,
+        count: entry.count + 1,
+      });
+    });
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
   }, [reportList]);
+
+  // Older links filter by name, newer ones by id
+  const activeCampaign = uniqueCampaigns.find(
+    (campaign) => campaign.id === selectedCampaign || campaign.name === selectedCampaign
+  );
 
   // Filter and sort reports
   const filteredReports = useMemo(() => {
     let filtered = reportList;
     if (selectedCampaign !== 'all') {
-      filtered = filtered.filter((report) => report.campaignName === selectedCampaign);
+      filtered = filtered.filter((report) => report.campaignId === activeCampaign?.id);
     }
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(
         (report) =>
           report.campaignName.toLowerCase().includes(query) ||
-          report.creatorName.toLowerCase().includes(query)
+          report.creatorName.toLowerCase().includes(query) ||
+          report.socialUsername?.toLowerCase().includes(query)
       );
     }
     return [...filtered].sort((a, b) => {
       if (sortBy === 'updatedAt') {
-        const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-        const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        const aTime = a.postedAt ? new Date(a.postedAt).getTime() : 0;
+        const bTime = b.postedAt ? new Date(b.postedAt).getTime() : 0;
         const cmp = aTime - bTime;
         return sortDirection === 'asc' ? -cmp : cmp;
       }
@@ -175,9 +592,9 @@ const CampaignPerformanceTable = () => {
       const cmp = aVal.localeCompare(bVal);
       return sortDirection === 'asc' ? cmp : -cmp;
     });
-  }, [reportList, selectedCampaign, searchQuery, sortBy, sortDirection]);
+  }, [reportList, selectedCampaign, activeCampaign, searchQuery, sortBy, sortDirection]);
 
-  console.log('Report List: ', reportList)
+  console.log('Report List: ', reportList);
 
   const buildCampaignDetailsPath = (campaignId) => {
     const returnTo = `${location.pathname}${location.search}`;
@@ -213,18 +630,6 @@ const CampaignPerformanceTable = () => {
     });
 
     navigate(`/dashboard/report/view?${params.toString()}`);
-  };
-
-  const handleNextPage = () => {
-    const newPage = currentPage + 1;
-    setCurrentPage(newPage);
-    updateUrlParams(newPage, selectedCampaign, searchQuery);
-  };
-
-  const handlePrevPage = () => {
-    const newPage = currentPage - 1;
-    setCurrentPage(newPage);
-    updateUrlParams(newPage, selectedCampaign, searchQuery);
   };
 
   const handlePageClick = (page) => {
@@ -263,80 +668,101 @@ const CampaignPerformanceTable = () => {
   };
 
   // Calculate pagination
-  const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  const totalPages = Math.ceil(filteredReports.length / PAGE_SIZE);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const endIndex = startIndex + PAGE_SIZE;
   const displayedReports = filteredReports.slice(startIndex, endIndex);
-  const hasNextPage = currentPage < totalPages;
-  const hasPrevPage = currentPage > 1;
 
   return (
     <Box sx={{ mt: 4 }}>
-      {/* Header with title */}
-      <Typography
-        variant="h5"
-        sx={{
-          fontFamily: 'Aileron',
-          fontSize: { xs: 18, md: 24 },
-          fontWeight: 600,
-          color: '#333',
-          mb: 2,
-        }}
-      >
-        Your Campaigns
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 2 }}>
+        <Typography
+          variant="h5"
+          sx={{
+            fontFamily: 'Aileron',
+            fontSize: { xs: 18, md: 24 },
+            fontWeight: 600,
+            color: '#333',
+          }}
+        >
+          Your Campaigns
+        </Typography>
+        {!isLoadingSubmissions && (
+          <Typography sx={{ fontSize: 14, color: '#8E8E93' }}>
+            {formatNumber(filteredReports.length)} {filteredReports.length === 1 ? 'post' : 'posts'}
+          </Typography>
+        )}
+      </Box>
 
       {/* Campaign Filter Dropdown + Search Bar */}
-      <Box sx={{ mb: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', gap: 2 }}>
-        <FormControl sx={{ width: { xs: '100%', sm: 400 } }}>
+      <Box
+        sx={{
+          mb: 2,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
+      >
+        <FormControl sx={{ width: { xs: '100%', sm: 360 } }}>
           <Select
-            value={selectedCampaign}
+            value={activeCampaign ? activeCampaign.id : 'all'}
             onChange={handleCampaignFilterChange}
             displayEmpty
+            renderValue={(value) => {
+              const campaign = uniqueCampaigns.find((item) => item.id === value);
+              return <CampaignOption name={campaign?.name} image={campaign?.image} />;
+            }}
             sx={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: '8px',
-              height: { xs: 44, sm: 48 },
-              fontSize: { xs: '14px', sm: '16px' },
-              fontWeight: 400,
-              color: '#000000',
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#E7E7E7',
-                borderRadius: '8px',
-                borderWidth: '1px',
-              },
-              '&:hover .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#E7E7E7',
-              },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#E7E7E7',
-              },
-              '& .MuiSelect-select': {
-                paddingTop: { xs: '10px', sm: '12px' },
-                paddingRight: '12px',
-                paddingBottom: { xs: '10px', sm: '12px' },
-                paddingLeft: '14px',
-                display: 'flex',
-                alignItems: 'center',
-              },
-              '& .MuiSelect-icon': {
-                color: '#231F20',
-                height: 20,
-                width: 20,
-              },
+              ...filterFieldSx,
+              '& .MuiSelect-icon': { color: '#231F20', width: 20, height: 20 },
             }}
             MenuProps={{
-              sx: {
-                maxHeight: 400,
+              // Same width and left edge as the field; long names truncate instead of widening the menu
+              anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
+              transformOrigin: { vertical: 'top', horizontal: 'left' },
+              PaperProps: {
+                sx: {
+                  mt: 0.75,
+                  width: { xs: 'calc(100% - 32px)', sm: 360 },
+                  maxHeight: 360,
+                  // Solid panel: the theme's blurred gradient makes the rows hard to read
+                  bgcolor: '#FFFFFF',
+                  backgroundImage: 'none',
+                  backdropFilter: 'none',
+                  borderRadius: '10px',
+                  border: '1px solid #E7E7E7',
+                  boxShadow: '0px 12px 32px rgba(0, 0, 0, 0.10)',
+                  '& .MuiMenu-list': { p: 0.75 },
+                  '& .MuiMenuItem-root': {
+                    minHeight: 44,
+                    px: 1.25,
+                    py: 0.75,
+                    mb: 0.25,
+                    borderRadius: '6px',
+                    '&:last-of-type': { mb: 0 },
+                    '&:hover, &.Mui-focusVisible': { bgcolor: '#F5F5F5' },
+                    '&.Mui-selected, &.Mui-selected.Mui-focusVisible': { bgcolor: '#F5F7FF' },
+                    '&.Mui-selected:hover': { bgcolor: '#EEF2FF' },
+                  },
+                },
               },
             }}
           >
-            <MenuItem value="all" sx={{ fontSize: '14px', fontWeight: 400 }}>
-              All Campaigns
+            <MenuItem value="all">
+              <CampaignOption count={reportList.length} selected={!activeCampaign} />
             </MenuItem>
+            {uniqueCampaigns.length > 0 && (
+              <Divider sx={{ my: '4px !important', borderColor: '#F0F0F0' }} />
+            )}
             {uniqueCampaigns.map((campaign) => (
-              <MenuItem key={campaign} value={campaign} sx={{ fontSize: '14px', fontWeight: 400 }}>
-                {campaign}
+              <MenuItem key={campaign.id} value={campaign.id}>
+                <CampaignOption
+                  name={campaign.name}
+                  image={campaign.image}
+                  count={campaign.count}
+                  selected={activeCampaign?.id === campaign.id}
+                />
               </MenuItem>
             ))}
           </Select>
@@ -346,28 +772,7 @@ const CampaignPerformanceTable = () => {
           value={searchQuery}
           onChange={handleSearchChange}
           placeholder="Search campaigns or creators..."
-          sx={{
-            width: { xs: '100%', sm: 400 },
-            '& .MuiOutlinedInput-root': {
-              backgroundColor: '#FFFFFF',
-              borderRadius: '8px',
-              height: { xs: 44, sm: 48 },
-              fontSize: { xs: '14px', sm: '16px' },
-              fontWeight: 400,
-              color: '#000000',
-              '& fieldset': {
-                borderColor: '#E7E7E7',
-                borderRadius: '8px',
-                borderWidth: '1px',
-              },
-              '&:hover fieldset': {
-                borderColor: '#E7E7E7',
-              },
-              '&.Mui-focused fieldset': {
-                borderColor: '#E7E7E7',
-              },
-            },
-          }}
+          sx={{ width: { xs: '100%', sm: 360 }, '& .MuiOutlinedInput-root': filterFieldSx }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -413,181 +818,52 @@ const CampaignPerformanceTable = () => {
           {/* Custom Table Header */}
           <Box
             sx={{
-              width: '100%',
-              backgroundColor: '#F5F5F5',
+              ...DESKTOP_GRID,
+              display: { xs: 'none', lg: 'grid' },
+              py: 1.25,
+              bgcolor: '#F5F5F5',
               borderRadius: 1,
-              display: { xs: 'none', md: 'flex' },
-              alignItems: 'center',
             }}
           >
-            <Box
-              sx={{
-                flex: '0 0 25%',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                px: 2,
-                py: 1,
-                borderRadius: 1,
-                userSelect: 'none',
-              }}
-              onClick={() => handleSort('creatorName')}
-            >
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: sortBy === 'creatorName' ? '#1340FF' : '#666',
-                }}
-              >
-                Creator
-              </Typography>
-              {(() => {
-                if (sortBy === 'creatorName') {
-                  if (sortDirection === 'asc') {
-                    return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
-                  }
-                  return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
-                }
-                return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
-              })()}
-            </Box>
-            <Box
-              sx={{
-                flex: '0 0 25%',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                px: 2,
-                py: 1,
-                borderRadius: '4px', // Only one borderRadius key
-                userSelect: 'none',
-              }}
-              onClick={() => handleSort('campaignName')}
-            >
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: sortBy === 'campaignName' ? '#1340FF' : '#666',
-                }}
-              >
-                Campaign Name
-              </Typography>
-              {(() => {
-                if (sortBy === 'campaignName') {
-                  if (sortDirection === 'asc') {
-                    return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
-                  }
-                  return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
-                }
-                return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
-              })()}
-            </Box>
-            <Box
-              sx={{
-                flex: '0 0 10%',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                px: 2,
-                py: 1,
-                borderRadius: '4px', // Only one borderRadius key
-                userSelect: 'none',
-              }}
-              onClick={() => handleSort('creditTierCredits')}
-            >
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: sortBy === 'creditTier' ? '#1340FF' : '#666',
-                }}
-              >
-                Tier
-              </Typography>
-              {(() => {
-                if (sortBy === 'creditTierCredits') {
-                  if (sortDirection === 'asc') {
-                    return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
-                  }
-                  return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
-                }
-                return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
-              })()}
-            </Box>
-            <Box
-              sx={{
-                flex: '0 0 10%',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                px: 2,
-                py: 1,
-                borderRadius: '4px', // Only one borderRadius key
-                userSelect: 'none',
-              }}
-              onClick={() => handleSort('platform')}
-            >
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: sortBy === 'platform' ? '#1340FF' : '#666',
-                }}
-              >
-                Platform
-              </Typography>
-              {(() => {
-                if (sortBy === 'platform') {
-                  if (sortDirection === 'asc') {
-                    return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
-                  }
-                  return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
-                }
-                return <ArrowUpward sx={{ fontSize: 14, color: '#bbb' }} />;
-              })()}
-            </Box>
-            <Box
-              sx={{
-                flex: '0 0 15%',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-                px: 1,
-                py: 1,
-                borderRadius: '4px',
-                userSelect: 'none',
-              }}
-              onClick={() => handleSort('updatedAt')}
-            >
-              <Typography
-                sx={{
-                  fontWeight: 600,
-                  fontSize: 14,
-                  color: sortBy === 'updatedAt' ? '#1340FF' : '#666',
-                }}
-              >
-                Posting Date
-              </Typography>
-              {(() => {
-                if (sortBy === 'updatedAt') {
-                  if (sortDirection === 'asc') {
-                    return <ArrowDownward sx={{ fontSize: 14, color: '#1340FF' }} />;
-                  }
-                  return <ArrowUpward sx={{ fontSize: 14, color: '#1340FF' }} />;
-                }
-                return <ArrowDownward sx={{ fontSize: 14, color: '#bbb' }} />;
-              })()}
-            </Box>
-            <Box sx={{ flex: '0 0 20%', textAlign: 'right' }}>
-              {/* Action column */}
-            </Box>
+            <Typography sx={headLabelSx}>#</Typography>
+            <SortHeader
+              label="Creator"
+              column="creatorName"
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
+            <SortHeader
+              label="Campaign"
+              column="campaignName"
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
+            <SortHeader
+              label="Tier"
+              column="creditTierCredits"
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
+            <SortHeader
+              label="Platform"
+              column="platform"
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
+            <SortHeader
+              label="Posting Date"
+              column="updatedAt"
+              sortBy={sortBy}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+              descFirst
+            />
+            <Typography sx={headLabelSx}>Post</Typography>
+            <Box />
           </Box>
 
           {/* Table Body */}
@@ -597,133 +873,166 @@ const CampaignPerformanceTable = () => {
               <CircularProgress />
             </Stack>
           ) : (
-          <Box sx={{ width: '100%' }}>
-            {displayedReports.map((row, index) => (
-              <Box
-                key={row.id}
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  alignItems: { xs: 'stretch', md: 'center' },
-                  borderBottom: '1px solid #f0f0f0',
-                  '&:hover': {
-                    backgroundColor: '#f8f9fa',
-                  },
-                }}
-              >
-                {/* Mobile Card Layout */}
+            <Box sx={{ width: '100%' }}>
+              {displayedReports.map((row, index) => (
                 <Box
+                  key={row.id}
                   sx={{
-                    display: { xs: 'flex', md: 'none' },
-                    flexDirection: 'column',
-                    gap: 1.5,
-                    p: 2,
+                    display: 'flex',
+                    flexDirection: { xs: 'column', lg: 'row' },
+                    alignItems: { xs: 'stretch', lg: 'center' },
+                    borderBottom: '1px solid #f0f0f0',
+                    '&:hover': {
+                      backgroundColor: '#f8f9fa',
+                    },
                   }}
                 >
-                  {/* Creator Info */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar
-                      src={row.creatorAvatar}
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        backgroundColor: '#e0e0e0',
-                        color: '#666',
-                        fontSize: 13,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {row.creatorName.charAt(0)}
-                    </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography
+                  {/* Mobile Card Layout */}
+                  <Box
+                    sx={{
+                      display: { xs: 'flex', lg: 'none' },
+                      flexDirection: 'column',
+                      gap: 1.5,
+                      p: 2,
+                    }}
+                  >
+                    {/* Creator Info */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Typography sx={rowNumberSx}>
+                        {formatNumber(startIndex + index + 1)}
+                      </Typography>
+                      <Avatar
+                        src={row.creatorAvatar}
                         sx={{
-                          fontWeight: 500,
-                          fontSize: 14,
-                          color: '#333',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          width: 36,
+                          height: 36,
+                          backgroundColor: '#e0e0e0',
+                          color: '#666',
+                          fontSize: 13,
+                          flexShrink: 0,
                         }}
                       >
-                        {row.creatorName}
-                      </Typography>
-                      {row.socialUsername && (
+                        {initialOf(row.creatorName)}
+                      </Avatar>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Typography
-                          component="a"
-                          href={row.socialProfileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          dir="auto"
+                          title={row.creatorName}
                           sx={{
-                            fontWeight: 400,
-                            fontSize: 12,
-                            color: '#666',
+                            fontWeight: 500,
+                            fontSize: 14,
+                            color: '#333',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
-                            textDecoration: 'none',
-                            '&:hover': { textDecoration: 'underline' },
                           }}
                         >
-                          {row.platform === 'Instagram' ? row.socialUsername : `@${row.socialUsername}`}
+                          {row.creatorName}
+                        </Typography>
+                        {row.socialUsername && (
+                          <Typography
+                            component="a"
+                            href={row.socialProfileUrl}
+                            title={`@${row.socialUsername}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                              fontWeight: 400,
+                              fontSize: 12,
+                              color: '#666',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              textDecoration: 'none',
+                              '&:hover': { textDecoration: 'underline' },
+                            }}
+                          >
+                            @{row.socialUsername}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    {/* Platform */}
+                    <Box>
+                      <Typography
+                        sx={{
+                          fontSize: 12,
+                          color: '#999',
+                          fontWeight: 500,
+                          mb: 0.25,
+                        }}
+                      >
+                        Platform
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: 13,
+                          color: '#333',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {row.platform}
+                      </Typography>
+                      <PostLink url={row.content} />
+                    </Box>
+
+                    {/* Campaign Name */}
+                    <Box>
+                      <Typography
+                        sx={{
+                          fontSize: 12,
+                          color: '#999',
+                          fontWeight: 500,
+                          mb: 0.25,
+                        }}
+                      >
+                        Campaign
+                      </Typography>
+                      {row.campaignId ? (
+                        <Typography
+                          component={RouterLink}
+                          to={buildCampaignDetailsPath(row.campaignId)}
+                          sx={{
+                            fontSize: 13,
+                            color: '#333',
+                            fontWeight: 500,
+                            overflowWrap: 'anywhere',
+                            textDecoration: 'none',
+                            '&:hover': {
+                              textDecoration: 'underline',
+                              color: '#1340FF',
+                            },
+                          }}
+                        >
+                          {row.campaignName}
+                        </Typography>
+                      ) : (
+                        <Typography
+                          sx={{
+                            fontSize: 13,
+                            color: '#333',
+                            fontWeight: 500,
+                            overflowWrap: 'anywhere',
+                          }}
+                        >
+                          {row.campaignName}
                         </Typography>
                       )}
                     </Box>
-                  </Box>
 
-                  {/* Platform */}
-                  <Box>
-                    <Typography
-                      sx={{
-                        fontSize: 12,
-                        color: '#999',
-                        fontWeight: 500,
-                        mb: 0.25,
-                      }}
-                    >
-                      Platform
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: 13,
-                        color: '#333',
-                        fontWeight: 500,
-                      }}
-                    >
-                      {row.platform}
-                    </Typography>
-                  </Box>
-
-                  {/* Campaign Name */}
-                  <Box>
-                    <Typography
-                      sx={{
-                        fontSize: 12,
-                        color: '#999',
-                        fontWeight: 500,
-                        mb: 0.25,
-                      }}
-                    >
-                      Campaign
-                    </Typography>
-                    {row.campaignId ? (
+                    {/* Posting Date */}
+                    <Box>
                       <Typography
-                        component={RouterLink}
-                        to={buildCampaignDetailsPath(row.campaignId)}
                         sx={{
-                          fontSize: 13,
-                          color: '#333',
+                          fontSize: 12,
+                          color: '#999',
                           fontWeight: 500,
-                          textDecoration: 'none',
-                          '&:hover': {
-                            textDecoration: 'underline',
-                            color: '#1340FF',
-                          },
+                          mb: 0.25,
                         }}
                       >
-                        {row.campaignName}
+                        Posting Date
                       </Typography>
-                    ) : (
                       <Typography
                         sx={{
                           fontSize: 13,
@@ -731,221 +1040,18 @@ const CampaignPerformanceTable = () => {
                           fontWeight: 500,
                         }}
                       >
-                        {row.campaignName}
+                        {fDate(row.postedAt)}
                       </Typography>
-                    )}
-                  </Box>
+                    </Box>
 
-                  {/* Posting Date */}
-                  <Box>
-                    <Typography
-                      sx={{
-                        fontSize: 12,
-                        color: '#999',
-                        fontWeight: 500,
-                        mb: 0.25,
-                      }}
-                    >
-                      Posting Date
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: 13,
-                        color: '#333',
-                        fontWeight: 500,
-                      }}
-                    >
-                      {fDate(row.updatedAt)}
-                    </Typography>
-                  </Box>
-
-                  {/* Action Button */}
-                  <Button
-                    variant="text"
-                    onClick={() => handleViewReport(row)}
-                    fullWidth
-                    sx={{
-                      height: 40,
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: '1px solid #E7E7E7',
-                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                      backgroundColor: '#FFFFFF',
-                      color: '#1340FF',
-                      fontSize: 14,
-                      fontWeight: 600,
-                      '&:hover': {
-                        backgroundColor: '#F8F9FA',
-                        border: '1px solid #E7E7E7',
-                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                      },
-                      '&:active': {
-                        boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
-                        transform: 'translateY(1px)',
-                      },
-                    }}
-                  >
-                    View Performance Report
-                  </Button>
-                </Box>
-
-                {/* Desktop Table Layout */}
-                <Box
-                  sx={{
-                    display: { xs: 'none', md: 'flex' },
-                    alignItems: 'center',
-                    width: '100%',
-                    minHeight: 80,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      flex: '0 0 25%',
-                      maxWidth: '25%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      px: 2,
-                      py: 1.5,
-                    }}
-                  >
-                    <Avatar
-                      src={row.creatorAvatar}
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        backgroundColor: '#e0e0e0',
-                        color: '#666',
-                        fontSize: 14,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {row.creatorName.charAt(0)}
-                    </Avatar>
-                    <Stack sx={{ minWidth: 0 }}>
-                      <Typography
-                        sx={{
-                          fontWeight: 400,
-                          fontSize: 14,
-                          color: '#333',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {row.creatorName}
-                      </Typography>
-                      {row.socialUsername && (
-                        <Typography
-                          component="a"
-                          href={row.socialProfileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          sx={{
-                            fontWeight: 400,
-                            fontSize: 13,
-                            color: '#666',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            textDecoration: 'none',
-                            '&:hover': { textDecoration: 'underline', color: '#1340FF' },
-                          }}
-                        >
-                          {row.platform === 'Instagram' ? row.socialUsername : `@${row.socialUsername}`}
-                        </Typography>
-                      )}
-                    </Stack>
-                  </Box>
-                  <Box sx={{ flex: '0 0 25%', px: 2, py: 1.5, maxWidth: '25%' }}>
-                    {row.campaignId ? (
-                      <Typography
-                        component={RouterLink}
-                        to={buildCampaignDetailsPath(row.campaignId)}
-                        sx={{
-                          fontSize: 14,
-                          color: '#333',
-                          fontWeight: 500,
-                          whiteSpace: 'wrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          textDecoration: 'none',
-                          '&:hover': {
-                            textDecoration: 'underline',
-                            color: '#1340FF',
-                          },
-                        }}
-                      >
-                        {row.campaignName}
-                      </Typography>
-                    ) : (
-                      <Typography
-                        sx={{
-                          fontSize: 14,
-                          color: '#333',
-                          fontWeight: 500,
-                          whiteSpace: 'wrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {row.campaignName}
-                      </Typography>
-                    )}
-                  </Box>
-                  <Box sx={{ flex: '0 0 10%', px: 2, py: 1.5, }}>
-                    <>
-                      <Typography
-                        sx={{
-                          fontWeight: 400,
-                          fontSize: 14,
-                          color: '#333',
-                        }}
-                      >
-                        {row.creditTier || '-'}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontWeight: 400,
-                          fontSize: 14,
-                          color: 'grey',
-                        }}
-                      >
-                        {row.isCreditTier ? `${row.creditTierCredits} ${row.creditTierCredits === 1 ? 'credit' : 'credits'}` : '1 credit'}
-                      </Typography>
-                    </>
-                  </Box>
-                  <Box sx={{ flex: '0 0 10%', px: 2, py: 1.5, }}>
-                    <Typography
-                      sx={{
-                        fontWeight: 400,
-                        fontSize: 14,
-                        color: '#333',
-                      }}
-                    >
-                      {row.platform}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ flex: '0 0 10%', px: 1, py: 1.5 }}>
-                    <Typography
-                      sx={{
-                        fontWeight: 400,
-                        fontSize: 14,
-                        color: '#333',
-                      }}
-                    >
-                      {fDate(row.updatedAt)}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ flex: '0 0 20%', textAlign: 'right', px: 1 }}>
+                    {/* Action Button */}
                     <Button
                       variant="text"
                       onClick={() => handleViewReport(row)}
+                      fullWidth
                       sx={{
-                        width: 192,
-                        height: 38,
-                        padding: '8px 12px 11px 12px',
-                        gap: '4px',
+                        height: 40,
+                        padding: '8px 12px',
                         borderRadius: '8px',
                         border: '1px solid #E7E7E7',
                         boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
@@ -953,7 +1059,6 @@ const CampaignPerformanceTable = () => {
                         color: '#1340FF',
                         fontSize: 14,
                         fontWeight: 600,
-                        flexShrink: 0,
                         '&:hover': {
                           backgroundColor: '#F8F9FA',
                           border: '1px solid #E7E7E7',
@@ -968,205 +1073,176 @@ const CampaignPerformanceTable = () => {
                       View Performance Report
                     </Button>
                   </Box>
-                </Box>
-              </Box>
-            ))}
-          </Box>
-          )}
 
-          {/* Pagination Controls - Clean minimal design */}
-          {!isLoadingSubmissions && totalPages > 1 && (
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                mt: { xs: 2, md: 3 },
-                pb: 2,
-                gap: 0.3,
-              }}
-            >
-              {/* Previous Button */}
-              <Button
-                onClick={handlePrevPage}
-                disabled={!hasPrevPage}
-                sx={{
-                  minWidth: 'auto',
-                  p: 0,
-                  backgroundColor: 'transparent',
-                  color: hasPrevPage ? '#000000' : '#8E8E93',
-                  border: 'none',
-                  fontSize: 20,
-                  fontWeight: 400,
-                  '&:hover': {
-                    backgroundColor: 'transparent',
-                  },
-                  '&:disabled': {
-                    backgroundColor: 'transparent',
-                    color: '#8E8E93',
-                  },
-                }}
-              >
-                <ChevronLeftRounded size={16} />
-              </Button>
+                  {/* Desktop Table Layout */}
+                  <Box
+                    sx={{
+                      ...DESKTOP_GRID,
+                      display: { xs: 'none', lg: 'grid' },
+                      width: '100%',
+                      minHeight: 76,
+                      py: 1.5,
+                    }}
+                  >
+                    <Typography sx={{ ...cellTextSx, color: '#8E8E93' }}>
+                      {formatNumber(startIndex + index + 1)}
+                    </Typography>
 
-              {/* Page Numbers */}
-              {(() => {
-                const pageButtons = [];
-                const showEllipsis = totalPages > 5;
-
-                if (!showEllipsis) {
-                  // Show all pages if 3 or fewer
-                  // eslint-disable-next-line no-plusplus
-                  for (let i = 1; i <= totalPages; i++) {
-                    pageButtons.push(
-                      <Button
-                        key={i}
-                        onClick={() => handlePageClick(i)}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+                      <Avatar
+                        src={row.creatorAvatar}
                         sx={{
-                          minWidth: 'auto',
-                          p: 0,
-                          mx: { xs: 0.5, md: 1 },
-                          backgroundColor: 'transparent',
-                          color: currentPage === i ? '#000000' : '#8E8E93',
-                          border: 'none',
-                          fontSize: { xs: 14, md: 16 },
-                          fontWeight: 400,
-                          '&:hover': {
-                            backgroundColor: 'transparent',
-                          },
+                          width: 40,
+                          height: 40,
+                          flexShrink: 0,
+                          bgcolor: '#e0e0e0',
+                          color: '#666',
+                          fontSize: 14,
                         }}
                       >
-                        {i}
-                      </Button>
-                    );
-                  }
-                } else {
-                  // Show 1, current-1, current, current+1, ..., last
-                  pageButtons.push(
+                        {initialOf(row.creatorName)}
+                      </Avatar>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography
+                          dir="auto"
+                          title={row.creatorName}
+                          sx={{ ...cellTextSx, ...ellipsisSx, fontWeight: 500 }}
+                        >
+                          {row.creatorName}
+                        </Typography>
+                        {row.socialUsername && (
+                          <Typography
+                            component="a"
+                            href={row.socialProfileUrl}
+                            title={`@${row.socialUsername}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            sx={{
+                              ...subTextSx,
+                              ...ellipsisSx,
+                              display: 'block',
+                              textDecoration: 'none',
+                              '&:hover': { textDecoration: 'underline', color: '#1340FF' },
+                            }}
+                          >
+                            @{row.socialUsername}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+                      <Avatar
+                        variant="rounded"
+                        src={row.campaignImage}
+                        alt={row.campaignName}
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          flexShrink: 0,
+                          bgcolor: '#e0e0e0',
+                          color: '#666',
+                          fontSize: 14,
+                        }}
+                      >
+                        {initialOf(row.campaignName)}
+                      </Avatar>
+                      <Typography
+                        dir="auto"
+                        title={row.campaignName}
+                        {...(row.campaignId && {
+                          component: RouterLink,
+                          to: buildCampaignDetailsPath(row.campaignId),
+                        })}
+                        sx={{
+                          ...cellTextSx,
+                          fontWeight: 500,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          overflowWrap: 'anywhere',
+                          textDecoration: 'none',
+                          ...(row.campaignId && {
+                            '&:hover': { textDecoration: 'underline', color: '#1340FF' },
+                          }),
+                        }}
+                      >
+                        {row.campaignName}
+                      </Typography>
+                    </Box>
+
+                    <Box>
+                      <Typography sx={cellTextSx}>{formatCredits(row)}</Typography>
+                      {row.creditTier && <Typography sx={subTextSx}>{row.creditTier}</Typography>}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <Iconify
+                        icon={row.platform === 'Instagram' ? 'mdi:instagram' : 'ic:baseline-tiktok'}
+                        width={18}
+                        sx={{ color: '#636366', flexShrink: 0 }}
+                      />
+                      <Typography sx={cellTextSx}>{row.platform}</Typography>
+                    </Box>
+
+                    <Typography sx={cellTextSx}>{fDate(row.postedAt)}</Typography>
+
+                    <Box sx={{ minWidth: 0 }}>
+                      <PostLink url={row.content} />
+                    </Box>
+
                     <Button
-                      key={1}
-                      onClick={() => handlePageClick(1)}
+                      variant="text"
+                      onClick={() => handleViewReport(row)}
                       sx={{
-                        minWidth: 'auto',
-                        p: 0,
-                        mx: { xs: 0.5, md: 1 },
-                        backgroundColor: 'transparent',
-                        color: currentPage === 1 ? '#000000' : '#8E8E93',
-                        border: 'none',
-                        fontSize: { xs: 14, md: 16 },
-                        fontWeight: 400,
+                        justifySelf: 'end',
+                        height: 38,
+                        px: 2,
+                        pb: '11px',
+                        whiteSpace: 'nowrap',
+                        borderRadius: '8px',
+                        border: '1px solid #E7E7E7',
+                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        bgcolor: '#FFFFFF',
+                        color: '#1340FF',
+                        fontSize: 14,
+                        fontWeight: 600,
                         '&:hover': {
-                          backgroundColor: 'transparent',
+                          bgcolor: '#F8F9FA',
+                          border: '1px solid #E7E7E7',
+                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
+                        },
+                        '&:active': {
+                          boxShadow: '0px -1px 0px 0px #E7E7E7 inset',
+                          transform: 'translateY(1px)',
                         },
                       }}
                     >
-                      1
+                      View Performance Report
                     </Button>
-                  );
-
-                  if (currentPage > 3) {
-                    pageButtons.push(
-                      <Typography key="ellipsis1" sx={{ mx: { xs: 0.5, md: 1 }, color: '#8E8E93', fontSize: { xs: 14, md: 16 } }}>
-                        ...
-                      </Typography>
-                    );
-                  }
-
-                  // Show current page and adjacent pages
-                  for (
-                    let i = Math.max(2, currentPage - 1);
-                    i <= Math.min(totalPages - 1, currentPage + 1);
-                    // eslint-disable-next-line no-plusplus
-                    i++
-                  ) {
-                    pageButtons.push(
-                      <Button
-                        key={i}
-                        onClick={() => handlePageClick(i)}
-                        sx={{
-                          minWidth: 'auto',
-                          p: 0,
-                          mx: { xs: 0.5, md: 1 },
-                          backgroundColor: 'transparent',
-                          color: currentPage === i ? '#000000' : '#8E8E93',
-                          border: 'none',
-                          fontSize: { xs: 14, md: 16 },
-                          fontWeight: 400,
-                          '&:hover': {
-                            backgroundColor: 'transparent',
-                          },
-                        }}
-                      >
-                        {i}
-                      </Button>
-                    );
-                  }
-
-                  if (currentPage < totalPages - 2) {
-                    pageButtons.push(
-                      <Typography key="ellipsis2" sx={{ mx: { xs: 0.5, md: 1 }, color: '#8E8E93', fontSize: { xs: 14, md: 16 } }}>
-                        ...
-                      </Typography>
-                    );
-                  }
-
-                  if (totalPages > 1) {
-                    pageButtons.push(
-                      <Button
-                        key={totalPages}
-                        onClick={() => handlePageClick(totalPages)}
-                        sx={{
-                          minWidth: 'auto',
-                          p: 0,
-                          mx: { xs: 0.5, md: 1 },
-                          backgroundColor: 'transparent',
-                          color: currentPage === totalPages ? '#000000' : '#8E8E93',
-                          border: 'none',
-                          fontSize: { xs: 14, md: 16 },
-                          fontWeight: 400,
-                          '&:hover': {
-                            backgroundColor: 'transparent',
-                          },
-                        }}
-                      >
-                        {totalPages}
-                      </Button>
-                    );
-                  }
-                }
-
-                return pageButtons;
-              })()}
-
-              {/* Next Button */}
-              <Button
-                onClick={handleNextPage}
-                disabled={!hasNextPage}
-                sx={{
-                  minWidth: 'auto',
-                  p: 0,
-                  backgroundColor: 'transparent',
-                  color: hasNextPage ? '#000000' : '#8E8E93',
-                  border: 'none',
-                  fontSize: 16,
-                  fontWeight: 400,
-                  '&:hover': {
-                    backgroundColor: 'transparent',
-                  },
-                  '&:disabled': {
-                    backgroundColor: 'transparent',
-                    color: '#8E8E93',
-                  },
-                }}
-              >
-                <ChevronRightRounded size={16} />
-              </Button>
+                  </Box>
+                </Box>
+              ))}
             </Box>
           )}
 
+          {!isLoadingSubmissions && totalPages > 1 && (
+            <PaginationBar
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredReports.length}
+              onPageChange={handlePageClick}
+            />
+          )}
+
           {/* Empty state - show when no data */}
-          {!isLoadingSubmissions && filteredReports.length === 0 && (
+          {/* No posts at all: the landing message sits under the table header */}
+          {!isLoadingSubmissions && reportList.length === 0 && (
+            <ReportLanding sx={{ minHeight: 360 }} />
+          )}
+
+          {!isLoadingSubmissions && reportList.length > 0 && filteredReports.length === 0 && (
             <Box
               sx={{
                 p: 6,
@@ -1186,7 +1262,7 @@ const CampaignPerformanceTable = () => {
               >
                 {selectedCampaign === 'all'
                   ? 'No campaigns found'
-                  : `No results for "${selectedCampaign}"`}
+                  : `No results for "${activeCampaign?.name || selectedCampaign}"`}
               </Typography>
               <Typography
                 sx={{
@@ -1195,7 +1271,7 @@ const CampaignPerformanceTable = () => {
                 }}
               >
                 {selectedCampaign === 'all'
-                  ? 'Campaigns with completed submissions from creators with connected social accounts will appear here'
+                  ? 'Campaigns with posted content and performance data will appear here'
                   : 'Try selecting a different campaign or check "All Campaigns"'}
               </Typography>
             </Box>

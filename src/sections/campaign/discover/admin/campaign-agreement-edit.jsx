@@ -22,6 +22,7 @@ import {
   Avatar,
   Divider,
   MenuItem,
+  TextField,
   Typography,
   IconButton,
 } from '@mui/material';
@@ -97,6 +98,14 @@ const getSnapshotFollowerCount = (record, platform) =>
   (record?.selectedPlatform || 'instagram') === platform
     ? toFollowerCount(record?.followerCount)
     : 0;
+
+const NUMBER_FIELD_SX = {
+  mt: 1,
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 1,
+    bgcolor: '#FFF',
+  },
+};
 
 const CREDIT_STATUS_STYLES = {
   exceeded: {
@@ -198,7 +207,7 @@ const CampaignAgreementEdit = ({
   const requiresUGCCredits = !isGuestCreator;
 
   const shortlistedRecord = agreement?.shortlistedCreator;
-  
+
   const isNdaRequired = !!campaign?.isNdaRequired;
 
   const pitchRecord = campaign?.pitch?.find((p) => p.userId === agreement?.user?.id);
@@ -394,6 +403,16 @@ const CampaignAgreementEdit = ({
     [campaign?.isCreditTier, previewTierSource]
   );
 
+  // Video amount and credits are linked: the video count is what gets saved (the backend prices it),
+  // credits are derived from it. Tier campaigns use the tier's rate (unknown until a tier matches);
+  // other campaigns are 1:1.
+  const creditsPerVideo = campaign?.isCreditTier ? displayTierData?.creditsPerVideo || null : 1;
+  const videoCount = Number(ugcCreditsValue) || 0;
+  const linkedCredits = creditsPerVideo && videoCount ? videoCount * creditsPerVideo : '';
+  // What the admin typed into Credits while it doesn't divide into whole videos; null otherwise.
+  const [creditsDraft, setCreditsDraft] = useState(null);
+  const hasCreditsRemainder = creditsDraft !== null && creditsDraft !== '';
+
   const handleSavedValue = useCallback(() => {
     if (isDefault) {
       setValue('paymentAmount', '200');
@@ -401,7 +420,8 @@ const CampaignAgreementEdit = ({
       return;
     }
 
-    setValue('paymentAmount', agreement?.amount);
+    // An agreed price wins; otherwise start from the budget already keyed in the Agreements table.
+    setValue('paymentAmount', agreement?.amount || agreement?.budgetAmount || '');
     setValue('currency', CURRENCY_PREFIXES[agreement?.currency]?.label);
     setValue('ugcCredits', agreement?.videoCount);
     setSelectedPlatform(agreedPlatform);
@@ -418,6 +438,7 @@ const CampaignAgreementEdit = ({
     agreement?.currency,
     agreement?.videoCount,
     agreement?.amount,
+    agreement?.budgetAmount,
     agreement?.isSeeding,
     agreement?.productSeeding,
     isDefault,
@@ -460,8 +481,8 @@ const CampaignAgreementEdit = ({
       ) {
         // For credit tier campaigns, use creditPerVideo multiplier
         const videos = creator.ugcVideos || 0;
-        const creditsPerVideo = campaign?.isCreditTier ? creator.creditPerVideo || 1 : 1;
-        return acc + videos * creditsPerVideo;
+        const creatorRate = campaign?.isCreditTier ? creator.creditPerVideo || 1 : 1;
+        return acc + videos * creatorRate;
       }
       return acc;
     }, 0);
@@ -936,7 +957,10 @@ const CampaignAgreementEdit = ({
                           fixedDecimalScale
                           onChange={undefined}
                           onValueChange={(value) => {
-                            setValue('product.value', value.floatValue, { shouldValidate: true, shouldDirty: true });
+                            setValue('product.value', value.floatValue, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
                           }}
                           prefix={
                             CURRENCY_PREFIXES[selectedCurrency]?.prefix
@@ -1028,7 +1052,10 @@ const CampaignAgreementEdit = ({
                           decimalScale={2}
                           fixedDecimalScale
                           onValueChange={(value) => {
-                            setValue('paymentAmount', value.floatValue, { shouldValidate: true, shouldDirty: true });
+                            setValue('paymentAmount', value.floatValue, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
                           }}
                           prefix={`${CURRENCY_PREFIXES[selectedCurrency]?.prefix} ` ?? ''}
                           placeholder={`${CURRENCY_PREFIXES[selectedCurrency]?.prefix} 350`}
@@ -1065,7 +1092,10 @@ const CampaignAgreementEdit = ({
                         customInput={RHFTextField}
                         allowNegative={false}
                         onValueChange={(value) => {
-                          setValue('platformFollowerCount', value.floatValue, { shouldValidate: true, shouldDirty: true });
+                          setValue('platformFollowerCount', value.floatValue, {
+                            shouldValidate: true,
+                            shouldDirty: true,
+                          });
                         }}
                         placeholder="2021"
                         variant="outlined"
@@ -1137,13 +1167,11 @@ const CampaignAgreementEdit = ({
                 </Box>
               </Grid>
 
-              {/* Credits amount */}
-              <Grid item xs={12} sm={6}>
-                {requiresUGCCredits && (
-                  <Box>
-                    <FieldLabel>
-                      {campaign?.isCreditTier ? 'Video Amount' : 'UGC Credits'}
-                    </FieldLabel>
+              {/* Video amount and credits, side by side and linked: fill either one */}
+              <Grid item xs={12}>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <FieldLabel>Video Amount</FieldLabel>
 
                     <Controller
                       name="ugcCredits"
@@ -1153,8 +1181,14 @@ const CampaignAgreementEdit = ({
                           {...field}
                           customInput={RHFTextField}
                           allowNegative={false}
-                          onValueChange={(value) => {
-                            setValue('ugcCredits', value.floatValue, { shouldValidate: true, shouldDirty: true });
+                          decimalScale={0}
+                          onValueChange={(value, sourceInfo) => {
+                            if (sourceInfo.source !== 'event') return;
+                            setCreditsDraft(null);
+                            setValue('ugcCredits', value.floatValue, {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
                           }}
                           placeholder="2"
                           variant="outlined"
@@ -1162,31 +1196,70 @@ const CampaignAgreementEdit = ({
                             const { floatValue, value } = val;
                             if (floatValue === undefined) return true;
 
-                            if (maxCreditsAllowed === null) return true;
-
                             if (value.length && Number(value[0]) === 0) return false;
 
-                            return floatValue <= maxCreditsAllowed;
+                            if (maxCreditsAllowed === null) return true;
+
+                            return floatValue * (creditsPerVideo || 1) <= maxCreditsAllowed;
                           }}
-                          sx={{
-                            mt: 1,
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 1,
-                              bgcolor: '#FFF',
-                            },
-                          }}
+                          sx={NUMBER_FIELD_SX}
                         />
                       )}
                     />
+                  </Grid>
 
-                    <Box sx={{ my: 1 }} />
-                    {campaign?.campaignCredits !== null && (
-                      <CreditsStatusBanner
-                        creatorCost={creatorCost}
-                        realTimeCreditsLeft={realTimeCreditsLeft}
-                        isCreditTier={campaign?.isCreditTier}
-                      />
-                    )}
+                  <Grid item xs={6}>
+                    <FieldLabel>UGC Credits</FieldLabel>
+
+                    <NumericFormat
+                      customInput={TextField}
+                      value={creditsDraft ?? linkedCredits}
+                      allowNegative={false}
+                      decimalScale={0}
+                      disabled={!creditsPerVideo}
+                      onValueChange={(value, sourceInfo) => {
+                        if (sourceInfo.source !== 'event') return;
+
+                        const credits = value.floatValue;
+                        const videos = credits ? credits / creditsPerVideo : '';
+                        const isWhole = videos === '' || Number.isInteger(videos);
+
+                        setCreditsDraft(isWhole ? null : value.value);
+                        setValue('ugcCredits', isWhole ? videos : '', {
+                          shouldValidate: isWhole,
+                          shouldDirty: true,
+                        });
+                      }}
+                      placeholder={creditsPerVideo ? String(2 * creditsPerVideo) : '—'}
+                      variant="outlined"
+                      fullWidth
+                      error={hasCreditsRemainder}
+                      helperText={
+                        hasCreditsRemainder &&
+                        `Must be a multiple of ${creditsPerVideo} (${creditsPerVideo} credits per video).`
+                      }
+                      isAllowed={(val) => {
+                        const { floatValue, value } = val;
+                        if (floatValue === undefined) return true;
+
+                        if (value.length && Number(value[0]) === 0) return false;
+
+                        if (maxCreditsAllowed === null) return true;
+
+                        return floatValue <= maxCreditsAllowed;
+                      }}
+                      sx={NUMBER_FIELD_SX}
+                    />
+                  </Grid>
+                </Grid>
+
+                {campaign?.campaignCredits !== null && (
+                  <Box sx={{ mt: 2 }}>
+                    <CreditsStatusBanner
+                      creatorCost={creatorCost}
+                      realTimeCreditsLeft={realTimeCreditsLeft}
+                      isCreditTier={campaign?.isCreditTier}
+                    />
                   </Box>
                 )}
               </Grid>

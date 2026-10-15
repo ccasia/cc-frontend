@@ -7,6 +7,7 @@ import Stack from '@mui/material/Stack';
 import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
@@ -16,6 +17,12 @@ import Iconify from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
+
+// Shared column widths so the item row and the reimbursement rows line up exactly.
+// Client & Campaign split the remaining space; Service and Price are fixed and never shrink
+// (Price stays wide enough to show the full amount).
+const SERVICE_COLUMN_SX = { width: { xs: '100%', md: 260 }, flexShrink: 0 };
+const PRICE_COLUMN_SX = { width: { xs: '100%', md: 150 }, flexShrink: 0 };
 
 export default function InvoiceNewEditDetails() {
   const { control, setValue, watch, resetField, getValues } = useFormContext();
@@ -75,9 +82,14 @@ export default function InvoiceNewEditDetails() {
   // For display in the UI
   const displayCurrency = currencySymbol || currencyCode || '';
 
-  const subTotal = sum(totalOnRow);
+  const subTotal = sum(totalOnRow.map((price) => Number(price) || 0));
 
-  const totalAmount = subTotal;
+  const reimbursementLines = values.reimbursements || [];
+  const isReimbursementInvoice = values.invoiceType === 'REIMBURSEMENT';
+  const firstLineNumber = isReimbursementInvoice ? 1 : 2;
+  const reimbursementTotal = sum(reimbursementLines.map((line) => Number(line.amount) || 0));
+
+  const totalAmount = subTotal + reimbursementTotal;
 
   useEffect(() => {
     setValue('totalAmount', totalAmount);
@@ -184,7 +196,8 @@ export default function InvoiceNewEditDetails() {
       </Typography>
 
       <Stack divider={<Divider flexItem sx={{ borderStyle: 'dashed' }} />} spacing={3}>
-        {fields.map((item, index) => (
+        {/* A REIMBURSEMENT invoice has no fee row — its receipts are the only lines */}
+        {!isReimbursementInvoice && fields.map((item, index) => (
           <Stack key={item.id} alignItems="flex-end" spacing={2}>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ width: 1 }}>
               <RHFTextField
@@ -199,7 +212,7 @@ export default function InvoiceNewEditDetails() {
                 InputLabelProps={{ shrink: true }}
               />
 
-              <FormControl sx={{ minWidth: 220 }}>
+              <FormControl sx={SERVICE_COLUMN_SX}>
                 <InputLabel id={`service-label-${index}`}>Service</InputLabel>
                 <Select
                   labelId={`service-label-${index}`}
@@ -303,9 +316,133 @@ export default function InvoiceNewEditDetails() {
                     </InputAdornment>
                   ),
                 }}
-                sx={{ maxWidth: { md: 120 } }}
+                sx={PRICE_COLUMN_SX}
               />
             </Stack>
+          </Stack>
+        ))}
+
+        {/* Approved reimbursement receipts (#2, #3, ...) — same row layout as the item above,
+            read-only: amounts come from the receipt review, not from this form */}
+        {reimbursementLines.map((line, lineIndex) => (
+          <Stack key={line.receiptId || lineIndex} spacing={1.5}>
+            <Stack direction="row" alignItems="center" spacing={0.75}>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+                #{lineIndex + firstLineNumber} Reimbursement
+              </Typography>
+              <Iconify icon="solar:lock-keyhole-minimalistic-linear" width={14} sx={{ color: 'text.disabled' }} />
+              <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                From approved receipt
+              </Typography>
+
+              {/* Let Finance check the actual receipt before paying */}
+              {line.fileUrl && (
+                <Box
+                  component="a"
+                  href={line.fileUrl}
+                  target="_blank"
+                  rel="noopener"
+                  sx={{
+                    ml: 'auto !important',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    typography: 'caption',
+                    fontWeight: 700,
+                    color: '#1340FF',
+                    textDecoration: 'none',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  <Iconify icon="solar:bill-list-linear" width={14} />
+                  View receipt
+                  <Iconify icon="eva:external-link-outline" width={13} />
+                </Box>
+              )}
+            </Stack>
+
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ width: 1 }}>
+              <TextField
+                fullWidth
+                label="Client Name"
+                value={values.items[0]?.clientName || ''}
+                InputLabelProps={{ shrink: true }}
+                InputProps={{ readOnly: true }}
+              />
+              <TextField
+                fullWidth
+                label="Campaign Name"
+                value={values.items[0]?.campaignName || ''}
+                InputLabelProps={{ shrink: true }}
+                InputProps={{ readOnly: true }}
+              />
+              <TextField
+                label="Service"
+                value="Reimbursement"
+                InputLabelProps={{ shrink: true }}
+                InputProps={{ readOnly: true }}
+                sx={SERVICE_COLUMN_SX}
+              />
+              <TextField
+                label="Price"
+                value={Number(line.amount || 0).toFixed(2)}
+                InputLabelProps={{ shrink: true }}
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Box sx={{ typography: 'subtitle2', color: 'text.disabled' }}>
+                        {displayCurrency}
+                      </Box>
+                    </InputAdornment>
+                  ),
+                }}
+                sx={PRICE_COLUMN_SX}
+              />
+            </Stack>
+
+            {line.description && (
+              <TextField
+                fullWidth
+                multiline
+                label="Receipt Description"
+                value={line.description}
+                InputLabelProps={{ shrink: true }}
+                InputProps={{ readOnly: true }}
+              />
+            )}
+
+            {/* The admin's "Note to Finance" from the receipt review — a message, not invoice data */}
+            {line.financeNote && (
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{
+                  px: 1.5,
+                  py: 1.25,
+                  borderRadius: 1,
+                  bgcolor: '#FFF8E0',
+                  border: '1px solid #FFE38A',
+                }}
+              >
+                <Iconify
+                  icon="solar:chat-round-line-linear"
+                  width={18}
+                  sx={{ color: '#B58A00', flexShrink: 0, mt: '1px' }}
+                />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#8A6A00', display: 'block' }}>
+                    Note from admin
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: '#221f20', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                  >
+                    {line.financeNote}
+                  </Typography>
+                </Box>
+              </Stack>
+            )}
           </Stack>
         ))}
       </Stack>

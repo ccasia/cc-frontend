@@ -32,10 +32,12 @@ export const useGetPostingSubmissions = () => {
     `${endpoints.submission.all}?onlyValidSocialInsights=true`,
     fetcher,
     {
+      // Report data changes daily; refetching on every tab focus only repeats a heavy request
       revalidateIfStale: true,
-      revalidateOnFocus: true,
+      revalidateOnFocus: false,
       revalidateOnMount: true,
       revalidateOnReconnect: true,
+      dedupingInterval: 60_000,
     }
   );
 

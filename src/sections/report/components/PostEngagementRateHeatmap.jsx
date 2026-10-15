@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import React, { useMemo } from 'react';
+import React, { useMemo, Fragment } from 'react';
 
 import { Box, Alert, Tooltip, Typography, CircularProgress } from '@mui/material';
 
@@ -150,206 +150,120 @@ export const PostEngagementRateHeatmap = ({ campaignId, submissionId, postUrl, w
     );
   }
 
+  const legend = [
+    { scale: scales.lowest, color: COLORS.lowest, text: '#48484A' },
+    { scale: scales.mediumLow, color: COLORS.lowMiddle, text: '#48484A' },
+    { scale: scales.mediumHigh, color: COLORS.highMiddle, text: '#E7E7E7' },
+    { scale: scales.highest, color: COLORS.highest, text: '#E7E7E7' },
+  ];
+  const labelSx = {
+    display: 'flex',
+    alignItems: 'center',
+    fontSize: { xs: 10, md: 13 },
+    fontWeight: 600,
+    color: '#000',
+    fontFamily: 'Aileron',
+  };
+
   return (
-    <Box sx={{ p: 0 }}>
-      {/* Header */}
+    // Fills its grid column, so the rows stretch to match the Daily Views chart beside it
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ mb: { xs: 2, md: 3 } }}>
-        <Typography
-          sx={{
-            fontFamily: 'Aileron',
-            fontWeight: 600,
-            fontSize: 24,
-            color: '#000',
-          }}
-        >
+        <Typography sx={{ fontFamily: 'Aileron', fontWeight: 600, fontSize: 24, color: '#000' }}>
           Engagement Rate Heatmap
         </Typography>
       </Box>
 
-      {/* Heatmap Container - Grid Layout */}
+      {/* One grid, so day labels always line up with their row of cells */}
       <Box
         sx={{
+          flex: 1,
           display: 'grid',
-          gridTemplateColumns: 'auto 1fr',
-          mb: 1,
+          gridTemplateColumns: `auto repeat(${weeks}, minmax(0, 1fr))`,
+          gridTemplateRows: {
+            xs: 'repeat(7, minmax(28px, 1fr)) auto auto auto',
+            md: 'repeat(7, minmax(37px, 1fr)) auto auto auto',
+          },
+          gap: { xs: 0.5, md: 1 },
         }}
       >
-        {/* Y-axis: Day Labels */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 0.5, md: 1 } }}>
-          {DAY_NAMES.map((day) => (
+        {DAY_NAMES.map((day, displayRow) => (
+          <Fragment key={day}>
+            <Box sx={{ ...labelSx, minWidth: { xs: 30, md: 40 } }}>{day}</Box>
+            {heatmapGrid.map((weekData, weekIndex) => {
+              const cell = weekData[displayRow] || { date: null, engagementRate: null };
+
+              return (
+                <Tooltip
+                  key={`${weekIndex}-${displayRow}`}
+                  title={
+                    cell?.date ? (
+                      <Box>
+                        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                          {dayjs(cell.date).format('ddd, MMM D, YYYY')}
+                        </Typography>
+                        <Typography variant="caption" display="block">
+                          Engagement Rate:{' '}
+                          {cell.engagementRate !== null
+                            ? `${cell.engagementRate.toFixed(2)}%`
+                            : 'No data'}
+                        </Typography>
+                        {cell.views !== null && (
+                          <Typography variant="caption" display="block">
+                            Views: {cell.views.toLocaleString()}
+                          </Typography>
+                        )}
+                      </Box>
+                    ) : (
+                      'No data'
+                    )
+                  }
+                  arrow
+                >
+                  <Box
+                    sx={{
+                      backgroundColor: getHeatColor(cell?.engagementRate),
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'scale(1.15)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                        zIndex: 10,
+                      },
+                    }}
+                  />
+                </Tooltip>
+              );
+            })}
+          </Fragment>
+        ))}
+
+        {/* X-axis: Week Labels */}
+        <Box />
+        {Array.from({ length: weeks }).map((_, weekIndex) => (
+          <Box
+            key={`week-label-${weekIndex}`}
+            sx={{ ...labelSx, justifyContent: 'center', height: { xs: 24, md: 32 } }}
+          >
+            Week {weekIndex + 1}
+          </Box>
+        ))}
+
+        {/* Legend */}
+        <Box sx={{ gridColumn: '2 / -1', display: 'flex', alignItems: 'center' }}>
+          {legend.map(({ scale, color, text }) => (
             <Box
-              key={day}
-              sx={{
-                height: { xs: 28, md: 37 },
-                display: 'flex',
-                alignItems: 'center',
-                fontSize: { xs: 10, md: 13 },
-                fontWeight: 600,
-                color: '#000',
-                fontFamily: 'Aileron',
-                minWidth: { xs: 30, md: 40 },
-              }}
+              key={scale.label + color}
+              sx={{ width: '100%', backgroundColor: color, textAlign: 'center', py: 0.2 }}
             >
-              {day}
+              <Typography sx={{ fontSize: { xs: 9, md: 12 }, color: text }}>{scale.label}</Typography>
             </Box>
           ))}
         </Box>
 
-        {/* Main Heatmap Grid */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 0.5, md: 1 } }}>
-          {Array.from({ length: 7 }).map((_, displayRow) => (
-            <Box
-              key={`day-row-${displayRow}`}
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(${weeks}, 1fr)`,
-                gap: { xs: 0.5, md: 1 },
-              }}
-            >
-              {heatmapGrid.map((weekData, weekIndex) => {
-                const cell = weekData[displayRow] || { date: null, engagementRate: null };
-
-                return (
-                  <Tooltip
-                    key={`${weekIndex}-${displayRow}`}
-                    title={
-                      cell?.date ? (
-                        <Box>
-                          <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                            {dayjs(cell.date).format('ddd, MMM D, YYYY')}
-                          </Typography>
-                          <Typography variant="caption" display="block">
-                            Engagement Rate:{' '}
-                            {cell.engagementRate !== null
-                              ? `${cell.engagementRate.toFixed(2)}%`
-                              : 'No data'}
-                          </Typography>
-                          {cell.views !== null && (
-                            <Typography variant="caption" display="block">
-                              Views: {cell.views.toLocaleString()}
-                            </Typography>
-                          )}
-                        </Box>
-                      ) : (
-                        'No data'
-                      )
-                    }
-                    arrow
-                  >
-                    <Box
-                      sx={{
-                        minWidth: { xs: 40, sm: 55, md: 67 },
-                        height: { xs: 28, md: 37 },
-                        backgroundColor: getHeatColor(cell?.engagementRate),
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          transform: 'scale(1.15)',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                          zIndex: 10,
-                        },
-                      }}
-                    />
-                  </Tooltip>
-                );
-              })}
-            </Box>
-          ))}
-
-          {/* X-axis: Week Labels at Bottom */}
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: `repeat(${weeks}, 1fr)`,
-              gap: { xs: 0.5, md: 1 },
-              mb: 1,
-            }}
-          >
-            {Array.from({ length: weeks }).map((_, weekIndex) => (
-              <Box
-                key={`week-label-${weekIndex}`}
-                sx={{
-                  textAlign: 'center',
-                  fontSize: { xs: 10, md: 13 },
-                  fontWeight: 600,
-                  color: '#000',
-                  fontFamily: 'Aileron',
-                  height: { xs: 24, md: 32 },
-                  minWidth: { xs: 40, sm: 55, md: 67 },
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                Week {weekIndex + 1}
-              </Box>
-            ))}
-          </Box>
-
-          {/* Legend */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <Box
-              sx={{
-                width: '100%',
-                backgroundColor: COLORS.lowest,
-                textAlign: 'center',
-                py: 0.2,
-              }}
-            >
-              <Typography sx={{ fontSize: { xs: 9, md: 12 }, color: '#48484A' }}>
-                {scales.lowest.label}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                width: '100%',
-                textAlign: 'center',
-                backgroundColor: COLORS.lowMiddle,
-                py: 0.2,
-              }}
-            >
-              <Typography sx={{ fontSize: { xs: 9, md: 12 }, color: '#48484A' }}>
-                {scales.mediumLow.label}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                width: '100%',
-                textAlign: 'center',
-                backgroundColor: COLORS.highMiddle,
-                py: 0.2,
-              }}
-            >
-              <Typography sx={{ fontSize: { xs: 9, md: 12 }, color: '#E7E7E7' }}>
-                {scales.mediumHigh.label}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                width: '100%',
-                textAlign: 'center',
-                backgroundColor: COLORS.highest,
-                py: 0.2,
-              }}
-            >
-              <Typography sx={{ fontSize: { xs: 9, md: 12 }, color: '#E7E7E7' }}>
-                {scales.highest.label}
-              </Typography>
-            </Box>
-          </Box>
-
-          <Box display="flex" flex={1} flexDirection="row" justifyContent="space-between">
-            <Typography sx={{ fontSize: { xs: 10, md: 14 } }}>Lowest Engagement</Typography>
-            <Typography sx={{ fontSize: { xs: 10, md: 14 } }}>Highest Engagement</Typography>
-          </Box>
+        <Box sx={{ gridColumn: '2 / -1', display: 'flex', justifyContent: 'space-between' }}>
+          <Typography sx={{ fontSize: { xs: 10, md: 14 } }}>Lowest Engagement</Typography>
+          <Typography sx={{ fontSize: { xs: 10, md: 14 } }}>Highest Engagement</Typography>
         </Box>
       </Box>
     </Box>

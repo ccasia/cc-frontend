@@ -218,6 +218,8 @@ export default function InvoiceNewEditForm({ id, creators, onClose, mutateInvoic
         accountEmail: '',
       },
       totalAmount: invoice?.amount || 0,
+      reimbursements: Array.isArray(invoice?.reimbursements) ? invoice.reimbursements : [],
+      invoiceType: invoice?.invoiceType || 'STANDARD',
       reason: invoice?.creator?.user?.paymentForm?.reason || '',
       otherReason: invoice?.creator?.user?.paymentForm?.reason || '',
     }),
@@ -387,6 +389,28 @@ export default function InvoiceNewEditForm({ id, creators, onClose, mutateInvoic
               >
                 {values.status.toUpperCase()}
               </Label>
+              {/* Invoice family: a receipts-only child points to its main invoice, and a main
+                  invoice lists its children (same wording as the finance list) */}
+              {invoice?.invoiceType === 'REIMBURSEMENT' && (
+                <>
+                  <Label color="info" variant="soft">
+                    RECEIPTS ONLY
+                  </Label>
+                  {invoice?.parentInvoiceNumber && (
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      ↳ Child of {invoice.parentInvoiceNumber}
+                    </Typography>
+                  )}
+                </>
+              )}
+              {invoice?.childInvoices?.length > 0 && (
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  + Receipts-only{' '}
+                  {invoice.childInvoices
+                    .map((child) => `${child.invoiceNumber} (${child.status})`)
+                    .join(', ')}
+                </Typography>
+              )}
             </Stack>
           </Box>
 

@@ -12,13 +12,11 @@ import {
   Stack,
   Avatar,
   Tooltip,
-  Popover,
   TableRow,
   TableCell,
   Typography,
   IconButton,
   ButtonBase,
-  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -34,20 +32,21 @@ import {
 } from 'src/utils/media-kit-utils';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { OUTREACH_STATUS_OPTIONS, getOutreachStatusConfig } from 'src/contants/outreach';
+import { OUTREACH_STATUS_OPTIONS } from 'src/contants/outreach';
 
 import Iconify from 'src/components/iconify';
+import { StatusChip, StatusSelect } from 'src/components/status-chip';
 
 import DiaTextReveal from './dia-text-reveal';
 import V3PitchActions from './v3-pitch-actions';
 import useJustFinished from './use-just-finished';
+import RowNotesPreview from './creator-notes/row-notes-preview';
 import { resolveRowMetrics } from './resolve-pitch-platform-stats';
 import { canEditFailedMetrics } from './guest-extraction/manual-metrics';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 import ManualMetricsDialog from './guest-extraction/manual-metrics-dialog';
 import { failureDetails, failureLabelShort } from './guest-extraction/extraction-error-copy';
 import {
-  chipSx,
   CELL_SX,
   NAME_SX,
   INDEX_SX,
@@ -60,12 +59,10 @@ import {
   FieldBlock,
   PRODUCT_SX,
   VALUE_SIZE,
-  emptyChipSx,
   AVATAR_SIZE,
   NAME_HEIGHT,
   SMALL_HEIGHT,
   PlatformIcon,
-  SPINNER_SIZE,
   NAME_LINK_SX,
   VALUE_HEIGHT,
   VALUE_MUTED_SX,
@@ -390,6 +387,8 @@ const PitchRow = ({
   logistics,
   enterIndex = 0,
   isNew = false,
+  noteSummary,
+  onOpenNotes,
 }) => {
   const smUp = useResponsive('up', 'sm');
   const { user } = useAuthContext();
@@ -430,29 +429,10 @@ const PitchRow = ({
     onViewPitch(pitch);
   };
 
-  // Outreach status dropdown state
-  const [outreachAnchorEl, setOutreachAnchorEl] = useState(null);
-  const [outreachLoading, setOutreachLoading] = useState(false);
-  const outreachPopoverOpen = Boolean(outreachAnchorEl);
-
-  const handleOutreachClick = (event) => {
-    if (isDisabled || pitch._isShortlistedOnly) return;
-    event.stopPropagation();
-    setOutreachAnchorEl(event.currentTarget);
-  };
-
-  const handleOutreachClose = () => {
-    setOutreachAnchorEl(null);
-  };
-
+  // StatusSelect handles the dropdown, the saving spinner and showing the picked status until
+  // the refetch lands; this only saves.
   const handleOutreachSelect = async (statusValue) => {
-    handleOutreachClose();
-
-    // Don't update if same status
-    if (statusValue === pitch.outreachStatus) return;
-
     try {
-      setOutreachLoading(true);
       await axiosInstance.patch(endpoints.campaign.pitch.v3.outreachStatus(pitch.id), {
         outreachStatus: statusValue,
       });
@@ -464,8 +444,8 @@ const PitchRow = ({
       enqueueSnackbar(error?.response?.data?.message || 'Failed to update outreach status', {
         variant: 'error',
       });
-    } finally {
-      setOutreachLoading(false);
+      // Lets the chip switch back to the saved status.
+      throw error;
     }
   };
 
@@ -700,6 +680,8 @@ const PitchRow = ({
                 <Typography sx={PRODUCT_SX}>{displayProducts}</Typography>
               </Stack>
             )}
+
+            {onOpenNotes && <RowNotesPreview summary={noteSummary} onOpen={onOpenNotes} />}
           </Stack>
         </Stack>
       </TableCell>
@@ -707,135 +689,18 @@ const PitchRow = ({
       {/* Outreach Status */}
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.outreach }}>
         <FieldBlock label="Outreach status" minHeight={CHIP_ROW_HEIGHT}>
-          {(() => {
-            const outreachConfig = getOutreachStatusConfig(pitch.outreachStatus);
-            const isSynthetic = pitch._isShortlistedOnly;
-
-            // For synthetic shortlisted rows (no real pitch record), show "—" non-clickable
-            if (isSynthetic) {
-              return <EmptyValue />;
-            }
-
-            // No status set - show placeholder
-            if (!outreachConfig) {
-              return (
-                <Box
-                  onClick={handleOutreachClick}
-                  sx={{
-                    ...emptyChipSx,
-                    alignSelf: 'flex-start',
-                    cursor: isDisabled ? 'default' : 'pointer',
-                    opacity: isDisabled ? 0.6 : 1,
-                    '&:hover': !isDisabled && {
-                      borderColor: '#8E8E93',
-                      bgcolor: '#FAFAFA',
-                    },
-                  }}
-                >
-                  {outreachLoading ? (
-                    <CircularProgress size={SPINNER_SIZE} sx={{ color: '#8E8E93' }} />
-                  ) : (
-                    <>
-                      Not Set
-                      {!isDisabled && (
-                        <Iconify icon="eva:chevron-down-fill" width={CONTROL_ICON_SIZE} />
-                      )}
-                    </>
-                  )}
-                </Box>
-              );
-            }
-
-            // Status is set - show colored chip
-            return (
-              <Box
-                onClick={handleOutreachClick}
-                sx={{
-                  ...chipSx(outreachConfig.color),
-                  alignSelf: 'flex-start',
-                  cursor: isDisabled ? 'default' : 'pointer',
-                  opacity: isDisabled ? 0.6 : 1,
-                  '&:hover': !isDisabled && {
-                    opacity: 0.85,
-                  },
-                }}
-              >
-                {outreachLoading ? (
-                  <CircularProgress size={SPINNER_SIZE} sx={{ color: outreachConfig.color }} />
-                ) : (
-                  <>
-                    {outreachConfig.label}
-                    {!isDisabled && (
-                      <Iconify icon="eva:chevron-down-fill" width={CONTROL_ICON_SIZE} />
-                    )}
-                  </>
-                )}
-              </Box>
-            );
-          })()}
+          {/* Synthetic shortlisted rows have no pitch record to store a status on */}
+          {pitch._isShortlistedOnly ? (
+            <EmptyValue />
+          ) : (
+            <StatusSelect
+              value={pitch.outreachStatus}
+              options={OUTREACH_STATUS_OPTIONS}
+              onChange={handleOutreachSelect}
+              disabled={isDisabled}
+            />
+          )}
         </FieldBlock>
-
-        {/* Outreach Status Popover */}
-        <Popover
-          open={outreachPopoverOpen}
-          anchorEl={outreachAnchorEl}
-          onClose={(e) => {
-            if (e && e.stopPropagation) e.stopPropagation();
-            handleOutreachClose();
-          }}
-          onClick={(e) => e.stopPropagation()}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-          slotProps={{
-            paper: {
-              sx: {
-                mt: 0.5,
-                p: 1.25,
-                bgcolor: 'white',
-                boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
-                borderRadius: 1.5,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1,
-              },
-            },
-          }}
-        >
-          {OUTREACH_STATUS_OPTIONS.map((option) => (
-            <Box
-              key={option.value}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOutreachSelect(option.value);
-              }}
-              sx={{
-                ...chipSx(option.color),
-                justifyContent: 'space-between',
-                px: 1.5,
-                fontSize: SMALL_SIZE + 1,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                ...(pitch.outreachStatus === option.value && {
-                  outline: `2px solid ${option.color}20`,
-                }),
-                '&:hover': {
-                  bgcolor: '#F5F5F5',
-                },
-              }}
-            >
-              <Box component="span" sx={{ flex: 1, textAlign: 'left' }}>
-                {option.label}
-              </Box>
-              {pitch.outreachStatus === option.value && (
-                <Iconify
-                  icon="eva:checkmark-fill"
-                  width={CONTROL_ICON_SIZE}
-                  sx={{ ml: 1, flexShrink: 0 }}
-                />
-              )}
-            </Box>
-          ))}
-        </Popover>
       </TableCell>
 
       {/* Engagement Rate + Tier */}
@@ -976,12 +841,10 @@ const PitchRow = ({
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.status }}>
         <Stack spacing={0.5}>
           <FieldBlock label="Creator status" minHeight={CHIP_ROW_HEIGHT}>
-            <Box
-              sx={{
-                ...chipSx(statusInfo.color),
-                borderColor: statusInfo.borderColor,
-                alignSelf: 'flex-start',
-              }}
+            <StatusChip
+              color={statusInfo.color}
+              borderColor={statusInfo.borderColor}
+              sx={{ alignSelf: 'flex-start' }}
             >
               {getStatusText(displayStatus, pitch, campaign)}
               {pitch?.adminComments && displayStatus === 'SENT_TO_CLIENT_WITH_COMMENTS' && (
@@ -994,7 +857,7 @@ const PitchRow = ({
                   />
                 </Tooltip>
               )}
-            </Box>
+            </StatusChip>
           </FieldBlock>
 
           {/* No label of its own, but it still sits on the value row. */}
@@ -1069,6 +932,9 @@ PitchRow.propTypes = {
   enterIndex: PropTypes.number,
   /** Added after the list first loaded: enters at once and flashes. */
   isNew: PropTypes.bool,
+  noteSummary: PropTypes.object,
+  /** Omitted when the viewer has no access to admin notes. */
+  onOpenNotes: PropTypes.func,
 };
 
 export default PitchRow;

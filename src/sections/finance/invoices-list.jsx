@@ -190,6 +190,33 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
     });
   }, [invoices, table.order, table.orderBy, filters]);
 
+  // Rows to draw: each main invoice followed by its receipts-only children (nested). A child whose
+  // main invoice isn't in the current results is drawn on its own with "Child of INV-x".
+  const invoiceRows = useMemo(() => {
+    const byId = new Map(dataFiltered.map((invoice) => [invoice.id, invoice]));
+
+    return dataFiltered
+      .filter((invoice) => !(invoice.parentInvoiceId && byId.has(invoice.parentInvoiceId)))
+      .flatMap((invoice) => [
+        {
+          invoice,
+          isChild: false,
+          parentInvoiceNumber: invoice.parentInvoice?.invoiceNumber,
+        },
+        ...(invoice.childInvoices || []).map((child) => ({
+          // Prefer the full row if the child is on this page; otherwise build it from the summary
+          // (campaign, creator and currency are always the same as the main invoice's)
+          invoice: byId.get(child.id) || {
+            ...invoice,
+            ...child,
+            reimbursements: [],
+            childInvoices: [],
+          },
+          isChild: true,
+        })),
+      ]);
+  }, [dataFiltered]);
+
   const exportSummary = useMemo(() => {
     const allData = exportData?.length ? exportData : dataFiltered;
     if (!allData?.length) return { count: 0, totalCount: 0, totals: [] };
@@ -1210,10 +1237,12 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
                   </TableRow>
                 ) : (
                   <>
-                    {dataFiltered?.map((invoice) => (
+                    {invoiceRows.map(({ invoice, isChild, parentInvoiceNumber }) => (
                       <InvoiceItem
                         key={invoice.id}
                         invoice={invoice}
+                        isChild={isChild}
+                        parentInvoiceNumber={parentInvoiceNumber}
                         onChangeStatus={changeInvoiceStatus}
                         selected={table.selected.includes(invoice.id)}
                         onSelectRow={() => table.onSelectRow(invoice.id)}
@@ -1260,7 +1289,8 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
           },
         }}
       >
-        <DialogContent sx={{ p: 2, overflow: 'hidden' }}>
+        {/* Scrolls when the form is taller than the dialog (e.g. invoices with reimbursement lines) */}
+        <DialogContent sx={{ p: 2, overflowY: 'auto' }}>
           <InvoiceNewEditForm
             id={selectedId}
             creators={selectedData}
