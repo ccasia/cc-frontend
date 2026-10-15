@@ -535,6 +535,7 @@ export const endpoints = {
     clientFeedback: '/api/public/client-feedback',
   },
   client: {
+    home: '/api/client/home',
     updateClient: '/api/client/updateClient',
     checkCompany: '/api/client/checkCompany',
     createCompany: '/api/client/createCompany',
