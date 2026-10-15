@@ -32,6 +32,7 @@ import useGetCompany from 'src/hooks/use-get-company';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 
+import { isClientManager } from 'src/utils/campaign-flow';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -43,6 +44,7 @@ import FormProvider from 'src/components/hook-form';
 import CloseDraftDialog from './close-draft-dialog';
 import DraftSaveIndicator from './draft-save-indicator';
 import { diffUserContent } from './utils/has-user-content';
+import { getCreditLimitError } from './utils/campaign-credits';
 import useCampaignDraftAutosave from './hooks/use-campaign-draft-autosave';
 import {
   isInBackSection,
@@ -139,7 +141,6 @@ function CreateCampaignFormV2({
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [brandState, setBrandState] = useState('');
-  const [hasCreditError, setHasCreditError] = useState(false);
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
 
   const handleOpenConfirm = () => setConfirmOpen(true);
@@ -275,7 +276,12 @@ function CreateCampaignFormV2({
       .required('Campaign credits is required.'),
     campaignManager: Yup.array()
       .min(1, 'At least 1 manager is required.')
-      .required('Campaign Manager is required.'),
+      .required('Campaign Manager is required.')
+      .test(
+        'client-manager',
+        'Client campaigns need at least one client user as a campaign manager.',
+        (managers, ctx) => !ctx.parent.isV4Submission || (managers || []).some(isClientManager)
+      ),
     campaignType: Yup.string().required('Campaign type is required.'),
     deliverables: Yup.array()
       .min(1, 'At least one deliverable is required.')
@@ -707,7 +713,14 @@ function CreateCampaignFormV2({
       case 5: // Logistic Remarks
         return [];
       case 6: // Finalise (now includes client, brand, credits)
-        return ['client', 'campaignCredits', 'campaignManager', 'campaignType', 'deliverables'];
+        return [
+          'client',
+          'campaignBrand',
+          'campaignCredits',
+          'campaignManager',
+          'campaignType',
+          'deliverables',
+        ];
       case 7: // Next Steps
         return [];
       case 8: // Additional Details 1
@@ -726,6 +739,9 @@ function CreateCampaignFormV2({
 
     // For finalise step (6), also check credit error
     const shouldCheckCreditError = activeStep === 6;
+    const hasCreditError = Boolean(
+      getCreditLimitError(getValues('client'), getValues('campaignCredits'))
+    );
     if (result && (!shouldCheckCreditError || !hasCreditError)) {
       const logisticsType = getValues('logisticsType');
       let nextStep = activeStep + 1;
@@ -1146,7 +1162,6 @@ function CreateCampaignFormV2({
               openCompany={openCompany}
               openBrand={openBrand}
               openPackage={openPackage}
-              onValidationChange={setHasCreditError}
               setBrandState={setBrandState}
               onPackageLinkSuccess={handlePackageLinkSuccess}
             />
@@ -1188,6 +1203,10 @@ function CreateCampaignFormV2({
       mode,
     ]
   );
+
+  // Finalise keeps Next enabled: pressing it runs handleNext's validation, which shows each
+  // unmet field's error instead of leaving the admin guessing why the button is disabled
+  const isFinaliseStep = activeStep === 6;
 
   // Check if current step has required fields filled
   const isStepValid = () => {
@@ -1273,8 +1292,9 @@ function CreateCampaignFormV2({
           client &&
           credits &&
           credits > 0 &&
-          !hasCreditError &&
+          !getCreditLimitError(client, credits) &&
           manager?.length > 0 &&
+          (!formValues.isV4Submission || manager.some(isClientManager)) &&
           type &&
           deliverables?.length > 0
         );
@@ -1560,7 +1580,7 @@ function CreateCampaignFormV2({
               <Button
                 variant="contained"
                 onClick={handleNext}
-                disabled={!isStepValid() || isLoading}
+                disabled={(!isFinaliseStep && !isStepValid()) || isLoading}
                 sx={{
                   height: 45,
                   bgcolor: '#3A3A3C',
@@ -1823,7 +1843,7 @@ function CreateCampaignFormV2({
           <Button
             variant="contained"
             onClick={handleNext}
-            disabled={!isStepValid() || isLoading}
+            disabled={(!isFinaliseStep && !isStepValid()) || isLoading}
             sx={{
               height: 48,
               flex: 1,

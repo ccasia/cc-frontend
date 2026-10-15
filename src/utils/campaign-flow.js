@@ -9,7 +9,16 @@
  * See docs/v4-unification-plan.md for the full context.
  */
 
-const isClientAdmin = (ca) => ca?.admin?.user?.role === 'client' || ca?.admin?.role?.name === 'Client';
+/**
+ * Whether a campaign-manager option/value is a client user. Options from /user/admins carry
+ * the admin role name ('Client') and the client relation; activate-mode prefill values are
+ * raw users with role 'client'.
+ */
+export const isClientManager = (manager) =>
+  manager?.role === 'Client' || manager?.role === 'client' || Boolean(manager?.client);
+
+const isClientAdmin = (ca) =>
+  isClientManager(ca?.admin?.user) || ca?.admin?.role?.name === 'Client';
 
 export function campaignHasClient(campaign) {
   if (!campaign) return false;

@@ -51,9 +51,11 @@ import V3PitchModal from './v3-pitch-modal';
 import usePitchSocket from './use-pitch-socket';
 import useCreatorNotes from './creator-notes/use-creator-notes';
 import { resolveRowMetrics } from './resolve-pitch-platform-stats';
+import useNoClientGuard from './no-client-guard/use-no-client-guard';
 import CreatorNotesDrawer from './creator-notes/creator-notes-drawer';
 import useGuestExtraction from './guest-extraction/use-guest-extraction';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
+import NoClientConfirmDialog from './no-client-guard/NoClientConfirmDialog';
 import { extractionErrorCopy } from './guest-extraction/extraction-error-copy';
 import { validateProfileLink } from './guest-extraction/profile-link-validation';
 import useGuestMetricsDecision from './guest-extraction/use-guest-metrics-decision';
@@ -1608,6 +1610,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         <AutomaticCreatorScrapeDialog
           open={nonPlatformOpen}
           onClose={() => setNonPlatformOpen(false)}
+          campaign={campaign}
           campaignId={campaign?.id}
           onUpdated={() => {
             onUpdate?.();
@@ -1617,6 +1620,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         <NonPlatformCreatorFormDialog
           open={nonPlatformOpen}
           onClose={() => setNonPlatformOpen(false)}
+          campaign={campaign}
           campaignId={campaign?.id}
           onUpdated={() => {
             onUpdate?.();
@@ -1894,6 +1898,7 @@ export function PlatformCreatorModal({
   // clients (and no-client campaigns) get the single default action
   const showShortlistActionChoice =
     user?.role !== 'client' && campaign?.submissionVersion === 'v4' && campaignHasClient(campaign);
+  const { guard, dialogProps: noClientDialogProps } = useNoClientGuard(campaign);
   /**
    * Rows live in the shared creator-row machine, the same one the guest modal
    * uses. It brings link debounce, the Apify fetch, polling, cancel, session
@@ -2238,6 +2243,12 @@ export function PlatformCreatorModal({
       return;
     }
 
+    // No client attached means this shortlist is a final approval — confirm first when the
+    // client-campaign toggle looks forgotten
+    guard(() => submitShortlist(validRows, explicitAction), validRows.length);
+  };
+
+  const submitShortlist = async (validRows, explicitAction) => {
     try {
       setSubmitting(true);
 
@@ -3252,6 +3263,8 @@ export function PlatformCreatorModal({
           getStoredProfileLink(breakdownRow?.creator, 'tiktok'),
         ]}
       />
+
+      <NoClientConfirmDialog {...noClientDialogProps} />
     </>
   );
 }
@@ -3265,7 +3278,8 @@ PlatformCreatorModal.propTypes = {
   onUpdated: PropTypes.func,
 };
 
-export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaignId }) {
+export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaign, campaignId }) {
+  const { guard, dialogProps: noClientDialogProps } = useNoClientGuard(campaign);
   const [formValues, setFormValues] = useState({
     creators: [
       {
@@ -3352,6 +3366,12 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
       adminComments: creator.adminComments?.trim() || undefined,
     }));
 
+    // No client attached means this shortlist is a final approval — confirm first when the
+    // client-campaign toggle looks forgotten
+    guard(() => submitGuestCreators(guestCreators), guestCreators.length);
+  };
+
+  const submitGuestCreators = async (guestCreators) => {
     try {
       loading.onTrue();
 
@@ -3719,6 +3739,8 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
           {loading.value ? 'Adding...' : 'Add Creator'}
         </Button>
       </DialogActions>
+
+      <NoClientConfirmDialog {...noClientDialogProps} />
     </Dialog>
   );
 }
@@ -3727,6 +3749,7 @@ NonPlatformCreatorFormDialog.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onUpdated: PropTypes.func,
+  campaign: PropTypes.object,
   campaignId: PropTypes.string,
 };
 
