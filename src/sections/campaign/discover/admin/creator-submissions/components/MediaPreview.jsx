@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 
 import { Box, Stack, Typography, ButtonBase } from '@mui/material';

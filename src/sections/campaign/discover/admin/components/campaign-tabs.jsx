@@ -42,7 +42,13 @@ const getAllowedTabs = (submissionVersion) => {
   return clientAllowedTabs.filter((tab) => tab !== 'submissions-v4');
 };
 
-const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab }) => {
+const tabWeight = (compact, active) => {
+  if (!compact) return 650;
+  return active ? 500 : 400;
+};
+
+const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = 'default' }) => {
+  const compact = variant === 'compact';
   const { user } = useAuthContext();
   const { mainRef } = useMainContext();
   const theme = useTheme();
@@ -214,7 +220,7 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab }) => {
         position: 'sticky',
         top: 0,
         zIndex: theme.zIndex.appBar - 1,
-        border: 1,
+        border: compact && !isStuck ? 0 : 1,
         borderColor: 'transparent',
         borderRadius: 2,
         transition: theme.transitions.create(['background-color', 'border-color', 'box-shadow']),
@@ -227,8 +233,8 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab }) => {
     >
       <Box
         sx={{
-          mt: isStuck ? 0 : 2,
-          mb: isStuck ? 0 : 2.5,
+          mt: isStuck || compact ? 0 : 2,
+          mb: isStuck || compact ? 0 : 2.5,
           transition: theme.transitions.create(['margin']),
           position: 'relative',
           '&::before': {
@@ -258,16 +264,18 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab }) => {
         }}
         overflow="hidden"
       >
-        <Divider
-          sx={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            width: 1,
-            opacity: isStuck ? 0 : 1,
-            transition: theme.transitions.create(['opacity']),
-          }}
-        />
+        {!compact && (
+          <Divider
+            sx={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              width: 1,
+              opacity: isStuck ? 0 : 1,
+              transition: theme.transitions.create(['opacity']),
+            }}
+          />
+        )}
         <Stack
           ref={tabsContainerRef}
           direction="row"
@@ -277,6 +285,8 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab }) => {
             overflowX: 'scroll',
             overflowY: 'hidden',
             scrollbarWidth: 'none',
+            // Drawn on the row itself so the active underline lands exactly on the line.
+            ...(compact && !isStuck && { boxShadow: `inset 0 -1px 0 ${theme.palette.divider}` }),
             '&::-webkit-scrollbar': {
               display: 'none',
             },
@@ -370,16 +380,16 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab }) => {
                   size="large"
                   onClick={() => handleChangeTab(null, tab.value)}
                   sx={{
-                    px: { xs: 1, sm: 1.2 },
+                    px: compact ? 0 : { xs: 1, sm: 1.2 },
                     py: 0.5,
-                    pb: 1,
-                    minWidth: !lgUp && 'fit-content',
+                    pb: compact ? 1.25 : 1,
+                    minWidth: compact || !lgUp ? 'fit-content' : undefined,
                     color: currentTab === tab.value ? '#221f20' : '#8e8e93',
                     position: 'relative',
-                    fontSize: { xs: '0.9rem', sm: '1.05rem' },
-                    fontWeight: 650,
+                    fontSize: compact ? 14 : { xs: '0.9rem', sm: '1.05rem' },
+                    fontWeight: tabWeight(compact, currentTab === tab.value),
                     whiteSpace: 'nowrap',
-                    mr: { xs: 1, sm: 2 },
+                    mr: compact ? 3.5 : { xs: 1, sm: 2 },
                     transition: 'transform 0.1s ease-in-out',
                     '&:focus': {
                       outline: 'none',
@@ -397,7 +407,7 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab }) => {
                       right: 0,
                       height: '2px',
                       width: currentTab === tab.value ? '100%' : '0%',
-                      bgcolor: '#1340ff',
+                      bgcolor: compact ? 'text.primary' : '#1340ff',
                       transition: 'all 0.3s ease-in-out',
                       transform: 'scaleX(1)',
                       transformOrigin: 'left',
@@ -429,4 +439,5 @@ CampaignTabs.propTypes = {
   isDemo: PropTypes.bool,
   publicReadonly: PropTypes.bool,
   forcedTab: PropTypes.string,
+  variant: PropTypes.oneOf(['default', 'compact']),
 };

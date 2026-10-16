@@ -2,7 +2,7 @@
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import React, { useMemo, useState, useCallback, memo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import { Box, Menu, Stack, Button, MenuItem, Typography, IconButton } from '@mui/material';
 
@@ -15,6 +15,10 @@ import { useCampaignPermissions } from 'src/hooks/use-campaign-permissions';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
+
+import Iconify from 'src/components/iconify';
+import CampaignTabs from 'src/components/campaign/CampaignTabs';
+
 import {
   setUrl,
   setOpenCopyDialog,
@@ -24,9 +28,6 @@ import {
   setOpenModal,
   setPublicUrl,
 } from 'src/sections/campaign/discover/admin/store/use-public-url';
-
-import Iconify from 'src/components/iconify';
-import CampaignTabs from 'src/components/campaign/CampaignTabs';
 
 const formatDate = (dateString) => {
   if (!dateString) return '';
