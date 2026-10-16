@@ -17,6 +17,8 @@ import Iconify from 'src/components/iconify';
 import CreatorScrapeRow from './creator-scrape-row';
 import { CC, ROW_GAP } from './creator-field-tokens';
 import useGuestExtraction from './use-guest-extraction';
+import useNoClientGuard from '../no-client-guard/use-no-client-guard';
+import NoClientConfirmDialog from '../no-client-guard/NoClientConfirmDialog';
 import { newIdempotencyKey, saveGuestCreators } from './guest-extraction-api';
 import { ACTIONS, MAX_ROWS, ENTRY_MODE, BATCH_SAVE_STATUS } from './creator-row-machine';
 
@@ -98,8 +100,15 @@ const stepperSx = {
   '&:disabled': { opacity: 0.5 },
 };
 
-export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId, onUpdated }) {
+export default function AutomaticCreatorScrapeDialog({
+  open,
+  onClose,
+  campaign,
+  campaignId,
+  onUpdated,
+}) {
   const { enqueueSnackbar } = useSnackbar();
+  const { guard, dialogProps: noClientDialogProps } = useNoClientGuard(campaign);
 
   /**
    * One key per batch, not one per page load.
@@ -351,7 +360,7 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
           sx={{ mt: `${ROW_GAP}px` }}
         >
           <Button
-            onClick={handleSave}
+            onClick={() => guard(handleSave, eligibleCount)}
             disabled={eligibleCount === 0 || saving}
             sx={{
               height: 44,
@@ -378,6 +387,8 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
           </Button>
         </Stack>
       </Box>
+
+      <NoClientConfirmDialog {...noClientDialogProps} />
     </Dialog>
   );
 }
@@ -385,6 +396,7 @@ export default function AutomaticCreatorScrapeDialog({ open, onClose, campaignId
 AutomaticCreatorScrapeDialog.propTypes = {
   open: PropTypes.bool,
   onClose: PropTypes.func.isRequired,
+  campaign: PropTypes.object,
   campaignId: PropTypes.string.isRequired,
   onUpdated: PropTypes.func,
 };
