@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import { forwardRef } from 'react';
 
-import { Box, ButtonBase } from '@mui/material';
+import { ButtonBase } from '@mui/material';
 
 // ----------------------------------------------------------------------
 

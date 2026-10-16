@@ -359,6 +359,7 @@ export const endpoints = {
       unsaveCampaign: (id) => `/api/campaign/unsaveCampaign/${id}`,
     },
     getCampaignLog: (id) => `/api/campaign/getCampaignLog/${id}`,
+    clientOverview: (id) => `/api/campaign/${id}/overview`,
     logistics: {
       admin: {
         create: '/api/campaign/createLogistic',

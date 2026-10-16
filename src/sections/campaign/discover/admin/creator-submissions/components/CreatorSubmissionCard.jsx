@@ -9,8 +9,8 @@ import MediaPreview from './MediaPreview';
 import CreatorHeader from './CreatorHeader';
 import ExpandableText from './ExpandableText';
 import SubmissionList from './SubmissionList';
-import { COLORS, HOVER_MEDIA, VISIBLE_COUNT, MIN_CARD_WIDTH } from '../utils/constants';
 import { hasMedia } from '../submission-viewer/utils';
+import { COLORS, HOVER_MEDIA, VISIBLE_COUNT, MIN_CARD_WIDTH } from '../utils/constants';
 import {
   setExpanded,
   selectSubmission,

@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { isEqual } from 'lodash';
-import { useSnackbar } from 'notistack';
 import PropTypes from 'prop-types';
+import { useSnackbar } from 'notistack';
 import React, { useState, useCallback } from 'react';
 
 import {
