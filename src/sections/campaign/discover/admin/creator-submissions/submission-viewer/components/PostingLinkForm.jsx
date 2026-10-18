@@ -73,7 +73,7 @@ export default function PostingLinkForm({ submission }) {
                   disabled={submitting}
                   placeholder={
                     index === 0
-                      ? 'Paste the TikTok or Instagram post link'
+                      ? 'Paste the TikTok, Instagram or Xiaohongshu post link'
                       : 'Add another link (optional)'
                   }
                   error={Boolean(errors[index])}
