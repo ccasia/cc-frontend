@@ -2,10 +2,12 @@ import * as yup from 'yup';
 import { UAParser } from 'ua-parser-js';
 import { useForm } from 'react-hook-form';
 import { enqueueSnackbar } from 'notistack';
+import { useDropzone } from 'react-dropzone';
 import { yupResolver } from '@hookform/resolvers/yup';
-import React, { useRef, useMemo, useState } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 import { LoadingButton } from '@mui/lab';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -32,6 +34,8 @@ const CATEGORIES = [
 ];
 
 const MAX_ATTACHMENTS = 5;
+
+const MotionBox = m(Box);
 
 const schema = yup.object().shape({
   stepsToReproduce: yup.string().required('Please describe what happened'),
@@ -205,7 +209,7 @@ const BugReportForm = () => {
 
   const description = watch('stepsToReproduce');
   const category = watch('category');
-  const attachments = watch('attachments') || [];
+  const attachments = watch('attachments');
 
   const isFormFilled = !!description?.trim();
 
@@ -217,22 +221,50 @@ const BugReportForm = () => {
     [bugFormDialog.value, user?.id]
   );
 
-  const addFiles = (newFiles) => {
-    const room = MAX_ATTACHMENTS - attachments.length;
-    if (room <= 0) {
-      enqueueSnackbar(`Maximum ${MAX_ATTACHMENTS} attachments allowed`, { variant: 'warning' });
-      return;
-    }
+  const addFiles = useCallback(
+    (newFiles) => {
+      const room = MAX_ATTACHMENTS - attachments.length;
+      if (room <= 0) {
+        enqueueSnackbar(`Maximum ${MAX_ATTACHMENTS} attachments allowed`, { variant: 'warning' });
+        return;
+      }
 
-    const filesToAdd = newFiles
-      .filter((file) => file.type?.startsWith('image/'))
-      .slice(0, room)
-      .map((file) => Object.assign(file, { preview: URL.createObjectURL(file) }));
+      const filesToAdd = newFiles
+        .filter((file) => file.type?.startsWith('image/'))
+        .slice(0, room)
+        .map((file) => Object.assign(file, { preview: URL.createObjectURL(file) }));
 
-    if (filesToAdd.length) {
-      setValue('attachments', [...attachments, ...filesToAdd], { shouldValidate: true });
-    }
-  };
+      if (filesToAdd.length) {
+        setValue('attachments', [...attachments, ...filesToAdd], { shouldValidate: true });
+      }
+    },
+    [attachments, setValue]
+  );
+
+  const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
+    onDrop: addFiles,
+    multiple: false,
+    accept: {
+      'image/*': [],
+    },
+  });
+
+  const reduceMotion = useReducedMotion();
+  const dropColor = isDragReject ? theme.palette.error.main : '#1340FF';
+
+  let dropIconMotion = { y: -4, scale: 1.06 };
+  if (reduceMotion) dropIconMotion = { y: 0, scale: 1 };
+  else if (isDragReject) dropIconMotion = { x: [0, -5, 5, -3, 3, 0] };
+
+  // New thumbnails drop in from above and settle, so it's clear where the file went.
+  const thumbMotion = reduceMotion
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
+    : {
+        initial: { opacity: 0, y: -24, scale: 0.8 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, scale: 0.8, transition: { duration: 0.15 } },
+        transition: { type: 'spring', stiffness: 420, damping: 24 },
+      };
 
   const handleRemoveFile = (fileToRemove) => {
     revokePreviews([fileToRemove]);
@@ -241,18 +273,6 @@ const BugReportForm = () => {
       attachments.filter((file) => file !== fileToRemove),
       { shouldValidate: true }
     );
-  };
-
-  const handleDescriptionPaste = (event) => {
-    const items = event.clipboardData?.items;
-    if (!items) return;
-
-    const imageFiles = Array.from(items)
-      .filter((item) => item.type?.startsWith('image/'))
-      .map((item) => item.getAsFile())
-      .filter(Boolean);
-
-    if (imageFiles.length) addFiles(imageFiles);
   };
 
   const closeAndResetForm = () => {
@@ -337,6 +357,24 @@ const BugReportForm = () => {
     </Box>
   );
 
+  // Paste a screenshot anywhere in the open dialog to attach it; text pastes pass through.
+  useEffect(() => {
+    if (!bugFormDialog.value) return undefined;
+
+    const handlePaste = (event) => {
+      const images = Array.from(event.clipboardData?.files || []).filter((file) =>
+        file.type?.startsWith('image/')
+      );
+      if (!images.length) return;
+
+      event.preventDefault();
+      addFiles(images);
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [addFiles, bugFormDialog.value]);
+
   return (
     <>
       {feedbackButton}
@@ -344,6 +382,7 @@ const BugReportForm = () => {
         open={bugFormDialog.value}
         maxWidth={false}
         PaperProps={{
+          ...getRootProps(),
           sx: {
             width: '640px',
             maxWidth: '95vw',
@@ -353,9 +392,75 @@ const BugReportForm = () => {
             gap: '24px',
             backgroundColor: theme.palette.grey[100],
             boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.15)',
+            position: 'relative',
           },
         }}
       >
+        <AnimatePresence>
+          {isDragActive && (
+            <MotionBox
+              key="drop-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 1,
+                display: 'grid',
+                placeItems: 'center',
+                borderRadius: '16px',
+                border: '2px dashed',
+                borderColor: dropColor,
+                bgcolor: alpha(dropColor, 0.06),
+                backdropFilter: 'blur(3px)',
+                pointerEvents: 'none',
+              }}
+            >
+              <MotionBox
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05, duration: 0.22, ease: 'easeOut' }}
+                sx={{ textAlign: 'center', color: dropColor }}
+              >
+                <MotionBox
+                  // Lifts once on drag-enter; a rejected file shakes instead.
+                  initial={{ y: 0, scale: 1 }}
+                  animate={dropIconMotion}
+                  transition={
+                    isDragReject
+                      ? { duration: 0.32, ease: 'easeInOut' }
+                      : { type: 'spring', stiffness: 380, damping: 18 }
+                  }
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    mx: 'auto',
+                    mb: 1.5,
+                    display: 'grid',
+                    placeItems: 'center',
+                    borderRadius: '50%',
+                    bgcolor: alpha(dropColor, 0.12),
+                  }}
+                >
+                  <Iconify
+                    icon={isDragReject ? 'solar:forbidden-circle-bold' : 'solar:gallery-add-bold'}
+                    width={28}
+                  />
+                </MotionBox>
+                <Typography sx={{ fontWeight: 600, fontSize: 16 }}>
+                  {isDragReject ? 'Only images can be attached' : 'Drop image to attach'}
+                </Typography>
+                {!isDragReject && (
+                  <Typography sx={{ mt: 0.5, fontSize: 13, color: 'text.secondary' }}>
+                    One image at a time
+                  </Typography>
+                )}
+              </MotionBox>
+            </MotionBox>
+          )}
+        </AnimatePresence>
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <Stack sx={{ height: '100%', maxHeight: 'calc(90vh - 48px)' }}>
             {/* Header — fixed top */}
@@ -372,7 +477,7 @@ const BugReportForm = () => {
                       letterSpacing: '-0.01em',
                     }}
                   >
-                   🐞 Report a bug
+                    🐞 Report a bug
                   </Typography>
 
                   <Typography
@@ -418,7 +523,6 @@ const BugReportForm = () => {
                     placeholder={descriptionPlaceholder}
                     multiline
                     rows={4}
-                    inputProps={{ onPaste: handleDescriptionPaste }}
                     sx={{
                       ...inputSx,
                       '& .MuiInputBase-root': {
@@ -490,7 +594,6 @@ const BugReportForm = () => {
                     }}
                     sx={inputSx}
                   />
-                  {/* <RHFTextField name="campaignName" placeholder="Search campaigns…" sx={inputSx} /> */}
                 </Stack>
 
                 <Stack gap={1.1}>
@@ -501,8 +604,9 @@ const BugReportForm = () => {
                     </Typography>
                   </Stack>
 
-                  <Stack direction="row" gap={1.25} flexWrap="wrap">
+                  <Stack direction="row" gap={1.25} flexWrap="wrap" sx={{ position: 'relative' }}>
                     <input
+                      {...getInputProps()}
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
@@ -515,7 +619,8 @@ const BugReportForm = () => {
                     />
 
                     {attachments.length < MAX_ATTACHMENTS && (
-                      <Box
+                      <MotionBox
+                        layout="position"
                         component="button"
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
@@ -542,63 +647,67 @@ const BugReportForm = () => {
                       >
                         <Typography sx={{ fontSize: '19px', lineHeight: 1 }}>+</Typography>
                         <Typography sx={{ fontSize: '11px' }}>Add file</Typography>
-                      </Box>
+                      </MotionBox>
                     )}
 
-                    {attachments.map((file) => (
-                      <Box
-                        key={file.preview}
-                        sx={{
-                          width: 96,
-                          height: 76,
-                          flex: 'none',
-                          position: 'relative',
-                          borderRadius: '11px',
-                          overflow: 'hidden',
-                          boxShadow: 'inset 0 0 0 1px rgba(20,16,45,0.08)',
-                        }}
-                      >
-                        <Box
-                          component="img"
-                          src={file.preview}
-                          alt={file.name}
-                          sx={{ width: 1, height: 1, objectFit: 'cover' }}
-                        />
-                        <IconButton
-                          onClick={() => handleRemoveFile(file)}
+                    <AnimatePresence initial={false} mode="popLayout">
+                      {attachments.map((file) => (
+                        <MotionBox
+                          key={file.preview}
+                          layout
+                          {...thumbMotion}
                           sx={{
-                            position: 'absolute',
-                            top: 4,
-                            right: 4,
-                            width: 20,
-                            height: 20,
-                            bgcolor: 'rgba(20,16,45,0.55)',
-                            color: '#fff',
-                            '&:hover': { bgcolor: 'rgba(20,16,45,0.8)' },
+                            width: 96,
+                            height: 76,
+                            flex: 'none',
+                            position: 'relative',
+                            borderRadius: '11px',
+                            overflow: 'hidden',
+                            boxShadow: 'inset 0 0 0 1px rgba(20,16,45,0.08)',
                           }}
                         >
-                          <Iconify icon="charm:cross" width={11} />
-                        </IconButton>
-                        <Typography
-                          noWrap
-                          sx={{
-                            position: 'absolute',
-                            bottom: 5,
-                            left: 5,
-                            right: 5,
-                            fontFamily: '"IBM Plex Mono", monospace',
-                            fontSize: '9.5px',
-                            color: '#4b475e',
-                            bgcolor: 'rgba(253,252,255,0.85)',
-                            px: '5px',
-                            py: '2px',
-                            borderRadius: '4px',
-                          }}
-                        >
-                          {file.name}
-                        </Typography>
-                      </Box>
-                    ))}
+                          <Box
+                            component="img"
+                            src={file.preview}
+                            alt={file.name}
+                            sx={{ width: 1, height: 1, objectFit: 'cover' }}
+                          />
+                          <IconButton
+                            onClick={() => handleRemoveFile(file)}
+                            sx={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 4,
+                              width: 20,
+                              height: 20,
+                              bgcolor: 'rgba(20,16,45,0.55)',
+                              color: '#fff',
+                              '&:hover': { bgcolor: 'rgba(20,16,45,0.8)' },
+                            }}
+                          >
+                            <Iconify icon="charm:cross" width={11} />
+                          </IconButton>
+                          <Typography
+                            noWrap
+                            sx={{
+                              position: 'absolute',
+                              bottom: 5,
+                              left: 5,
+                              right: 5,
+                              fontFamily: '"IBM Plex Mono", monospace',
+                              fontSize: '9.5px',
+                              color: '#4b475e',
+                              bgcolor: 'rgba(253,252,255,0.85)',
+                              px: '5px',
+                              py: '2px',
+                              borderRadius: '4px',
+                            }}
+                          >
+                            {file.name}
+                          </Typography>
+                        </MotionBox>
+                      ))}
+                    </AnimatePresence>
                   </Stack>
                 </Stack>
 
