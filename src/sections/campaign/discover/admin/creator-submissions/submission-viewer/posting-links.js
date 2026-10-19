@@ -11,15 +11,19 @@ const TIKTOK_HOSTS = [
   'vt.tiktok.com',
 ];
 const INSTAGRAM_HOSTS = ['instagram.com', 'www.instagram.com', 'm.instagram.com'];
+const XHS_HOSTS = ['xiaohongshu.com', 'www.xiaohongshu.com'];
+const XHS_SHORT_HOSTS = ['xhslink.com', 'www.xhslink.com', 'xhslink.cn', 'www.xhslink.cn'];
 
-const KNOWN_HOST_WITHOUT_SCHEME = /^(?:(?:www|m|vm|vt)\.)?(?:tiktok|instagram)\.com(?:[/?#]|$)/i;
+const KNOWN_HOST_WITHOUT_SCHEME =
+  /^(?:(?:www|m|vm|vt)\.)?(?:(?:tiktok|instagram|xiaohongshu)\.com|xhslink\.(?:com|cn))(?:[/?#]|$)/i;
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:\/\//i;
 const TIKTOK_POST_PATH = /^\/@[^/]+\/(?:video|photo)\/\d+/;
 const TIKTOK_SHORT_PATH = /^\/t\/[\w-]+/;
 const INSTAGRAM_POST_PATH = /^\/(?:[\w.]+\/)?(?:p|reels?|tv)\/[\w-]+/;
+const XHS_POST_PATH = /^\/(?:explore|discovery\/item|user\/profile\/\w+)\/\w+/;
 
 const NOT_A_LINK =
-  "Not a TikTok or Instagram link. Paste the post's link, e.g. https://www.tiktok.com/@name/video/123.";
+  "Not a TikTok, Instagram or Xiaohongshu link. Paste the post's link, e.g. https://www.tiktok.com/@name/video/123.";
 
 /**
  * Checks one link. Returns { link } with https:// added / http upgraded, or { error } with a
@@ -31,7 +35,7 @@ export const checkPostingLink = (rawLink) => {
 
   if (/\s/.test(value)) {
     return {
-      error: /(?:tiktok|instagram)\.com/i.test(value)
+      error: /(?:(?:tiktok|instagram|xiaohongshu)\.com|xhslink\.(?:com|cn))/i.test(value)
         ? 'This link has a space in it. Paste just the link.'
         : NOT_A_LINK,
     };
@@ -74,8 +78,21 @@ export const checkPostingLink = (rawLink) => {
           "This Instagram link isn't to a post. Open the post or reel and copy its link (it has /p/ or /reel/ in it).",
       };
     }
+  } else if (XHS_HOSTS.includes(host)) {
+    if (!XHS_POST_PATH.test(path)) {
+      return {
+        error:
+          "This Xiaohongshu link isn't to a post. Open the post and copy its link (it has /explore/ in it).",
+      };
+    }
+  } else if (XHS_SHORT_HOSTS.includes(host)) {
+    if (path.length <= 1) {
+      return { error: "This xhslink link isn't to a post. Copy the post's share link." };
+    }
   } else {
-    return { error: `Only TikTok and Instagram links are accepted, not ${host}.` };
+    return {
+      error: `Only TikTok, Instagram and Xiaohongshu links are accepted, not ${host}.`,
+    };
   }
 
   return { link: url.toString() };
