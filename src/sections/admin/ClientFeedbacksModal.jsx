@@ -24,6 +24,11 @@ import { fetcher, endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
 
+import {
+  setCampaign,
+  openSubmissionViewer,
+} from 'src/sections/campaign/discover/admin/creator-submissions/store/use-creator-submissions-store';
+
 dayjs.extend(relativeTime);
 
 const PAGE_SIZE = 3;
@@ -68,7 +73,13 @@ export default function ClientFeedbacksModal({ open, onClose }) {
     onClose();
   };
 
+  // v4 opens the submission viewer (mounted by the dashboard) on top of this dialog
   const handleViewFeedback = (submission) => {
+    if (submission.campaign?.submissionVersion === 'v4') {
+      setCampaign({ id: submission.campaignId, hasClient: submission.campaign.hasClient });
+      openSubmissionViewer({ userId: submission.userId, submissionId: submission.id });
+      return;
+    }
     const creatorName = encodeURIComponent(submission.user?.name || '');
     router.push(
       `${paths.dashboard.campaign.adminCampaignDetail(submission.campaignId)}?tab=submissions-v4&creator=${creatorName}`

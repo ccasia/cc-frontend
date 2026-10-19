@@ -58,7 +58,7 @@ import {
 } from 'src/sections/campaign/discover/admin/store/use-spreadsheet';
 
 import CampaignFAQ from '../campaign-faq';
-import { useTabs } from '../store/use-tabs';
+import { useTabs, setCurrentTab } from '../store/use-tabs';
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalysis from '../campaign-analytics';
 import CampaignTabs from '../components/campaign-tabs';
@@ -178,6 +178,14 @@ const CampaignDetailView = ({
   // );
 
   const currentTab = useTabs((state) => state.currentTab);
+
+  const [linkedTab, setLinkedTab] = useState(() => searchParams.get('tab'));
+
+  useEffect(() => {
+    if (!linkedTab) return;
+    setCurrentTab(linkedTab);
+    setLinkedTab(null);
+  }, [linkedTab]);
 
   // Check if user is client (demo sessions render the read-only client view)
   const isClient =
@@ -453,7 +461,7 @@ const CampaignDetailView = ({
         </>
       )}
 
-      {!campaignLoading ? renderTabContent() : <LoadingScreen />}
+      {!campaignLoading && !linkedTab ? renderTabContent() : <LoadingScreen />}
 
       {copyDialogContainer}
 
