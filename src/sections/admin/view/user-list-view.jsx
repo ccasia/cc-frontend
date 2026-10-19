@@ -1,4 +1,5 @@
 import * as yup from 'yup';
+import { m } from 'framer-motion';
 import isEqual from 'lodash/isEqual';
 import { Toaster } from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
@@ -117,6 +118,8 @@ const defaultFilters = {
   role: [],
   status: 'all',
 };
+
+const MotionButton = m(Button);
 
 // ----------------------------------------------------------------------
 
@@ -393,8 +396,12 @@ export default function UserListView() {
           ]}
           action={
             user?.role === 'superadmin' && (
-              <Button
+              <MotionButton
                 startIcon={<Iconify icon="mdi:invite" width={20} height={20} />}
+                whileTap={{
+                  y: 1,
+                  borderBottom: 'none',
+                }}
                 sx={{
                   bgcolor: 'black',
                   color: 'white',
@@ -405,14 +412,15 @@ export default function UserListView() {
                   fontSize: '0.9rem',
                   cursor: 'pointer',
                   '&:hover': {
-                    bgcolor: 'grey',
+                    bgcolor: (theme) => alpha('#000000', 0.8),
                     opacity: 0.9,
                   },
                 }}
+
                 onClick={handleClickOpenDialog}
               >
                 Invite admin
-              </Button>
+              </MotionButton>
             )
           }
           sx={{
