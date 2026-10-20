@@ -18,6 +18,8 @@ const stageColor = { done: 'text.primary', current: ACTION_BLUE, todo: 'grey.500
 
 export default function CampaignCard({ campaign, openTasks, selected, onSelect, onView }) {
   const complete = isComplete(campaign);
+  const image = campaign?.image[0];
+
   const daysLeft = daysUntil(campaign.endDate);
   const inReview = Math.max(0, campaign.submissions.received - campaign.submissions.approved);
 
@@ -47,6 +49,8 @@ export default function CampaignCard({ campaign, openTasks, selected, onSelect, 
         }
       }}
       sx={{
+        position: 'relative',
+        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         gap: 2.25,
@@ -61,6 +65,22 @@ export default function CampaignCard({ campaign, openTasks, selected, onSelect, 
         '&:focus-visible': { outline: `2px solid ${ACTION_BLUE}`, outlineOffset: 2 },
       }}
     >
+      {/* <Box
+        component="img"
+        alt="campaign_image"
+        src={image}
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 1,
+          zIndex: 1,
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: '0 0',
+          maskImage: 'linear-gradient(black, transparent)',
+        }}
+      /> */}
+
       <Stack direction="row" spacing={1.5} alignItems="flex-start">
         <Avatar
           variant="rounded"
@@ -169,6 +189,7 @@ CampaignCard.propTypes = {
     shortlist: PropTypes.shape({ confirmed: PropTypes.number, total: PropTypes.number }),
     submissions: PropTypes.shape({ received: PropTypes.number, approved: PropTypes.number }),
     posting: PropTypes.shape({ posted: PropTypes.number, total: PropTypes.number }),
+    image: PropTypes.array,
   }).isRequired,
   openTasks: PropTypes.number,
   selected: PropTypes.bool,
@@ -230,3 +251,5 @@ function StageRow({ stage }) {
 StageRow.propTypes = {
   stage: PropTypes.object.isRequired,
 };
+
+// then if the creator is not linked then can input follower manually
