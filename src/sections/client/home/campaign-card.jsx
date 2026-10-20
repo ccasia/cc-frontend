@@ -79,12 +79,23 @@ export default function CampaignCard({ campaign, openTasks, selected, onSelect, 
           objectPosition: '0 0',
           maskImage: 'linear-gradient(black, transparent)',
         }}
+      />
+
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 1,
+          zIndex: 1,
+          height: '100%',
+          backdropFilter: 'blur(1.5px)',
+        }}
       /> */}
 
       <Stack direction="row" spacing={1.5} alignItems="flex-start">
         <Avatar
           variant="rounded"
-          src={campaign.logo || undefined}
+          src={campaign.image || campaign.logo}
           alt=""
           sx={{ width: 40, height: 40, borderRadius: '10px', bgcolor: 'grey.200' }}
         >
