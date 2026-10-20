@@ -64,6 +64,9 @@ export function toDraftCreator(creator) {
                 id: account.instagramUser.id,
                 followers_count: account.instagramUser.followers_count,
                 engagement_rate: account.instagramUser.engagement_rate,
+                lastUpdated: account.instagramUser.lastUpdated ?? null,
+                updatedAt: account.instagramUser.updatedAt ?? null,
+                expiresIn: account.instagramUser.expiresIn ?? null,
               }
             : null,
           tiktokUser: account.tiktokUser
@@ -71,6 +74,8 @@ export function toDraftCreator(creator) {
                 id: account.tiktokUser.id,
                 follower_count: account.tiktokUser.follower_count,
                 engagement_rate: account.tiktokUser.engagement_rate,
+                lastUpdated: account.tiktokUser.lastUpdated ?? null,
+                updatedAt: account.tiktokUser.updatedAt ?? null,
               }
             : null,
         }

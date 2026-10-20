@@ -60,6 +60,7 @@ import useGuestMetricsDecision from './guest-extraction/use-guest-metrics-decisi
 import ScrapeTextFieldReveal, { ScrapeRevealGate } from './scrape-text-field-reveal';
 import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
 import AutomaticCreatorScrapeDialog from './guest-extraction/automatic-creator-scrape-dialog';
+import MediaKitSyncNote, { getMediaKitSyncState } from './guest-extraction/media-kit-sync-note';
 import {
   ACTIONS,
   ROW_STATUS,
@@ -330,13 +331,23 @@ const PLATFORM_OPTIONS = [
   { value: 'tiktok', label: 'TikTok', icon: 'ic:baseline-tiktok', color: '#000000' },
 ];
 
+/**
+ * A connected account counts as a media kit only once its stats are saved.
+ * A token-only row (stats sync failed) falls back to manual entry.
+ */
+const hasMediaKitForPlatform = (creator, selectedPlatform) => {
+  if (!creator) return false;
+  if (selectedPlatform === 'tiktok') return creator?.creator?.tiktokUser?.follower_count != null;
+  return creator?.creator?.instagramUser?.followers_count != null;
+};
+
 const getPlatformFollowerCount = (creator, selectedPlatform) => {
   if (!creator) return 0;
 
   const igFollowers = creator?.creator?.instagramUser?.followers_count || 0;
   const tkFollowers = creator?.creator?.tiktokUser?.follower_count || 0;
-  const hasInstagramConnected = !!creator?.creator?.instagramUser;
-  const hasTiktokConnected = !!creator?.creator?.tiktokUser;
+  const hasInstagramConnected = hasMediaKitForPlatform(creator, 'instagram');
+  const hasTiktokConnected = hasMediaKitForPlatform(creator, 'tiktok');
   const manualInstagramFollowers = creator?.creator?.manualInstagramFollowerCount || 0;
   const manualTiktokFollowers = creator?.creator?.manualTiktokFollowerCount || 0;
   const normalizedPlatform = selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram';
@@ -361,21 +372,14 @@ const getPlatformFollowerCount = (creator, selectedPlatform) => {
 const getPlatformEngagementRate = (creator, selectedPlatform) => {
   if (!creator) return null;
   const isTiktok = selectedPlatform === 'tiktok';
-  const connected = isTiktok ? creator?.creator?.tiktokUser : creator?.creator?.instagramUser;
-  const rate = connected
-    ? connected.engagement_rate
+  const rate = hasMediaKitForPlatform(creator, selectedPlatform)
+    ? (isTiktok ? creator.creator.tiktokUser : creator.creator.instagramUser).engagement_rate
     : isTiktok
       ? creator?.creator?.manualTiktokEngagementRate
       : creator?.creator?.manualInstagramEngagementRate;
   if (rate == null) return null;
   // "5.40" reads as false precision next to the handoff's "5.4".
   return String(Number(Number(rate).toFixed(2)));
-};
-
-const hasMediaKitForPlatform = (creator, selectedPlatform) => {
-  if (!creator) return false;
-  if (selectedPlatform === 'tiktok') return !!creator?.creator?.tiktokUser;
-  return !!creator?.creator?.instagramUser;
 };
 
 const getStoredProfileLink = (creator, platform) => {
@@ -420,19 +424,36 @@ const renderProfileSourceOption = (creator, option) => {
   );
 };
 
-const getDefaultPlatformFromMediaKit = (creator) => {
-  if (creator?.creator?.instagramUser) return 'instagram';
-  if (creator?.creator?.tiktokUser) return 'tiktok';
-  return '';
+/**
+ * A row reads its numbers from the media kit unless the admin chose the
+ * profile link instead, which puts the row on the link source modes.
+ */
+const LINK_SOURCE_MODES = ['stored', 'manual'];
+const rowUsesMediaKit = (row) =>
+  hasMediaKitForPlatform(row.creator, row.selectedPlatform) &&
+  !LINK_SOURCE_MODES.includes(row.sourceMode);
+
+/**
+ * The sync note for a connected row: shown when its saved numbers are stale,
+ * or when the admin chose the profile link instead.
+ */
+const getSyncNote = (row) => {
+  if (!row.creator || !hasMediaKitForPlatform(row.creator, row.selectedPlatform)) return null;
+  const sync = getMediaKitSyncState(row.creator, row.selectedPlatform);
+  const usingProfileLink = !row.hasMediaKit;
+  if (!usingProfileLink && !sync?.isStale) return null;
+  return {
+    lastSyncedAt: sync?.lastSyncedAt,
+    tokenExpired: sync?.tokenExpired,
+    usingProfileLink,
+  };
 };
 
 /** Platforms that have a connected media kit account for this creator */
-const getConnectedPlatformValues = (creator) => {
-  const values = [];
-  if (creator?.creator?.instagramUser) values.push('instagram');
-  if (creator?.creator?.tiktokUser) values.push('tiktok');
-  return values;
-};
+const getConnectedPlatformValues = (creator) =>
+  ['instagram', 'tiktok'].filter((platform) => hasMediaKitForPlatform(creator, platform));
+
+const getDefaultPlatformFromMediaKit = (creator) => getConnectedPlatformValues(creator)[0] ?? '';
 
 // Admins may choose IG or TikTok for credits even when only one platform has a media kit
 // (other platform uses manual follower entry).
@@ -1899,10 +1920,7 @@ export function PlatformCreatorModal({
    * uses. It brings link debounce, the Apify fetch, polling, cancel, session
    * recovery and reset-on-open, so none of that is written twice.
    */
-  const skipDraftRow = useCallback(
-    (row) => hasMediaKitForPlatform(row.creator, row.selectedPlatform),
-    []
-  );
+  const skipDraftRow = useCallback((row) => rowUsesMediaKit(row), []);
   const resolveCreator = useCallback(
     (creatorId) => (data || []).find((creator) => creator.id === creatorId) ?? null,
     [data]
@@ -1937,7 +1955,7 @@ export function PlatformCreatorModal({
       rowState.rows.map((row) => ({
         ...row,
         selectedPlatform: row.selectedPlatform ?? '',
-        hasMediaKit: hasMediaKitForPlatform(row.creator, row.selectedPlatform),
+        hasMediaKit: rowUsesMediaKit(row),
       })),
     [rowState.rows]
   );
@@ -2025,6 +2043,25 @@ export function PlatformCreatorModal({
         // Both helpers are per platform, so a saved manual value is never stale.
         followerCount: getPlatformFollowerCount(row.creator, platform) || '',
         engagementRate: getPlatformEngagementRate(row.creator, platform) ?? '',
+      });
+    },
+    [creatorRows, setSource]
+  );
+
+  /** Opt in to a scrape of the profile link, for example when the media kit is stale. */
+  const handleUseProfileLink = useCallback(
+    (rowId) => {
+      const row = creatorRows.find((entry) => entry.id === rowId);
+      if (!row?.creator || !row.selectedPlatform) return;
+
+      const storedLink = getStoredProfileLink(row.creator, row.selectedPlatform);
+      setSource(rowId, {
+        selectedPlatform: row.selectedPlatform,
+        sourceMode: storedLink ? 'stored' : 'manual',
+        profileLink: storedLink,
+        platform: null,
+        followerCount: '',
+        engagementRate: '',
       });
     },
     [creatorRows, setSource]
@@ -3059,6 +3096,17 @@ export function PlatformCreatorModal({
                         </Stack>
                       )}
                     </ScrapeRevealGate>
+
+                    {scrapeEnabled && getSyncNote(row) && (
+                      <MediaKitSyncNote
+                        {...getSyncNote(row)}
+                        onToggle={() =>
+                          row.hasMediaKit
+                            ? handleUseProfileLink(row.id)
+                            : handleSourceChange(row.id, row.selectedPlatform)
+                        }
+                      />
+                    )}
 
                     {/* CS Comments sits on its own full-width row, per the
                         handoff. Inline it was the sixth field and got squeezed
