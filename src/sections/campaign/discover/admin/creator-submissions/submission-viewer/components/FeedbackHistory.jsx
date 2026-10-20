@@ -6,6 +6,7 @@ import { Box, Stack, Typography, ButtonBase, CircularProgress } from '@mui/mater
 import { useSubmissionComments } from 'src/hooks/use-submission-comments';
 
 import { sectionLabelSx } from '../styles';
+import { wasSentToCreator } from '../utils';
 import useCaptionHistory from '../hooks/use-caption-history';
 import {
   setHistoryTab,
@@ -47,7 +48,7 @@ const groupByUpload = (comments, uploads = []) => {
 const describeComment = (comment) => {
   const notes = [];
   if (comment.user?.role !== 'creator') {
-    notes.push(comment.isSentToCreator ? 'Sent to creator' : 'Not sent to creator');
+    notes.push(wasSentToCreator(comment) ? 'Sent to creator' : 'Not sent to creator');
   }
   if (comment.resolvedAt || comment.resolvedByUserId) {
     notes.push(`Resolved${comment.resolvedBy?.name ? ` by ${comment.resolvedBy.name}` : ''}`);

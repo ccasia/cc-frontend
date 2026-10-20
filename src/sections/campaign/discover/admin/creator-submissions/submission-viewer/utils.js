@@ -117,9 +117,23 @@ export const getClientReasons = (submission) => {
 export const isCommentResolved = (comment) =>
   Boolean(comment?.resolvedByUserId || comment?.resolvedAt);
 
+// Deleted comments leave the thread; a deleted one stays as a placeholder only while live
+// replies still hang off it
+export const withoutDeletedComments = (comments) =>
+  comments
+    .map((comment) => ({
+      ...comment,
+      replies: (comment.replies || []).filter((reply) => !reply.deletedAt),
+    }))
+    .filter((comment) => !comment.deletedAt || comment.replies.length > 0);
+
 // Top-level comments followed by their replies
 export const flattenComments = (comments) =>
   comments.flatMap((comment) => [comment, ...(comment.replies || [])]);
+
+// Sending marks every comment as sent; the ones the admin left out stay hidden from the creator
+export const wasSentToCreator = (comment) =>
+  Boolean(comment?.isSentToCreator) && comment.isVisibleToCreator !== false;
 
 // Admin + client comments the creator hasn't received yet and that are selected for them
 export const getUnsentFeedback = (comments) =>

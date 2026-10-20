@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
-import { useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { useMemo, useEffect } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 
 import { keyframes } from '@mui/material/styles';
@@ -29,8 +29,10 @@ import {
   revealComment,
   parseTimestamp,
   COMMENT_ID_ATTR,
+  wasSentToCreator,
   isCommentResolved,
   REVIEW_SCROLL_ATTR,
+  withoutDeletedComments,
 } from '../utils';
 import {
   playFromFeedback,
@@ -268,7 +270,8 @@ function CreatorDeliveryTag({ comment, canToggle, onToggle }) {
 
   return (
     <Typography sx={{ ml: 'auto', fontSize: 11, color: '#9A9AA2', whiteSpace: 'nowrap' }}>
-      {comment.isSentToCreator ? 'Sent to creator' : ''}
+      {comment.isSentToCreator &&
+        (wasSentToCreator(comment) ? 'Sent to creator' : 'Not sent to creator')}
     </Typography>
   );
 }
@@ -766,7 +769,9 @@ AnimatedList.propTypes = {
 };
 
 export default function ViewerComments({ submission }) {
-  const { videoId, comments, commentsLoading, canSelectForCreator } = useCommentThread(submission);
+  const { videoId, comments: allComments, commentsLoading, canSelectForCreator } =
+    useCommentThread(submission);
+  const comments = useMemo(() => withoutDeletedComments(allComments), [allComments]);
   const newIds = useNewCommentIds(submission.id, videoId, comments, commentsLoading);
   const showResolved = useCreatorSubmissionsStore((s) => s.showResolvedComments);
 

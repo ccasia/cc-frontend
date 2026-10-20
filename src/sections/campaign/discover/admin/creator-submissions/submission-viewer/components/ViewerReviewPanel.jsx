@@ -717,6 +717,8 @@ function ReviewComposer({ submission }) {
   );
 
   const sendToCreatorLabel = pending === 'creator' ? 'Sending…' : 'Send to creator';
+  // A typed comment must be posted first, so it can be ticked or left out like the others
+  const hasDraft = isVideo && Boolean(draft.trim());
 
   // Photos / raw footage: "Request a change" first (like the posted-link review); the
   // reasons and the send only show once sending back.
@@ -754,16 +756,20 @@ function ReviewComposer({ submission }) {
           {sendToClientButton}
           {approveInRow && approveButton}
           {canSendToCreator && isVideo && (
-            <CtaButton
-              fullWidth
-              size="large"
-              variant="white"
-              color={NEUTRAL_COLOR}
-              disabled={busy}
-              onClick={handleSendToCreator}
-            >
-              {sendToCreatorLabel}
-            </CtaButton>
+            <Tooltip title={hasDraft ? 'Post your comment first' : ''} placement="top">
+              <Box component="span" sx={{ display: 'flex', width: '100%' }}>
+                <CtaButton
+                  fullWidth
+                  size="large"
+                  variant="white"
+                  color={NEUTRAL_COLOR}
+                  disabled={busy || hasDraft}
+                  onClick={handleSendToCreator}
+                >
+                  {sendToCreatorLabel}
+                </CtaButton>
+              </Box>
+            </Tooltip>
           )}
           {canSendToCreator && !isVideo && (
             <CtaButton
