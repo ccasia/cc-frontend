@@ -34,6 +34,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetActiveCreditTiers from 'src/hooks/use-get-active-credit-tiers';
 
 import axiosInstance from 'src/utils/axios';
 import { campaignHasClient } from 'src/utils/campaign-flow';
@@ -50,7 +51,7 @@ import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import usePitchSocket from './use-pitch-socket';
 import useCreatorNotes from './creator-notes/use-creator-notes';
-import { resolveRowMetrics } from './resolve-pitch-platform-stats';
+import { resolveRowTier, resolveRowMetrics } from './resolve-pitch-platform-stats';
 import useNoClientGuard from './no-client-guard/use-no-client-guard';
 import CreatorNotesDrawer from './creator-notes/creator-notes-drawer';
 import useGuestExtraction from './guest-extraction/use-guest-extraction';
@@ -469,6 +470,7 @@ const countPitchesByStatus = (pitches, statusList) =>
 
 const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisabled = false }) => {
   const { user } = useAuthContext();
+  const { tiers: activeTiers } = useGetActiveCreditTiers();
   const { socket } = useSocketContext();
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedPitch, setSelectedPitch] = useState(null);
@@ -877,20 +879,9 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
           break;
         }
         case 'tier': {
-          // Get tier data using same logic as PitchRow
-          const getTierCredits = (pitch) => {
-            // Prefer shortlisted tier snapshot (covers synthetic + regular pitches).
-            if (pitch._creditTier) {
-              return pitch._creditPerVideo || pitch._creditTier?.creditsPerVideo || 0;
-            }
-            // For regular pitches, prefer creator's current tier; fall back to shortlist snapshot
-            return (
-              pitch.user?.creator?.creditTier?.creditsPerVideo ||
-              pitch._creditPerVideo ||
-              pitch._creditTier?.creditsPerVideo ||
-              0
-            );
-          };
+          // Same tier the row shows, so the order matches the screen.
+          const getTierCredits = (pitch) =>
+            resolveRowTier(pitch, campaign, activeTiers)?.creditsPerVideo || 0;
           const tierA = getTierCredits(a);
           const tierB = getTierCredits(b);
           comparison = tierA - tierB;
@@ -931,6 +922,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
     sortColumn,
     sortDirection,
     campaign,
+    activeTiers,
     searchQuery,
     outreachStatusFilter,
     unreadNotesOnly,
