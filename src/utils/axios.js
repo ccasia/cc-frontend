@@ -467,6 +467,7 @@ export const endpoints = {
   },
   creditTier: {
     root: '/api/credit-tier',
+    active: '/api/credit-tier/active',
     create: '/api/credit-tier',
     update: (id) => `/api/credit-tier/${id}`,
     delete: (id) => `/api/credit-tier/${id}`,

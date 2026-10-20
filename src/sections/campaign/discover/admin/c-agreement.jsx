@@ -490,11 +490,10 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
     return resolveTierForFollowerCount(creditTierList, effectiveFollowerCountForTier);
   }, [campaign?.isCreditTier, creditTierList, effectiveFollowerCountForTier]);
 
-  let previewTierSource = tierData || null;
-
-  if (hasPlatformChanged || effectiveFollowerCountForTier > 0) {
-    previewTierSource = liveTierData;
-  }
+  // Matches the backend (resolveCampaignTierOrNull): the tier saved at approval stands, unless the
+  // platform changes or a superadmin types a follower count. Without a saved tier, preview the live one.
+  const isTierCorrection = hasPlatformChanged || (isSuperAdmin && Number(platformFollowerValue || 0) > 0);
+  const previewTierSource = tierData && !isTierCorrection ? tierData : liveTierData;
 
   const displayTierData = useMemo(
     () =>
