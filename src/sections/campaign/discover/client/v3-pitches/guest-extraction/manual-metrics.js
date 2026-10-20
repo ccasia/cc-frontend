@@ -14,9 +14,11 @@ const isGuestPitch = (pitch) => {
   );
 };
 
+// A connected account counts only once its stats are saved. A token-only row
+// has no numbers, so the admin may type them.
 const isConnectedOn = (creator, platform) => {
-  const instagram = Boolean(creator?.isFacebookConnected || creator?.instagramUser);
-  const tiktok = Boolean(creator?.isTiktokConnected || creator?.tiktokUser);
+  const instagram = creator?.instagramUser?.followers_count != null;
+  const tiktok = creator?.tiktokUser?.follower_count != null;
   if (platform === 'instagram') return instagram;
   if (platform === 'tiktok') return tiktok;
   return instagram || tiktok;
