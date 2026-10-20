@@ -94,7 +94,6 @@ export default function useSubmissionSocket({
       socket.off('v4:content:submitted', handleContentSubmitted);
       socket.off('v4:posting:updated', handlePostingUpdated);
       socket.off('v4:content:processed', handleContentProcessed);
-      socket.emit('leave-campaign', campaign.id);
     };
   }, [socket, submission?.id, campaign?.id, onUpdate, localActionInProgress, userId, hasPhotos, hasRawFootage]);
 }

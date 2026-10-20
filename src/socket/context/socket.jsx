@@ -6,6 +6,8 @@ import { useAuthContext } from 'src/auth/hooks';
 
 export const SocketContext = createContext();
 
+const JOIN_EVENTS = ['room', 'join-campaign', 'join-campaign-notes', 'join:upload'];
+
 const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState();
   const [online, setOnline] = useState();
@@ -14,9 +16,17 @@ const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     const socketConnection = io({
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
       reconnection: true,
       path: '/socket.io/',
+    });
+
+    const joinedRooms = new Map();
+    socketConnection.onAnyOutgoing((event, roomId) => {
+      if (JOIN_EVENTS.includes(event) && roomId) {
+        joinedRooms.set(`${event}:${roomId}`, [event, roomId]);
+      }
+      if (event === 'leave-campaign') joinedRooms.delete(`join-campaign:${roomId}`);
     });
 
     socketConnection.on('connect', () => {
@@ -27,6 +37,8 @@ const SocketProvider = ({ children }) => {
         socketConnection.emit('register', user.id);
         socketConnection.emit('online-user');
       }
+
+      joinedRooms.forEach(([event, roomId]) => socketConnection.emit(event, roomId));
     });
 
     // expose helpers for campaign room subscription
