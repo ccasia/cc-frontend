@@ -46,7 +46,7 @@ export default function LatestUpdates({ updates }) {
                 {!last && <Box sx={{ width: '1px', flex: 1, mt: 0.5, bgcolor: 'divider' }} />}
               </Stack>
               <Box sx={{ pb: last ? 0 : 2, minWidth: 0 }}>
-                <Typography sx={{ fontSize: 13 }}>{item.message}</Typography>
+                <Typography sx={{ fontSize: 13, lineHeight: 1.4 }}>{item.message}</Typography>
                 <Typography sx={{ mt: 0.25, fontSize: 11, color: 'text.secondary' }}>
                   {[
                     'Admin',

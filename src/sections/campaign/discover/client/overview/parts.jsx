@@ -7,10 +7,6 @@ import { setCurrentTab } from 'src/sections/campaign/discover/admin/store/use-ta
 import { TONES } from './stages';
 
 export const tabularNums = { fontVariantNumeric: 'tabular-nums' };
-export const monoFont = {
-  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-  ...tabularNums,
-};
 
 export const goToTab = (tab) => {
   localStorage.setItem('campaigndetail', tab);
@@ -70,7 +66,7 @@ export function Pill({ children, bgcolor, color, sx }) {
         py: 0.25,
         borderRadius: 999,
         fontSize: 10,
-        fontWeight: 600,
+        fontWeight: 500,
         lineHeight: 1.6,
         whiteSpace: 'nowrap',
         bgcolor,

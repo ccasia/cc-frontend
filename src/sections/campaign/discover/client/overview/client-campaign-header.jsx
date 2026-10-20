@@ -12,6 +12,8 @@ import { BLUE, percent, timeline, statusLabel } from './stages';
 // Light blue for credits on agreements not yet signed.
 const PENDING_BLUE = alpha(BLUE, 0.3);
 
+const meterValue = { color: 'text.primary', fontWeight: 500 };
+
 export default function ClientCampaignHeader({ campaignId, onBack, tabs }) {
   const { data } = useClientCampaignOverview(campaignId);
   const campaign = data?.campaign;
@@ -34,13 +36,26 @@ export default function ClientCampaignHeader({ campaignId, onBack, tabs }) {
       >
         <ButtonBase
           onClick={onBack}
-          sx={{ gap: 0.5, fontSize: 13, color: 'text.secondary', borderRadius: 0.5 }}
+          sx={{
+            gap: 0.5,
+            fontFamily: 'inherit',
+            fontSize: 13,
+            color: 'text.secondary',
+            borderRadius: 0.5,
+          }}
         >
           <Iconify icon="eva:arrow-ios-back-fill" width={14} />
           Campaigns
         </ButtonBase>
         <span>/</span>
-        <Typography noWrap sx={{ fontSize: 13, color: 'text.primary', minWidth: 0 }}>
+        <Typography
+          noWrap
+          sx={{
+            color: 'text.primary',
+            minWidth: 0,
+            fontSize: 13,
+          }}
+        >
           {campaign?.name}
         </Typography>
       </Stack>
@@ -69,7 +84,12 @@ export default function ClientCampaignHeader({ campaignId, onBack, tabs }) {
             <Stack direction="row" alignItems="center" spacing={1.25} flexWrap="wrap">
               <Typography
                 component="h1"
-                sx={{ fontSize: 26, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.2 }}
+                sx={{
+                  fontFamily: 'Instrument Serif, serif',
+                  fontSize: { xs: '1.5rem', sm: '2rem' },
+                  fontWeight: 550,
+                  lineHeight: 1.2,
+                }}
               >
                 {campaign?.name ?? <Skeleton width={240} />}
               </Typography>
@@ -90,14 +110,14 @@ export default function ClientCampaignHeader({ campaignId, onBack, tabs }) {
                 </Box>
               )}
             </Stack>
-            {campaign?.objective && (
+            {/* {campaign?.objective && (
               <Typography sx={{ mt: 0.5, fontSize: 13, color: 'text.secondary' }}>
                 Objective ·{' '}
                 <Box component="span" sx={{ color: 'text.primary', fontWeight: 500 }}>
                   {campaign.objective}
                 </Box>
               </Typography>
-            )}
+            )} */}
           </Box>
         </Stack>
 
@@ -115,19 +135,19 @@ export default function ClientCampaignHeader({ campaignId, onBack, tabs }) {
         >
           <Box sx={{ color: 'text.secondary' }}>Timeline</Box>
           <MeterBar parts={[{ value: time?.progress || 0, color: 'text.primary' }]} />
-          <Box>{time ? `Day ${time.day} of ${time.totalDays}` : '—'}</Box>
+          <Box sx={meterValue}>{time ? `Day ${time.day} of ${time.totalDays}` : '—'}</Box>
 
-          <Box sx={{ color: 'text.secondary' }}>UGC credits</Box>
+          {/* <Box sx={{ color: 'text.secondary' }}>UGC credits</Box>
           <MeterBar
             label={`${used} of ${total} credits used, ${contractPending} pending signature`}
             parts={[
               { value: percent(signed, total), color: BLUE },
               { value: percent(Math.min(contractPending, used), total), color: PENDING_BLUE },
             ]}
-          />
-          <Box>
+          /> */}
+          {/* <Box sx={meterValue}>
             {used}/{total} used
-          </Box>
+          </Box> */}
         </Box>
       </Stack>
 

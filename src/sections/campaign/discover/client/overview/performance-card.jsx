@@ -38,7 +38,13 @@ export default function PerformanceCard({ performance }) {
       aside={
         <ButtonBase
           onClick={() => goToTab('analytics')}
-          sx={{ fontSize: 12.5, fontWeight: 500, color: BLUE, borderRadius: 0.5 }}
+          sx={{
+            fontFamily: 'inherit',
+            fontSize: 13,
+            fontWeight: 500,
+            color: BLUE,
+            borderRadius: 0.5,
+          }}
         >
           View analytics →
         </ButtonBase>
@@ -49,7 +55,15 @@ export default function PerformanceCard({ performance }) {
           <Box key={m.label}>
             <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{m.label}</Typography>
             <Stack direction="row" alignItems="baseline" spacing={0.75} sx={{ mt: 0.5 }}>
-              <Typography sx={{ fontSize: 22, fontWeight: 600, lineHeight: 1.2, ...tabularNums }}>
+              <Typography
+                sx={{
+                  fontSize: 22,
+                  fontWeight: 600,
+                  lineHeight: 1.2,
+                  letterSpacing: '-0.02em',
+                  ...tabularNums,
+                }}
+              >
                 {m.value}
               </Typography>
               {m.change != null && (

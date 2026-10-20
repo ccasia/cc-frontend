@@ -16,6 +16,8 @@ export default function ClientCampaignOverview({ campaignId, viewerRole = 'clien
   const { data, isLoading, isError, refetch } = useClientCampaignOverview(campaignId);
   const { data: videos = EMPTY } = useFeaturedVideos(campaignId);
 
+
+
   const stages = useMemo(() => (data ? buildStages(data) : []), [data]);
 
   if (isError) {

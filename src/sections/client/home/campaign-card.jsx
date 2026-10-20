@@ -1,5 +1,5 @@
-import PropTypes from 'prop-types';
 import { format } from 'date-fns';
+import PropTypes from 'prop-types';
 
 import { alpha } from '@mui/material/styles';
 import { Box, Stack, Avatar, Button, Typography } from '@mui/material';
