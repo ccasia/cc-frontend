@@ -142,9 +142,10 @@ export default function SendBulkAgreementModal({
         const creatorRow = creatorsById.get(row.userId);
         const isGuest = creatorRow?.user?.creator?.isGuest === true;
         if (isGuest) return 0;
-        const videoCount = Number(row.videoCount) || 0;
+        // Form fields are ugcCredits / platformFollowerCount (see the rows built below)
+        const videoCount = Number(row.ugcCredits) || 0;
         if (!campaign?.isCreditTier) return videoCount;
-        const tier = resolveTierForFollowerCount(creditTierList, Number(row.followerCount) || 0);
+        const tier = resolveTierForFollowerCount(creditTierList, Number(row.platformFollowerCount) || 0);
         return (tier?.creditsPerVideo || 0) * videoCount;
       }),
     [rows, creatorsById, campaign?.isCreditTier, creditTierList]

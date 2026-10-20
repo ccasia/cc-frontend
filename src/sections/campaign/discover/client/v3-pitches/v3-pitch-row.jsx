@@ -22,6 +22,7 @@ import {
 import { paths } from 'src/routes/paths';
 
 import { useResponsive } from 'src/hooks/use-responsive';
+import useGetActiveCreditTiers from 'src/hooks/use-get-active-credit-tiers';
 
 import { fDate } from 'src/utils/format-time';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -41,7 +42,7 @@ import DiaTextReveal from './dia-text-reveal';
 import V3PitchActions from './v3-pitch-actions';
 import useJustFinished from './use-just-finished';
 import RowNotesPreview from './creator-notes/row-notes-preview';
-import { resolveRowMetrics } from './resolve-pitch-platform-stats';
+import { resolveRowTier, resolveRowMetrics } from './resolve-pitch-platform-stats';
 import { canEditFailedMetrics } from './guest-extraction/manual-metrics';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 import ManualMetricsDialog from './guest-extraction/manual-metrics-dialog';
@@ -391,6 +392,7 @@ const PitchRow = ({
   onOpenNotes,
 }) => {
   const smUp = useResponsive('up', 'sm');
+  const { tiers: activeTiers } = useGetActiveCreditTiers();
   const { user } = useAuthContext();
   const { enqueueSnackbar } = useSnackbar();
   const creatorProfileId = pitch.userId || pitch.user?.id || pitch.user?.creator?.userId;
@@ -477,28 +479,9 @@ const PitchRow = ({
     />
   );
 
-  // Get tier data from synthetic shortlisted row or creator's current tier
-  const getTierData = () => {
-    // Prefer shortlisted snapshot tier data (covers synthetic + regular pitches).
-    if (pitch._creditTier) {
-      return {
-        name: pitch._creditTier.name,
-        creditsPerVideo: pitch._creditPerVideo || pitch._creditTier.creditsPerVideo,
-      };
-    }
-    // For regular pitches, use creator's current tier
-    const creatorTier = pitch.user?.creator?.creditTier;
-    if (creatorTier) {
-      return {
-        name: creatorTier.name,
-        creditsPerVideo: creatorTier.creditsPerVideo,
-      };
-    }
-    return null;
-  };
-
   const engagementRateText = formatEngagementRate(displayData.engagementRate);
-  const tierData = getTierData();
+  // The tier saved on approval, else the live tier on the platform chosen at shortlisting.
+  const tierData = resolveRowTier(pitch, campaign, activeTiers);
   const credits = tierData?.creditsPerVideo;
   const creditsText = credits == null ? null : `${credits} Credit${credits === 1 ? '' : 's'}`;
 
@@ -743,7 +726,7 @@ const PitchRow = ({
           <FieldBlock label="Tier">
             {tierData ? (
               <Stack direction="row" alignItems="center" spacing={1}>
-                <PlatformIcon platform={displayData.platform} />
+                <PlatformIcon platform={tierData.platform} />
                 <ScrapeMetricValue
                   text={tierData.name}
                   reveal={revealScrapeMetrics}
