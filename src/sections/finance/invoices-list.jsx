@@ -825,6 +825,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         { value: 'overdue', label: 'Overdue', count: counts.overdue ?? 0 },
         { value: 'draft', label: 'Draft', count: counts.draft ?? 0 },
         { value: 'rejected', label: 'Rejected', count: counts.rejected ?? 0 },
+        { value: 'processing', label: 'Processing', count: counts.processing ?? 0 },
         { value: 'failed', label: 'Failed', count: counts.failed ?? 0 },
       ];
     }
@@ -837,6 +838,7 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
       { value: 'overdue', label: 'Overdue', count: 0 },
       { value: 'draft', label: 'Draft', count: 0 },
       { value: 'rejected', label: 'Rejected', count: 0 },
+      { value: 'processing', label: 'Processing', count: 0 },
       { value: 'failed', label: 'Failed', count: 0 },
     ];
   }, [apiStatusCounts, invoiceStats]);
