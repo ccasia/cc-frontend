@@ -54,7 +54,6 @@ export default function useV4SubmissionListSocket({
       socket.off('v4:content:submitted', handleContentSubmitted);
       socket.off('v4:submission:updated', handleSubmissionUpdated);
       socket.off('v4:posting:updated', handlePostingUpdated);
-      socket.emit('leave-campaign', campaignId);
     };
   }, [socket, campaignId, creatorUserId, onUpdate, userId]);
 }

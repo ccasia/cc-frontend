@@ -139,7 +139,7 @@ const VideoSubmissionModal = ({
     return () => {
       isMounted = false;
     };
-  }, [open, submission?.id, isDemoSubmission]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, submission?.id, submission?.status, submission?.updatedAt, isDemoSubmission]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Countdown timer for feedbackDeadline (display-only, no auto-submit)
   useEffect(() => {
