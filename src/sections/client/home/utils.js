@@ -56,7 +56,7 @@ export function campaignStages(campaign) {
   const complete = isComplete(campaign);
 
   const rows = [
-    { label: 'Shortlist', n: shortlist.confirmed, d: shortlist.total, inReview: 0 },
+    { label: 'Confirmed', n: shortlist.confirmed, d: shortlist.total, inReview: 0 },
     { label: 'Review', n: submissions.approved, d: posting.total, inReview },
     { label: 'Posting', n: posting.posted, d: posting.total, inReview: 0 },
     { label: 'Report', n: complete ? 1 : 0, d: 1, inReview: 0, text: complete ? 'Ready' : '—' },
