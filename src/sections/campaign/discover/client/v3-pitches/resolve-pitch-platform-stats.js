@@ -3,7 +3,9 @@
  * that platform (pitch + manual creator columns).
  */
 
-import { resolveRecordedPlatform } from 'src/utils/credit-tier-platform';
+import { resolveRecordedPlatform, resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
+
+import { resolveTierForFollowerCount } from '../../admin/c-agreement';
 
 function toNumber(value) {
   if (value == null || value === '') return null;
@@ -129,4 +131,27 @@ export function resolveRowMetrics(pitch, campaign) {
     otherPlatform: other,
     otherPlatformHasData: otherStats.followers != null || otherStats.engagementRate != null,
   };
+}
+
+/**
+ * Master list row tier and the platform it is priced on: the tier approval saved for this campaign,
+ * else the creator's live tier on the platform chosen at shortlisting (Instagram when none was, as
+ * agreements read it). Approval saves that same live tier (resolveLiveRowTier in cc-backend, which
+ * copies this follower order), so the client is billed what the row showed. `tiers` is the active
+ * tier list.
+ */
+export function resolveRowTier(pitch, campaign, tiers) {
+  const platform = resolveTierPlatformForDisplay(pitch, campaign);
+
+  if (pitch?._creditTier) {
+    return {
+      platform,
+      name: pitch._creditTier.name,
+      creditsPerVideo: pitch._creditPerVideo || pitch._creditTier.creditsPerVideo,
+    };
+  }
+
+  const { followers } = resolvePitchPlatformStats({ pitch: { ...pitch, selectedPlatform: platform }, platform });
+  const live = resolveTierForFollowerCount(tiers, followers);
+  return live ? { platform, name: live.name, creditsPerVideo: live.creditsPerVideo } : null;
 }

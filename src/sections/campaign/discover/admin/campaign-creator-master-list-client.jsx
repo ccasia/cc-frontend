@@ -254,6 +254,7 @@ const CampaignCreatorMasterListClient = ({
       const creatorsFromV3 = v3Pitches
         .map((pitch) => {
           const demoStatus = isDemoCampaign ? demoPitchStatuses[pitch.id] : null;
+          const sc = shortlistByUserId.get(pitch.userId || pitch.user?.id);
 
           return {
             id: pitch.id,
@@ -284,7 +285,9 @@ const CampaignCreatorMasterListClient = ({
             engagementRate: pitch.engagementRate,
             isShortlisted: false,
             outreachStatus: pitch.outreachStatus,
-            selectedPlatform: pitch.selectedPlatform,
+            _creditTier: sc?.creditTier ?? null,
+            _creditPerVideo: sc?.creditPerVideo ?? null,
+            selectedPlatform: sc?.selectedPlatform ?? pitch.selectedPlatform,
           };
         })
         .filter((creator) => !!creator.user && !!creator.user.id)
@@ -359,7 +362,7 @@ const CampaignCreatorMasterListClient = ({
               outreachStatus: pitch.outreachStatus,
               _creditTier: sc?.creditTier ?? null,
               _creditPerVideo: sc?.creditPerVideo ?? null,
-              selectedPlatform: pitch.selectedPlatform,
+              selectedPlatform: sc?.selectedPlatform ?? pitch.selectedPlatform,
             };
           })
           .filter((creator) => creator.user && creator.user.creator)

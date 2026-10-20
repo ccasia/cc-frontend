@@ -14,6 +14,8 @@ import {
   Typography,
 } from '@mui/material';
 
+import useGetActiveCreditTiers from 'src/hooks/use-get-active-credit-tiers';
+
 import { fDate } from 'src/utils/format-time';
 import { getUserDisplay } from 'src/utils/user-display';
 import {
@@ -27,7 +29,7 @@ import { getOutreachStatusConfig } from 'src/contants/outreach';
 import Iconify from 'src/components/iconify';
 import { StatusChip } from 'src/components/status-chip';
 
-import { resolveRowMetrics } from '../client/v3-pitches/resolve-pitch-platform-stats';
+import { resolveRowTier, resolveRowMetrics } from '../client/v3-pitches/resolve-pitch-platform-stats';
 import {
   CELL_SX,
   INDEX_SX,
@@ -79,6 +81,7 @@ const CreatorMasterListRow = ({
   onToggleSelect,
   logistics,
 }) => {
+  const { tiers: activeTiers } = useGetActiveCreditTiers();
   const rowUser = getUserDisplay(pitch.user);
   // Profile link is stored on Creator model
   const instagramStats = pitch?.user?.creator?.instagramUser || null;
@@ -132,28 +135,8 @@ const CreatorMasterListRow = ({
   );
   const engagementRateText = formatEngagementRate(displayData.engagementRate);
 
-  // Get tier data: the creator's current tier, else the shortlist snapshot.
-  const getTierData = () => {
-    // First check creator's current tier
-    const creatorTier = pitch?.user?.creator?.creditTier;
-    if (creatorTier) {
-      return {
-        name: creatorTier.name,
-        creditsPerVideo: creatorTier.creditsPerVideo,
-      };
-    }
-    // Fallback: shortlist snapshot tier (e.g., when a guest creator was linked to a platform
-    // creator whose own Creator.creditTier hasn't been computed)
-    if (pitch?._creditTier) {
-      return {
-        name: pitch._creditTier.name,
-        creditsPerVideo: pitch._creditPerVideo || pitch._creditTier.creditsPerVideo,
-      };
-    }
-    return null;
-  };
-
-  const tierData = getTierData();
+  // The tier saved on approval, else the live tier on the platform chosen at shortlisting.
+  const tierData = resolveRowTier(pitch, campaign, activeTiers);
   const credits = tierData?.creditsPerVideo;
   const creditsText = credits == null ? null : `${credits} Credit${credits === 1 ? '' : 's'}`;
 
@@ -346,7 +329,7 @@ const CreatorMasterListRow = ({
           <FieldBlock label="Tier">
             {tierData ? (
               <Stack direction="row" alignItems="center" spacing={1}>
-                <PlatformIcon platform={displayData.platform} />
+                <PlatformIcon platform={tierData.platform} />
                 <Typography sx={VALUE_PLAIN_SX}>{tierData.name}</Typography>
                 {creditsText && <Typography sx={VALUE_MUTED_SX}>{creditsText}</Typography>}
               </Stack>

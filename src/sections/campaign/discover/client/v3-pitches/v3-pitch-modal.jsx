@@ -31,6 +31,7 @@ import { paths } from 'src/routes/paths';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 import { useGetAgreement } from 'src/hooks/agreement/use-get-agreement';
+import useGetActiveCreditTiers from 'src/hooks/use-get-active-credit-tiers';
 
 import { formatNumber } from 'src/utils/media-kit-utils';
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -50,6 +51,7 @@ import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 import { failureReasonShort } from './guest-extraction/extraction-error-copy';
 import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
 import {
+  resolveRowTier,
   seedPitchPlatform,
   availablePitchPlatforms,
   resolvePitchPlatformStats,
@@ -106,6 +108,7 @@ MetricActionButton.propTypes = {
 
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = false }) => {
   const { enqueueSnackbar } = useSnackbar();
+  const { tiers: activeTiers } = useGetActiveCreditTiers();
   const { user } = useAuthContext();
   const navigate = useNavigate();
 
@@ -275,11 +278,8 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
 
   const ageText = derivedBirthDate ? String(dayjs().diff(dayjs(derivedBirthDate), 'year')) : DASH;
   const pronounsText = derivedPronouns || DASH;
-  const tierName =
-    creatorProfile?.creditTier?.name ||
-    currentPitch?.user?.creator?.creditTier?.name ||
-    currentPitch?._creditTier?.name ||
-    DASH;
+  // Same tier as the row: saved on approval, else live on the shortlisted platform (not the header toggle).
+  const tierName = resolveRowTier(currentPitch, campaign, activeTiers)?.name || DASH;
 
   const matchPercentage = Math.min(currentPitch?.matchingPercentage || 100, 100);
 
