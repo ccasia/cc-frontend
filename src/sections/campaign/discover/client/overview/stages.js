@@ -65,7 +65,7 @@ function shortlistStage({ credits, shortlist }) {
     segments: segments([
       { label: 'confirmed', value: confirmed, color: 'green' },
       { label: 'contract pending', value: shortlist?.contractPending || 0, color: 'blue' },
-      { label: 'open', value: credits?.unallocated || 0, color: 'grey' },
+      { label: 'credits left', value: credits?.unallocated || 0, color: 'grey' },
     ]),
   };
 
@@ -84,7 +84,7 @@ function shortlistStage({ credits, shortlist }) {
   } else if (used >= total) {
     stage.note = 'All credits allocated';
   } else {
-    stage.note = `On track · campaign team is sourcing ${plural(total - used, 'more creator')}`;
+    stage.note = `On track · campaign team is sourcing ${plural(total - used, 'more credit')}`;
   }
 
   return stage;
@@ -270,10 +270,14 @@ export function buildStages(overview, today = new Date()) {
 
 export function timeline(campaign, today = new Date()) {
   if (!campaign?.startDate || !campaign?.endDate) return null;
+
   const totalDays =
     differenceInCalendarDays(new Date(campaign.endDate), new Date(campaign.startDate)) + 1;
+
   const day = differenceInCalendarDays(today, new Date(campaign.startDate)) + 1;
+
   const clamped = Math.min(Math.max(day, 0), totalDays);
+
   return { day: clamped, totalDays, progress: percent(clamped, totalDays) };
 }
 

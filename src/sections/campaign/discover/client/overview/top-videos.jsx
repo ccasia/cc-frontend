@@ -7,7 +7,7 @@ import { Box, Stack, Avatar, ButtonBase, Typography } from '@mui/material';
 import Iconify from 'src/components/iconify';
 
 import { formatRate, compactNumber } from './stages';
-import { monoFont, OverviewCard, tabularNums } from './parts';
+import { OverviewCard, tabularNums } from './parts';
 
 const PAGE_SIZE = 3;
 
@@ -21,7 +21,7 @@ export default function TopVideos({ videos }) {
 
   const pager = sorted.length > 0 && (
     <Stack direction="row" alignItems="center" spacing={1}>
-      <Typography sx={{ fontSize: 12, color: 'text.secondary', ...monoFont }}>
+      <Typography sx={{ fontSize: 12, color: 'text.secondary', ...tabularNums }}>
         {start + 1}–{start + visible.length} of {sorted.length}
       </Typography>
       <PagerButton
@@ -159,7 +159,8 @@ function VideoCard({ video, rank }) {
             borderRadius: '50%',
             bgcolor: 'grey.900',
             fontSize: 11,
-            ...monoFont,
+            fontWeight: 600,
+            ...tabularNums,
           }}
         >
           {rank}
@@ -174,8 +175,8 @@ function VideoCard({ video, rank }) {
             borderRadius: 999,
             bgcolor: 'rgba(255, 255, 255, 0.9)',
             color: 'text.primary',
-            fontSize: 10,
-            fontWeight: 600,
+            fontSize: 11,
+            fontWeight: 500,
           }}
         >
           {video.platform}
@@ -191,10 +192,13 @@ function VideoCard({ video, rank }) {
             background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
           }}
         >
-          <Typography component="span" sx={{ fontSize: 20, fontWeight: 600, ...tabularNums }}>
+          <Typography
+            component="span"
+            sx={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', ...tabularNums }}
+          >
             {compactNumber(video.views)}
           </Typography>{' '}
-          <Typography component="span" sx={{ fontSize: 11, opacity: 0.85 }}>
+          <Typography component="span" sx={{ fontSize: 12, opacity: 0.85 }}>
             views
           </Typography>
         </Box>
@@ -206,16 +210,16 @@ function VideoCard({ video, rank }) {
           alt={video.creator?.name}
           sx={{ width: 24, height: 24 }}
         />
-        <Typography noWrap sx={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 500 }}>
+        <Typography noWrap sx={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 500 }}>
           {video.creator?.name}
         </Typography>
         {video.postedAt && (
-          <Typography sx={{ fontSize: 11, color: 'text.secondary', flex: 'none' }}>
+          <Typography sx={{ fontSize: 12, color: 'text.secondary', flex: 'none' }}>
             {format(new Date(video.postedAt), 'MMM d')}
           </Typography>
         )}
       </Stack>
-      <Typography sx={{ mt: 0.5, fontSize: 11.5, color: 'text.secondary', ...tabularNums }}>
+      <Typography sx={{ mt: 0.5, fontSize: 12, color: 'text.secondary', ...tabularNums }}>
         <Box component="span" sx={{ color: 'text.primary', fontWeight: 500 }}>
           {compactNumber(video.likes)}
         </Box>{' '}

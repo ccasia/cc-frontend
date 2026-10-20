@@ -225,11 +225,8 @@ const CampaignHeader = ({
   return (
     <Stack spacing={1} direction="row" alignItems="center">
       <IconButton
-        // color="inherit"
-        // startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
         onClick={onBack}
         sx={{
-          // alignSelf: 'flex-start',
           color: '#636366',
           fontSize: { xs: '0.875rem', sm: '1rem' },
           mb: 1,

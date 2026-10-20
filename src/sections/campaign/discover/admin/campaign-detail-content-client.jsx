@@ -148,6 +148,26 @@ const CampaignDetailContentClient = ({ campaign }) => {
     return formatDate(start || end);
   };
 
+  const getCampaignTimeline = () => {
+    const start = campaign?.campaignBrief?.startDate;
+    const end = campaign?.campaignBrief?.endDate;
+    if (!start && !end) return 'Not specified';
+
+    const formatDate = (date) => {
+      if (!date) return '';
+      return new Date(date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    };
+
+    if (start && end) {
+      return `${formatDate(start)} - ${formatDate(end)}`;
+    }
+    return formatDate(start || end);
+  };
+
   const requirement = campaign?.campaignRequirement;
   const internalComments = campaign?.internalComments;
 
@@ -243,6 +263,11 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   <Typography sx={SectionBodyStyle}>{getPostingTimeline()}</Typography>
                 </Box>
               )}
+
+              <Box>
+                <Typography sx={SectionTitleStyle}>Campaign Period</Typography>
+                <Typography sx={SectionBodyStyle}>{getCampaignTimeline()}</Typography>
+              </Box>
             </Stack>
           </Box>
 

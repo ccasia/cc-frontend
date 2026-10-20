@@ -14,8 +14,8 @@ import TaskList from './task-list';
 import { useClientHome } from './api';
 import CampaignCard from './campaign-card';
 import CreditsPanel from './credits-panel';
-import ClientOnboarding from './client-onboarding';
 import CampaignFilters from './campaign-filters';
+import ClientOnboarding from './client-onboarding';
 import {
   FONTS,
   plural,

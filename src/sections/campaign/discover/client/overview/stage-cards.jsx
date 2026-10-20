@@ -2,8 +2,8 @@ import PropTypes from 'prop-types';
 
 import { Box, Stack, ButtonBase, Typography } from '@mui/material';
 
+import { Pill, goToTab, toneColors, tabularNums } from './parts';
 import { TONES, dueText, ownerLabel, SEGMENT_COLORS } from './stages';
-import { Pill, goToTab, monoFont, toneColors, tabularNums } from './parts';
 
 export default function StageCards({ stages, viewerRole }) {
   return (
@@ -57,8 +57,9 @@ function StageCard({ stage, number, viewerRole }) {
             border: 1,
             borderColor: 'divider',
             fontSize: 10,
+            fontWeight: 500,
             color: 'text.secondary',
-            ...monoFont,
+            ...tabularNums,
           }}
         >
           {number}
@@ -72,7 +73,15 @@ function StageCard({ stage, number, viewerRole }) {
       </Stack>
 
       <Stack direction="row" alignItems="baseline" spacing={0.75}>
-        <Typography sx={{ fontSize: 24, fontWeight: 600, lineHeight: 1.2, ...tabularNums }}>
+        <Typography
+          sx={{
+            fontSize: 24,
+            fontWeight: 600,
+            lineHeight: 1.2,
+            letterSpacing: '-0.03em',
+            ...tabularNums,
+          }}
+        >
           {stage.stat}
         </Typography>
         <Typography sx={{ fontSize: 12, color: 'text.secondary' }}>{stage.statLabel}</Typography>
@@ -180,16 +189,16 @@ function ActionCallout({ action, tab, viewerRole }) {
       }}
     >
       <Box sx={{ minWidth: 0 }}>
-        <Typography sx={{ fontSize: 12.5, fontWeight: 600, color: 'text.primary' }}>
+        <Typography sx={{ fontSize: 12, fontWeight: 500, color: 'text.primary' }}>
           {action.text}
         </Typography>
         <Typography
-          sx={{ mt: 0.25, fontSize: 11, color: overdue ? 'error.dark' : 'warning.darker' }}
+          sx={{ mt: 0.25, fontSize: 10, color: overdue ? 'error.dark' : 'warning.darker' }}
         >
           {[ownerLabel(action.owner, viewerRole), due].filter(Boolean).join(' · ')}
         </Typography>
       </Box>
-      <Box component="span" aria-hidden sx={{ color: 'warning.darker' }}>
+      <Box component="span" aria-hidden sx={{ fontWeight: 600, color: 'warning.darker' }}>
         →
       </Box>
     </ButtonBase>

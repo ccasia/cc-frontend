@@ -42,11 +42,6 @@ const getAllowedTabs = (submissionVersion) => {
   return clientAllowedTabs.filter((tab) => tab !== 'submissions-v4');
 };
 
-const tabWeight = (compact, active) => {
-  if (!compact) return 650;
-  return active ? 500 : 400;
-};
-
 const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = 'default' }) => {
   const compact = variant === 'compact';
   const { user } = useAuthContext();
@@ -386,8 +381,8 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
                     minWidth: compact || !lgUp ? 'fit-content' : undefined,
                     color: currentTab === tab.value ? '#221f20' : '#8e8e93',
                     position: 'relative',
-                    fontSize: compact ? 14 : { xs: '0.9rem', sm: '1.05rem' },
-                    fontWeight: tabWeight(compact, currentTab === tab.value),
+                    fontSize: { xs: '0.9rem', sm: '1.05rem' },
+                    fontWeight: 650,
                     whiteSpace: 'nowrap',
                     mr: compact ? 3.5 : { xs: 1, sm: 2 },
                     transition: 'transform 0.1s ease-in-out',
