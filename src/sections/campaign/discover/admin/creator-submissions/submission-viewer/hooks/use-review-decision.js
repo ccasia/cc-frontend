@@ -1,3 +1,4 @@
+import { mutate } from 'swr';
 import { enqueueSnackbar } from 'notistack';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
@@ -32,6 +33,11 @@ export default function useReviewDecision(submission) {
   const isVideo = submission.submissionType?.type === 'VIDEO';
   const videoId = isVideo ? submission.video?.[0]?.id : undefined;
 
+  // Every cached thread of this submission (any upload, with or without deleted comments)
+  const commentsUrl = endpoints.submission.v4.comments(submission.id);
+  const mutateComments = () =>
+    mutate((key) => typeof key === 'string' && key.startsWith(commentsUrl));
+
   const isAdminsTurn = ADMIN_REVIEW_STATUSES.includes(submission.status);
   const canSendToClient = hasClient && submission.status === 'PENDING_REVIEW';
   const canApprove = isAdminsTurn;
@@ -42,7 +48,8 @@ export default function useReviewDecision(submission) {
     setPendingDecision(kind);
     try {
       await request();
-      await mutateSubmissions();
+      // Sending marks comments as sent, so the thread's tags need refreshing too
+      await Promise.all([mutateSubmissions(), mutateComments()]);
       enqueueSnackbar(successMessage, { variant: 'success' });
       return true;
     } catch (error) {
