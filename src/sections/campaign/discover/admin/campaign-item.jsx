@@ -205,16 +205,38 @@ export default function CampaignItem({
 
   const renderImages = (
     <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
-      <Image
-        alt={campaign?.name}
-        src={campaign?.campaignBrief?.images?.[0]}
-        sx={{
-          height: '100%',
-          width: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center',
-        }}
-      />
+      {campaign?.campaignBrief?.images?.[0] ? (
+        <Image
+          alt={campaign?.name}
+          src={campaign?.campaignBrief?.images?.[0]}
+          sx={{
+            height: '100%',
+            width: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+          }}
+        />
+      ) : (
+        <Box
+          sx={{
+            height: '100%',
+            width: '100%',
+            display: 'flex',
+            rotate: '45deg',
+            scale: 3,
+          }}
+        >
+          {Array.from({ length: 60 }).map((_, i) => (
+            <Box
+              sx={{
+                bgcolor: i % 2 === 0 ? 'white' : theme.palette.grey[100],
+                height: 1,
+                width: 8,
+              }}
+            />
+          ))}
+        </Box>
+      )}
       {status && (
         <Box
           sx={{
