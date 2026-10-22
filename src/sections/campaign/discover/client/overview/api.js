@@ -14,33 +14,39 @@ export function useClientCampaignOverview(campaignId, { enabled = true } = {}) {
   });
 }
 
+export const featuredVideosKey = (campaignId) => ['featuredVideos', campaignId];
+
 /**
+ * Posts admins starred in Campaign Analytics, sorted by views (no stats last). Stats come from
+ * the daily snapshot, so they can be a day old and are null before the first capture.
  * @typedef {Object} FeaturedVideo
  * @property {string} id
- * @property {string} thumbnailUrl
- * @property {string} postUrl
+ * @property {'submission'|'manual'} source  manual rows come from ManualCreatorEntry and have no media
+ * @property {string|null} submissionId
+ * @property {string|null} manualEntryId
+ * @property {string|null} postUrl
  * @property {'TikTok'|'Instagram'} platform
- * @property {number} views
- * @property {number} likes
- * @property {number} engagementRate  percent, e.g. 4.2
- * @property {string} postedAt
- * @property {{ name: string, photoURL?: string }} creator
+ * @property {string|null} thumbnailUrl
+ * @property {string|null} videoUrl  uploaded draft file, for the hover preview
+ * @property {number|null} views
+ * @property {number|null} likes
+ * @property {number|null} engagementRate  percent, e.g. 4.2
+ * @property {string|null} postedAt
+ * @property {string|null} statsCapturedAt
+ * @property {string} featuredAt
+ * @property {{ name: string|null, photoURL: string|null }} creator
  */
 
-/**
- * TODO: no `featured` flag exists on posts yet. Admins will star videos in Campaign Analytics
- * (design 4a); return those here, sorted by views, once the backend stores them.
- * @returns {Promise<FeaturedVideo[]>}
- */
-// eslint-disable-next-line no-unused-vars
+/** @returns {Promise<FeaturedVideo[]>} */
 export async function getFeaturedVideos(campaignId) {
-  return [];
+  const res = await axiosInstance.get(endpoints.campaign.featuredVideos(campaignId));
+  return res.data;
 }
 
-export function useFeaturedVideos(campaignId) {
+export function useFeaturedVideos(campaignId, { enabled = true } = {}) {
   return useQuery({
-    queryKey: ['featuredVideos', campaignId],
+    queryKey: featuredVideosKey(campaignId),
     queryFn: () => getFeaturedVideos(campaignId),
-    enabled: !!campaignId,
+    enabled: enabled && !!campaignId,
   });
 }

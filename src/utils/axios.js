@@ -360,6 +360,7 @@ export const endpoints = {
     },
     getCampaignLog: (id) => `/api/campaign/getCampaignLog/${id}`,
     clientOverview: (id) => `/api/campaign/${id}/overview`,
+    featuredVideos: (id) => `/api/campaign/${id}/featured-videos`,
     logistics: {
       admin: {
         create: '/api/campaign/createLogistic',

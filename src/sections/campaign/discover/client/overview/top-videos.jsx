@@ -1,17 +1,19 @@
-import { useState } from 'react';
-import PropTypes from 'prop-types';
 import { format } from 'date-fns';
+import PropTypes from 'prop-types';
+import { useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 
 import { Box, Stack, Avatar, ButtonBase, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
+import { tabularNums, OverviewCard } from './parts';
 import { formatRate, compactNumber } from './stages';
-import { OverviewCard, tabularNums } from './parts';
 
 const PAGE_SIZE = 3;
 
 export default function TopVideos({ videos }) {
+  console.log(videos);
   const sorted = [...videos].sort((a, b) => b.views - a.views);
   const pages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const [page, setPage] = useState(0);
@@ -125,84 +127,135 @@ PagerButton.propTypes = {
   onClick: PropTypes.func,
 };
 
+// Muted preview on hover or focus; the tile still opens the live post.
+function RenderVideo({ video, rank }) {
+  const { videoUrl } = video;
+  const videoRef = useRef(null);
+  const reduceMotion = useReducedMotion();
+  const canPreview = !!videoUrl && !reduceMotion;
+
+  const play = () => {
+    // play() rejects if the browser blocks it or the pointer leaves first; the poster stays.
+    videoRef.current?.play().catch(() => {});
+  };
+
+  const stop = () => {
+    const el = videoRef.current;
+    if (!el) return;
+    el.pause();
+    el.currentTime = 0;
+  };
+
+  return (
+    <Box
+      // Manual entries can have no post URL, so the tile isn't a link then.
+      {...(video.postUrl && {
+        component: 'a',
+        href: video.postUrl,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        'aria-label': `Open ${video.creator?.name || 'creator'}'s post on ${video.platform}`,
+      })}
+      onMouseEnter={canPreview ? play : undefined}
+      onMouseLeave={canPreview ? stop : undefined}
+      onFocus={canPreview ? play : undefined}
+      onBlur={canPreview ? stop : undefined}
+      sx={{
+        position: 'relative',
+        display: 'block',
+        aspectRatio: '9 / 14',
+        maxWidth: 1,
+        borderRadius: 1.5,
+        overflow: 'hidden',
+        bgcolor: 'grey.200',
+        backgroundImage: video.thumbnailUrl ? `url(${video.thumbnailUrl})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        color: 'common.white',
+      }}
+    >
+      {videoUrl && (
+        <Box
+          component="video"
+          ref={videoRef}
+          src={videoUrl}
+          poster={video.thumbnailUrl || undefined}
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden
+          sx={{ position: 'absolute', inset: 0, width: 1, height: 1, objectFit: 'cover' }}
+        />
+      )}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 8,
+          left: 8,
+          width: 22,
+          height: 22,
+          display: 'grid',
+          placeItems: 'center',
+          borderRadius: '50%',
+          bgcolor: 'grey.900',
+          fontSize: 11,
+          fontWeight: 600,
+          ...tabularNums,
+        }}
+      >
+        {rank}
+      </Box>
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          px: 1,
+          py: 0.25,
+          borderRadius: 999,
+          bgcolor: 'rgba(255, 255, 255, 0.9)',
+          color: 'text.primary',
+          fontSize: 11,
+          fontWeight: 500,
+        }}
+      >
+        {video.platform}
+      </Box>
+      <Box
+        sx={{
+          position: 'absolute',
+          insetInline: 0,
+          bottom: 0,
+          px: 1.25,
+          pt: 4,
+          pb: 1.25,
+          background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
+        }}
+      >
+        <Typography
+          component="span"
+          sx={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', ...tabularNums }}
+        >
+          {compactNumber(video.views)}
+        </Typography>{' '}
+        <Typography component="span" sx={{ fontSize: 12, opacity: 0.85 }}>
+          views
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
+RenderVideo.propTypes = {
+  video: PropTypes.object.isRequired,
+  rank: PropTypes.number.isRequired,
+};
+
 function VideoCard({ video, rank }) {
   return (
     <Box sx={{ minWidth: 0 }}>
-      <Box
-        component="a"
-        href={video.postUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        sx={{
-          position: 'relative',
-          display: 'block',
-          aspectRatio: '9 / 14',
-          maxWidth: 1,
-          borderRadius: 1.5,
-          overflow: 'hidden',
-          bgcolor: 'grey.200',
-          backgroundImage: video.thumbnailUrl ? `url(${video.thumbnailUrl})` : 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          color: 'common.white',
-        }}
-      >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            width: 22,
-            height: 22,
-            display: 'grid',
-            placeItems: 'center',
-            borderRadius: '50%',
-            bgcolor: 'grey.900',
-            fontSize: 11,
-            fontWeight: 600,
-            ...tabularNums,
-          }}
-        >
-          {rank}
-        </Box>
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            px: 1,
-            py: 0.25,
-            borderRadius: 999,
-            bgcolor: 'rgba(255, 255, 255, 0.9)',
-            color: 'text.primary',
-            fontSize: 11,
-            fontWeight: 500,
-          }}
-        >
-          {video.platform}
-        </Box>
-        <Box
-          sx={{
-            position: 'absolute',
-            insetInline: 0,
-            bottom: 0,
-            px: 1.25,
-            pt: 4,
-            pb: 1.25,
-            background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
-          }}
-        >
-          <Typography
-            component="span"
-            sx={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', ...tabularNums }}
-          >
-            {compactNumber(video.views)}
-          </Typography>{' '}
-          <Typography component="span" sx={{ fontSize: 12, opacity: 0.85 }}>
-            views
-          </Typography>
-        </Box>
-      </Box>
+      <RenderVideo video={video} rank={rank} />
 
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1.25 }}>
         <Avatar

@@ -27,6 +27,7 @@ import Iconify from 'src/components/iconify';
 import DiaTextReveal from 'src/sections/campaign/discover/client/v3-pitches/dia-text-reveal';
 
 import ScrapeFixButton from './ScrapeFixButton';
+import FeatureVideoButton from './FeatureVideoButton';
 import ScrapeFailedMetrics from './ScrapeFailedMetrics';
 import ScrapeMetricsLoading from './ScrapeMetricsLoading';
 
@@ -355,8 +356,11 @@ export default function UserPerformanceCard({
   // A failed scrape still saved the post's thumbnail, so its row shows the post too.
   const postThumbnail =
     insightData?.thumbnail || insightData?.video?.media_url || scrapeFailure?.thumbnailUrl;
+
   const postLink = insightData?.postUrl || scrapeFailure?.postUrl;
+
   const [brokenThumbnail, setBrokenThumbnail] = useState(null);
+
   const thumbnailSrc = postThumbnail && postThumbnail !== brokenThumbnail ? postThumbnail : null;
 
   return (
@@ -898,6 +902,12 @@ export default function UserPerformanceCard({
                 <Box sx={{ width: 36 }} />
               )}
             </Stack>
+
+            <FeatureVideoButton
+              campaignId={campaignId}
+              submissionId={submission?.id}
+              postUrl={submission?.postUrl}
+            />
           </Box>
 
           {/* ── Mobile Layout (xs) ── */}
