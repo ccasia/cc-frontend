@@ -53,13 +53,13 @@ const percent = (n, d) => (d ? Math.round((n / d) * 100) : 0);
 export function campaignStages(campaign) {
   const { shortlist, submissions, posting } = campaign;
   const inReview = Math.max(0, submissions.received - submissions.approved);
-  const complete = isComplete(campaign);
+  // const complete = isComplete(campaign);
 
   const rows = [
     { label: 'Confirmed', n: shortlist.confirmed, d: shortlist.total, inReview: 0 },
     { label: 'Review', n: submissions.approved, d: posting.total, inReview },
     { label: 'Posting', n: posting.posted, d: posting.total, inReview: 0 },
-    { label: 'Report', n: complete ? 1 : 0, d: 1, inReview: 0, text: complete ? 'Ready' : '—' },
+    // { label: 'Report', n: complete ? 1 : 0, d: 1, inReview: 0, text: complete ? 'Ready' : '—' },
   ];
 
   return rows.map((row, index) => {
