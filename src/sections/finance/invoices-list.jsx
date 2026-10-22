@@ -918,18 +918,13 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
 
       enqueueSnackbar(`Generating ${actionableInvoices.length} PDF(s)...`, { variant: 'info' });
 
-      await Promise.all(
-        actionableInvoices.map(async (inv) => {
-          const pdfBlob = await pdf(<InvoicePDF invoice={inv} />).toBlob();
-          formData.append(`file_${inv.id}`, pdfBlob, `Invoice-${inv.invoiceNumber}.pdf`);
-        })
-      );
-
-      setInvoices((prevInvoices) =>
-        prevInvoices.map((invoice) =>
-          actionableIds.includes(invoice.id) ? { ...invoice, status: 'processing' } : invoice
-        )
-      );
+      // Render one at a time: parallel @react-pdf renders race on Yoga's WASM init
+      // eslint-disable-next-line no-restricted-syntax
+      for (const inv of actionableInvoices) {
+        // eslint-disable-next-line no-await-in-loop
+        const pdfBlob = await pdf(<InvoicePDF invoice={inv} />).toBlob();
+        formData.append(`file_${inv.id}`, pdfBlob, `Invoice-${inv.invoiceNumber}.pdf`);
+      }
 
       const res = await axiosInstance.post(endpoints.invoice.bulkUpdateInvoices, formData, {
         headers: {
@@ -937,8 +932,26 @@ const InvoiceLists = ({ invoices: invoicesProp = [] }) => {
         },
       });
 
+      const { queued = 0, skipped = 0 } = res.data || {};
+
+      if (res.status === 200 && !queued) {
+        enqueueSnackbar(res.data?.message || 'None of the selected invoices can be approved.', {
+          variant: 'warning',
+        });
+        return;
+      }
+
       if (res.status === 200) {
-        enqueueSnackbar('Invoices queued for processing.', { variant: 'success' });
+        setInvoices((prevInvoices) =>
+          prevInvoices.map((invoice) =>
+            actionableIds.includes(invoice.id) ? { ...invoice, status: 'processing' } : invoice
+          )
+        );
+
+        enqueueSnackbar(
+          `${queued} invoice(s) queued for processing.${skipped ? ` ${skipped} skipped.` : ''}`,
+          { variant: 'success' }
+        );
 
         if (typeof mutateStats === 'function') {
           mutateStats();
