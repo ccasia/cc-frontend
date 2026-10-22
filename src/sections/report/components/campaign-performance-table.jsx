@@ -437,7 +437,7 @@ const CampaignPerformanceTable = () => {
 
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
 
-  const [sortBy, setSortBy] = useState('campaignName');
+  const [sortBy, setSortBy] = useState('updatedAt');
   const [sortDirection, setSortDirection] = useState('asc');
 
   const { user } = useAuthContext();
