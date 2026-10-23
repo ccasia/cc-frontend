@@ -1,8 +1,16 @@
 import { format, differenceInCalendarDays } from 'date-fns';
 
+import { STATUS_CHIP } from 'src/sections/campaign/discover/admin/creator-submissions/utils/constants';
+
 // Reserved for things waiting on the client; everything else uses theme colours.
 export const ACTION_BLUE = '#1A3DFF';
-export const REVIEW_TINT = '#C3CDFF';
+
+// Same colours as the admin submission status chips.
+export const STATUS_COLOR = {
+  late: STATUS_CHIP.CHANGES_REQUIRED.color,
+  review: STATUS_CHIP.PENDING_REVIEW.color,
+  done: STATUS_CHIP.APPROVED.color,
+};
 
 export const FONTS = {
   serif: '"Instrument Serif", Georgia, serif',

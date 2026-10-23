@@ -10,7 +10,7 @@ import {
   daysUntil,
   isComplete,
   ACTION_BLUE,
-  REVIEW_TINT,
+  STATUS_COLOR,
   campaignStages,
 } from './utils';
 
@@ -239,7 +239,7 @@ function StageRow({ stage }) {
             position: 'absolute',
             inset: 0,
             width: `${stage.pctWithReview}%`,
-            bgcolor: REVIEW_TINT,
+            bgcolor: STATUS_COLOR.review,
           }}
         />
         <Box
@@ -247,7 +247,7 @@ function StageRow({ stage }) {
             position: 'absolute',
             inset: 0,
             width: `${stage.pct}%`,
-            bgcolor: stage.state === 'done' ? 'text.primary' : ACTION_BLUE,
+            bgcolor: stage.state === 'done' ? STATUS_COLOR.done : ACTION_BLUE,
           }}
         />
       </Box>

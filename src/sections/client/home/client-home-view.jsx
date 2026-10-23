@@ -23,7 +23,7 @@ import {
   daysUntil,
   greetingFor,
   ACTION_BLUE,
-  REVIEW_TINT,
+  STATUS_COLOR,
   CAMPAIGN_TABS,
   sortCampaigns,
   openTaskCounts,
@@ -136,7 +136,7 @@ export default function ClientHomeView() {
                     {plural(tasks.length, 'thing')} need{tasks.length === 1 ? 's' : ''} you across{' '}
                     {plural(campaignsWaiting, 'campaign')}.
                     {overdue > 0 && (
-                      <Box component="span" sx={{ color: 'error.dark', fontWeight: 500 }}>
+                      <Box component="span" sx={{ color: STATUS_COLOR.late, fontWeight: 500 }}>
                         {' '}
                         {overdue} {overdue === 1 ? 'is' : 'are'} overdue.
                       </Box>
@@ -297,8 +297,8 @@ export default function ClientHomeView() {
 function StageKey() {
   const items = [
     { label: 'Current stage', color: ACTION_BLUE },
-    { label: 'In review', color: REVIEW_TINT },
-    { label: 'Done', color: 'text.primary' },
+    { label: 'In review', color: STATUS_COLOR.review },
+    { label: 'Done', color: STATUS_COLOR.done },
   ];
 
   return (

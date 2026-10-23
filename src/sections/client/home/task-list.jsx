@@ -6,13 +6,13 @@ import { Box, Card, Stack, Button, ButtonBase, Typography } from '@mui/material'
 
 import Iconify from 'src/components/iconify';
 
-import { FONTS, dueLabel, groupTasks, ACTION_BLUE } from './utils';
+import { FONTS, dueLabel, groupTasks, ACTION_BLUE, STATUS_COLOR } from './utils';
 
 const PAGE_SIZE = 5;
 
 const rowPx = { xs: 2.5, sm: 3 };
 
-const dueColor = { late: 'error.dark', soon: 'text.primary', normal: 'text.secondary' };
+const dueColor = { late: STATUS_COLOR.late, soon: 'text.primary', normal: 'text.secondary' };
 
 export default function TaskList({
   tasks,
@@ -131,7 +131,7 @@ export default function TaskList({
               borderColor: 'divider',
               fontSize: 12,
               fontWeight: 500,
-              color: group.key === 'overdue' ? 'error.dark' : 'grey.500',
+              color: group.key === 'overdue' ? STATUS_COLOR.late : 'grey.500',
             }}
           >
             {group.label}
@@ -233,7 +233,7 @@ function TaskRow({ task, campaignName, primary, divided, onOpen }) {
         px: rowPx,
         py: 1.75,
         borderTop: divided ? `1px solid ${alpha(theme.palette.grey[500], 0.12)}` : 0,
-        bgcolor: late ? alpha(theme.palette.error.main, 0.08) : 'transparent',
+        bgcolor: late ? alpha(STATUS_COLOR.late, 0.08) : 'transparent',
       })}
     >
       <Box sx={{ minWidth: 0 }}>
