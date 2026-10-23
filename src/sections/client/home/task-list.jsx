@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { alpha } from '@mui/material/styles';
-import { Box, Card, Stack, Button, Typography } from '@mui/material';
+import { Box, Card, Stack, Button, ButtonBase, Typography } from '@mui/material';
+
+import Iconify from 'src/components/iconify';
 
 import { FONTS, dueLabel, groupTasks, ACTION_BLUE } from './utils';
+
+const PAGE_SIZE = 5;
 
 const rowPx = { xs: 2.5, sm: 3 };
 
@@ -19,6 +24,28 @@ export default function TaskList({
   const visible = filterCampaign ? tasks.filter((t) => t.campaignId === filterCampaign.id) : tasks;
   const groups = groupTasks(visible);
   const firstId = groups[0]?.tasks[0]?.id;
+
+  // Back to the first page whenever the campaign filter changes.
+  const filterId = filterCampaign?.id ?? null;
+  const [paging, setPaging] = useState({ filterId, page: 0 });
+  const page = paging.filterId === filterId ? paging.page : 0;
+  const setPage = (next) => setPaging({ filterId, page: next });
+
+  const pages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  const current = Math.min(page, pages - 1);
+  const start = current * PAGE_SIZE;
+  const end = Math.min(start + PAGE_SIZE, visible.length);
+
+  // Groups are consecutive runs of the sorted list, so each keeps the part inside [start, end).
+  let offset = 0;
+  const pageGroups = groups
+    .map((group) => {
+      const from = Math.max(0, start - offset);
+      const to = Math.max(from, Math.min(group.tasks.length, end - offset));
+      offset += group.tasks.length;
+      return { ...group, tasks: group.tasks.slice(from, to) };
+    })
+    .filter((group) => group.tasks.length);
 
   return (
     <Card
@@ -93,7 +120,7 @@ export default function TaskList({
         </Box>
       )}
 
-      {groups.map((group) => (
+      {pageGroups.map((group) => (
         <Box key={group.key} role="group" aria-label={group.label}>
           <Typography
             sx={{
@@ -122,6 +149,35 @@ export default function TaskList({
           ))}
         </Box>
       ))}
+
+      {pages > 1 && (
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ px: rowPx, py: 1.5, borderTop: 1, borderColor: 'divider' }}
+        >
+          <Typography
+            sx={{ fontSize: 13, color: 'text.secondary', fontVariantNumeric: 'tabular-nums' }}
+          >
+            {start + 1}–{end} of {visible.length}
+          </Typography>
+          <Stack direction="row" spacing={1}>
+            <PagerButton
+              label="Previous tasks"
+              icon="eva:arrow-ios-back-fill"
+              disabled={current === 0}
+              onClick={() => setPage(current - 1)}
+            />
+            <PagerButton
+              label="Next tasks"
+              icon="eva:arrow-ios-forward-fill"
+              disabled={current >= pages - 1}
+              onClick={() => setPage(current + 1)}
+            />
+          </Stack>
+        </Stack>
+      )}
     </Card>
   );
 }
@@ -132,6 +188,33 @@ TaskList.propTypes = {
   filterCampaign: PropTypes.object,
   onClearFilter: PropTypes.func.isRequired,
   onOpenTask: PropTypes.func.isRequired,
+};
+
+function PagerButton({ label, icon, disabled, onClick }) {
+  return (
+    <ButtonBase
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      sx={{
+        width: 32,
+        height: 32,
+        borderRadius: 1,
+        border: 1,
+        borderColor: 'divider',
+        color: disabled ? 'grey.400' : 'text.primary',
+      }}
+    >
+      <Iconify icon={icon} width={16} />
+    </ButtonBase>
+  );
+}
+
+PagerButton.propTypes = {
+  label: PropTypes.string,
+  icon: PropTypes.string,
+  disabled: PropTypes.bool,
+  onClick: PropTypes.func,
 };
 
 const CTA = { SHORTLIST_REVIEW: 'Review shortlist', CONTENT_REVIEW: 'Review content' };
