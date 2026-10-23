@@ -12,17 +12,20 @@ export const TONES = {
   idle: { color: STATUS_CHIP.NOT_STARTED.color, pill: 'Not started' },
 };
 
-// Segments named after a submission status use that status's chip colour.
 export const SEGMENT_COLORS = {
   green: STATUS_CHIP.APPROVED.color,
   blue: BLUE,
   red: STATUS_CHIP.CHANGES_REQUIRED.color,
   grey: STATUS_CHIP.NOT_STARTED.color,
-  sentToClient: STATUS_CHIP.SENT_TO_CLIENT.color,
-  pendingReview: STATUS_CHIP.PENDING_REVIEW.color,
-  posted: STATUS_CHIP.POSTED.color,
-  approveLink: STATUS_CHIP.APPROVE_LINK.color,
+  ...Object.fromEntries(Object.entries(STATUS_CHIP).map(([status, chip]) => [status, chip.color])),
 };
+
+// A segment that counts one submission status, labelled and coloured like the admin chip.
+const statusSegment = (status, value) => ({
+  label: STATUS_CHIP[status].label,
+  value,
+  color: status,
+});
 
 const SHORTLIST_RESPONSE_DAYS = 3;
 
@@ -127,11 +130,11 @@ function submissionsStage({ submissions: s }) {
     stat: `${approved}/${total}`,
     statLabel: 'drafts approved',
     segments: segments([
-      { label: 'approved', value: approved, color: 'green' },
-      { label: 'in review', value: inReview, color: 'sentToClient' },
-      { label: 'with campaign team', value: withAdmins, color: 'pendingReview' },
-      { label: 'revision', value: revision, color: 'red' },
-      { label: 'not submitted', value: notSubmitted, color: 'grey' },
+      statusSegment('APPROVED', approved),
+      statusSegment('SENT_TO_CLIENT', inReview),
+      statusSegment('PENDING_REVIEW', withAdmins),
+      statusSegment('CHANGES_REQUIRED', revision),
+      statusSegment('NOT_STARTED', notSubmitted),
     ]),
   };
 
@@ -236,8 +239,8 @@ function analyticsStage({ posts: p, campaign }, today) {
       stat: '0',
       statLabel: 'posts live',
       segments: segments([
-        { label: 'pending', value: pending, color: 'approveLink' },
-        { label: 'not posted', value: Math.max(0, total - pending), color: 'grey' },
+        statusSegment('APPROVE_LINK', pending),
+        statusSegment('NOT_STARTED', Math.max(0, total - pending)),
       ]),
       note: 'Data appears after the first post goes live',
     };
@@ -256,9 +259,9 @@ function analyticsStage({ posts: p, campaign }, today) {
     stat: `${live}/${total}`,
     statLabel: 'posts live',
     segments: segments([
-      { label: 'live', value: live, color: 'posted' },
-      { label: 'pending', value: pending, color: 'approveLink' },
-      { label: 'not posted', value: Math.max(0, total - live - pending), color: 'grey' },
+      statusSegment('POSTED', live),
+      statusSegment('APPROVE_LINK', pending),
+      statusSegment('NOT_STARTED', Math.max(0, total - live - pending)),
     ]),
     note,
   };

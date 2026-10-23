@@ -77,10 +77,10 @@ describe('buildStages, mid campaign', () => {
 
   it('drops empty segments', () => {
     expect(submissions.segments.map((s) => s.label)).toEqual([
-      'approved',
-      'in review',
-      'revision',
-      'not submitted',
+      'Approved',
+      'Sent to Client',
+      'Changes Required',
+      'Not Started',
     ]);
   });
 });
