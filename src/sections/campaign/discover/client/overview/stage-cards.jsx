@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 
-import { Box, Stack, ButtonBase, Typography } from '@mui/material';
+import { Box, Stack, alpha, ButtonBase, Typography } from '@mui/material';
 
-import { Pill, goToTab, toneColors, tabularNums } from './parts';
+import { goToTab, StatusPill, toneColors, tabularNums } from './parts';
 import { TONES, dueText, ownerLabel, SEGMENT_COLORS } from './stages';
 
 export default function StageCards({ stages, viewerRole }) {
@@ -42,7 +42,7 @@ function StageCard({ stage, number, viewerRole }) {
   return (
     <Stack spacing={1.25} sx={{ px: 2, pb: 2, bgcolor: 'background.paper', minWidth: 0 }}>
       <Box sx={{ height: 3, mx: -2, bgcolor: 'grey.200' }}>
-        <Box sx={{ height: 1, width: `${stage.progress}%`, bgcolor: colors.bar }} />
+        <Box sx={{ height: 1, width: `${stage.progress}%`, bgcolor: colors.main }} />
       </Box>
 
       <Stack direction="row" alignItems="center" spacing={1} sx={{ pt: 0.75 }}>
@@ -67,9 +67,7 @@ function StageCard({ stage, number, viewerRole }) {
         <Typography sx={{ fontSize: 13, fontWeight: 600, flex: 1, minWidth: 0 }} noWrap>
           {stage.name}
         </Typography>
-        <Pill bgcolor={colors.pillBg} color={colors.pillText}>
-          {stage.pill || TONES[stage.tone].pill}
-        </Pill>
+        <StatusPill tone={stage.tone}>{stage.pill || TONES[stage.tone].pill}</StatusPill>
       </Stack>
 
       <Stack direction="row" alignItems="baseline" spacing={0.75}>
@@ -171,6 +169,7 @@ SegmentBar.propTypes = {
 function ActionCallout({ action, tab, viewerRole }) {
   const due = dueText(action.dueAt);
   const overdue = due?.startsWith('Overdue');
+  const warn = toneColors('warn');
 
   return (
     <ButtonBase
@@ -183,22 +182,20 @@ function ActionCallout({ action, tab, viewerRole }) {
         justifyContent: 'space-between',
         textAlign: 'left',
         borderRadius: 1,
-        bgcolor: 'warning.lighter',
-        '&:hover': { bgcolor: 'warning.light' },
-        '&:focus-visible': { outline: '2px solid', outlineColor: 'warning.dark' },
+        bgcolor: warn.soft,
+        '&:hover': { bgcolor: alpha(warn.main, 0.28) },
+        '&:focus-visible': { outline: '2px solid', outlineColor: warn.text },
       }}
     >
       <Box sx={{ minWidth: 0 }}>
         <Typography sx={{ fontSize: 12, fontWeight: 500, color: 'text.primary' }}>
           {action.text}
         </Typography>
-        <Typography
-          sx={{ mt: 0.25, fontSize: 10, color: overdue ? 'error.dark' : 'warning.darker' }}
-        >
+        <Typography sx={{ mt: 0.25, fontSize: 10, color: overdue ? TONES.bad.color : warn.text }}>
           {[ownerLabel(action.owner, viewerRole), due].filter(Boolean).join(' · ')}
         </Typography>
       </Box>
-      <Box component="span" aria-hidden sx={{ fontWeight: 600, color: 'warning.darker' }}>
+      <Box component="span" aria-hidden sx={{ fontWeight: 600, color: warn.text }}>
         →
       </Box>
     </ButtonBase>

@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
 
-import { alpha } from '@mui/material/styles';
+import { alpha, darken } from '@mui/material/styles';
 import { Box, Stack, Avatar, Button, Typography } from '@mui/material';
 
 import {
@@ -23,9 +23,9 @@ export default function CampaignCard({ campaign, openTasks, selected, onSelect, 
   const daysLeft = daysUntil(campaign.endDate);
   const inReview = Math.max(0, campaign.submissions.received - campaign.submissions.approved);
 
-  let pill = 'On track';
-  if (openTasks) pill = `${openTasks} to do`;
-  else if (complete) pill = 'Complete';
+  let status = { label: 'On track', color: STATUS_COLOR.active };
+  if (openTasks) status = { label: `${openTasks} to do`, color: STATUS_COLOR.review };
+  else if (complete) status = { label: 'Complete', color: STATUS_COLOR.done };
 
   let note = campaign.objective || '';
   if (inReview > 0) note = `${plural(inReview, 'submission')} in review`;
@@ -118,23 +118,7 @@ export default function CampaignCard({ campaign, openTasks, selected, onSelect, 
           </Typography>
         </Box>
 
-        <Box
-          component="span"
-          sx={{
-            flex: 'none',
-            px: 1.125,
-            py: 0.625,
-            borderRadius: 999,
-            fontSize: 12,
-            fontWeight: 500,
-            whiteSpace: 'nowrap',
-            fontVariantNumeric: 'tabular-nums',
-            bgcolor: openTasks ? ACTION_BLUE : 'grey.200',
-            color: openTasks ? 'common.white' : 'text.secondary',
-          }}
-        >
-          {pill}
-        </Box>
+        <StatusLabel {...status} />
       </Stack>
 
       <Stack spacing={1.5}>
@@ -206,6 +190,42 @@ CampaignCard.propTypes = {
   selected: PropTypes.bool,
   onSelect: PropTypes.func.isRequired,
   onView: PropTypes.func.isRequired,
+};
+
+// Same look as the admin StatusChip, which only takes submission statuses.
+function StatusLabel({ label, color }) {
+  return (
+    <Stack
+      component="span"
+      direction="row"
+      alignItems="center"
+      spacing={0.75}
+      sx={{
+        px: 1.25,
+        py: 0.5,
+        flex: 'none',
+        borderRadius: 100,
+        bgcolor: alpha(color, 0.16),
+        color: darken(color, 0.4),
+        fontSize: 12,
+        fontWeight: 600,
+        lineHeight: '16px',
+        whiteSpace: 'nowrap',
+        fontVariantNumeric: 'tabular-nums',
+      }}
+    >
+      <Box
+        component="span"
+        sx={{ width: 7, height: 7, flexShrink: 0, borderRadius: '50%', bgcolor: color }}
+      />
+      <span>{label}</span>
+    </Stack>
+  );
+}
+
+StatusLabel.propTypes = {
+  label: PropTypes.string.isRequired,
+  color: PropTypes.string.isRequired,
 };
 
 function StageRow({ stage }) {

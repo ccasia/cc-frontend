@@ -10,6 +10,7 @@ export const STATUS_COLOR = {
   late: STATUS_CHIP.CHANGES_REQUIRED.color,
   review: STATUS_CHIP.PENDING_REVIEW.color,
   done: STATUS_CHIP.APPROVED.color,
+  active: STATUS_CHIP.IN_PROGRESS.color,
 };
 
 export const FONTS = {

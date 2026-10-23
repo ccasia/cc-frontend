@@ -1,20 +1,22 @@
 import { format, addDays, differenceInCalendarDays } from 'date-fns';
 
+import { STATUS_CHIP } from 'src/sections/campaign/discover/admin/creator-submissions/utils/constants';
+
 export const BLUE = '#1340FF';
 
-// Tone → theme palette key. Idle uses greys directly.
+// Colours match the admin submission status chips.
 export const TONES = {
-  ok: { palette: 'success', pill: 'On track' },
-  warn: { palette: 'warning', pill: 'Action needed' },
-  bad: { palette: 'error', pill: 'Blocked' },
-  idle: { palette: null, pill: 'Not started' },
+  ok: { color: STATUS_CHIP.APPROVED.color, pill: 'On track' },
+  warn: { color: STATUS_CHIP.PENDING_REVIEW.color, pill: 'Action needed' },
+  bad: { color: STATUS_CHIP.CHANGES_REQUIRED.color, pill: 'Blocked' },
+  idle: { color: STATUS_CHIP.NOT_STARTED.color, pill: 'Not started' },
 };
 
 export const SEGMENT_COLORS = {
-  green: 'success.main',
+  green: STATUS_CHIP.APPROVED.color,
   blue: BLUE,
-  amber: 'warning.main',
-  red: 'error.main',
+  amber: STATUS_CHIP.PENDING_REVIEW.color,
+  red: STATUS_CHIP.CHANGES_REQUIRED.color,
   grey: 'grey.300',
 };
 
