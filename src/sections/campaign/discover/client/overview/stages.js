@@ -12,12 +12,16 @@ export const TONES = {
   idle: { color: STATUS_CHIP.NOT_STARTED.color, pill: 'Not started' },
 };
 
+// Segments named after a submission status use that status's chip colour.
 export const SEGMENT_COLORS = {
   green: STATUS_CHIP.APPROVED.color,
   blue: BLUE,
-  amber: STATUS_CHIP.PENDING_REVIEW.color,
   red: STATUS_CHIP.CHANGES_REQUIRED.color,
-  grey: 'grey.300',
+  grey: STATUS_CHIP.NOT_STARTED.color,
+  sentToClient: STATUS_CHIP.SENT_TO_CLIENT.color,
+  pendingReview: STATUS_CHIP.PENDING_REVIEW.color,
+  posted: STATUS_CHIP.POSTED.color,
+  approveLink: STATUS_CHIP.APPROVE_LINK.color,
 };
 
 const SHORTLIST_RESPONSE_DAYS = 3;
@@ -124,8 +128,8 @@ function submissionsStage({ submissions: s }) {
     statLabel: 'drafts approved',
     segments: segments([
       { label: 'approved', value: approved, color: 'green' },
-      { label: 'in review', value: inReview, color: 'amber' },
-      { label: 'with campaign team', value: withAdmins, color: 'blue' },
+      { label: 'in review', value: inReview, color: 'sentToClient' },
+      { label: 'with campaign team', value: withAdmins, color: 'pendingReview' },
       { label: 'revision', value: revision, color: 'red' },
       { label: 'not submitted', value: notSubmitted, color: 'grey' },
     ]),
@@ -232,7 +236,7 @@ function analyticsStage({ posts: p, campaign }, today) {
       stat: '0',
       statLabel: 'posts live',
       segments: segments([
-        { label: 'pending', value: pending, color: 'blue' },
+        { label: 'pending', value: pending, color: 'approveLink' },
         { label: 'not posted', value: Math.max(0, total - pending), color: 'grey' },
       ]),
       note: 'Data appears after the first post goes live',
@@ -252,8 +256,8 @@ function analyticsStage({ posts: p, campaign }, today) {
     stat: `${live}/${total}`,
     statLabel: 'posts live',
     segments: segments([
-      { label: 'live', value: live, color: 'green' },
-      { label: 'pending', value: pending, color: 'blue' },
+      { label: 'live', value: live, color: 'posted' },
+      { label: 'pending', value: pending, color: 'approveLink' },
       { label: 'not posted', value: Math.max(0, total - live - pending), color: 'grey' },
     ]),
     note,

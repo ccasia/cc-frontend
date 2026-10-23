@@ -148,7 +148,7 @@ export function SegmentBar({ segments }) {
         {segments.map((s) => (
           <Stack key={s.label} direction="row" alignItems="center" spacing={0.625}>
             <Box
-              sx={{ width: 7, height: 7, borderRadius: '2px', bgcolor: SEGMENT_COLORS[s.color] }}
+              sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: SEGMENT_COLORS[s.color] }}
             />
             <span>
               {s.value} {s.label}
