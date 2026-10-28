@@ -261,7 +261,7 @@ function analyticsStage({ posts: p, campaign }, today) {
     segments: segments([
       statusSegment('POSTED', live),
       statusSegment('APPROVE_LINK', pending),
-      statusSegment('NOT_STARTED', Math.max(0, total - live - pending)),
+      // statusSegment('NOT_STARTED', Math.max(0, total - live - pending)),
     ]),
     note,
   };

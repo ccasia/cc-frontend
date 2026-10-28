@@ -10,7 +10,6 @@ import { tabularNums } from './parts';
 import { BLUE, percent, timeline, statusLabel } from './stages';
 
 // Light blue for credits on agreements not yet signed.
-const PENDING_BLUE = alpha(BLUE, 0.3);
 
 const meterValue = { color: 'text.primary', fontWeight: 500 };
 
@@ -20,11 +19,9 @@ export default function ClientCampaignHeader({ campaignId, onBack, tabs }) {
   const credits = data?.credits;
   const time = timeline(campaign);
 
-  const total = credits?.total || 0;
   const used = credits?.used || 0;
   const contractPending = data?.shortlist?.contractPending || 0;
   // Pending is drawn inside "used": creditsUtilized already counts agreements that are sent but unsigned.
-  const signed = Math.max(0, used - contractPending);
 
   return (
     <Box sx={{ pt: 2.5, mb: 3.5 }}>
@@ -136,18 +133,6 @@ export default function ClientCampaignHeader({ campaignId, onBack, tabs }) {
           <Box sx={{ color: 'text.secondary' }}>Timeline</Box>
           <MeterBar parts={[{ value: time?.progress || 0, color: 'text.primary' }]} />
           <Box sx={meterValue}>{time ? `Day ${time.day} of ${time.totalDays}` : '—'}</Box>
-
-          {/* <Box sx={{ color: 'text.secondary' }}>UGC credits</Box>
-          <MeterBar
-            label={`${used} of ${total} credits used, ${contractPending} pending signature`}
-            parts={[
-              { value: percent(signed, total), color: BLUE },
-              { value: percent(Math.min(contractPending, used), total), color: PENDING_BLUE },
-            ]}
-          /> */}
-          {/* <Box sx={meterValue}>
-            {used}/{total} used
-          </Box> */}
         </Box>
       </Stack>
 

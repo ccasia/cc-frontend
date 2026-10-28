@@ -13,7 +13,6 @@ import { formatRate, compactNumber } from './stages';
 const PAGE_SIZE = 3;
 
 export default function TopVideos({ videos }) {
-  console.log(videos);
   const sorted = [...videos].sort((a, b) => b.views - a.views);
   const pages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const [page, setPage] = useState(0);

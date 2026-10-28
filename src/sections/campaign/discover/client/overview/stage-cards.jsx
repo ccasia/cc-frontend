@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 
-import { Box, Stack, alpha, ButtonBase, Typography } from '@mui/material';
+import { Box, Stack, alpha, Button, ButtonBase, Typography } from '@mui/material';
 
-import { goToTab, StatusPill, toneColors, tabularNums } from './parts';
 import { TONES, dueText, ownerLabel, SEGMENT_COLORS } from './stages';
+import { goToTab, StatusPill, toneColors, tabularNums } from './parts';
 
 export default function StageCards({ stages, viewerRole }) {
   return (
@@ -87,7 +87,8 @@ function StageCard({ stage, number, viewerRole }) {
 
       <SegmentBar segments={stage.segments} />
 
-      <Box sx={{ mt: 'auto !important', pt: 0.5 }}>
+      {/* <Box sx={{ mt: 'auto !important', pt: 0.5 }}> */}
+      <Box sx={{ pt: 0.5 }}>
         {stage.action ? (
           <ActionCallout action={stage.action} tab={stage.tab} viewerRole={viewerRole} />
         ) : (
@@ -106,6 +107,26 @@ function StageCard({ stage, number, viewerRole }) {
           </Box>
         )}
       </Box>
+
+      {stage.name === 'Analytics' && (
+        <Button
+          fullWidth
+          variant="outlined"
+          onClick={() => goToTab(stage.tab)}
+          sx={{
+            mt: 'auto !important',
+            py: 0.75,
+            fontSize: 12,
+            fontWeight: 500,
+            color: 'text.primary',
+            borderColor: 'divider',
+            borderRadius: 1,
+            '&:hover': { borderColor: 'text.primary', bgcolor: 'transparent' },
+          }}
+        >
+          View analytics
+        </Button>
+      )}
     </Stack>
   );
 }
