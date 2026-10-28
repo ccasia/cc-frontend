@@ -573,9 +573,7 @@ const PlatformOverviewDesktop = ({
                 </Typography>
                 <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
                   {availablePlatforms.length > 1 && getPlatformLabel(selectedPlatform)}
-                  {availablePlatforms.length < 2 &&
-                    insightsData.length > 0 &&
-                    `${insightsData[0].platform} Posts`}
+                  {availablePlatforms.length < 2 && `${availablePlatforms[0]} Posts`}
                 </Typography>
               </Box>
             </Grid>
