@@ -223,6 +223,12 @@ export function useNavData() {
             icon: <Iconify icon="material-symbols:build-outline-rounded" width={25} />,
           },
           {
+            roles: ['superadmin'],
+            title: 'App Versions',
+            path: paths.dashboard.appVersions.root,
+            icon: <Iconify icon="material-symbols:phone-iphone-outline" width={25} />,
+          },
+          {
             roles: ['superadmin', 'god'],
             title: 'AI Report Configurations',
             path: paths.dashboard.reportAi.root,

@@ -593,4 +593,8 @@ export const endpoints = {
     manage: '/api/release-notes/manage',
     detail: (id) => `/api/release-notes/${id}`,
   },
+  appVersions: {
+    root: '/api/app-versions',
+    platform: (platform) => `/api/app-versions/${platform}`,
+  },
 };

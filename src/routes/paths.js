@@ -158,6 +158,9 @@ export const paths = {
     releaseNotes: {
       root: `${ROOTS.DASHBOARD}/release-notes`,
     },
+    appVersions: {
+      root: `${ROOTS.DASHBOARD}/app-versions`,
+    },
     report: {
       root: `${ROOTS.DASHBOARD}/report`,
     },
