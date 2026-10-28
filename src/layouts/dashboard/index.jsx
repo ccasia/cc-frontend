@@ -29,6 +29,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 import CampaignInvitationModal from 'src/layouts/common/campaign-invitation';
+import CreateUrbanscapesModal from 'src/layouts/common/create-urbanscapes-modal';
 
 import Iconify from 'src/components/iconify';
 import BugReportForm from 'src/components/bug-report-form';
@@ -412,6 +413,8 @@ export default function DashboardLayout({ children }) {
           onGoToCampaign={handleGoToInvitedCampaign}
           campaignName={inviteApprovalPopup.campaignName}
         />
+
+        <CreateUrbanscapesModal disabled={socialLinksModalOpen} />
       </Box>
 
       {/* Social Links Modal for Creators */}
