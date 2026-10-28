@@ -162,15 +162,17 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
 
   const postingSubmissions = useMemo(() => extractPostingSubmissions(submissions), [submissions]);
 
+  // A platform with only manual entries still gets its own tab.
   const availablePlatforms = useMemo(() => {
-    if (postingSubmissions.length === 0) {
-      return ['Instagram', 'TikTok'];
-    }
     const platforms = [
-      ...new Set(postingSubmissions.map((sub) => sub && sub.platform).filter(Boolean)),
+      ...new Set(
+        [...postingSubmissions, ...(manualEntries || [])]
+          .map((item) => item && item.platform)
+          .filter(Boolean)
+      ),
     ];
     return platforms.length > 0 ? platforms : ['Instagram', 'TikTok'];
-  }, [postingSubmissions]);
+  }, [postingSubmissions, manualEntries]);
 
   const filteredSubmissions = useMemo(() => {
     if (selectedPlatform === 'ALL') {
@@ -227,9 +229,28 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     return manualEntries.filter((entry) => entry.platform === selectedPlatform);
   }, [manualEntries, selectedPlatform]);
 
+  // Every post once, the way the creator list shows it: scraped numbers win over a manual entry
+  // for the same link. The Overview and the platform tabs all count from this.
+  const summaryPosts = useMemo(() => {
+    const seen = new Set();
+    const isFirst = (key) => {
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    };
+    return {
+      insights: insightsData.filter((data) => isFirst(submissionPostKey(data, data.submissionId))),
+      manual: (manualEntries || []).filter((entry) => isFirst(manualPostKey(entry))),
+    };
+  }, [insightsData, manualEntries]);
+
   const summaryStats = useMemo(() => {
+    const onPlatform = (item) => selectedPlatform === 'ALL' || item.platform === selectedPlatform;
+    const insights = summaryPosts.insights.filter(onPlatform);
+    const manual = summaryPosts.manual.filter(onPlatform);
+
     // If we have no insights and no manual entries, return placeholder
-    if (!filteredInsightsData?.length && !filteredManualEntries?.length) {
+    if (!insights.length && !manual.length) {
       return {
         totalViews: 0,
         totalLikes: 0,
@@ -242,27 +263,17 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       };
     }
     // Calculate stats including both insights and manual entries
-    return calculateSummaryStats(filteredInsightsData, filteredManualEntries);
-  }, [filteredInsightsData, filteredManualEntries]);
+    return calculateSummaryStats(insights, manual);
+  }, [summaryPosts, selectedPlatform]);
 
+  // Same posts as each tab's post count, so the Overview bars add up to the tabs.
   const platformCounts = useMemo(() => {
     const counts = { Instagram: 0, TikTok: 0 };
-    const data = [...postingSubmissions, ...manualEntries];
-
-    const sanitized = [];
-
-    data.forEach((element) => {
-      if (!sanitized.some((a) => a.postUrl === element.postUrl)) sanitized.push(element);
+    [...summaryPosts.insights, ...summaryPosts.manual].forEach(({ platform }) => {
+      if (counts[platform] !== undefined) counts[platform] += 1;
     });
-
-    sanitized.forEach((item) => {
-      if (item?.platform === 'Instagram' || item?.entry?.platform === 'Instagram')
-        counts.Instagram += 1;
-      if (item?.platform === 'TikTok' || item?.entry?.platform === 'TikTok') counts.TikTok += 1;
-    });
-
     return counts;
-  }, [postingSubmissions, manualEntries]);
+  }, [summaryPosts]);
 
   const findTopPerformerByMetric = (metricKey, insights, submissionsList) => {
     let topPerformer = null;
@@ -320,13 +331,9 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     const rows = [];
 
     filteredManualEntries.forEach((entry) => {
-      const canonical = canonicalizePostUrl(entry.postUrl);
-      const dedupKey = canonical
-        ? `url::${entry.platform}::${canonical}`
-        : `manual::${entry.platform}::${(entry.creatorUsername || entry.id).toLowerCase()}`;
       rows.push({
         kind: 'manual',
-        dedupKey,
+        dedupKey: manualPostKey(entry),
         engagementRate: Number(entry.engagementRate) || 0,
         entry,
       });
@@ -346,14 +353,10 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       }
 
       const engagementRate = insightData ? calculateEngagementRate(insightData.insight) : 0;
-      const canonical = canonicalizePostUrl(submission.postUrl);
-      const dedupKey = canonical
-        ? `url::${submission.platform}::${canonical}`
-        : `submission::${submission.platform}::${submission.user}::${submission.id}`;
 
       rows.push({
         kind: 'submission',
-        dedupKey,
+        dedupKey: submissionPostKey(submission, submission.id),
         engagementRate,
         submission,
         insightData,
@@ -363,19 +366,23 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       });
     });
 
+    // One row per post, matching the summary: scraped numbers, else a manual entry, else the
+    // scrape's progress or failure.
+    const rank = (row) => {
+      if (row.insightData) return 2;
+      return row.kind === 'manual' ? 1 : 0;
+    };
+    const rowByPost = new Map();
+    rows.forEach((row) => {
+      const current = rowByPost.get(row.dedupKey);
+      if (!current || rank(row) > rank(current)) rowByPost.set(row.dedupKey, row);
+    });
+
     // Posts still being scraped, then failed scrapes, sit on top, where the admin who approved them looks.
     const needsAttention = (row) => (row.scrapeProgress ? 2 : 0) + (row.scrapeFailure ? 1 : 0);
-    rows.sort(
+    return [...rowByPost.values()].sort(
       (a, b) => needsAttention(b) - needsAttention(a) || b.engagementRate - a.engagementRate
     );
-
-    const seen = new Set();
-
-    return rows.filter((row) => {
-      if (seen.has(row.dedupKey)) return false;
-      seen.add(row.dedupKey);
-      return true;
-    });
   }, [
     filteredManualEntries,
     filteredSubmissions,
@@ -761,7 +768,7 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
               <Box sx={{ mb: 4 }}>
                 <CoreMetricsSection
                   insightsData={filteredInsightsData}
-                  postingSubmissions={postingSubmissions ?? []}
+                  availablePlatforms={availablePlatforms}
                   summaryStats={summaryStats}
                   filteredInsightsData={filteredInsightsData}
                   filteredSubmissions={filteredSubmissions}
@@ -842,6 +849,21 @@ function getRefreshFailureMessage(failure) {
   };
 
   return messages[failure.code] || failure.reason || 'Unknown error.';
+}
+
+// The same link from a submission and a manual entry is one post.
+function submissionPostKey({ platform, postUrl, user }, submissionId) {
+  const canonical = canonicalizePostUrl(postUrl);
+  return canonical
+    ? `url::${platform}::${canonical}`
+    : `submission::${platform}::${user}::${submissionId}`;
+}
+
+function manualPostKey({ platform, postUrl, creatorUsername, id }) {
+  const canonical = canonicalizePostUrl(postUrl);
+  return canonical
+    ? `url::${platform}::${canonical}`
+    : `manual::${platform}::${(creatorUsername || id).toLowerCase()}`;
 }
 
 export default CampaignAnalysis;

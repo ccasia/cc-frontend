@@ -98,7 +98,12 @@ export const calculateSummaryStats = (insightsData, manualEntries = []) => {
     0
   );
   const totalSaved = allData.reduce((sum, item) => sum + getMetricValue(item.insight, 'saved'), 0);
-  const totalReach = allData.reduce((sum, item) => sum + getMetricValue(item.insight, 'reach'), 0);
+  // Reach is Instagram only: TikTok snapshots store their views as reach.
+  const totalReach = allData.reduce(
+    (sum, item) =>
+      item.platform === 'Instagram' ? sum + getMetricValue(item.insight, 'reach') : sum,
+    0
+  );
   const totalInteractions = allData.reduce(
     (sum, item) => sum + getMetricValue(item.insight, 'total_interactions'),
     0
