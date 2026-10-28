@@ -211,13 +211,6 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     campaignMutate?.();
   }, [pendingByKey, postingSubmissions, campaignMutate]);
 
-  const filteredInsightsData = useMemo(() => {
-    if (selectedPlatform === 'ALL') {
-      return insightsData;
-    }
-    return insightsData.filter((data) => data && data.platform === selectedPlatform);
-  }, [insightsData, selectedPlatform]);
-
   // Filter manual entries based on selected platform
   const filteredManualEntries = useMemo(() => {
     if (!manualEntries || manualEntries.length === 0) {
@@ -244,10 +237,17 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
     };
   }, [insightsData, manualEntries]);
 
-  const summaryStats = useMemo(() => {
+  // The selected tab's share of those posts: what the cards and their top-performer chips use.
+  const tabPosts = useMemo(() => {
     const onPlatform = (item) => selectedPlatform === 'ALL' || item.platform === selectedPlatform;
-    const insights = summaryPosts.insights.filter(onPlatform);
-    const manual = summaryPosts.manual.filter(onPlatform);
+    return {
+      insights: summaryPosts.insights.filter(onPlatform),
+      manual: summaryPosts.manual.filter(onPlatform),
+    };
+  }, [summaryPosts, selectedPlatform]);
+
+  const summaryStats = useMemo(() => {
+    const { insights, manual } = tabPosts;
 
     // If we have no insights and no manual entries, return placeholder
     if (!insights.length && !manual.length) {
@@ -259,12 +259,16 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
         totalSaved: 0,
         totalReach: 0,
         totalPosts: 0,
+        totalCreators: 0,
         avgEngagementRate: 0,
       };
     }
     // Calculate stats including both insights and manual entries
-    return calculateSummaryStats(insights, manual);
-  }, [summaryPosts, selectedPlatform]);
+    return {
+      ...calculateSummaryStats(insights, manual),
+      totalCreators: countCreators(insights, manual),
+    };
+  }, [tabPosts]);
 
   // Same posts as each tab's post count, so the Overview bars add up to the tabs.
   const platformCounts = useMemo(() => {
@@ -297,9 +301,9 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
       });
     }
 
-    // Check manual entries
-    if (filteredManualEntries && filteredManualEntries.length > 0) {
-      filteredManualEntries.forEach((entry) => {
+    // Check manual entries, skipping any that duplicate a post counted above
+    if (tabPosts.manual.length > 0) {
+      tabPosts.manual.forEach((entry) => {
         let value = 0;
         // Map metric keys to manual entry fields
         if (metricKey === 'views') value = entry.views || 0;
@@ -767,10 +771,10 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
             <>
               <Box sx={{ mb: 4 }}>
                 <CoreMetricsSection
-                  insightsData={filteredInsightsData}
+                  insightsData={tabPosts.insights}
                   availablePlatforms={availablePlatforms}
                   summaryStats={summaryStats}
-                  filteredInsightsData={filteredInsightsData}
+                  filteredInsightsData={tabPosts.insights}
                   filteredSubmissions={filteredSubmissions}
                   findTopPerformerByMetric={findTopPerformerByMetric}
                 />
@@ -778,10 +782,10 @@ const CampaignAnalysis = ({ campaign, campaignMutate, isDisabled = false }) => {
                 {!!availablePlatforms.length && (
                   <PlatformOverviewLayout
                     postCount={filteredSubmissions.length}
-                    insightsData={filteredInsightsData}
+                    insightsData={tabPosts.insights}
                     summaryStats={summaryStats}
                     platformCounts={platformCounts}
-                    filteredInsightsData={filteredInsightsData}
+                    filteredInsightsData={tabPosts.insights}
                     filteredSubmissions={filteredSubmissions}
                     availablePlatforms={availablePlatforms}
                   />
@@ -857,6 +861,18 @@ function submissionPostKey({ platform, postUrl, user }, submissionId) {
   return canonical
     ? `url::${platform}::${canonical}`
     : `submission::${platform}::${user}::${submissionId}`;
+}
+
+// One creator however many posts they have. A manual entry only carries a username, so it
+// can't be matched to the same creator's platform-synced posts.
+function countCreators(insights, manual) {
+  const creators = new Set();
+  insights.forEach((data) => creators.add(`user::${data.user}`));
+  manual.forEach((entry) => {
+    const name = entry.creatorUsername || entry.creatorName || entry.id;
+    creators.add(`manual::${name.replace(/^@/, '').toLowerCase()}`);
+  });
+  return creators.size;
 }
 
 function manualPostKey({ platform, postUrl, creatorUsername, id }) {

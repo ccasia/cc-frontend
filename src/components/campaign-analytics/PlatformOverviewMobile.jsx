@@ -336,7 +336,9 @@ const PlatformOverviewMobile = ({
                 fontSize={{ xs: 32, sm: 40 }}
                 color="#1340FF"
               >
-                {summaryStats.totalPosts}
+                {selectedPlatform === 'ALL' && availablePlatforms.length > 1
+                  ? summaryStats.totalCreators
+                  : summaryStats.totalPosts}
               </Typography>
               <Typography
                 fontFamily="Aileron"
