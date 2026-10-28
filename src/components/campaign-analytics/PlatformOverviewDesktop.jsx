@@ -569,7 +569,9 @@ const PlatformOverviewDesktop = ({
                   fontSize={55}
                   color="#1340FF"
                 >
-                  {summaryStats.totalPosts}
+                  {selectedPlatform === 'ALL' && availablePlatforms.length > 1
+                    ? summaryStats.totalCreators
+                    : summaryStats.totalPosts}
                 </Typography>
                 <Typography fontFamily="Aileron" fontWeight={600} fontSize={18} color="#1340FF">
                   {availablePlatforms.length > 1 && getPlatformLabel(selectedPlatform)}

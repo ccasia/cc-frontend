@@ -8,7 +8,7 @@ import { PlatformOverviewMobile, PlatformOverviewDesktop } from 'src/components/
 import { useAnalyticsStore } from '../stores/analytics.store';
 
 const getPlatformLabel = (platform) => {
-  if (platform === 'ALL') return 'Total Posts';
+  if (platform === 'ALL') return 'Total Creators';
   if (platform === 'Instagram') return 'Instagram Posts';
   if (platform === 'TikTok') return 'TikTok Posts';
   return '';
