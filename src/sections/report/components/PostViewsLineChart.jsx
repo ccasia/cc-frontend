@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
 import { Line, XAxis, YAxis, Tooltip, LineChart, ResponsiveContainer } from 'recharts';
@@ -6,12 +5,16 @@ import { Line, XAxis, YAxis, Tooltip, LineChart, ResponsiveContainer } from 'rec
 import { Box, Alert, Typography, CircularProgress } from '@mui/material';
 
 import { useGetPostDailyTrend } from './use-get-post-daily-trend';
+import { mondayOf, reportDayKey, reportAnchorDay } from './report-day';
 
 /**
  * PostViewsLineChart
  * Per-post variant of TopCreatorsLineChart. Renders a single creator's post
  * over a Mon-Sun week of daily views, with the same pagination chevrons that
  * step backward through history. Used in the content performance report.
+ *
+ * Snapshots store the post's total views, so a day's views are its total
+ * minus the total of the snapshot before it. The first snapshot has none.
  */
 
 const LINE_COLOR = '#FFC702';
@@ -51,6 +54,11 @@ const CustomTooltip = ({ active, payload, label }) => {
         />
         <Typography sx={{ fontSize: 12, color: '#000' }}>{formatViews(entry.value)} views</Typography>
       </Box>
+      {entry.payload?.total !== null && entry.payload?.total !== undefined && (
+        <Typography sx={{ fontSize: 11, color: '#636366', mt: 0.5 }}>
+          {formatViews(entry.payload.total)} total
+        </Typography>
+      )}
     </Box>
   );
 };
@@ -63,7 +71,7 @@ CustomTooltip.propTypes = {
 
 const CustomXAxisTick = ({ x, y, payload, chartData }) => {
   const dayData = chartData?.weekData?.find((d) => d.day === payload.value);
-  const dateFormatted = dayData?.fullDate ? dayjs(dayData.fullDate).format('DD/MM') : '';
+  const dateFormatted = dayData?.shortDate ?? '';
 
   return (
     <g transform={`translate(${x},${y})`}>
@@ -109,60 +117,40 @@ export const PostViewsLineChart = ({
 }) => {
   const [weekOffset, setWeekOffset] = useState(0); // 0 = current week, 1 = last week, etc.
 
-  // Pull a long enough window to support pagination. 6 weeks = 42 days mirrors
-  // the heatmap's default and gives a few weeks of history to step back into.
-  const { trendData, isLoading, error } = useGetPostDailyTrend(campaignId, {
-    submissionId,
-    postUrl,
-    days: 42,
-  });
+  const { trendData, isLoading, error } = useGetPostDailyTrend(campaignId, { submissionId, postUrl });
 
   const chartData = useMemo(() => {
     const rows = trendData ?? [];
 
-    // Index by YYYY-MM-DD for cell lookup
-    const byDate = new Map();
-    rows.forEach((r) => {
-      byDate.set(dayjs(r.snapshotDate).format('YYYY-MM-DD'), r);
-    });
+    const byDate = new Map(
+      rows.map((r, i) => [
+        reportDayKey(r.snapshotDate),
+        { total: r.views, views: i > 0 ? Math.max(0, r.views - rows[i - 1].views) : null },
+      ])
+    );
 
-    // Anchor on this week's Monday (Asia agnostic — uses local browser time).
-    // Then back off by weekOffset.
-    const today = dayjs().startOf('day');
-    const dow = today.day();
-    const daysToMonday = dow === 0 ? 6 : dow - 1;
-    const thisMonday = today.subtract(daysToMonday, 'day').startOf('day');
-    const visibleMonday = thisMonday.subtract(weekOffset, 'week');
+    // The week of the last data day (or today), then back by weekOffset
+    const visibleMonday = mondayOf(reportAnchorDay(rows)).subtract(weekOffset, 'week');
 
-    // Always render all 7 day-of-week slots so the X-axis is consistent
-    // (Mon → Sun). For days that haven't happened yet (current week, after
-    // today) we leave views as null — combined with connectNulls={false}
-    // on the Line, this makes the line stop visually at today.
-    const weekData = [];
-    for (let i = 0; i < 7; i += 1) {
+    // Always render all 7 day-of-week slots so the X-axis is consistent (Mon → Sun).
+    // Days without a snapshot stay null, and connectNulls={false} breaks the line there.
+    const weekData = DAY_NAMES.map((day, i) => {
       const date = visibleMonday.add(i, 'day');
-      const isFuture = date.isAfter(today, 'day');
-      const snapshot = byDate.get(date.format('YYYY-MM-DD'));
-      weekData.push({
-        day: DAY_NAMES[i],
-        date: date.format('YYYY-MM-DD'),
-        fullDate: date.toDate(),
-        views: isFuture ? null : snapshot?.views ?? null,
-      });
-    }
-
-    // Y-axis domain — only consider populated days
-    let minViews = Infinity;
-    let maxViews = -Infinity;
-    weekData.forEach((d) => {
-      if (d.views !== null && d.views !== undefined) {
-        if (d.views < minViews) minViews = d.views;
-        if (d.views > maxViews) maxViews = d.views;
-      }
+      const point = byDate.get(date.format('YYYY-MM-DD'));
+      return {
+        day,
+        shortDate: date.format('DD/MM'),
+        views: point?.views ?? null,
+        total: point?.total ?? null,
+      };
     });
+
+    const populated = weekData.map((d) => d.views).filter((v) => v !== null);
+    const hasViews = populated.length > 0;
+    const minViews = hasViews ? Math.min(...populated) : 0;
+    const maxViews = hasViews ? Math.max(...populated) : 0;
 
     // A flat line (or one point) has no range, so pad around the value instead
-    const hasViews = maxViews !== -Infinity;
     const range = maxViews - minViews;
     const padding = range > 0 ? range * 0.1 : Math.max(maxViews * 0.1, 10);
     const yMin = hasViews ? Math.max(0, Math.floor(minViews - (range > 0 ? 0 : padding))) : 0;
@@ -172,8 +160,8 @@ export const PostViewsLineChart = ({
       weekData,
       yMin,
       yMax,
-      mondayDate: visibleMonday.toDate(),
-      hasAnyData: weekData.some((d) => d.views !== null && d.views !== undefined),
+      mondayLabel: visibleMonday.format('DD/MM/YY'),
+      hasAnyData: hasViews,
     };
   }, [trendData, weekOffset]);
 
@@ -203,10 +191,12 @@ export const PostViewsLineChart = ({
     );
   }
 
-  if (!trendData || trendData.length === 0) {
+  if (!trendData || trendData.length < 2) {
     return (
       <Box sx={{ p: 2, bgcolor: 'background.neutral', borderRadius: 2, height: '100%' }}>
-        <Alert severity="info">No views data for this post yet. Data updates daily.</Alert>
+        <Alert severity="info">
+          Daily views show from the second day of data. Data updates daily.
+        </Alert>
       </Box>
     );
   }
@@ -252,7 +242,7 @@ export const PostViewsLineChart = ({
               textAlign: 'center',
             }}
           >
-            {chartData?.mondayDate ? dayjs(chartData.mondayDate).format('DD/MM/YY') : ''}
+            {chartData?.mondayLabel ?? ''}
           </Typography>
 
           <Box
