@@ -359,6 +359,8 @@ export const endpoints = {
       unsaveCampaign: (id) => `/api/campaign/unsaveCampaign/${id}`,
     },
     getCampaignLog: (id) => `/api/campaign/getCampaignLog/${id}`,
+    clientOverview: (id) => `/api/campaign/${id}/overview`,
+    featuredVideos: (id) => `/api/campaign/${id}/featured-videos`,
     logistics: {
       admin: {
         create: '/api/campaign/createLogistic',
@@ -536,6 +538,7 @@ export const endpoints = {
     clientFeedback: '/api/public/client-feedback',
   },
   client: {
+    home: '/api/client/home',
     updateClient: '/api/client/updateClient',
     checkCompany: '/api/client/checkCompany',
     createCompany: '/api/client/createCompany',

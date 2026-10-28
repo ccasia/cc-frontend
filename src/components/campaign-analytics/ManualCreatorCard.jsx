@@ -24,6 +24,7 @@ import { updateManualCreatorEntry } from 'src/api/manual-creator';
 
 import Iconify from 'src/components/iconify';
 
+import FeatureVideoButton from './FeatureVideoButton';
 import { ScrollingName } from './UserPerformanceCard';
 
 const inlineEditFieldStyle = {
@@ -871,6 +872,8 @@ const ManualCreatorCard = ({
                 </Stack>
               </Stack>
             </Stack>
+
+            <FeatureVideoButton campaignId={campaignId} manualEntryId={entry.id} />
           </Box>
 
           <Box display={{ xs: 'block', md: 'none' }} px={2} py={1}>

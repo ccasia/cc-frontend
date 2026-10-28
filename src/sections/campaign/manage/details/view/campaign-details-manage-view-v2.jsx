@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
+import { useRouter, useSearchParams } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
@@ -77,7 +77,12 @@ const CampaignDetailManageViewV2 = ({ id }) => {
     [campaign, campaignLoading]
   );
 
-  const [currentTab, setCurrentTab] = useState('general');
+  // ?tab=<value> opens a specific tab (e.g. the no-client shortlist guard links to Finalise)
+  const searchParams = useSearchParams();
+  const [currentTab, setCurrentTab] = useState(() => {
+    const requestedTab = searchParams.get('tab');
+    return TABS.some((tab) => tab.value === requestedTab) ? requestedTab : 'general';
+  });
 
   // Form state of the active tab, reported up so the header Save button can drive it
   const [formState, setFormState] = useState({ isDirty: false, isSubmitting: false });

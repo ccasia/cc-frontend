@@ -1,5 +1,6 @@
-import useSWR from 'swr';
 import dayjs from 'dayjs';
+import useSWR, { mutate } from 'swr';
+import { MotionConfig } from 'framer-motion';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import React, { useMemo, useState, useEffect } from 'react';
 
@@ -25,6 +26,12 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 
+import SubmissionViewer from 'src/sections/campaign/discover/admin/creator-submissions/submission-viewer/SubmissionViewer';
+import {
+  resetCreatorSubmissions,
+  useCreatorSubmissionsStore,
+} from 'src/sections/campaign/discover/admin/creator-submissions/store/use-creator-submissions-store';
+
 import DraftsPendingModal from './DraftsPendingModal';
 import PitchesPendingModal from './PitchesPendingModal';
 import LinksToApproveModal from './LinksToApproveModal';
@@ -35,6 +42,14 @@ import AgreementsPendingModal from './AgreementsPendingModal';
 dayjs.extend(relativeTime);
 
 const SWR_OPTS = { revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 120000 };
+
+// The submission viewer can approve drafts, links and client feedback, so these go stale when it closes
+const VIEWER_STALE_KEYS = [
+  endpoints.dashboard.attention,
+  endpoints.dashboard.linksPending,
+  endpoints.dashboard.draftsPending,
+  endpoints.dashboard.clientFeedbacks,
+];
 
 const STAT_ITEMS = (campaigns, stats, attention, avgResponseDisplay) => [
   { label: 'ACTIVE\nCAMPAIGNS', value: campaigns.length, bg: '#1a2b5e', icon: 'hugeicons:megaphone-01' },
@@ -61,7 +76,7 @@ const ATTENTION_ITEMS = (attention) => [
 const DashboardSuperadmin = () => {
   const { data: campaignsData, isLoading: campaignsLoading } = useSWR(endpoints.dashboard.campaigns, fetcher, SWR_OPTS);
   const { data: dashboardStats, isLoading: statsLoading } = useSWR(endpoints.dashboard.stats, fetcher, SWR_OPTS);
-  const { data: attentionData } = useSWR(endpoints.dashboard.attention, fetcher, { ...SWR_OPTS, dedupingInterval: 60000 });
+  const { data: attentionData, mutate: mutateAttention } = useSWR(endpoints.dashboard.attention, fetcher, { ...SWR_OPTS, dedupingInterval: 60000 });
   const { data: newlyApprovedData, isLoading: newlyApprovedLoading } = useSWR(endpoints.dashboard.newlyApproved, fetcher, SWR_OPTS);
 
   const campaigns = useMemo(
@@ -85,6 +100,21 @@ const DashboardSuperadmin = () => {
     socket?.on('onlineUsers', (data) => setOnlineUsers(data.onlineUsers));
     return () => { socket?.off('onlineUsers'); };
   }, [socket]);
+
+  useEffect(() => {
+    const unsubscribe = useCreatorSubmissionsStore.subscribe((state, prev) => {
+      if (prev.viewerOpen && !state.viewerOpen) VIEWER_STALE_KEYS.forEach((key) => mutate(key));
+    });
+    return () => {
+      unsubscribe();
+      resetCreatorSubmissions();
+    };
+  }, []);
+
+  const closeAttentionModal = (setOpen) => () => {
+    setOpen(false);
+    mutateAttention();
+  };
 
   const stats = dashboardStats?.data || {};
   const attention = attentionData || {};
@@ -460,28 +490,32 @@ const DashboardSuperadmin = () => {
 
       <AgreementsPendingModal
         open={agreementsModalOpen}
-        onClose={() => setAgreementsModalOpen(false)}
+        onClose={closeAttentionModal(setAgreementsModalOpen)}
       />
       <DraftsPendingModal
         open={draftsModalOpen}
-        onClose={() => setDraftsModalOpen(false)}
+        onClose={closeAttentionModal(setDraftsModalOpen)}
       />
       <PitchesPendingModal
         open={pitchesModalOpen}
-        onClose={() => setPitchesModalOpen(false)}
+        onClose={closeAttentionModal(setPitchesModalOpen)}
       />
       <LinksToApproveModal
         open={linksModalOpen}
-        onClose={() => setLinksModalOpen(false)}
+        onClose={closeAttentionModal(setLinksModalOpen)}
       />
       <ClientFeedbacksModal
         open={clientFeedbacksModalOpen}
-        onClose={() => setClientFeedbacksModalOpen(false)}
+        onClose={closeAttentionModal(setClientFeedbacksModalOpen)}
       />
       <OverdueInvoicesModal
         open={overdueModalOpen}
-        onClose={() => setOverdueModalOpen(false)}
+        onClose={closeAttentionModal(setOverdueModalOpen)}
       />
+
+      <MotionConfig reducedMotion="user">
+        <SubmissionViewer />
+      </MotionConfig>
     </Box>
   );
 };

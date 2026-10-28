@@ -20,6 +20,8 @@ import {
 
 import useGetCompany from 'src/hooks/use-get-company';
 
+import { isClientManager } from 'src/utils/campaign-flow';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
@@ -34,6 +36,7 @@ import {
 import CreateBrand from '../brandDialog';
 import { useGetAdmins } from '../hooks/get-am';
 import NdaAgreementField from '../nda-agreement-field';
+import { getCreditLimitError } from '../utils/campaign-credits';
 import PackageCreateDialog from '../../../packages/package-dialog';
 import CreateCompany from '../../../brand/create/brandForms/FirstForms/create-company';
 
@@ -92,7 +95,6 @@ const FinaliseCampaign = ({
   openBrand,
   openCompany,
   openPackage,
-  onValidationChange,
   setBrandState,
   onPackageLinkSuccess,
 }) => {
@@ -105,8 +107,10 @@ const FinaliseCampaign = ({
   const { user } = useAuthContext();
   const {
     watch,
+    trigger,
     setValue,
     getValues,
+    getFieldState,
     formState: { errors },
   } = useFormContext();
 
@@ -117,55 +121,67 @@ const FinaliseCampaign = ({
   const client = watch('client');
   const brand = getValues('campaignBrand');
   const campaignCredits = watch('campaignCredits');
+  const isClientCampaign = watch('isV4Submission');
 
   const creditSummary = useMemo(() => client?.creditSummary || null, [client]);
 
-  const requestedCredits = Number(campaignCredits || 0);
-  const availableCredits = creditSummary?.remainingCredits ?? 0;
+  const creditHelperText = getCreditLimitError(client, campaignCredits);
+  const creditError = Boolean(creditHelperText);
 
-  let creditError = false;
-  let creditHelperText = '';
-
-  if (requestedCredits > availableCredits) {
-    creditError = true;
-    creditHelperText = `Exceeds limit - credits available: ${availableCredits}`;
-  }
-
-  // Notify parent of credit validation status
-  useEffect(() => {
-    if (onValidationChange) {
-      onValidationChange(creditError);
-    }
-  }, [creditError, onValidationChange]);
-
-  // Open create company dialog when new client is typed
-  useEffect(() => {
-    if (client && client.inputValue) {
-      openCompany.onTrue();
-    }
-  }, [client, openCompany]);
-
-  // Open create brand dialog when new brand is typed
-  useEffect(() => {
-    if (brand?.inputValue) {
-      openBrand.onTrue();
-    }
-  }, [brand, openBrand]);
-
-  // Clear brand when switching to direct client
-  useEffect(() => {
-    if (client && client?.type === 'directClient') {
+  // Run on the admin's pick only — not on autosave restore / activate prefill (reset)
+  const handleClientChange = (event, value) => {
+    // A brand belongs to its client, so drop it whenever the client changes
+    if (value?.id !== getValues('client')?.id) {
       setValue('campaignBrand', null, { shouldValidate: true });
     }
-  }, [client, setValue]);
+    setValue('client', value, { shouldValidate: true });
+    if (value?.inputValue) openCompany.onTrue();
+  };
 
-  const filteredCampaignManagers = useMemo(
+  const handleBrandChange = (event, value) => {
+    setValue('campaignBrand', value, { shouldValidate: true });
+    if (value?.inputValue) openBrand.onTrue();
+  };
+
+  // Client users of the selected client company — only these can manage a client campaign
+  const companyClientManagers = useMemo(
     () =>
-      admins
-        ?.filter((item) => item.role === 'CSM' || item.role === 'CSL')
-        .sort((a, b) => a.name.localeCompare(b.name)) || [],
-    [admins]
+      (admins || []).filter(
+        (item) => isClientManager(item) && client?.id && item.client?.company?.id === client.id
+      ),
+    [admins, client?.id]
   );
+
+  // Client users first on a client campaign, then CSM/CSL staff — each group A–Z
+  const filteredCampaignManagers = useMemo(() => {
+    const byName = (a, b) => a.name.localeCompare(b.name);
+    const staff = (admins || [])
+      .filter((item) => item.role === 'CSM' || item.role === 'CSL')
+      .sort(byName);
+    return isClientCampaign ? [...[...companyClientManagers].sort(byName), ...staff] : staff;
+  }, [admins, isClientCampaign, companyClientManagers]);
+
+  // Drop client managers that no longer qualify (toggle turned off, or another client picked).
+  // An effect rather than a handler because RHFSwitch exposes no onChange for the toggle.
+  useEffect(() => {
+    if (!admins) return;
+    const current = getValues('campaignManager') || [];
+    const allowedClientIds = isClientCampaign ? companyClientManagers.map((c) => c.id) : [];
+    const next = current.filter((m) => !isClientManager(m) || allowedClientIds.includes(m.id));
+    if (next.length !== current.length) {
+      setValue('campaignManager', next, { shouldValidate: true });
+    } else if (getFieldState('campaignManager').error) {
+      // The client-manager rule depends on the toggle, so re-check to clear a stale error
+      trigger('campaignManager');
+    }
+  }, [admins, isClientCampaign, companyClientManagers, getValues, setValue, getFieldState, trigger]);
+
+  // Warn up front — no client user can be picked, so the client-manager rule can't be met
+  let managerHelperText;
+  if (isClientCampaign && client?.id && !companyClientManagers.length) {
+    managerHelperText =
+      'This client has no user accounts yet. Invite a client user before enabling client campaign.';
+  }
 
   return (
     <Stack spacing={3} sx={{ maxWidth: '800px', mx: 'auto', mt: 4, mb: 8 }}>
@@ -176,6 +192,7 @@ const FinaliseCampaign = ({
           placeholder="Select or Create Client"
           options={companyData || []}
           loading={companyLoading}
+          onChange={handleClientChange}
           getOptionLabel={(option) => {
             if (option.inputValue) {
               return option.inputValue;
@@ -226,6 +243,7 @@ const FinaliseCampaign = ({
             placeholder="Select or Create Brand"
             options={client?.brand || []}
             loading={companyLoading}
+            onChange={handleBrandChange}
             getOptionLabel={(option) => {
               if (option.inputValue) {
                 return option.inputValue;
@@ -369,6 +387,13 @@ const FinaliseCampaign = ({
         <Typography variant="subtitle2" fontWeight={400} color="text.secondary">
           Enabling this option allows the selected client to manage the campaign.
         </Typography>
+        {!isClientCampaign && companyClientManagers.length > 0 && (
+          <Typography variant="subtitle2" fontWeight={400} sx={{ color: 'warning.dark', mt: 0.5 }}>
+            {client?.name} has {companyClientManagers.length} client account
+            {companyClientManagers.length === 1 ? '' : 's'}. With this off, creators you
+            shortlist are approved without client review.
+          </Typography>
+        )}
       </Stack>
 
       {/* Credit Tier Toggle */}
@@ -402,26 +427,37 @@ const FinaliseCampaign = ({
               placeholder="Campaign Manager"
               options={filteredCampaignManagers}
               freeSolo
+              helperText={managerHelperText}
               isOptionEqualToValue={(option, value) => option.id === value.id}
-              getOptionLabel={(option) => option.name}
+              getOptionLabel={(option) =>
+                isClientManager(option) ? `${option.name} (Client)` : option.name
+              }
               renderTags={(selected, getTagProps) =>
-                selected.map((option, index) => (
-                  <Chip
-                    {...getTagProps({ index })}
-                    avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
-                    key={option?.id}
-                    label={option?.id === user?.id ? 'Me' : option?.name}
-                    size="small"
-                    variant="outlined"
-                    sx={{
-                      border: 1,
-                      borderColor: '#EBEBEB',
-                      boxShadow: (theme) => `0px -3px 0px 0px #E7E7E7 inset`,
-                      py: 2,
-                      px: 1,
-                    }}
-                  />
-                ))
+                selected.map((option, index) => {
+                  const isClient = isClientManager(option);
+                  return (
+                    <Chip
+                      {...getTagProps({ index })}
+                      avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
+                      key={option?.id}
+                      label={
+                        option?.id === user?.id
+                          ? 'Me'
+                          : `${option?.name}${isClient ? ' (Client)' : ''}`
+                      }
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        border: 1,
+                        borderColor: isClient ? '#1340FF' : '#EBEBEB',
+                        boxShadow: (theme) => `0px -3px 0px 0px #E7E7E7 inset`,
+                        py: 2,
+                        px: 1,
+                        ...(isClient && { bgcolor: 'rgba(19, 64, 255, 0.08)' }),
+                      }}
+                    />
+                  );
+                })
               }
             />
           </FormField>
@@ -517,7 +553,6 @@ FinaliseCampaign.propTypes = {
   openBrand: PropTypes.object,
   openCompany: PropTypes.object,
   openPackage: PropTypes.object,
-  onValidationChange: PropTypes.func,
   setBrandState: PropTypes.func,
   onPackageLinkSuccess: PropTypes.func,
 };

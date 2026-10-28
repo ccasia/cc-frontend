@@ -2,9 +2,8 @@ import PropTypes from 'prop-types';
 
 import { Box, Typography } from '@mui/material';
 
-import { sanitizeReportHtml } from '../utils/sanitize-report-html';
 import LoadingSkeleton from '../components/LoadingSkeleton';
-import useAiAnalytic from '../hooks/useAiAnalytic';
+import { sanitizeReportHtml } from '../utils/sanitize-report-html';
 
 const CampaignSummary = ({ effectiveEditMode, campaignDescription, isClientView }) => {
   if (effectiveEditMode) {

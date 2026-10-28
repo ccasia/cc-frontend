@@ -11,7 +11,7 @@ import { CalendarView } from 'src/sections/calendar/view';
 import ReportingView from 'src/sections/report/view/reporting-view';
 
 // Import the client dashboard directly without lazy loading to avoid issues
-import ClientDashboard from '../../sections/client/dashboard-client';
+import ClientHomeRoute from '../../sections/client/home';
 
 // ----------------------------------------------------------------------
 
@@ -170,7 +170,7 @@ export const dashboardRoutes = [
         path: 'client',
         element: (
           <RoleBasedGuard roles={['admin', 'client']} hasContent>
-            <ClientDashboard />
+            <ClientHomeRoute />
           </RoleBasedGuard>
         ),
       },

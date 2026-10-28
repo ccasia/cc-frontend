@@ -295,17 +295,6 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
     setOpenPitchModal(true);
   };
 
-  // const refreshData = async () => {
-  //   try {
-  //     const response = await axiosInstance.get(endpoints.campaign.get(campaignId));
-  //     setCampaign(response.data);
-  //     // If you have a separate pitches state, update that too
-  //     setPitches(response.data.pitches); // adjust according to your data structure
-  //   } catch (error) {
-  //     console.error('Error refreshing data:', error);
-  //   }
-  // };
-
   const handlePitchUpdate = (updatedPitch) => {
     if (onUpdate) {
       onUpdate();

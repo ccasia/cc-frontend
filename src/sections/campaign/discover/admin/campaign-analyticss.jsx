@@ -728,6 +728,15 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
   const { entries: manualEntries, mutate: mutateManualEntries } =
     useGetManualCreatorEntries(campaignId);
 
+  // Fetch insights for posting submissions (always fetch all, filter for display)
+  const {
+    data: insightsData,
+    isLoading: loadingInsights,
+    error: insightsError,
+    mutate: refreshInsights,
+    clearCache,
+  } = useSocialInsights(postingSubmissions, campaignId);
+
   // Update reportState when campaignId changes (user switches campaigns)
   useEffect(() => {
     if (campaignId) {
@@ -784,15 +793,6 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
     return counts;
   }, [postingSubmissions, manualEntries]);
 
-  // Fetch insights for posting submissions (always fetch all, filter for display)
-  const {
-    data: insightsData,
-    isLoading: loadingInsights,
-    error: insightsError,
-    mutate: refreshInsights,
-    clearCache,
-  } = useSocialInsights(postingSubmissions, campaignId);
-
   // Filter insights data based on selected platform
   const filteredInsightsData = useMemo(() => {
     if (selectedPlatform === 'ALL') {
@@ -821,6 +821,7 @@ const CampaignAnalytics = ({ campaign, campaignMutate, isDisabled = false }) => 
       const dedupKey = canonical
         ? `url::${entry.platform}::${canonical}`
         : `manual::${entry.platform}::${(entry.creatorUsername || entry.id).toLowerCase()}`;
+
       rows.push({
         kind: 'manual',
         dedupKey,

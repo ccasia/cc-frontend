@@ -34,7 +34,6 @@ const CreatorList = ({
   const showAddCreatorForm = useAnalyticsStore((state) => state.showAddCreatorForm);
   const formState = useAnalyticsStore((state) => state.formState);
   const selectedPlatform = useAnalyticsStore((state) => state.selectedPlatform);
-  console.log('FORM', formState);
 
   const existingKeys = useMemo(
     () =>
@@ -104,7 +103,6 @@ const CreatorList = ({
           </Button>
         ) : (
           <Stack direction="row" spacing={1.5}>
-            {/* Cancel Button */}
             <Button
               onClick={() => setShowAddCreatorForm(false)}
               disabled={formState.isSubmitting}
@@ -131,7 +129,6 @@ const CreatorList = ({
               Cancel
             </Button>
 
-            {/* Save Button */}
             <Button
               onClick={() => formRef.current?.submit()}
               disabled={!formState.isValid || formState.isSubmitting}
@@ -180,7 +177,6 @@ const CreatorList = ({
               mutateManualEntries();
               enqueueSnackbar('Creator entry added successfully', { variant: 'success' });
             }}
-            // onFormStateChange={setFormState}
           />
         )}
       </AnimatePresence>

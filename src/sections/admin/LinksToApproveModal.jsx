@@ -77,7 +77,7 @@ export default function LinksToApproveModal({ open, onClose }) {
     setLoadingId(key);
     try {
       if (submission.campaign?.submissionVersion === 'v4') {
-        await axiosInstance.post(endpoints.submission.admin.approvePostingLink, {
+        await axiosInstance.post(endpoints.submission.v4.approvePostingLink, {
           submissionId: submission.id,
           action,
         });

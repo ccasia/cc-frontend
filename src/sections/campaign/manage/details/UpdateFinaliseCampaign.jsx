@@ -22,7 +22,7 @@ import {
 import useGetClients from 'src/hooks/use-get-clients';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import { campaignHasClient } from 'src/utils/campaign-flow';
+import { isClientManager, campaignHasClient } from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -80,7 +80,13 @@ FormField.propTypes = {
 
 // Validation schema
 const UpdateFinaliseCampaignSchema = Yup.object().shape({
-  campaignManager: Yup.array().min(1, 'At least one campaign manager is required'),
+  campaignManager: Yup.array()
+    .min(1, 'At least one campaign manager is required')
+    .test(
+      'client-manager',
+      'Client campaigns need at least one client user as a campaign manager.',
+      (managers, ctx) => !ctx.parent.isV4Submission || (managers || []).some(isClientManager)
+    ),
   campaignType: Yup.string().required('Campaign type is required'),
   deliverables: Yup.array().min(1, 'At least one deliverable is required'),
   isNdaRequired: Yup.boolean(),
@@ -92,9 +98,10 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
   const { data: admins } = useGetAdmins('active');
 
   const companyId = campaign?.company?.id || campaign?.brand?.company?.id;
+  const companyName = campaign?.company?.name || campaign?.brand?.company?.name || 'This company';
 
   // Fetch clients for this company using the new hook
-  const { clients: campaignClients } = useGetClients(companyId);
+  const { clients: campaignClients, isLoading: clientsLoading } = useGetClients(companyId);
 
   // Warning dialog state for v4 submission toggle
   const [v4WarningOpen, setV4WarningOpen] = useState(false);
@@ -152,7 +159,9 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
     handleSubmit,
     reset,
     watch,
+    trigger,
     setValue,
+    getFieldState,
     formState: { isSubmitting, isDirty },
   } = methods;
 
@@ -162,6 +171,22 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
 
   const isV4Submission = watch('isV4Submission');
   const currentManagers = watch('campaignManager');
+
+  // Client users of this campaign's company first on a client campaign, then CSM/CSL staff —
+  // each group A–Z
+  const managerOptions = useMemo(() => {
+    const byName = (a, b) => (a.name || '').localeCompare(b.name || '');
+    const staff = (admins || [])
+      .filter((item) => item.role === 'CSM' || item.role === 'CSL')
+      .sort(byName);
+    return isV4Submission ? [...[...campaignClients].sort(byName), ...staff] : staff;
+  }, [admins, campaignClients, isV4Submission]);
+
+  // Warn up front — no client user can be picked, so the client-manager rule can't be met
+  const managerHelperText =
+    isV4Submission && !clientsLoading && !campaignClients.length
+      ? 'This client has no user accounts yet. Invite a client user before enabling client campaign.'
+      : undefined;
 
   // Handle v4 toggle change with warning dialog
   const handleV4ToggleChange = (event) => {
@@ -192,6 +217,9 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
       setValue('campaignManager', nonClientManagers, { shouldDirty: true });
     }
 
+    // The client-manager rule depends on the toggle, so re-check to clear a stale error
+    if (getFieldState('campaignManager').error) trigger('campaignManager');
+
     setV4WarningOpen(false);
     setPendingV4Value(null);
   };
@@ -218,6 +246,7 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
         deliverables: data.deliverables,
         isCreditTier: data.isCreditTier,
         isNdaRequired: data.isNdaRequired,
+        isClientCampaign: !!data.isV4Submission,
       });
 
       enqueueSnackbar('Campaign finalise settings updated successfully');
@@ -267,6 +296,13 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
                 ? 'Client users are attached as campaign managers and review approvals. Disabling removes them.'
                 : "Enabling this attaches the campaign's client users as managers — approvals will route through them.")}
           </Typography>
+          {campaign?.submissionVersion === 'v4' && !isV4Submission && campaignClients.length > 0 && (
+            <Typography variant="caption" fontWeight={400} sx={{ color: 'warning.dark', mt: 0.5 }}>
+              {companyName} has {campaignClients.length} client account
+              {campaignClients.length === 1 ? '' : 's'}. With this off, creators you shortlist are
+              approved without client review.
+            </Typography>
+          )}
         </Stack>
 
         {/* Credit Tier Toggle */}
@@ -320,13 +356,16 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
                 name="campaignManager"
                 multiple
                 placeholder="Campaign Manager"
-                options={admins}
+                options={managerOptions}
                 freeSolo
+                helperText={managerHelperText}
                 isOptionEqualToValue={(option, value) => option.id === value.id}
-                getOptionLabel={(option) => option.name || ''}
+                getOptionLabel={(option) =>
+                  isClientManager(option) ? `${option.name || ''} (Client)` : option.name || ''
+                }
                 renderTags={(selected, getTagProps) =>
                   selected.map((option, index) => {
-                    const isClient = option?.role === 'Client' || option?.role === 'client';
+                    const isClient = isClientManager(option);
                     return (
                       <Chip
                         {...getTagProps({ index })}

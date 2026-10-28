@@ -58,7 +58,7 @@ import {
 } from 'src/sections/campaign/discover/admin/store/use-spreadsheet';
 
 import CampaignFAQ from '../campaign-faq';
-import { useTabs } from '../store/use-tabs';
+import { useTabs, setCurrentTab } from '../store/use-tabs';
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalysis from '../campaign-analytics';
 import CampaignTabs from '../components/campaign-tabs';
@@ -70,12 +70,14 @@ import CampaignOverviewClient from '../campaign-overview-client';
 import CampaignDraftSubmissions from '../campaign-draft-submission';
 import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
 import CampaignDetailContentClient from '../campaign-detail-content-client';
+import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
+import ClientCampaignHeader from '../../client/overview/client-campaign-header';
+import ClientCampaignOverview from '../../client/overview/client-campaign-overview';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 import CampaignCreatorSubmissions from '../creator-submissions/CampaignCreatorSubmissions';
-import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -177,11 +179,22 @@ const CampaignDetailView = ({
 
   const currentTab = useTabs((state) => state.currentTab);
 
+  const [linkedTab, setLinkedTab] = useState(() => searchParams.get('tab'));
+
+  useEffect(() => {
+    if (!linkedTab) return;
+    setCurrentTab(linkedTab);
+    setLinkedTab(null);
+  }, [linkedTab]);
+
   // Check if user is client (demo sessions render the read-only client view)
   const isClient =
     publicReadonly || isDemo || user?.role === 'client' || user?.admin?.role?.name === 'Client';
 
   const isSuperAdmin = user?.admin?.mode === 'god';
+
+  // Demo and public read-only views can't call the client overview endpoint.
+  const showClientOverview = user?.role === 'client' && !isDemo && !publicReadonly;
 
   const returnTo = searchParams.get('returnTo');
   const safeReturnTo = returnTo && returnTo.startsWith('/') ? returnTo : null;
@@ -238,6 +251,7 @@ const CampaignDetailView = ({
   const renderTabContent = () => {
     switch (currentTab) {
       case 'overview':
+        if (showClientOverview) return <ClientCampaignOverview campaignId={campaign?.id || id} />;
         return isClient ? (
           <CampaignOverviewClient campaign={campaign} onUpdate={campaignMutate} />
         ) : (
@@ -418,26 +432,36 @@ const CampaignDetailView = ({
         px: { xs: 2, sm: 4 },
       }}
     >
-      <CampaignHeader
-        campaign={campaign}
-        onBack={handleBackNavigation}
-        isClient={isClient}
-        openInitialActivateDialog={initialActivateDialog.onTrue}
-        openActivateDialog={activateDialog.onTrue}
-        handleOpenCampaignLog={campaignLog.onTrue}
-      />
+      {showClientOverview ? (
+        <ClientCampaignHeader
+          campaignId={campaign?.id || id}
+          onBack={handleBackNavigation}
+          tabs={<CampaignTabs campaign={campaign} variant="compact" />}
+        />
+      ) : (
+        <>
+          <CampaignHeader
+            campaign={campaign}
+            onBack={handleBackNavigation}
+            isClient={isClient}
+            openInitialActivateDialog={initialActivateDialog.onTrue}
+            openActivateDialog={activateDialog.onTrue}
+            handleOpenCampaignLog={campaignLog.onTrue}
+          />
 
-      {/* View-only banner for CSMs viewing non-managed campaigns */}
-      {isViewOnly && !isClient && <ViewOnlyBanner />}
+          {/* View-only banner for CSMs viewing non-managed campaigns */}
+          {isViewOnly && !isClient && <ViewOnlyBanner />}
 
-      <CampaignTabs
-        campaign={campaign}
-        isDemo={isDemo}
-        publicReadonly={publicReadonly}
-        forcedTab={forcedTab}
-      />
+          <CampaignTabs
+            campaign={campaign}
+            isDemo={isDemo}
+            publicReadonly={publicReadonly}
+            forcedTab={forcedTab}
+          />
+        </>
+      )}
 
-      {!campaignLoading ? renderTabContent() : <LoadingScreen />}
+      {!campaignLoading && !linkedTab ? renderTabContent() : <LoadingScreen />}
 
       {copyDialogContainer}
 

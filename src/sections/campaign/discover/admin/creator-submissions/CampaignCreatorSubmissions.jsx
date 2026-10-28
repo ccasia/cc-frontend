@@ -15,8 +15,8 @@ import { MIN_CARD_WIDTH } from './utils/constants';
 import useGetSubmissions from './hooks/use-get-submissions';
 import SubmissionViewer from './submission-viewer/SubmissionViewer';
 import CreatorSubmissionGrid from './components/CreatorSubmissionGrid';
-import { groupByCreator, getFilterCounts, filterSubmissions } from './utils/utils';
 import CreatorSubmissionsToolbar from './components/CreatorSubmissionsToolbar';
+import { groupByCreator, getFilterCounts, filterSubmissions } from './utils/utils';
 import CreatorSubmissionCardSkeleton from './components/CreatorSubmissionCardSkeleton';
 import useV4SubmissionListSocket from '../submissions/v4/shared/use-v4-submission-list-socket';
 import {

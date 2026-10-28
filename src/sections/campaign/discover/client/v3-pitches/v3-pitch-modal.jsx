@@ -44,10 +44,12 @@ import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 
 import WarningMessage from './guest-extraction/warning-message';
+import useNoClientGuard from './no-client-guard/use-no-client-guard';
 import CampaignAgreementEdit from '../../admin/campaign-agreement-edit';
 import { canEditFailedMetrics } from './guest-extraction/manual-metrics';
 import ManualMetricsDialog from './guest-extraction/manual-metrics-dialog';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
+import NoClientConfirmDialog from './no-client-guard/NoClientConfirmDialog';
 import { failureReasonShort } from './guest-extraction/extraction-error-copy';
 import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
 import {
@@ -111,6 +113,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
   const { tiers: activeTiers } = useGetActiveCreditTiers();
   const { user } = useAuthContext();
   const navigate = useNavigate();
+  const { guard, dialogProps: noClientDialogProps } = useNoClientGuard(campaign);
 
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -379,8 +382,11 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
 
   const handleApprove = () => {
     if (isAdmin && (displayStatus === 'PENDING_REVIEW' || displayStatus === 'MAYBE')) {
-      // Explicit action: admin approval is final (forwarding is the Send to Client button)
-      handleAction('approve', 'approve', { adminComments: comments, action: 'approve' });
+      // Explicit action: admin approval is final (forwarding is the Send to Client button).
+      // With no client attached, confirm first when the client-campaign toggle looks forgotten
+      guard(() =>
+        handleAction('approve', 'approve', { adminComments: comments, action: 'approve' })
+      );
     } else if (isClient && displayStatus === 'PENDING_REVIEW') {
       handleAction('approve', 'approve/client', { adminComments: comments });
     }
@@ -1300,6 +1306,8 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
         // Same as the other actions here: the list refreshes and the modal closes.
         onSaved={(saved) => onUpdate?.({ ...currentPitch, ...saved })}
       />
+
+      <NoClientConfirmDialog {...noClientDialogProps} />
     </>
   );
 };
