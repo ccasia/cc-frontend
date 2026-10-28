@@ -1,10 +1,10 @@
-import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import React, { useMemo, Fragment } from 'react';
 
 import { Box, Alert, Tooltip, Typography, CircularProgress } from '@mui/material';
 
 import { useGetPostDailyTrend } from './use-get-post-daily-trend';
+import { mondayOf, reportDay, reportDayKey, reportAnchorDay } from './report-day';
 
 /**
  * PostEngagementRateHeatmap
@@ -71,42 +71,30 @@ const computeScales = (rates) => {
 };
 
 export const PostEngagementRateHeatmap = ({ campaignId, submissionId, postUrl, weeks = 6 }) => {
-  const days = weeks * 7;
-  const { trendData, isLoading, error } = useGetPostDailyTrend(campaignId, {
-    submissionId,
-    postUrl,
-    days,
-  });
+  const { trendData, isLoading, error } = useGetPostDailyTrend(campaignId, { submissionId, postUrl });
 
-  // Build a 6 (or N) × 7 grid where index 0 = oldest week, last = latest.
-  // Always anchor on today's week so the rightmost column is the current
-  // week; cells past today render as empty (same color used for missing
-  // data), which gives the "shaded up to today" look.
-  const { heatmapGrid, scales } = useMemo(() => {
+  // Oldest week on the left, the week of the last data day (or today) on the right.
+  // `weeks` is the minimum; a longer campaign gets a column for each week it ran.
+  const { heatmapGrid, scales, weekCount } = useMemo(() => {
     const rows = trendData ?? [];
     const rates = rows.map((r) => r.engagementRate).filter((v) => v !== null && v > 0);
     const dynamicScales = computeScales(rates);
 
-    // Index snapshots by YYYY-MM-DD for O(1) cell lookup
-    const byDate = new Map();
-    rows.forEach((r) => {
-      byDate.set(dayjs(r.snapshotDate).format('YYYY-MM-DD'), r);
-    });
+    const byDate = new Map(rows.map((r) => [reportDayKey(r.snapshotDate), r]));
 
-    const anchorDate = dayjs();
-    const anchorDow = anchorDate.day(); // 0 = Sun
-    const daysFromMonday = anchorDow === 0 ? 6 : anchorDow - 1;
-    const latestMonday = anchorDate.subtract(daysFromMonday, 'day').startOf('day');
+    const latestMonday = mondayOf(reportAnchorDay(rows));
+    const firstMonday = rows.length ? mondayOf(reportDay(rows[0].snapshotDate)) : latestMonday;
+    const count = Math.max(weeks, latestMonday.diff(firstMonday, 'week') + 1);
 
     const grid = [];
-    for (let w = 0; w < weeks; w += 1) {
-      const weekMonday = latestMonday.subtract(weeks - 1 - w, 'week');
+    for (let w = 0; w < count; w += 1) {
+      const weekMonday = latestMonday.subtract(count - 1 - w, 'week');
       const weekData = [];
       for (let d = 0; d < 7; d += 1) {
         const cellDate = weekMonday.add(d, 'day');
         const snapshot = byDate.get(cellDate.format('YYYY-MM-DD'));
         weekData.push({
-          date: cellDate.toDate(),
+          label: cellDate.format('ddd, MMM D, YYYY'),
           engagementRate: snapshot?.engagementRate ?? null,
           views: snapshot?.views ?? null,
           hasData: !!snapshot,
@@ -115,7 +103,7 @@ export const PostEngagementRateHeatmap = ({ campaignId, submissionId, postUrl, w
       grid.push(weekData);
     }
 
-    return { heatmapGrid: grid, scales: dynamicScales };
+    return { heatmapGrid: grid, scales: dynamicScales, weekCount: count };
   }, [trendData, weeks]);
 
   const getHeatColor = (rate) => {
@@ -179,7 +167,7 @@ export const PostEngagementRateHeatmap = ({ campaignId, submissionId, postUrl, w
         sx={{
           flex: 1,
           display: 'grid',
-          gridTemplateColumns: `auto repeat(${weeks}, minmax(0, 1fr))`,
+          gridTemplateColumns: `auto repeat(${weekCount}, minmax(0, 1fr))`,
           gridTemplateRows: {
             xs: 'repeat(7, minmax(28px, 1fr)) auto auto auto',
             md: 'repeat(7, minmax(37px, 1fr)) auto auto auto',
@@ -191,16 +179,16 @@ export const PostEngagementRateHeatmap = ({ campaignId, submissionId, postUrl, w
           <Fragment key={day}>
             <Box sx={{ ...labelSx, minWidth: { xs: 30, md: 40 } }}>{day}</Box>
             {heatmapGrid.map((weekData, weekIndex) => {
-              const cell = weekData[displayRow] || { date: null, engagementRate: null };
+              const cell = weekData[displayRow] || { label: null, engagementRate: null };
 
               return (
                 <Tooltip
                   key={`${weekIndex}-${displayRow}`}
                   title={
-                    cell?.date ? (
+                    cell?.label ? (
                       <Box>
                         <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                          {dayjs(cell.date).format('ddd, MMM D, YYYY')}
+                          {cell.label}
                         </Typography>
                         <Typography variant="caption" display="block">
                           Engagement Rate:{' '}
@@ -240,7 +228,7 @@ export const PostEngagementRateHeatmap = ({ campaignId, submissionId, postUrl, w
 
         {/* X-axis: Week Labels */}
         <Box />
-        {Array.from({ length: weeks }).map((_, weekIndex) => (
+        {Array.from({ length: weekCount }).map((_, weekIndex) => (
           <Box
             key={`week-label-${weekIndex}`}
             sx={{ ...labelSx, justifyContent: 'center', height: { xs: 24, md: 32 } }}
