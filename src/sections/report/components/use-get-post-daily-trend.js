@@ -15,16 +15,19 @@ import axios from 'axios';
  * @param {object} options
  * @param {string} [options.submissionId]
  * @param {string} [options.postUrl]
- * @param {number} [options.days] - default 42 (6 weeks)
+ * @param {number} [options.days] - default: every stored day, so a finished campaign keeps its history
  */
-export const useGetPostDailyTrend = (campaignId, { submissionId, postUrl, days = 42 } = {}) => {
+export const useGetPostDailyTrend = (campaignId, { submissionId, postUrl, days } = {}) => {
+  const daysQuery = days ? `days=${days}` : '';
   let url = null;
   if (campaignId && postUrl) {
     url = `/api/campaign/${campaignId}/post-engagement-snapshots/daily-by-url?postUrl=${encodeURIComponent(
       postUrl
-    )}&days=${days}`;
+    )}${daysQuery ? `&${daysQuery}` : ''}`;
   } else if (campaignId && submissionId) {
-    url = `/api/campaign/${campaignId}/post-engagement-snapshots/daily/${submissionId}?days=${days}`;
+    url = `/api/campaign/${campaignId}/post-engagement-snapshots/daily/${submissionId}${
+      daysQuery ? `?${daysQuery}` : ''
+    }`;
   }
 
   const { data, error, isLoading, mutate } = useSWR(
