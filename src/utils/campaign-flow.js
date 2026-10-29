@@ -17,6 +17,14 @@
 export const isClientManager = (manager) =>
   manager?.role === 'Client' || manager?.role === 'client' || Boolean(manager?.client);
 
+const CS_ROLES = ['CSM', 'CSL'];
+
+export const isCsManager = (manager) =>
+  CS_ROLES.includes(manager?.role) || CS_ROLES.includes(manager?.admin?.role?.name);
+
+export const CS_MANAGER_REQUIRED_MESSAGE =
+  'At least one CS admin is required as a campaign manager.';
+
 const isClientAdmin = (ca) =>
   isClientManager(ca?.admin?.user) || ca?.admin?.role?.name === 'Client';
 

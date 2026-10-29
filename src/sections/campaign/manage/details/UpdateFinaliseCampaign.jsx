@@ -22,7 +22,12 @@ import {
 import useGetClients from 'src/hooks/use-get-clients';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import { isClientManager, campaignHasClient } from 'src/utils/campaign-flow';
+import {
+  isCsManager,
+  isClientManager,
+  campaignHasClient,
+  CS_MANAGER_REQUIRED_MESSAGE,
+} from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -86,6 +91,9 @@ const UpdateFinaliseCampaignSchema = Yup.object().shape({
       'client-manager',
       'Client campaigns need at least one client user as a campaign manager.',
       (managers, ctx) => !ctx.parent.isV4Submission || (managers || []).some(isClientManager)
+    )
+    .test('cs-manager', CS_MANAGER_REQUIRED_MESSAGE, (managers) =>
+      (managers || []).some(isCsManager)
     ),
   campaignType: Yup.string().required('Campaign type is required'),
   deliverables: Yup.array().min(1, 'At least one deliverable is required'),
