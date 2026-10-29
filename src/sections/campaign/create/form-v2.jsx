@@ -32,8 +32,12 @@ import useGetCompany from 'src/hooks/use-get-company';
 import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 
-import { isClientManager } from 'src/utils/campaign-flow';
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import {
+  isCsManager,
+  isClientManager,
+  CS_MANAGER_REQUIRED_MESSAGE,
+} from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
 import NextStepsIcon from 'src/assets/icons/next-steps-icon';
@@ -46,6 +50,7 @@ import DraftSaveIndicator from './draft-save-indicator';
 import { diffUserContent } from './utils/has-user-content';
 import { getCreditLimitError } from './utils/campaign-credits';
 import useCampaignDraftAutosave from './hooks/use-campaign-draft-autosave';
+import { registerFailedNext, resetCampaignCreate } from './store/use-campaign-create-store';
 import {
   isInBackSection,
   isInFrontSection,
@@ -272,6 +277,8 @@ function CreateCampaignFormV2({
         otherwise: (s) => s,
       }),
     campaignCredits: Yup.number()
+      // A cleared input is '' (NaN once cast) — show the required message, not Yup's type error
+      .typeError('Campaign credits is required.')
       .min(1, 'Minimum need to be 1')
       .required('Campaign credits is required.'),
     campaignManager: Yup.array()
@@ -281,6 +288,9 @@ function CreateCampaignFormV2({
         'client-manager',
         'Client campaigns need at least one client user as a campaign manager.',
         (managers, ctx) => !ctx.parent.isV4Submission || (managers || []).some(isClientManager)
+      )
+      .test('cs-manager', CS_MANAGER_REQUIRED_MESSAGE, (managers) =>
+        (managers || []).some(isCsManager)
       ),
     campaignType: Yup.string().required('Campaign type is required.'),
     deliverables: Yup.array()
@@ -498,6 +508,9 @@ function CreateCampaignFormV2({
     setShowAdditionalDetails(false);
   };
 
+  // Per-form UI state lives in the create store — clear it when the form closes
+  useEffect(() => resetCampaignCreate, []);
+
   // The draft picker lives on the discover page now, so the chosen draft arrives
   // as a prop. The dialog is keyed on it, so this only ever runs once per mount.
   const initialDraftLoadedRef = useRef(false);
@@ -545,9 +558,11 @@ function CreateCampaignFormV2({
     if (deliverables.length === 0) deliverables.push('UGC_VIDEOS');
 
     // Map assigned admins to the user objects the manager autocomplete expects.
+    // Carry the admin role name (CSM / CSL / Client) like the /user/admins options do, so the
+    // CS-admin and client-manager rules recognise prefilled managers
     const campaignManager = (campaign.campaignAdmin || [])
-      .map((ca) => ca.admin?.user)
-      .filter(Boolean);
+      .filter((ca) => ca.admin?.user)
+      .map((ca) => ({ ...ca.admin.user, role: ca.admin.role?.name || ca.admin.user.role }));
 
     // Industries may be stored as an array or a comma-joined string.
     let campaignIndustries = [];
@@ -769,6 +784,8 @@ function CreateCampaignFormV2({
 
       localStorage.setItem('adminActiveStep', nextStep);
       setActiveStep(nextStep);
+    } else {
+      registerFailedNext();
     }
   };
 
@@ -1295,6 +1312,7 @@ function CreateCampaignFormV2({
           !getCreditLimitError(client, credits) &&
           manager?.length > 0 &&
           (!formValues.isV4Submission || manager.some(isClientManager)) &&
+          manager.some(isCsManager) &&
           type &&
           deliverables?.length > 0
         );
