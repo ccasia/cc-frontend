@@ -136,6 +136,9 @@ const Feedback = lazy(() => import('src/pages/dashboard/feedback/feedback'));
 // Release Notes
 const ReleaseNotes = lazy(() => import('src/pages/dashboard/release-notes'));
 
+// Mobile app version policy (superadmin only)
+const AppVersions = lazy(() => import('src/pages/dashboard/app-versions'));
+
 // Mobile View
 const MobileModalView = lazy(
   () => import('src/sections/campaign/discover/creator/mobile-modal-view')
@@ -794,6 +797,14 @@ export const dashboardRoutes = [
         element: (
           <RoleBasedGuard roles={['superadmin']} hasContent>
             <ReleaseNotes />
+          </RoleBasedGuard>
+        ),
+      },
+      {
+        path: 'app-versions',
+        element: (
+          <RoleBasedGuard roles={['superadmin']} hasContent>
+            <AppVersions />
           </RoleBasedGuard>
         ),
       },
