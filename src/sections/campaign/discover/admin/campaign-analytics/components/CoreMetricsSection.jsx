@@ -1,5 +1,5 @@
+import React from 'react';
 import PropTypes from 'prop-types';
-import React, { useMemo } from 'react';
 
 import { Box, Grid } from '@mui/material';
 
@@ -8,23 +8,12 @@ import { useAnalyticsStore } from '../stores/analytics.store';
 
 const CoreMetricsSection = ({
   summaryStats: stats,
-  postingSubmissions,
+  availablePlatforms,
   filteredInsightsData,
   filteredSubmissions,
   findTopPerformerByMetric,
 }) => {
   const selectedPlatform = useAnalyticsStore((state) => state.selectedPlatform);
-
-  const availablePlatforms = useMemo(() => {
-    if (postingSubmissions.length === 0) {
-      // Return default platforms for empty state display
-      return ['Instagram', 'TikTok'];
-    }
-    const platforms = [
-      ...new Set(postingSubmissions.map((sub) => sub && sub.platform).filter(Boolean)),
-    ];
-    return platforms.length > 0 ? platforms : ['Instagram', 'TikTok'];
-  }, [postingSubmissions]);
 
   // Define metrics configuration
   const metricsConfig = [
@@ -85,7 +74,7 @@ export default CoreMetricsSection;
 
 CoreMetricsSection.propTypes = {
   summaryStats: PropTypes.object,
-  postingSubmissions: PropTypes.array,
+  availablePlatforms: PropTypes.array,
   filteredInsightsData: PropTypes.array,
   filteredSubmissions: PropTypes.array,
   findTopPerformerByMetric: PropTypes.array,

@@ -336,7 +336,9 @@ const PlatformOverviewMobile = ({
                 fontSize={{ xs: 32, sm: 40 }}
                 color="#1340FF"
               >
-                {summaryStats.totalPosts}
+                {selectedPlatform === 'ALL' && availablePlatforms.length > 1
+                  ? summaryStats.totalCreators
+                  : summaryStats.totalPosts}
               </Typography>
               <Typography
                 fontFamily="Aileron"
@@ -345,9 +347,7 @@ const PlatformOverviewMobile = ({
                 color="#636366"
               >
                 {availablePlatforms.length > 1 && getPlatformLabel(selectedPlatform)}
-                {availablePlatforms.length < 2 &&
-                  insightsData.length > 0 &&
-                  `${insightsData[0].platform} Posts`}
+                {availablePlatforms.length < 2 && `${availablePlatforms[0]} Posts`}
               </Typography>
             </Box>
           </Grid>
