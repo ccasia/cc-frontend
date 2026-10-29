@@ -7,6 +7,7 @@ import { Box, Stack, Tooltip, IconButton, Typography, CircularProgress } from '@
 import { useResponsive } from 'src/hooks/use-responsive';
 
 import Iconify from 'src/components/iconify';
+import { AnnotationCanvas, AnnotationToolbar } from 'src/components/video-annotation';
 
 import useViewerData from '../hooks/use-viewer-data';
 import useReleaseMedia from '../hooks/use-release-media';
@@ -21,6 +22,7 @@ import {
   getItemNoun,
   getShownUrl,
   getItemCount,
+  formatTimestamp,
   getVersionCount,
   getSubmissionMedia,
 } from '../utils';
@@ -30,9 +32,20 @@ import {
   setDuration,
   setIsPlaying,
   setCurrentTime,
+  undoAnnotation,
+  closeAnnotation,
   setMediaSwitching,
+  setAnnotationTool,
+  addAnnotationShape,
+  setAnnotationColor,
+  setAnnotationTextBg,
+  setAnnotationStroke,
   registerVideoElement,
+  updateAnnotationShape,
+  deleteAnnotationShape,
+  selectAnnotationShape,
   closeSubmissionViewer,
+  clearAnnotationShapes,
   useCreatorSubmissionsStore,
 } from '../../store/use-creator-submissions-store';
 
@@ -395,6 +408,99 @@ VideoLayer.propTypes = {
   sx: PropTypes.object,
 };
 
+const centredOverlaySx = {
+  position: 'absolute',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  zIndex: OVERLAY_Z,
+};
+
+const centredTagSx = { ...overlayTagSx, ...centredOverlaySx, whiteSpace: 'nowrap' };
+
+const VIEWED_TAG_TOP = 48;
+
+// Shape types drawn with a line, so they have a thickness
+const LINE_TYPES = ['freehand', 'arrow', 'rect'];
+
+function FrameAnnotation({ aspect }) {
+  const annotationMode = useCreatorSubmissionsStore((s) => s.annotationMode);
+  const annotationShapes = useCreatorSubmissionsStore((s) => s.annotationShapes);
+  const canUndo = useCreatorSubmissionsStore((s) => s.annotationPast.length > 0);
+  const selectedIndex = useCreatorSubmissionsStore((s) => s.annotationSelected);
+  const annotationFrameMs = useCreatorSubmissionsStore((s) => s.annotationFrameMs);
+  const viewedAnnotation = useCreatorSubmissionsStore((s) => s.viewedAnnotation);
+  const tool = useCreatorSubmissionsStore((s) => s.annotationTool);
+  const color = useCreatorSubmissionsStore((s) => s.annotationColor);
+  const textBg = useCreatorSubmissionsStore((s) => s.annotationTextBg);
+  const stroke = useCreatorSubmissionsStore((s) => s.annotationStroke);
+
+  if (!annotationMode && !viewedAnnotation) return null;
+
+  if (!annotationMode) {
+    return (
+      <>
+        <AnnotationCanvas
+          shapes={viewedAnnotation.shapes || []}
+          aspect={aspect}
+          sx={{ zIndex: OVERLAY_Z }}
+        />
+        <Typography sx={{ ...centredTagSx, top: VIEWED_TAG_TOP }}>
+          Drawing at {formatTimestamp(viewedAnnotation.frameTimeMs / 1000)} · play to hide
+        </Typography>
+      </>
+    );
+  }
+
+  const selectedShape = annotationShapes[selectedIndex];
+  // Lines and boxes have a thickness; text doesn't
+  const showStroke = ['pen', 'arrow', 'rect'].includes(tool) || LINE_TYPES.includes(selectedShape?.type);
+
+  return (
+    <>
+      <AnnotationCanvas
+        editable
+        shapes={annotationShapes}
+        aspect={aspect}
+        tool={tool}
+        color={color}
+        textBg={textBg}
+        stroke={stroke}
+        selectedIndex={selectedIndex}
+        onAddShape={addAnnotationShape}
+        onChangeShape={updateAnnotationShape}
+        onDeleteShape={deleteAnnotationShape}
+        onSelect={selectAnnotationShape}
+        sx={{ zIndex: OVERLAY_Z }}
+      />
+      <AnnotationToolbar
+        tool={tool}
+        color={color}
+        textBg={textBg}
+        showTextBg={tool === 'text' || selectedShape?.type === 'text'}
+        stroke={stroke}
+        showStroke={showStroke}
+        onStrokeChange={setAnnotationStroke}
+        canUndo={canUndo}
+        canClear={annotationShapes.length > 0}
+        onUndo={undoAnnotation}
+        onClear={clearAnnotationShapes}
+        onClose={closeAnnotation}
+        onToolChange={setAnnotationTool}
+        onColorChange={setAnnotationColor}
+        onTextBgChange={setAnnotationTextBg}
+        sx={{ ...centredOverlaySx, top: 12 }}
+      />
+      <Typography sx={{ ...centredTagSx, bottom: 12 }}>
+        Drawing at {formatTimestamp((annotationFrameMs ?? 0) / 1000)} · add a note to post it
+      </Typography>
+    </>
+  );
+}
+
+FrameAnnotation.propTypes = {
+  aspect: PropTypes.number,
+};
+
 /**
  * Media stage that never flashes empty between switches: the incoming media loads invisibly
  * on top of the current (paused) one and fades in once it has a frame, while the frame eases
@@ -411,6 +517,7 @@ function ViewerMedia({ submission }) {
   const { advanceItem } = useViewerNavigation();
   const isMobile = useResponsive('down', 'md');
   const keepable = !isMobile && submission.submissionType?.type !== 'RAW_FOOTAGE';
+  const annotationMode = useCreatorSubmissionsStore((s) => s.annotationMode);
 
   // Only start loading once switching has paused, so a fast swipe through several
   // creators loads just the one you land on. Settled as a primitive "kind|url" key.
@@ -483,7 +590,7 @@ function ViewerMedia({ submission }) {
       {...{ [VIDEO_FRAME_ATTR]: '' }}
       onClick={
         (isPhotoSet && advanceItem) ||
-        (isVideo && !isMobile && !isSwitching && togglePlay) ||
+        (isVideo && !isMobile && !isSwitching && !annotationMode && togglePlay) ||
         undefined
       }
       sx={{
@@ -557,9 +664,14 @@ function ViewerMedia({ submission }) {
         </Box>
       )}
 
-      {isVideo && <VersionArrows />}
+      {isVideo && activeLayer && !isSwitching && <FrameAnnotation aspect={activeLayer.ratio} />}
+
+      {/* While drawing, the frame can't change underneath: no upload arrows or scrubber */}
+      {isVideo && !annotationMode && <VersionArrows />}
       {isItemSet && <ItemPager noun={getItemNoun(submission)} />}
-      {isVideo && !isMobile && activeLayer && <VideoControls submission={submission} />}
+      {isVideo && !isMobile && activeLayer && !annotationMode && (
+        <VideoControls submission={submission} />
+      )}
     </Box>
   );
 }
@@ -682,10 +794,12 @@ export default function ViewerMediaPane() {
   // Covers the whole pane; off in the stacked mobile layout so the page can scroll
   const paneRef = useRef(null);
   const isStacked = useResponsive('down', 'md');
+  // Off while drawing too: switching media would throw the drawing away
+  const annotationMode = useCreatorSubmissionsStore((s) => s.annotationMode);
   useSwipeNavigation(
     paneRef,
     { onUp: prevCreator, onDown: nextCreator, onLeft: goLeft, onRight: goRight },
-    { enabled: !isStacked }
+    { enabled: !isStacked && !annotationMode }
   );
 
   return (

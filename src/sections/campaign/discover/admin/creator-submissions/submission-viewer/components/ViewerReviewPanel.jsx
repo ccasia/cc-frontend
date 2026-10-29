@@ -534,16 +534,18 @@ CaptionSection.propTypes = {
 // Seconds of video per pixel dragged on the timestamp chip
 const DRAG_SECONDS_PER_PX = 0.15;
 
-// The feedback's timestamp; drag sideways to nudge it (and the video) to the right frame
-function DraftTimestamp({ time, onAdjust }) {
+// The feedback's timestamp; drag sideways to nudge it (and the video) to the right frame.
+// Locked while there's a drawing, which belongs to the frame it was drawn on.
+function DraftTimestamp({ time, onAdjust, locked = false }) {
   const dragRef = useRef(null);
 
   return (
-    <Tooltip title="Drag to adjust" placement="top">
+    <Tooltip title={locked ? 'Locked to your drawing' : 'Drag to adjust'} placement="top">
       <Box
         component="span"
         onPointerDown={(event) => {
           event.preventDefault();
+          if (locked) return;
           event.currentTarget.setPointerCapture(event.pointerId);
           dragRef.current = { startX: event.clientX, startTime: time };
         }}
@@ -561,12 +563,19 @@ function DraftTimestamp({ time, onAdjust }) {
         sx={{
           ...timestampChipSx,
           mt: '1px',
-          cursor: 'ew-resize',
+          cursor: locked ? 'default' : 'ew-resize',
           userSelect: 'none',
           touchAction: 'none',
-          '&:hover': { bgcolor: '#DCD8FF' },
+          '&:hover': locked ? undefined : { bgcolor: '#DCD8FF' },
         }}
       >
+        {locked && (
+          <Iconify
+            icon="solar:pen-bold"
+            width={11}
+            sx={{ mr: 0.5, verticalAlign: '-1px' }}
+          />
+        )}
         {formatTimestamp(time)}
       </Box>
     </Tooltip>
@@ -576,6 +585,7 @@ function DraftTimestamp({ time, onAdjust }) {
 DraftTimestamp.propTypes = {
   time: PropTypes.number.isRequired,
   onAdjust: PropTypes.func.isRequired,
+  locked: PropTypes.bool,
 };
 
 function ReviewComposer({ submission }) {
@@ -584,6 +594,9 @@ function ReviewComposer({ submission }) {
     draft,
     draftTime,
     sending,
+    annotationMode,
+    hasDrawing,
+    frameLocked,
     unsentComments,
     hasUnsentFeedback,
     changeDraft,
@@ -656,7 +669,9 @@ function ReviewComposer({ submission }) {
     emptyFeedbackError = `Tick at least one comment for ${firstName}, or add feedback here.`;
   }
 
-  const placeholder = `What ${firstName} should change at this moment`;
+  const placeholder = hasDrawing
+    ? `Describe what you've marked for ${firstName}`
+    : `What ${firstName} should change at this moment`;
 
   const label = getSubmissionLabel(submission);
   // Unsent comments plus the draft (which is posted on confirm); videos only
@@ -789,6 +804,19 @@ function ReviewComposer({ submission }) {
       {isVideo && (
         <Stack direction="row" alignItems="center">
           <Typography sx={{ fontSize: 12.5, fontWeight: 600 }}>Your feedback</Typography>
+          {annotationMode && (
+            <Typography
+              sx={{
+                ml: 'auto',
+                fontSize: 11.5,
+                fontWeight: 500,
+                color: hasDrawing ? '#1340FF' : '#9A9AA2',
+              }}
+            >
+              <Iconify icon="solar:pen-bold" width={12} sx={{ mr: 0.5, verticalAlign: '-2px' }} />
+              {hasDrawing ? 'Drawing attached' : 'Draw on the video'}
+            </Typography>
+          )}
         </Stack>
       )}
 
@@ -809,7 +837,9 @@ function ReviewComposer({ submission }) {
           helperText={showError ? emptyFeedbackError : ''}
           placeholder={placeholder}
           InputProps={{
-            startAdornment: <DraftTimestamp time={draftTime} onAdjust={adjustDraftTime} />,
+            startAdornment: (
+              <DraftTimestamp time={draftTime} onAdjust={adjustDraftTime} locked={frameLocked} />
+            ),
             sx: { fontSize: 13, alignItems: 'flex-start' },
           }}
         />

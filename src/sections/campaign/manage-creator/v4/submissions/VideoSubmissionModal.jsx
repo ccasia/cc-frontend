@@ -24,6 +24,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import { getStatusColor } from 'src/contants/statusColors';
 
 import Iconify from 'src/components/iconify';
+import { AnnotationCanvas } from 'src/components/video-annotation';
 import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
 
 const formatTime = (timeInSeconds) => {
@@ -88,6 +89,39 @@ const VideoSubmissionModal = ({
   const [captionSavedValue, setCaptionSavedValue] = useState(submission?.caption || '');
   const [captionSaving, setCaptionSaving] = useState(false);
 
+  const [viewedAnnotation, setViewedAnnotation] = useState(null);
+  const [videoAspect, setVideoAspect] = useState(null);
+
+  // Fullscreen goes on the player box, not the <video>, so a shown drawing (an overlay in
+  // the box) stays visible. The native fullscreen button is hidden where this works.
+  const videoFrameRef = useRef(null);
+  const [isFrameFullscreen, setIsFrameFullscreen] = useState(false);
+  const canFrameFullscreen = Boolean(document.fullscreenEnabled);
+
+  useEffect(() => {
+    const handleChange = () =>
+      setIsFrameFullscreen(
+        Boolean(videoFrameRef.current) && document.fullscreenElement === videoFrameRef.current
+      );
+    document.addEventListener('fullscreenchange', handleChange);
+    return () => document.removeEventListener('fullscreenchange', handleChange);
+  }, []);
+
+  const toggleFrameFullscreen = () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else videoFrameRef.current?.requestFullscreen()?.catch(() => {});
+  };
+
+  const showAnnotation = (annotation) => {
+    const el = modalVideoRef.current;
+    if (!el || !Number.isInteger(annotation?.frameTimeMs)) return;
+    el.pause();
+    const seconds = annotation.frameTimeMs / 1000;
+    el.currentTime = seconds;
+    setModalCurrentTime(seconds);
+    setViewedAnnotation(annotation);
+  };
+
   const handleModalSeek = (timeStr) => {
     const el = modalVideoRef.current;
     if (!el) return;
@@ -107,6 +141,11 @@ const VideoSubmissionModal = ({
     setModalCurrentTime(0);
     setModalDuration(0);
   }, [videoPage]);
+
+  // A drawing belongs to one frame of one video
+  useEffect(() => {
+    setViewedAnnotation(null);
+  }, [open, submission?.id, videoPage]);
 
   const refreshSubmission = async () => {
     if (!submission?.id || isDemoSubmission) return;
@@ -808,6 +847,7 @@ const VideoSubmissionModal = ({
 
               {/* Video Player */}
               <Box
+                ref={videoFrameRef}
                 sx={{
                   flex: 1,
                   bgcolor: '#000',
@@ -823,8 +863,37 @@ const VideoSubmissionModal = ({
                   minHeight: { xs: 0, sm: 200, md: 300 },
                   maxHeight: { xs: '33vh', sm: '42vh', md: 'none' },
                   position: 'relative',
+                  '&:fullscreen': { borderRadius: 0, maxHeight: 'none' },
                 }}
               >
+                {videoUrl && !isProcessing && canFrameFullscreen && (
+                  <DarkGlassTooltip
+                    title={isFrameFullscreen ? 'Exit full screen' : 'Full screen'}
+                    placement="left"
+                  >
+                    <IconButton
+                      onClick={toggleFrameFullscreen}
+                      size="small"
+                      aria-label={isFrameFullscreen ? 'Exit full screen' : 'Full screen'}
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        zIndex: 10,
+                        color: '#F4F4F4',
+                        bgcolor: '#1C1C1C',
+                        borderRadius: '8px',
+                        borderBottom: '2px solid #000',
+                        '&:hover': { bgcolor: '#2C2C2C' },
+                      }}
+                    >
+                      <Iconify
+                        icon={isFrameFullscreen ? 'mdi:fullscreen-exit' : 'mdi:fullscreen'}
+                        width={18}
+                      />
+                    </IconButton>
+                  </DarkGlassTooltip>
+                )}
                 {videoUrl && !isProcessing && isAdmin && (
                   <DarkGlassTooltip title={copied ? 'Copied!' : 'Copy Link'} placement="right">
                     <IconButton
@@ -891,13 +960,30 @@ const VideoSubmissionModal = ({
                         ref={modalVideoRef}
                         src={videoUrl}
                         controls
-                        controlsList={isCreator ? 'nodownload' : undefined}
+                        controlsList={
+                          [isCreator && 'nodownload', canFrameFullscreen && 'nofullscreen']
+                            .filter(Boolean)
+                            .join(' ') || undefined
+                        }
                         preload="metadata"
                         playsInline
                         onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)}
+                        // Playing, or seeking off the drawn frame, hides the drawing
+                        onPlay={() => setViewedAnnotation(null)}
+                        onSeeked={(e) => {
+                          if (
+                            viewedAnnotation &&
+                            Math.abs(e.target.currentTime * 1000 - viewedAnnotation.frameTimeMs) >
+                              300
+                          ) {
+                            setViewedAnnotation(null);
+                          }
+                        }}
                         onLoadedMetadata={(e) => {
                           if (Number.isFinite(e.target.duration))
                             setModalDuration(e.target.duration);
+                          if (e.target.videoHeight)
+                            setVideoAspect(e.target.videoWidth / e.target.videoHeight);
                         }}
                         style={{
                           width: '100%',
@@ -929,6 +1015,41 @@ const VideoSubmissionModal = ({
                     </Typography>
                   );
                 })()}
+
+                {viewedAnnotation && videoUrl && !isProcessing && (
+                  <>
+                    <AnnotationCanvas
+                      shapes={viewedAnnotation.shapes || []}
+                      aspect={videoAspect ?? viewedAnnotation.canvas?.aspect ?? undefined}
+                      sx={{ zIndex: 5 }}
+                    />
+                    <Typography
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 10,
+                        px: 1,
+                        py: 0.375,
+                        borderRadius: 0.75,
+                        fontSize: 11.5,
+                        fontWeight: 500,
+                        whiteSpace: 'nowrap',
+                        color: 'common.white',
+                        bgcolor: 'rgba(17, 17, 19, 0.6)',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      <Iconify
+                        icon="solar:pen-bold"
+                        width={12}
+                        sx={{ mr: 0.5, verticalAlign: '-1px' }}
+                      />
+                      Drawing at {formatTime(viewedAnnotation.frameTimeMs / 1000)} · play to hide
+                    </Typography>
+                  </>
+                )}
               </Box>
             </Box>
 
@@ -966,6 +1087,9 @@ const VideoSubmissionModal = ({
                   },
                   onPause: () => modalVideoRef.current?.pause(),
                   onPlay: () => modalVideoRef.current?.play(),
+                  showAnnotation,
+                  // For hover previews of drawings (the frame they were drawn on)
+                  currentVideoUrl: videoUrl,
                 });
               }
               if (React.isValidElement(rightSideContent)) {

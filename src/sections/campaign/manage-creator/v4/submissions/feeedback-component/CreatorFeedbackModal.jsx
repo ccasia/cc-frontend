@@ -23,6 +23,7 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
+import { AnnotationPreviewTooltip } from 'src/components/video-annotation';
 
 const COLORS = {
   primary: '#1340FF',
@@ -844,6 +845,8 @@ const FeedbackCard = ({
   isResolved,
   isNewAndUnopened,
   onSeekTo,
+  onViewAnnotation,
+  annotationVideoUrl,
   currentTime,
   useCommentSystem,
   commentHighlightCutoffMs,
@@ -871,6 +874,14 @@ const FeedbackCard = ({
   );
   const showBlueBorder = qualifiesForHighlight && !highlightDismissed;
 
+  const hasAnnotation = Boolean(onViewAnnotation && feedbackItem.annotation);
+  const canSeek = Boolean(onSeekTo && feedbackItem.timestamp);
+  const timestampInteractive = hasAnnotation || canSeek;
+  const handleTimestampClick = () => {
+    if (hasAnnotation) onViewAnnotation(feedbackItem.annotation);
+    else if (canSeek) onSeekTo(feedbackItem.timestamp);
+  };
+
   return (
     <Box>
       <Box
@@ -895,38 +906,50 @@ const FeedbackCard = ({
         />
 
         <Box sx={{ px: 0.5, display: 'flex', gap: { xs: 0.75, md: 1 } }}>
-          <Typography
-            variant="body2"
-            component={onSeekTo && feedbackItem.timestamp ? 'button' : 'span'}
-            type={onSeekTo && feedbackItem.timestamp ? 'button' : undefined}
-            onClick={
-              onSeekTo && feedbackItem.timestamp
-                ? () => onSeekTo(feedbackItem.timestamp)
-                : undefined
-            }
-            sx={{
-              fontSize: { xs: '0.813rem', md: '0.875rem' },
-              color: COLORS.primary,
-              fontWeight: 500,
-              flexShrink: 0,
-              ...(onSeekTo && feedbackItem.timestamp
-                ? {
-                    cursor: 'pointer',
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    textAlign: 'left',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                      textUnderlineOffset: 2,
-                      opacity: 0.9,
-                    },
-                  }
-                : {}),
-            }}
+          <AnnotationPreviewTooltip
+            annotation={hasAnnotation ? feedbackItem.annotation : null}
+            videoUrl={annotationVideoUrl}
           >
-            {feedbackItem.timestamp ? formatTimestampForDisplay(feedbackItem.timestamp) : '00:00'}
-          </Typography>
+            <Typography
+              variant="body2"
+              component={timestampInteractive ? 'button' : 'span'}
+              type={timestampInteractive ? 'button' : undefined}
+              onClick={timestampInteractive ? handleTimestampClick : undefined}
+              sx={{
+                fontSize: { xs: '0.813rem', md: '0.875rem' },
+                color: COLORS.primary,
+                fontWeight: 500,
+                flexShrink: 0,
+                // Keeps the pen icon (drawings) and the time together on one line
+                whiteSpace: 'nowrap',
+                ...(timestampInteractive
+                  ? {
+                      cursor: 'pointer',
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      textAlign: 'left',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                        textUnderlineOffset: 2,
+                        opacity: 0.9,
+                      },
+                    }
+                  : {}),
+              }}
+            >
+              {hasAnnotation && (
+                <Iconify
+                  icon="solar:pen-bold"
+                  width={12}
+                  sx={{ mr: 0.5, verticalAlign: '-1px' }}
+                />
+              )}
+              {feedbackItem.timestamp
+                ? formatTimestampForDisplay(feedbackItem.timestamp)
+                : '00:00'}
+            </Typography>
+          </AnnotationPreviewTooltip>
           <Typography
             variant="body2"
             sx={{
@@ -1081,6 +1104,8 @@ FeedbackCard.propTypes = {
   isResolved: PropTypes.bool,
   isNewAndUnopened: PropTypes.bool,
   onSeekTo: PropTypes.func,
+  onViewAnnotation: PropTypes.func,
+  annotationVideoUrl: PropTypes.string,
   currentTime: PropTypes.string,
   useCommentSystem: PropTypes.bool,
   commentHighlightCutoffMs: PropTypes.number,
@@ -1104,6 +1129,7 @@ const CreatorFeedbackModal = ({
   commentHighlightCutoffMs = null,
   isPastVideo = false,
   onSeekTo,
+  onViewAnnotation,
   currentTime = 0,
 }) => {
   const currentVideoId = currentVideo?.id;
@@ -1530,6 +1556,7 @@ const CreatorFeedbackModal = ({
                       id: item.id,
                       content: item.text,
                       timestamp: item.timestamp,
+                      annotation: item.annotation,
                       createdAt: item.createdAt,
                       resolved: !!item.resolvedByUserId,
                       resolvedAt: item.resolvedAt,
@@ -1598,6 +1625,8 @@ const CreatorFeedbackModal = ({
                     isResolved={effectiveResolved}
                     isNewAndUnopened={showNewCommentBorders && !isPastVideo}
                     onSeekTo={onSeekTo}
+                    onViewAnnotation={onViewAnnotation}
+                    annotationVideoUrl={currentVideo?.url}
                     currentTime={formatTimeForBackend(currentTime)}
                     useCommentSystem={useCommentSystem}
                     commentHighlightCutoffMs={commentHighlightCutoffMs}
@@ -1793,6 +1822,7 @@ CreatorFeedbackModal.propTypes = {
   commentHighlightCutoffMs: PropTypes.number,
   isPastVideo: PropTypes.bool,
   onSeekTo: PropTypes.func,
+  onViewAnnotation: PropTypes.func,
   currentTime: PropTypes.number,
 };
 
