@@ -773,6 +773,7 @@ const V4VideoSubmission = ({
           onSeekTo,
           currentVideoTime,
           isPastVideo,
+          showAnnotation,
         }) => (
           <CreatorFeedbackModal
             submission={freshSubmission || submission}
@@ -784,6 +785,7 @@ const V4VideoSubmission = ({
             commentHighlightCutoffMs={highlightCutoff}
             isPastVideo={isPastVideo}
             onSeekTo={onSeekTo}
+            onViewAnnotation={showAnnotation}
             currentTime={parseSecondsFromTimestamp(currentVideoTime)}
           />
         )}

@@ -39,6 +39,7 @@ import {
 
 import Iconify from 'src/components/iconify';
 import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
+import { AnnotationPreviewTooltip } from 'src/components/video-annotation';
 
 const getNewItemLabel = ({ replies, messages }) => {
   const total = replies + messages;
@@ -163,6 +164,7 @@ const CommentCard = ({
   onToggleReplies,
   onAgree,
   onTimestampClick,
+  annotationVideoUrl,
   currentUser,
   isReplying,
   onCancelReply,
@@ -528,20 +530,31 @@ const CommentCard = ({
             }}
           >
             {comment.timestamp && (
-              <Typography
-                component="span"
-                onClick={() => onTimestampClick(comment.timestamp)}
-                sx={{
-                  fontSize: { xs: '0.813rem', md: '0.875rem' },
-                  color: '#1340FF',
-                  fontWeight: 500,
-                  mr: 1,
-                  cursor: 'pointer',
-                  '&:hover': { textDecoration: 'underline' },
-                }}
-              >
-                {formatDisplayTime(comment.timestamp)}
-              </Typography>
+              <AnnotationPreviewTooltip annotation={comment.annotation} videoUrl={annotationVideoUrl}>
+                <Typography
+                  component="span"
+                  onClick={() => onTimestampClick(comment)}
+                  sx={{
+                    fontSize: { xs: '0.813rem', md: '0.875rem' },
+                    color: '#1340FF',
+                    fontWeight: 500,
+                    mr: 1,
+                    // Keeps the pen icon (drawings) and the time together on one line
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  {comment.annotation && (
+                    <Iconify
+                      icon="solar:pen-bold"
+                      width={12}
+                      sx={{ mr: 0.5, verticalAlign: '-1px' }}
+                    />
+                  )}
+                  {formatDisplayTime(comment.timestamp)}
+                </Typography>
+              </AnnotationPreviewTooltip>
             )}
             {comment.text}
           </Typography>
@@ -766,6 +779,7 @@ CommentCard.propTypes = {
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     text: PropTypes.string,
     timestamp: PropTypes.string,
+    annotation: PropTypes.object,
     createdAt: PropTypes.string,
     user: PropTypes.shape({
       id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -796,6 +810,7 @@ CommentCard.propTypes = {
   onToggleReplies: PropTypes.func,
   onAgree: PropTypes.func,
   onTimestampClick: PropTypes.func,
+  annotationVideoUrl: PropTypes.string,
   currentUser: PropTypes.shape({
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }),
@@ -820,6 +835,8 @@ const ClientFeedbackModal = forwardRef(
       onPause,
       onPlay,
       onSeek,
+      onViewAnnotation,
+      annotationVideoUrl,
       onSendToAdmin,
       isLocked,
       isPastVideo,
@@ -1238,8 +1255,11 @@ const ClientFeedbackModal = forwardRef(
       }
     };
 
-    const handleTimestampClick = (timestamp) => {
-      if (onSeek) onSeek(timestamp);
+    // Clicking a comment's timestamp shows its drawing on the frame when one exists,
+    // otherwise it just seeks the video.
+    const handleTimestampClick = (comment) => {
+      if (comment?.annotation && onViewAnnotation) onViewAnnotation(comment.annotation);
+      else if (onSeek) onSeek(comment?.timestamp);
     };
 
     // 2. Toggle Agree (Like) with API
@@ -1634,6 +1654,7 @@ const ClientFeedbackModal = forwardRef(
                             onReplyClick={(id) => setReplyingToId(id)}
                             onAgree={handleAgree}
                             onTimestampClick={handleTimestampClick}
+                            annotationVideoUrl={annotationVideoUrl}
                             isReplying={replyingToId === reply.id}
                             onCancelReply={() => setReplyingToId(null)}
                             onSubmitReply={handleInlineReplySubmit}
@@ -1697,6 +1718,7 @@ const ClientFeedbackModal = forwardRef(
                           }}
                           onAgree={handleAgree}
                           onTimestampClick={handleTimestampClick}
+                          annotationVideoUrl={annotationVideoUrl}
                           isReplying={replyingToId === comment.id}
                           onCancelReply={() => setReplyingToId(null)}
                           onSubmitReply={handleInlineReplySubmit}
@@ -2246,6 +2268,8 @@ ClientFeedbackModal.propTypes = {
   onPause: PropTypes.func,
   onPlay: PropTypes.func,
   onSeek: PropTypes.func,
+  onViewAnnotation: PropTypes.func,
+  annotationVideoUrl: PropTypes.string,
   onSendToAdmin: PropTypes.func,
   isLocked: PropTypes.bool,
   isPastVideo: PropTypes.bool,

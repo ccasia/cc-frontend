@@ -17,6 +17,7 @@ import {
 
 import Iconify from 'src/components/iconify';
 import CtaButton from 'src/components/cta-button';
+import { AnnotationPreviewTooltip } from 'src/components/video-annotation';
 
 import { sectionLabelSx } from '../styles';
 import { EASE_OUT } from '../../utils/constants';
@@ -26,6 +27,7 @@ import useNewCommentIds from '../hooks/use-new-comment-ids';
 import useViewerSubmission from '../hooks/use-viewer-submission';
 import useCommentActions, { DELETE_UNDO_MS } from '../hooks/use-comment-actions';
 import {
+  getShownUrl,
   revealComment,
   parseTimestamp,
   COMMENT_ID_ATTR,
@@ -33,6 +35,7 @@ import {
   REVIEW_SCROLL_ATTR,
 } from '../utils';
 import {
+  showAnnotation,
   playFromFeedback,
   addIncomingComment,
   toggleOriginalShown,
@@ -59,24 +62,34 @@ export const timestampChipSx = {
   color: ACCENT,
   bgcolor: '#EDEBFF',
   verticalAlign: 'baseline',
+  // Keeps the pen icon (drawings) and the time together on one line
+  whiteSpace: 'nowrap',
 };
 
-export function TimestampChip({ timestamp, onClick }) {
+// annotation: the comment's drawing, previewed on hover over its frame of `videoUrl`
+export function TimestampChip({ timestamp, onClick, annotation = null, videoUrl }) {
   return (
-    <ButtonBase
-      component="span"
-      onClick={onClick}
-      disabled={!onClick}
-      sx={{ ...timestampChipSx, '&:hover': onClick ? { bgcolor: '#DCD8FF' } : undefined }}
-    >
-      {timestamp}
-    </ButtonBase>
+    <AnnotationPreviewTooltip annotation={annotation} videoUrl={videoUrl}>
+      <ButtonBase
+        component="span"
+        onClick={onClick}
+        disabled={!onClick}
+        sx={{ ...timestampChipSx, '&:hover': onClick ? { bgcolor: '#DCD8FF' } : undefined }}
+      >
+        {annotation && (
+          <Iconify icon="solar:pen-bold" width={11} sx={{ mr: 0.5, verticalAlign: '-1px' }} />
+        )}
+        {timestamp}
+      </ButtonBase>
+    </AnnotationPreviewTooltip>
   );
 }
 
 TimestampChip.propTypes = {
   timestamp: PropTypes.string.isRequired,
   onClick: PropTypes.func,
+  annotation: PropTypes.object,
+  videoUrl: PropTypes.string,
 };
 
 const ROLE_TAG = {
@@ -326,6 +339,9 @@ function CommentItem({ comment, isReply = false, isNew = false, threadRoot }) {
   const { toggleForCreator, deleteComment } = useCommentActions(submission);
   const composer = useCreatorSubmissionsStore((s) => s.commentComposer);
   const showOriginal = useCreatorSubmissionsStore((s) => Boolean(s.originalShown[comment.id]));
+  // The thread follows the upload on screen, so its drawings preview on that video
+  const versionIndex = useCreatorSubmissionsStore((s) => s.versionIndex);
+  const videoUrl = comment.annotation ? getShownUrl(submission, versionIndex) : undefined;
 
   const { canReply, canEdit, canDelete, canToggleForCreator } = permissionsFor(comment, {
     isReply,
@@ -404,7 +420,13 @@ function CommentItem({ comment, isReply = false, isNew = false, threadRoot }) {
             {timestamp && (
               <TimestampChip
                 timestamp={timestamp}
-                onClick={() => playFromFeedback(parseTimestamp(timestamp))}
+                annotation={comment.annotation}
+                videoUrl={videoUrl}
+                onClick={() =>
+                  comment.annotation
+                    ? showAnnotation(comment.annotation)
+                    : playFromFeedback(parseTimestamp(timestamp))
+                }
               />
             )}
 

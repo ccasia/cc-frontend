@@ -12,8 +12,10 @@ import {
   seekVideo,
   playVideo,
   pauseVideo,
+  closeAnnotation,
   setFeedbackDraft,
   setFeedbackSending,
+  getAnnotationPayload,
   setFeedbackFrozenTime,
   useCreatorSubmissionsStore,
 } from '../../store/use-creator-submissions-store';
@@ -58,6 +60,12 @@ export default function useCommentComposer(submission) {
   const frozenTime = useCreatorSubmissionsStore((s) => s.feedbackFrozenTime);
   const sending = useCreatorSubmissionsStore((s) => s.feedbackSending);
 
+  const annotationMode = useCreatorSubmissionsStore((s) => s.annotationMode);
+  const hasDrawing = useCreatorSubmissionsStore((s) => s.annotationShapes.length > 0);
+  const frameLocked = useCreatorSubmissionsStore(
+    (s) => s.annotationMode && (s.annotationShapes.length > 0 || s.annotationPast.length > 0)
+  );
+
   const draftTime = frozenTime ?? currentTime;
 
   useEffect(() => {
@@ -76,15 +84,16 @@ export default function useCommentComposer(submission) {
     if (value && frozenTime == null) {
       setFeedbackFrozenTime(currentTime);
       pauseVideo();
-    } else if (!value && frozenTime != null) {
+    } else if (!value && frozenTime != null && !annotationMode) {
       setFeedbackFrozenTime(null);
     }
   };
 
   // Dragging the timestamp chip: moves the video, and the locked timestamp with it
   const adjustDraftTime = (seconds) => {
-    // Unknown length: nothing to bound against, so don't move it at all
-    if (!duration) return;
+    // Unknown length: nothing to bound against, so don't move it at all.
+    // A drawing is tied to its frame, so it can't move once something is drawn.
+    if (!duration || frameLocked) return;
     const time = Math.min(Math.max(0, seconds), Math.floor(duration));
     if (frozenTime != null) setFeedbackFrozenTime(time);
     seekVideo(time);
@@ -93,7 +102,14 @@ export default function useCommentComposer(submission) {
   // Resolves true when there was nothing to post or the post succeeded
   const postDraft = async () => {
     const text = draft.trim();
-    if (!text) return true;
+    const annotation = isVideo ? getAnnotationPayload() : null;
+    if (!text) {
+      if (annotation) {
+        enqueueSnackbar('Add a comment to go with your drawing', { variant: 'warning' });
+        return false;
+      }
+      return true;
+    }
     if (sending) return false;
 
     setFeedbackSending(true);
@@ -102,10 +118,12 @@ export default function useCommentComposer(submission) {
         text,
         videoId,
         ...(isVideo && { timestamp: formatTimestamp(draftTime) }),
+        ...(annotation && { annotation }),
       });
       setFeedbackDraft('');
       writeDraft(draftKey, '');
       setFeedbackFrozenTime(null);
+      if (annotationMode) closeAnnotation();
       await commentsMutate();
       revealComment(data?.id);
       if (isVideo) playVideo();
@@ -123,6 +141,9 @@ export default function useCommentComposer(submission) {
     draft,
     draftTime,
     sending,
+    annotationMode,
+    hasDrawing,
+    frameLocked,
     unsentComments,
     hasUnsentFeedback,
     changeDraft,

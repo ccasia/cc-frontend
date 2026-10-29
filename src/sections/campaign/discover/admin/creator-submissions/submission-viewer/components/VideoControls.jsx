@@ -14,6 +14,7 @@ import {
   seekVideo,
   togglePlay,
   toggleMute,
+  startAnnotation,
   playFromFeedback,
   useCreatorSubmissionsStore,
 } from '../../store/use-creator-submissions-store';
@@ -148,6 +149,13 @@ function Scrubber({ submission }) {
                       >
                         {comment.timestamp}
                       </Box>
+                      {comment.annotation && (
+                        <Iconify
+                          icon="solar:pen-bold"
+                          width={11}
+                          sx={{ mr: 0.5, verticalAlign: '-1px' }}
+                        />
+                      )}
                       <Box component="span" sx={{ fontWeight: 600 }}>
                         {comment.user?.name}
                       </Box>
@@ -195,6 +203,7 @@ export default function VideoControls({ submission }) {
   const muted = useCreatorSubmissionsStore((s) => s.muted);
   const currentTime = useCreatorSubmissionsStore((s) => s.currentTime);
   const duration = useDisplayDuration(submission);
+  const canDraw = submission.submissionType?.type === 'VIDEO';
 
   const handleFullscreen = (event) => {
     if (document.fullscreenElement) {
@@ -242,7 +251,28 @@ export default function VideoControls({ submission }) {
           {formatTimestamp(currentTime)} / {duration ? formatTimestamp(duration) : '--:--'}
         </Typography>
 
-        <IconButton size="small" onClick={toggleMute} sx={{ ...controlButtonSx, ml: 'auto' }}>
+        {canDraw && (
+          <Tooltip title="Draw on frame" placement="top">
+            <IconButton
+              size="small"
+              aria-label="Draw on frame"
+              disabled={mediaSwitching}
+              onClick={startAnnotation}
+              sx={{
+                ...controlButtonSx,
+                ml: 'auto',
+                '&.Mui-disabled': { color: 'rgba(255, 255, 255, 0.35)' },
+              }}
+            >
+              <Iconify icon="solar:pen-bold" width={18} />
+            </IconButton>
+          </Tooltip>
+        )}
+        <IconButton
+          size="small"
+          onClick={toggleMute}
+          sx={{ ...controlButtonSx, ml: canDraw ? 0 : 'auto' }}
+        >
           <Iconify icon={muted ? 'mdi:volume-off' : 'mdi:volume-high'} width={18} />
         </IconButton>
         <IconButton size="small" onClick={handleFullscreen} sx={controlButtonSx}>

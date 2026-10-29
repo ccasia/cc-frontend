@@ -498,6 +498,8 @@ export default function MobileVideoSubmission({
           submission: modalSubmission,
           ref: feedbackRef,
           refreshSubmission,
+          showAnnotation,
+          currentVideoUrl,
         }) => {
           const currentModalVideo =
             modalSubmission?.video?.find((v) => v.id === modalVideoId) ||
@@ -523,6 +525,8 @@ export default function MobileVideoSubmission({
               videoId={modalVideoId || clientVideo?.id || video?.id}
               currentVideoTime={formatModalTime(modalCurrentTime)}
               onSeek={onSeekTo}
+              onViewAnnotation={showAnnotation}
+              annotationVideoUrl={currentVideoUrl}
               onPause={onPause}
               onPlay={onPlay}
               onSendToAdmin={handleSendAndRefresh}

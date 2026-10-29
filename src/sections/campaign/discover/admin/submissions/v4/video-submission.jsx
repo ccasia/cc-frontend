@@ -1277,6 +1277,8 @@ export default function V4VideoSubmission({
           submission: modalSubmission,
           ref: feedbackRef,
           refreshSubmission,
+          showAnnotation,
+          currentVideoUrl,
         }) => {
           const currentModalVideo =
             modalSubmission?.video?.find((v) => v.id === modalVideoId) ||
@@ -1297,6 +1299,8 @@ export default function V4VideoSubmission({
               isDemo={isDemoCampaign}
               currentVideoTime={videoControls.formatTime(modalCurrentTime || 0)}
               onSeek={onSeekTo}
+              onViewAnnotation={showAnnotation}
+              annotationVideoUrl={currentVideoUrl}
               onPause={onPause}
               onPlay={onPlay}
               onSendToAdmin={handleSendAndRefresh}
