@@ -1,7 +1,8 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
+import { keyframes } from '@emotion/react';
 import { useFormContext } from 'react-hook-form';
-import React, { memo, useMemo, useEffect } from 'react';
+import React, { memo, useRef, useMemo, useEffect } from 'react';
 
 import {
   Box,
@@ -9,12 +10,14 @@ import {
   Stack,
   Avatar,
   Button,
+  Switch,
   Tooltip,
   MenuItem,
   FormLabel,
   TextField,
   Typography,
   ListItemText,
+  FormControlLabel,
   createFilterOptions,
 } from '@mui/material';
 
@@ -38,6 +41,7 @@ import { useGetAdmins } from '../hooks/get-am';
 import NdaAgreementField from '../nda-agreement-field';
 import { getCreditLimitError } from '../utils/campaign-credits';
 import PackageCreateDialog from '../../../packages/package-dialog';
+import { useCampaignCreateStore } from '../store/use-campaign-create-store';
 import CreateCompany from '../../../brand/create/brandForms/FirstForms/create-company';
 
 // Campaign type options (matching activate-campaign-dialog.jsx)
@@ -86,6 +90,21 @@ FormField.propTypes = {
 
 const filter = createFilterOptions();
 
+// Short shake drawing the eye to the package button each time Next is blocked by it
+const packageNudge = keyframes`
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+`;
+
+// Active client users belonging to the given company (from the /user/admins list)
+const getCompanyClientUsers = (admins, companyId) =>
+  companyId
+    ? (admins || []).filter(
+        (item) => isClientManager(item) && item.client?.company?.id === companyId
+      )
+    : [];
+
 const getRemainingTime = (invoiceDate) => {
   const remainingDays = dayjs(invoiceDate).diff(dayjs(), 'days');
   return remainingDays;
@@ -127,6 +146,44 @@ const FinaliseCampaign = ({
 
   const creditHelperText = getCreditLimitError(client, campaignCredits);
   const creditError = Boolean(creditHelperText);
+  // Without a usable package the credits field isn't shown, so its error (set when Next is
+  // pressed) would be invisible — show it on the package prompt instead
+  const packageError = Boolean(errors?.campaignCredits);
+
+  // Every blocked Next press scrolls the package prompt into view and replays the nudge
+  const failedNextCount = useCampaignCreateStore((s) => s.failedNextCount);
+  const packagePromptRef = useRef(null);
+  useEffect(() => {
+    if (!failedNextCount || !packageError) return;
+    packagePromptRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [failedNextCount, packageError]);
+  const packageButtonSx = {
+    mt: 2,
+    ...(packageError && { animation: `${packageNudge} 0.45s ease-in-out` }),
+  };
+
+  const syncClientManagers = (companyId, clientCampaign) => {
+    if (!admins) return;
+    const companyClients = clientCampaign ? getCompanyClientUsers(admins, companyId) : [];
+    const companyClientIds = companyClients.map((c) => c.id);
+    const current = getValues('campaignManager') || [];
+    const kept = current.filter((m) => !isClientManager(m) || companyClientIds.includes(m.id));
+    const keptIds = kept.map((m) => m.id);
+    const next = [...kept, ...companyClients.filter((c) => !keptIds.includes(c.id))];
+
+    if (kept.length !== current.length || next.length !== kept.length) {
+      setValue('campaignManager', next, { shouldDirty: true, shouldValidate: true });
+    } else if (getFieldState('campaignManager').error) {
+      // The client-manager rule depends on the toggle, so re-check to clear a stale error
+      trigger('campaignManager');
+    }
+  };
+
+  const handleClientCampaignToggle = (event) => {
+    const { checked } = event.target;
+    setValue('isV4Submission', checked, { shouldDirty: true });
+    syncClientManagers(getValues('client')?.id, checked);
+  };
 
   // Run on the admin's pick only — not on autosave restore / activate prefill (reset)
   const handleClientChange = (event, value) => {
@@ -135,6 +192,7 @@ const FinaliseCampaign = ({
       setValue('campaignBrand', null, { shouldValidate: true });
     }
     setValue('client', value, { shouldValidate: true });
+    syncClientManagers(value?.id, getValues('isV4Submission'));
     if (value?.inputValue) openCompany.onTrue();
   };
 
@@ -145,10 +203,7 @@ const FinaliseCampaign = ({
 
   // Client users of the selected client company — only these can manage a client campaign
   const companyClientManagers = useMemo(
-    () =>
-      (admins || []).filter(
-        (item) => isClientManager(item) && client?.id && item.client?.company?.id === client.id
-      ),
+    () => getCompanyClientUsers(admins, client?.id),
     [admins, client?.id]
   );
 
@@ -160,21 +215,6 @@ const FinaliseCampaign = ({
       .sort(byName);
     return isClientCampaign ? [...[...companyClientManagers].sort(byName), ...staff] : staff;
   }, [admins, isClientCampaign, companyClientManagers]);
-
-  // Drop client managers that no longer qualify (toggle turned off, or another client picked).
-  // An effect rather than a handler because RHFSwitch exposes no onChange for the toggle.
-  useEffect(() => {
-    if (!admins) return;
-    const current = getValues('campaignManager') || [];
-    const allowedClientIds = isClientCampaign ? companyClientManagers.map((c) => c.id) : [];
-    const next = current.filter((m) => !isClientManager(m) || allowedClientIds.includes(m.id));
-    if (next.length !== current.length) {
-      setValue('campaignManager', next, { shouldValidate: true });
-    } else if (getFieldState('campaignManager').error) {
-      // The client-manager rule depends on the toggle, so re-check to clear a stale error
-      trigger('campaignManager');
-    }
-  }, [admins, isClientCampaign, companyClientManagers, getValues, setValue, getFieldState, trigger]);
 
   // Warn up front — no client user can be picked, so the client-manager rule can't be met
   let managerHelperText;
@@ -290,21 +330,50 @@ const FinaliseCampaign = ({
       {/* Credit Summary Section */}
       {client &&
         (!creditSummary || !creditSummary.remainingCredits ? (
-          <Box sx={{ textAlign: 'center', p: 3, bgcolor: '#F9F9F9', borderRadius: 1 }}>
+          <Box
+            ref={packagePromptRef}
+            sx={{
+              textAlign: 'center',
+              p: 3,
+              bgcolor: '#F9F9F9',
+              borderRadius: 1,
+              border: 1,
+              borderColor: packageError ? 'error.main' : 'transparent',
+            }}
+          >
             <Typography variant="subtitle1" color="text.secondary">
               No active package found
             </Typography>
-            <Button variant="outlined" sx={{ mt: 2 }} onClick={openPackage.onTrue}>
+            <Button
+              // New key per blocked Next press, so the nudge animation plays again
+              key={failedNextCount}
+              variant={packageError ? 'contained' : 'outlined'}
+              color={packageError ? 'error' : 'primary'}
+              sx={packageButtonSx}
+              onClick={openPackage.onTrue}
+            >
               Link a package
             </Button>
+            {packageError && (
+              <Typography variant="caption" color="error" component="p" sx={{ mt: 1 }}>
+                Link a package to set campaign credits before continuing.
+              </Typography>
+            )}
           </Box>
         ) : (
           <>
             {dayjs(creditSummary.nextExpiryDate).isBefore(dayjs(), 'date') ? (
               <Stack
+                ref={packagePromptRef}
                 alignItems="center"
                 spacing={1}
-                sx={{ p: 3, bgcolor: '#FFF8E5', borderRadius: 1 }}
+                sx={{
+                  p: 3,
+                  bgcolor: '#FFF8E5',
+                  borderRadius: 1,
+                  border: 1,
+                  borderColor: packageError ? 'error.main' : 'transparent',
+                }}
               >
                 <Avatar
                   sx={{ bgcolor: (theme) => theme.palette.warning.light, width: 60, height: 60 }}
@@ -312,9 +381,20 @@ const FinaliseCampaign = ({
                   <Iconify icon="pajamas:expire" width={26} />
                 </Avatar>
                 <Typography variant="subtitle2">Package has expired</Typography>
-                <Button variant="outlined" sx={{ mt: 2 }} onClick={openPackage.onTrue}>
+                <Button
+                  key={failedNextCount}
+                  variant={packageError ? 'contained' : 'outlined'}
+                  color={packageError ? 'error' : 'primary'}
+                  sx={packageButtonSx}
+                  onClick={openPackage.onTrue}
+                >
                   Renew package
                 </Button>
+                {packageError && (
+                  <Typography variant="caption" color="error">
+                    Renew the package to set campaign credits before continuing.
+                  </Typography>
+                )}
               </Stack>
             ) : (
               <Stack direction={{ sm: 'column', md: 'row' }} spacing={1}>
@@ -382,7 +462,16 @@ const FinaliseCampaign = ({
           >
             Enable this as a client campaign?
           </Typography>
-          <RHFSwitch name="isV4Submission" color="primary" />
+          {/* Plain Switch (not RHFSwitch) so turning it on can fill in the client managers */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={!!isClientCampaign}
+                onChange={handleClientCampaignToggle}
+                color="primary"
+              />
+            }
+          />
         </Stack>
         <Typography variant="subtitle2" fontWeight={400} color="text.secondary">
           Enabling this option allows the selected client to manage the campaign.
