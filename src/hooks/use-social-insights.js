@@ -10,6 +10,16 @@ const SNAPSHOT_CACHE_TIME = 24 * 60 * 60 * 1000;
 const getSnapshotKey = ({ platform, postUrl }) =>
   `${platform || ''}:${canonicalizePostUrl(postUrl)}`;
 
+// A TikTok short link (vt./vm.tiktok.com) is stored resolved, so the snapshot
+// is also keyed by its short code to match the link in the submission.
+const getSnapshotKeys = (snapshot) =>
+  snapshot.platform === 'TikTok' && snapshot.shortCode
+    ? [
+        getSnapshotKey(snapshot),
+        getSnapshotKey({ ...snapshot, postUrl: `https://tiktok.com/${snapshot.shortCode}` }),
+      ]
+    : [getSnapshotKey(snapshot)];
+
 const toInsightData = (submission, snapshot) => ({
   submissionId: submission.id,
   platform: submission.platform,
@@ -67,12 +77,13 @@ export const useSocialInsights = (postingSubmissions, campaignId) => {
 
   const { data, failedUrls, loadingProgress, isLoading, error } = useMemo(() => {
     const snapshotsByPost = (query.data || []).reduce((latestByPost, snapshot) => {
-      const key = getSnapshotKey(snapshot);
-      const current = latestByPost.get(key);
       const snapshotTime = new Date(snapshot.capturedAt || snapshot.snapshotDate).getTime();
-      const currentTime = new Date(current?.capturedAt || current?.snapshotDate || 0).getTime();
 
-      if (!current || snapshotTime > currentTime) latestByPost.set(key, snapshot);
+      getSnapshotKeys(snapshot).forEach((key) => {
+        const current = latestByPost.get(key);
+        const currentTime = new Date(current?.capturedAt || current?.snapshotDate || 0).getTime();
+        if (!current || snapshotTime > currentTime) latestByPost.set(key, snapshot);
+      });
       return latestByPost;
     }, new Map());
 
