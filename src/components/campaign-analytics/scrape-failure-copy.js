@@ -3,7 +3,7 @@ const RETRY_DAYS = 3;
 
 const BY_HAND = 'Open the post and enter the views, likes and comments by hand.';
 const RETRY =
-  'We will try again tonight while the campaign is running, up to 3 days in a row. You can also enter the views, likes and comments by hand.';
+  'The system will check this post again tonight while the campaign is running, up to 3 days in a row. You can also enter the views, likes and comments by hand.';
 
 const COPY = {
   HIDDEN: {
@@ -32,10 +32,10 @@ const COPY = {
     message: 'Instagram did not show the views for this Reel. Open the Reel and enter the views by hand.',
   },
   TIMED_OUT: { headline: 'Check took too long', message: 'The post took too long to load.', retry: true },
-  JOB_FAILED: { headline: 'Check did not finish', message: 'Something went wrong while we checked this post.', retry: true },
-  START_AMBIGUOUS: { headline: 'Check did not start', message: 'We could not start the check for this post.', retry: true },
+  JOB_FAILED: { headline: 'Check did not finish', message: 'Something went wrong while the system checked this post.', retry: true },
+  START_AMBIGUOUS: { headline: 'Check did not start', message: 'The system could not start the check for this post.', retry: true },
   ERROR: { headline: 'Check was stopped', message: 'The check stopped before it finished.', retry: true },
-  FALLBACK: { headline: 'Could not check this post', message: 'Something went wrong while we checked this post.', retry: true },
+  FALLBACK: { headline: 'Could not check this post', message: 'Something went wrong while the system checked this post.', retry: true },
 };
 
 const HIDDEN_REASON =
