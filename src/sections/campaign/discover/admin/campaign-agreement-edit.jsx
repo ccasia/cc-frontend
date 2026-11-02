@@ -346,14 +346,12 @@ const CampaignAgreementEdit = ({
   const [
     isSeedingAgreement,
     isDefault,
-    selectedCurrency,
     ugcCreditsValue,
     paymentAmountValue,
     platformFollowerValue,
   ] = watch([
     'isSeedingAgreement',
     'default',
-    'currency',
     'ugcCredits',
     'paymentAmount',
     'platformFollowerCount',
@@ -388,7 +386,8 @@ const CampaignAgreementEdit = ({
 
   // Matches the backend (resolveCampaignTierOrNull): the tier saved at approval stands, unless the
   // platform changes or a superadmin types a follower count. Without a saved tier, preview the live one.
-  const isTierCorrection = hasPlatformChanged || (isSuperAdmin && Number(platformFollowerValue || 0) > 0);
+  const isTierCorrection =
+    hasPlatformChanged || (isSuperAdmin && Number(platformFollowerValue || 0) > 0);
   const previewTierSource = tierData && !isTierCorrection ? tierData : liveTierData;
 
   const displayTierData = useMemo(
@@ -421,7 +420,12 @@ const CampaignAgreementEdit = ({
 
     // An agreed price wins; otherwise start from the budget already keyed in the Agreements table.
     setValue('paymentAmount', agreement?.amount || agreement?.budgetAmount || '');
-    setValue('currency', CURRENCY_PREFIXES[agreement?.currency]?.label);
+    setValue(
+      'currency',
+      CURRENCY_PREFIXES[agreement?.currency]?.label ||
+        agreement?.shortlistedCreator?.currency ||
+        'MYR'
+    );
     setValue('ugcCredits', agreement?.videoCount);
     setSelectedPlatform(agreedPlatform);
     setValue('platformFollowerCount', String(getFollowerCountByPlatform(agreedPlatform) || ''));
@@ -435,6 +439,7 @@ const CampaignAgreementEdit = ({
     }
   }, [
     agreement?.currency,
+    agreement?.shortlistedCreator?.currency,
     agreement?.videoCount,
     agreement?.amount,
     agreement?.budgetAmount,
@@ -957,12 +962,7 @@ const CampaignAgreementEdit = ({
                               shouldDirty: true,
                             });
                           }}
-                          prefix={
-                            CURRENCY_PREFIXES[selectedCurrency]?.prefix
-                              ? `${CURRENCY_PREFIXES[selectedCurrency].prefix} `
-                              : ''
-                          }
-                          placeholder={`${CURRENCY_PREFIXES[selectedCurrency]?.prefix} 350`}
+                          placeholder="350"
                           variant="outlined"
                           isAllowed={(val) => {
                             const { value } = val;
@@ -1052,8 +1052,7 @@ const CampaignAgreementEdit = ({
                               shouldDirty: true,
                             });
                           }}
-                          prefix={`${CURRENCY_PREFIXES[selectedCurrency]?.prefix} ` ?? ''}
-                          placeholder={`${CURRENCY_PREFIXES[selectedCurrency]?.prefix} 350`}
+                          placeholder="350"
                           variant="outlined"
                           isAllowed={(val) => {
                             const { value } = val;
