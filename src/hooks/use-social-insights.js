@@ -10,13 +10,14 @@ const SNAPSHOT_CACHE_TIME = 24 * 60 * 60 * 1000;
 const getSnapshotKey = ({ platform, postUrl }) =>
   `${platform || ''}:${canonicalizePostUrl(postUrl)}`;
 
-// A TikTok short link (vt./vm.tiktok.com) is stored resolved, so the snapshot
-// is also keyed by its short code to match the link in the submission.
+// A TikTok short link (vt./vm.tiktok.com or tiktok.com/t/) is stored resolved, so the
+// snapshot is also keyed by its short code to match the link in the submission.
 const getSnapshotKeys = (snapshot) =>
   snapshot.platform === 'TikTok' && snapshot.shortCode
     ? [
         getSnapshotKey(snapshot),
         getSnapshotKey({ ...snapshot, postUrl: `https://tiktok.com/${snapshot.shortCode}` }),
+        getSnapshotKey({ ...snapshot, postUrl: `https://tiktok.com/t/${snapshot.shortCode}` }),
       ]
     : [getSnapshotKey(snapshot)];
 
