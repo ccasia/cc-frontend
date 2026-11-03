@@ -73,15 +73,6 @@ const cleanHandle = (value) =>
     .replace(/^@+/, '')
     .replace(/[/?#].*$/, '') || null;
 
-// Creators can paste text around the link, so take the post URL out of the field
-const POST_URL_REGEX =
-  /(?:https?:\/\/)?(?:[\w-]+\.)?(?:instagram\.com\/(?:p|reel|tv)\/[\w-]+|tiktok\.com\/@[^/\s]+\/(?:video|photo)\/\d+|(?:vt|vm|m)\.tiktok\.com\/[\w-]+)[^\s]*/i;
-const extractPostUrl = (text) => {
-  const match = text?.match(POST_URL_REGEX)?.[0];
-  if (!match) return text;
-  return /^https?:\/\//i.test(match) ? match : `https://${match}`;
-};
-
 const PAGE_SIZE = 8;
 
 // 1 … 4 5 6 … 161, always 7 slots or fewer
@@ -447,30 +438,20 @@ const CampaignPerformanceTable = () => {
   const reportList = React.useMemo(() => {
     if (!submissionData) return [];
 
+    // One entry per post: a submission with an Instagram and a TikTok link has two
     return submissionData?.submissions
       ?.filter((submission) => {
-        if (!submission.content) return false;
-
-        // More specific regex patterns for actual post links
-        const instagramPostRegex =
-          /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
-        const tiktokPostRegex =
-          /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@[^/]+\/(?:video|photo)\/\d+/i;
-        const tiktokMobileRegex = /(?:https?:\/\/)?(?:vt|vm|m)\.tiktok\.com\/[A-Za-z0-9_-]+/i;
-
-        const isInstagramPost = instagramPostRegex.test(submission.content);
-        const isTiktokPost =
-          tiktokPostRegex.test(submission.content) || tiktokMobileRegex.test(submission.content);
-
-        if (!isInstagramPost && !isTiktokPost) return false;
+        if (!submission.postUrl) return false;
+        const isInstagram = submission.reportPlatform === 'Instagram';
 
         // Stored metrics (scraped or API snapshots) work without a connected account
         if (!submission.hasStoredMetrics) {
-          if (isInstagramPost && !submission.isInstagramConnected) return false;
-          if (isTiktokPost && !isInstagramPost && !submission.isTiktokConnected) return false;
-
-          if (isInstagramPost && submission.isInstagramTokenValid === false) return false;
-          if (isTiktokPost && !isInstagramPost && submission.isTiktokTokenValid === false)
+          if (isInstagram ? !submission.isInstagramConnected : !submission.isTiktokConnected)
+            return false;
+          if (
+            (isInstagram ? submission.isInstagramTokenValid : submission.isTiktokTokenValid) ===
+            false
+          )
             return false;
         }
 
@@ -488,11 +469,9 @@ const CampaignPerformanceTable = () => {
         return true;
       })
       .map((submission) => {
-        const instagramPostRegex2 =
-          /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[A-Za-z0-9_-]+/i;
-        const isInstagram = instagramPostRegex2.test(submission.content);
+        const isInstagram = submission.reportPlatform === 'Instagram';
         return {
-          id: submission.id,
+          id: `${submission.id}-${submission.reportPlatform}`,
           creatorId: submission.user?.creator?.id,
           creatorName: submission.user?.name?.trim() || null,
           campaignName: submission.campaign?.name || 'N/A',
@@ -508,7 +487,7 @@ const CampaignPerformanceTable = () => {
           socialUsername: cleanHandle(
             isInstagram ? submission.user?.creator?.instagram : submission.user?.creator?.tiktok
           ),
-          content: extractPostUrl(submission.content),
+          content: submission.postUrl,
           submissionId: submission.id,
           campaignId: submission.campaignId,
           userId: submission.user?.id,
