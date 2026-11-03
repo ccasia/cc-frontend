@@ -128,8 +128,13 @@ const CreatorSubmissionGrid = ({ creators, fadeKey }) => {
               transform: `translateY(${row.start - scrollMargin}px)`,
             }}
           >
-            {rowCreators.map(({ user, submissions }) => (
-              <CreatorSubmissionCard key={user.id} creator={user} submissions={submissions} />
+            {rowCreators.map(({ user, submissions, products }) => (
+              <CreatorSubmissionCard
+                key={user.id}
+                creator={user}
+                submissions={submissions}
+                products={products}
+              />
             ))}
           </Box>
         );

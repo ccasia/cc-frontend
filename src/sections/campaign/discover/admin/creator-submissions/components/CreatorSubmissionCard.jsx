@@ -30,7 +30,7 @@ const captionOverlaySx = {
   boxShadow: '0px 12px 16px -8px rgba(0, 0, 0, 0.12)',
 };
 
-const CreatorSubmissionCard = ({ creator, submissions }) => {
+const CreatorSubmissionCard = ({ creator, submissions, products }) => {
   const selectedId = useCreatorSubmissionsStore((state) => state.selectedByCreator[creator.id]);
   const expanded = useCreatorSubmissionsStore((state) => !!state.expandedByCreator[creator.id]);
   const selected = submissions.find((s) => s.id === selectedId) ?? submissions[0];
@@ -75,7 +75,12 @@ const CreatorSubmissionCard = ({ creator, submissions }) => {
         [HOVER_MEDIA]: { '&:hover::after': { opacity: 1 } },
       }}
     >
-      <CreatorHeader creator={creator} submissions={submissions} onSelect={handlePillSelect} />
+      <CreatorHeader
+        creator={creator}
+        submissions={submissions}
+        products={products}
+        onSelect={handlePillSelect}
+      />
 
       <Stack
         direction="row"
@@ -129,4 +134,5 @@ export default memo(CreatorSubmissionCard);
 CreatorSubmissionCard.propTypes = {
   creator: PropTypes.object.isRequired,
   submissions: PropTypes.array.isRequired,
+  products: PropTypes.string,
 };
