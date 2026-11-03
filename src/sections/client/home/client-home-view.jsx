@@ -16,17 +16,28 @@ import CampaignCard from './campaign-card';
 import CreditsPanel from './credits-panel';
 import CampaignFilters from './campaign-filters';
 import ClientOnboarding from './client-onboarding';
+import useHoldScroll from './hooks/use-hold-scroll';
+import PostedEmptyState from './components/posted-empty-state';
+import CampaignsEmptyState from './components/campaigns-empty-state';
+import HiddenCampaignsNotice from './components/hidden-campaigns-notice';
 import {
   FONTS,
   plural,
   reviewTab,
   daysUntil,
+  latestPost,
+  postsByDay,
+  countPosted,
+  periodLabel,
   greetingFor,
   ACTION_BLUE,
+  periodPhrase,
+  periodWindow,
   STATUS_COLOR,
   CAMPAIGN_TABS,
   sortCampaigns,
   openTaskCounts,
+  periodShortPhrase,
 } from './utils';
 
 const EMPTY = [];
@@ -50,9 +61,11 @@ export default function ClientHomeView() {
   const { data, isLoading, isError, refetch } = useClientHome();
 
   const tasksRef = useRef(null);
+  const spacerRef = useRef(null);
   const [selectedId, setSelectedId] = useState(null);
   const [tab, setTab] = useState('all');
   const [query, setQuery] = useState('');
+  const [period, setPeriod] = useState({ value: 'all' });
 
   const tasks = data?.tasks ?? EMPTY;
   const campaigns = data?.campaigns ?? EMPTY;
@@ -60,12 +73,18 @@ export default function ClientHomeView() {
   const campaignsById = useMemo(() => new Map(campaigns.map((c) => [c.id, c])), [campaigns]);
   const openCounts = useMemo(() => openTaskCounts(tasks), [tasks]);
 
+  // Not memoised: a rolling preset ends at the current time, so it moves on every render.
+  const postedWindow = periodWindow(period);
+  const postedBy = new Map(campaigns.map((c) => [c.id, countPosted(c, postedWindow)]));
+  // With a period chosen, only campaigns that posted in it are listed and counted.
+  const postedIn = (c) => !postedWindow || postedBy.get(c.id) > 0;
+
   const tabs = CAMPAIGN_TABS.map((t) => ({
     ...t,
-    count: campaigns.filter((c) => t.test(c, openCounts)).length,
+    count: campaigns.filter((c) => t.test(c, openCounts) && postedIn(c)).length,
   }));
 
-  const visibleCampaigns = useMemo(() => {
+  const searchMatches = useMemo(() => {
     const { test } = CAMPAIGN_TABS.find((t) => t.value === tab);
     const q = query.trim().toLowerCase();
     const matches = campaigns.filter(
@@ -74,6 +93,20 @@ export default function ClientHomeView() {
     );
     return sortCampaigns(matches, openCounts);
   }, [campaigns, openCounts, tab, query]);
+
+  const visibleCampaigns = searchMatches.filter(postedIn);
+  // The calendar shows posts for the current search and tab, not just the chosen period.
+  const postDays = useMemo(() => postsByDay(searchMatches), [searchMatches]);
+  const hiddenCampaigns = searchMatches.filter((c) => !postedIn(c));
+  const hiddenByPeriod = hiddenCampaigns.length;
+  const showAllTime = () => setPeriod({ value: 'all' });
+
+  // Posts for any period, so the picker can show counts before one is applied.
+  const countPosts = (p) =>
+    searchMatches.reduce((sum, c) => sum + countPosted(c, periodWindow(p)), 0);
+
+  const postedTotal = visibleCampaigns.reduce((sum, c) => sum + postedBy.get(c.id), 0);
+  const postedCampaigns = visibleCampaigns.filter((c) => postedBy.get(c.id) > 0).length;
 
   const openCampaign = (campaignId, campaignTab) => {
     if (campaignTab) {
@@ -93,10 +126,7 @@ export default function ClientHomeView() {
     }
   };
 
-  const resetFilters = () => {
-    setTab('all');
-    setQuery('');
-  };
+  useHoldScroll(spacerRef);
 
   const overdue = tasks.filter((t) => daysUntil(t.dueAt) < 0).length;
   const campaignsWaiting = new Set(tasks.map((t) => t.campaignId)).size;
@@ -224,6 +254,11 @@ export default function ClientHomeView() {
                 tab={tab}
                 onTabChange={setTab}
                 tabs={tabs}
+                period={period}
+                onPeriodChange={setPeriod}
+                posted={{ total: postedTotal, campaigns: postedCampaigns }}
+                postDays={postDays}
+                countPosts={countPosts}
               />
 
               <Box
@@ -253,39 +288,51 @@ export default function ClientHomeView() {
                       key={campaign.id}
                       campaign={campaign}
                       openTasks={openCounts.get(campaign.id) || 0}
+                      posted={
+                        postedWindow
+                          ? {
+                              count: postedBy.get(campaign.id),
+                              label: periodLabel(period),
+                              phrase: periodShortPhrase(period),
+                            }
+                          : null
+                      }
                       selected={selectedId === campaign.id}
                       onSelect={selectCampaign}
                       onView={(id) => openCampaign(id)}
                     />
                   ))}
 
-                {!isLoading && !isError && !visibleCampaigns.length && (
-                  <Box
-                    sx={{
-                      gridColumn: '1 / -1',
-                      py: 4,
-                      px: 3,
-                      border: '1px dashed',
-                      borderColor: 'divider',
-                      borderRadius: '14px',
-                      textAlign: 'center',
-                      fontSize: 14,
-                      color: 'text.secondary',
-                    }}
-                  >
-                    {campaigns.length ? (
-                      <>
-                        No campaigns match.{' '}
-                        <Button variant="text" size="small" onClick={resetFilters}>
-                          Clear search and filters
-                        </Button>
-                      </>
-                    ) : (
-                      'You have no campaigns yet.'
-                    )}
-                  </Box>
+                {!isLoading && !isError && !visibleCampaigns.length && hiddenByPeriod > 0 && (
+                  <PostedEmptyState
+                    period={period}
+                    hiddenCount={hiddenByPeriod}
+                    lastPostedAt={latestPost(searchMatches)}
+                    onPeriodChange={setPeriod}
+                  />
+                )}
+
+                {!isLoading && !isError && !visibleCampaigns.length && !hiddenByPeriod && (
+                  <CampaignsEmptyState
+                    key={query.trim() ? 'search' : tab}
+                    tab={tab}
+                    query={query}
+                    hasCampaigns={campaigns.length > 0}
+                    onTabChange={setTab}
+                    onClear={() => setQuery('')}
+                  />
                 )}
               </Box>
+
+              {!isLoading && hiddenByPeriod > 0 && visibleCampaigns.length > 0 && (
+                <HiddenCampaignsNotice
+                  campaigns={hiddenCampaigns}
+                  phrase={periodPhrase(period)}
+                  onShowAll={showAllTime}
+                />
+              )}
+
+              <Box ref={spacerRef} aria-hidden />
             </Box>
           </Stack>
         </Container>

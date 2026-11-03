@@ -3,28 +3,11 @@ import PropTypes from 'prop-types';
 
 import { Box, Stack, Tooltip, Typography } from '@mui/material';
 
+import { whiteTooltipSlotProps } from 'src/components/tooltip/white-tooltip';
+
 import StatusChip from './StatusChip';
 import { COLORS, HOVER_MEDIA } from '../utils/constants';
 import { getStatusChip, getSubmissionLabel } from '../utils/utils';
-
-const tooltipSlotProps = {
-  tooltip: {
-    sx: {
-      px: 1.25,
-      py: 1,
-      bgcolor: 'common.white',
-      border: `1px solid ${COLORS.hover}`,
-      borderRadius: 1.5,
-      boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
-    },
-  },
-  arrow: {
-    sx: {
-      color: 'common.white',
-      '&::before': { border: `1px solid ${COLORS.hover}` },
-    },
-  },
-};
 
 // Campaigns can have many deliverables; past this the pills would push the handle off the card
 const MAX_PILLS = 8;
@@ -36,7 +19,7 @@ const StatusBar = ({ submissions, onSelect }) => (
         key={submission.id}
         arrow
         placement="top"
-        slotProps={tooltipSlotProps}
+        slotProps={whiteTooltipSlotProps}
         title={
           <Stack direction="row" alignItems="center" spacing={1}>
             <Typography sx={{ fontSize: 12, fontWeight: 600, color: COLORS.text }}>
