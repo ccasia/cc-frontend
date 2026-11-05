@@ -18,14 +18,24 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { useResponsive } from 'src/hooks/use-responsive';
+
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { getStatusColor } from 'src/contants/statusColors';
 
 import Iconify from 'src/components/iconify';
-import { AnnotationCanvas } from 'src/components/video-annotation';
 import { DarkGlassTooltip } from 'src/components/tooltip/glass-tooltip';
+import { VIDEO_FRAME_ATTR, videoToolbarButtonSx } from 'src/components/video-toolbar';
+import {
+  AnnotationCanvas,
+  AnnotationEditor,
+  useAnnotationDraft,
+} from 'src/components/video-annotation';
+
+import FeedbackTimeline from './feedback-timeline';
+import ModalVideoToolbar from './modal-video-toolbar';
 
 const formatTime = (timeInSeconds) => {
   const t = Math.floor(Math.max(0, Number(timeInSeconds) || 0));
@@ -79,6 +89,11 @@ const VideoSubmissionModal = ({
   const feedbackPanelRef = useRef(null);
   const [modalCurrentTime, setModalCurrentTime] = useState(0);
   const [modalDuration, setModalDuration] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [muted, setMuted] = useState(false);
+  // The admin viewer's toolbar on desktop; small screens keep the native controls
+  // (element fullscreen isn't available on iPhone Safari)
+  const useToolbar = !useResponsive('down', 'md');
 
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -91,6 +106,9 @@ const VideoSubmissionModal = ({
 
   const [viewedAnnotation, setViewedAnnotation] = useState(null);
   const [videoAspect, setVideoAspect] = useState(null);
+  // A client's drawing in progress, posted with their next feedback comment
+  const drawing = useAnnotationDraft();
+  const { close: closeDrawing } = drawing;
 
   // Fullscreen goes on the player box, not the <video>, so a shown drawing (an overlay in
   // the box) stays visible. The native fullscreen button is hidden where this works.
@@ -112,9 +130,27 @@ const VideoSubmissionModal = ({
     else videoFrameRef.current?.requestFullscreen()?.catch(() => {});
   };
 
+  // While drawing, the frame can't change underneath: an empty drawing just closes, a
+  // drawn one keeps the frame (returns false) so it isn't lost
+  const leaveDrawing = () => {
+    if (!drawing.active) return true;
+    if (drawing.shapes.length) return false;
+    closeDrawing();
+    return true;
+  };
+
+  // Pauses and opens the drawing tools on the current frame
+  const startDrawing = () => {
+    const el = modalVideoRef.current;
+    if (!el) return;
+    el.pause();
+    setViewedAnnotation(null);
+    drawing.start(Math.round(el.currentTime * 1000));
+  };
+
   const showAnnotation = (annotation) => {
     const el = modalVideoRef.current;
-    if (!el || !Number.isInteger(annotation?.frameTimeMs)) return;
+    if (!el || !Number.isInteger(annotation?.frameTimeMs) || !leaveDrawing()) return;
     el.pause();
     const seconds = annotation.frameTimeMs / 1000;
     el.currentTime = seconds;
@@ -122,9 +158,27 @@ const VideoSubmissionModal = ({
     setViewedAnnotation(annotation);
   };
 
+  const seekModalVideo = (seconds) => {
+    const el = modalVideoRef.current;
+    if (!el || !leaveDrawing()) return;
+    el.currentTime = seconds;
+    setModalCurrentTime(seconds);
+  };
+
+  const toggleModalPlay = () => {
+    const el = modalVideoRef.current;
+    if (!el || drawing.active) return;
+    if (el.paused) el.play()?.catch(() => {});
+    else el.pause();
+  };
+
+  const toggleModalMute = () => {
+    if (modalVideoRef.current) modalVideoRef.current.muted = !modalVideoRef.current.muted;
+  };
+
   const handleModalSeek = (timeStr) => {
     const el = modalVideoRef.current;
-    if (!el) return;
+    if (!el || !leaveDrawing()) return;
     const wasPaused = el.paused;
     const seconds = parseTimeToSeconds(timeStr);
     el.currentTime = seconds;
@@ -145,7 +199,8 @@ const VideoSubmissionModal = ({
   // A drawing belongs to one frame of one video
   useEffect(() => {
     setViewedAnnotation(null);
-  }, [open, submission?.id, videoPage]);
+    closeDrawing();
+  }, [open, submission?.id, videoPage, closeDrawing]);
 
   const refreshSubmission = async () => {
     if (!submission?.id || isDemoSubmission) return;
@@ -353,6 +408,18 @@ const VideoSubmissionModal = ({
     'CHANGES_REQUIRED',
   ];
   const isProcessing = isClientDemo && clientDemoProcessingStatuses.includes(submissionStatus);
+  // Same statuses the client's feedback box is open in (and the backend allows drawings in)
+  // and only until the client's feedback window closes, when their feedback box locks too
+  const feedbackWindowClosed =
+    Boolean(currentVideo?.feedbackDeadline) &&
+    new Date(currentVideo.feedbackDeadline).getTime() <= Date.now();
+  const canClientDraw =
+    isClient &&
+    !isClientDemo &&
+    useToolbar &&
+    !isPastVideo &&
+    !feedbackWindowClosed &&
+    ['SENT_TO_CLIENT', 'CLIENT_FEEDBACK'].includes(submissionStatus);
 
   const getModalStatusColor = (status) => {
     if (isCreator) {
@@ -466,6 +533,8 @@ const VideoSubmissionModal = ({
       <Modal
         open={open}
         onClose={isClient ? handleModalCloseRequest : onClose}
+        // Esc leaves drawing mode rather than closing the modal
+        disableEscapeKeyDown={drawing.active}
         closeAfterTransition
         slots={{ backdrop: Backdrop }}
         slotProps={{
@@ -848,6 +917,7 @@ const VideoSubmissionModal = ({
               {/* Video Player */}
               <Box
                 ref={videoFrameRef}
+                {...{ [VIDEO_FRAME_ATTR]: '' }}
                 sx={{
                   flex: 1,
                   bgcolor: '#000',
@@ -866,7 +936,8 @@ const VideoSubmissionModal = ({
                   '&:fullscreen': { borderRadius: 0, maxHeight: 'none' },
                 }}
               >
-                {videoUrl && !isProcessing && canFrameFullscreen && (
+                {/* The toolbar has its own fullscreen button */}
+                {videoUrl && !isProcessing && canFrameFullscreen && !useToolbar && (
                   <DarkGlassTooltip
                     title={isFrameFullscreen ? 'Exit full screen' : 'Full screen'}
                     placement="left"
@@ -959,7 +1030,7 @@ const VideoSubmissionModal = ({
                         key={currentVideo?.id}
                         ref={modalVideoRef}
                         src={videoUrl}
-                        controls
+                        controls={!useToolbar}
                         controlsList={
                           [isCreator && 'nodownload', canFrameFullscreen && 'nofullscreen']
                             .filter(Boolean)
@@ -967,9 +1038,15 @@ const VideoSubmissionModal = ({
                         }
                         preload="metadata"
                         playsInline
+                        onClick={useToolbar && !drawing.active ? toggleModalPlay : undefined}
                         onTimeUpdate={(e) => setModalCurrentTime(e.target.currentTime)}
+                        onVolumeChange={(e) => setMuted(e.target.muted)}
+                        onPause={() => setIsPlaying(false)}
                         // Playing, or seeking off the drawn frame, hides the drawing
-                        onPlay={() => setViewedAnnotation(null)}
+                        onPlay={() => {
+                          setIsPlaying(true);
+                          setViewedAnnotation(null);
+                        }}
                         onSeeked={(e) => {
                           if (
                             viewedAnnotation &&
@@ -980,6 +1057,9 @@ const VideoSubmissionModal = ({
                           }
                         }}
                         onLoadedMetadata={(e) => {
+                          // A new video element starts paused and unmuted
+                          setIsPlaying(!e.target.paused);
+                          setMuted(e.target.muted);
                           if (Number.isFinite(e.target.duration))
                             setModalDuration(e.target.duration);
                           if (e.target.videoHeight)
@@ -989,6 +1069,7 @@ const VideoSubmissionModal = ({
                           width: '100%',
                           height: '100%',
                           objectFit: 'contain',
+                          cursor: useToolbar ? 'pointer' : undefined,
                         }}
                       >
                         <track kind="captions" />
@@ -1050,7 +1131,55 @@ const VideoSubmissionModal = ({
                     </Typography>
                   </>
                 )}
+
+                {videoUrl && !isProcessing && (
+                  <AnnotationEditor draft={drawing} aspect={videoAspect ?? undefined} />
+                )}
+
+                {videoUrl && !isProcessing && useToolbar && !drawing.active && (
+                  <ModalVideoToolbar
+                    submissionId={effectiveSubmission.id}
+                    videoId={currentVideo?.id}
+                    isPlaying={isPlaying}
+                    currentTime={modalCurrentTime}
+                    duration={modalDuration}
+                    muted={muted}
+                    onTogglePlay={toggleModalPlay}
+                    onSeek={seekModalVideo}
+                    onToggleMute={toggleModalMute}
+                    onFullscreen={canFrameFullscreen ? toggleFrameFullscreen : undefined}
+                    onShowAnnotation={showAnnotation}
+                    actions={
+                      canClientDraw && (
+                        <DarkGlassTooltip title="Draw on frame" placement="top">
+                          <IconButton
+                            size="small"
+                            aria-label="Draw on frame"
+                            onClick={startDrawing}
+                            sx={videoToolbarButtonSx}
+                          >
+                            <Iconify icon="solar:pen-bold" width={18} />
+                          </IconButton>
+                        </DarkGlassTooltip>
+                      )
+                    }
+                  />
+                )}
               </Box>
+
+              {/* Small screens use native controls, so the dots get a track of their own */}
+              {videoUrl && !isProcessing && !useToolbar && (
+                <Box sx={{ display: isCaptionOpen ? 'none' : 'block', mt: -0.5 }}>
+                  <FeedbackTimeline
+                    submissionId={effectiveSubmission.id}
+                    videoId={currentVideo?.id}
+                    duration={modalDuration}
+                    currentTime={modalCurrentTime}
+                    onSeek={seekModalVideo}
+                    onShowAnnotation={showAnnotation}
+                  />
+                </Box>
+              )}
             </Box>
 
             {/* Right Side - Flexible Content (Client/Creator/Admin specific) */}
@@ -1086,10 +1215,22 @@ const VideoSubmissionModal = ({
                     }
                   },
                   onPause: () => modalVideoRef.current?.pause(),
-                  onPlay: () => modalVideoRef.current?.play(),
+                  // The drawn frame stays put while drawing
+                  onPlay: () => !drawing.active && modalVideoRef.current?.play(),
                   showAnnotation,
                   // For hover previews of drawings (the frame they were drawn on)
                   currentVideoUrl: videoUrl,
+                  // Clients can draw on a frame while the video is with them for review
+                  // (desktop only: the frame is too small to draw on with phone controls)
+                  annotationDraft: canClientDraw
+                    ? {
+                        active: drawing.active,
+                        frameMs: drawing.frameMs,
+                        start: startDrawing,
+                        close: closeDrawing,
+                        getPayload: () => drawing.getPayload(videoAspect),
+                      }
+                    : null,
                 });
               }
               if (React.isValidElement(rightSideContent)) {

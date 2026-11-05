@@ -1279,6 +1279,7 @@ export default function V4VideoSubmission({
           refreshSubmission,
           showAnnotation,
           currentVideoUrl,
+          annotationDraft,
         }) => {
           const currentModalVideo =
             modalSubmission?.video?.find((v) => v.id === modalVideoId) ||
@@ -1301,6 +1302,7 @@ export default function V4VideoSubmission({
               onSeek={onSeekTo}
               onViewAnnotation={showAnnotation}
               annotationVideoUrl={currentVideoUrl}
+              annotationDraft={annotationDraft}
               onPause={onPause}
               onPlay={onPlay}
               onSendToAdmin={handleSendAndRefresh}

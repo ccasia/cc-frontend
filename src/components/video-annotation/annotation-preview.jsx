@@ -13,16 +13,17 @@ const FALLBACK_ASPECT = 9 / 16;
 // fragment (#t=), so nothing reads its pixels and the bucket needs no CORS setup.
 function AnnotationPreview({ annotation, videoUrl }) {
   const aspect = annotation.canvas?.aspect || FALLBACK_ASPECT;
-  const width = Math.min(PREVIEW_MAX_WIDTH, Math.round(PREVIEW_HEIGHT * aspect));
-  const height = Math.round(width / aspect);
+  const minWidth = Math.min(PREVIEW_MAX_WIDTH, Math.round(PREVIEW_HEIGHT * aspect));
   const seconds = (annotation.frameTimeMs / 1000).toFixed(3);
 
   return (
     <Box
       sx={{
         position: 'relative',
-        width,
-        height,
+        // Stretches to the caption's width when that's wider, keeping the video's shape
+        width: 1,
+        minWidth,
+        aspectRatio: String(aspect),
         borderRadius: 1,
         overflow: 'hidden',
         bgcolor: '#000',

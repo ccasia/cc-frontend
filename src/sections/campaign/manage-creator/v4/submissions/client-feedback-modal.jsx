@@ -530,7 +530,10 @@ const CommentCard = ({
             }}
           >
             {comment.timestamp && (
-              <AnnotationPreviewTooltip annotation={comment.annotation} videoUrl={annotationVideoUrl}>
+              <AnnotationPreviewTooltip
+                annotation={comment.annotation}
+                videoUrl={annotationVideoUrl}
+              >
                 <Typography
                   component="span"
                   onClick={() => onTimestampClick(comment)}
@@ -837,6 +840,7 @@ const ClientFeedbackModal = forwardRef(
       onSeek,
       onViewAnnotation,
       annotationVideoUrl,
+      annotationDraft,
       onSendToAdmin,
       isLocked,
       isPastVideo,
@@ -1423,6 +1427,8 @@ const ClientFeedbackModal = forwardRef(
     // 4. Submits a brand new top-level comment from the bottom sticky input
     const handleTopLevelSubmit = async () => {
       if (!feedbackText.trim()) return;
+      // A drawing on the paused frame goes with the comment
+      const annotation = annotationDraft?.getPayload() ?? null;
 
       try {
         const data = isDemo
@@ -1442,8 +1448,11 @@ const ClientFeedbackModal = forwardRef(
                 parentId: null,
                 videoId,
                 isClientDraft: !isCountingDown,
+                ...(annotation && { annotation }),
               })
             ).data;
+
+        if (annotation) annotationDraft.close();
 
         const newComment = {
           ...data,
@@ -1917,7 +1926,11 @@ const ClientFeedbackModal = forwardRef(
                   disabled={effectiveIsLocked}
                   minRows={isMobile ? 1 : 2}
                   maxRows={isMobile ? 4 : 6}
-                  placeholder={effectiveIsLocked ? 'Comments are disabled' : 'Leave feedback...'}
+                  placeholder={(() => {
+                    if (effectiveIsLocked) return 'Comments are disabled';
+                    if (annotationDraft?.active) return 'Add a note to post your drawing...';
+                    return 'Leave feedback...';
+                  })()}
                   value={effectiveIsLocked ? 'Comments are disabled' : feedbackText}
                   onChange={(e) => {
                     const next = e.target.value;
@@ -2269,6 +2282,11 @@ ClientFeedbackModal.propTypes = {
   onPlay: PropTypes.func,
   onSeek: PropTypes.func,
   onViewAnnotation: PropTypes.func,
+  annotationDraft: PropTypes.shape({
+    active: PropTypes.bool,
+    close: PropTypes.func,
+    getPayload: PropTypes.func,
+  }),
   annotationVideoUrl: PropTypes.string,
   onSendToAdmin: PropTypes.func,
   isLocked: PropTypes.bool,
