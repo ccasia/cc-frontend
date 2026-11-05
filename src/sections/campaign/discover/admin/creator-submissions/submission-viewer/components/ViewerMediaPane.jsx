@@ -453,7 +453,8 @@ function FrameAnnotation({ aspect }) {
 
   const selectedShape = annotationShapes[selectedIndex];
   // Lines and boxes have a thickness; text doesn't
-  const showStroke = ['pen', 'arrow', 'rect'].includes(tool) || LINE_TYPES.includes(selectedShape?.type);
+  const showStroke =
+    ['pen', 'arrow', 'rect'].includes(tool) || LINE_TYPES.includes(selectedShape?.type);
 
   return (
     <>
@@ -491,7 +492,8 @@ function FrameAnnotation({ aspect }) {
         sx={{ ...centredOverlaySx, top: 12 }}
       />
       <Typography sx={{ ...centredTagSx, bottom: 12 }}>
-        Drawing at {formatTimestamp((annotationFrameMs ?? 0) / 1000)} · add a note to post it
+        Drawing at {formatTimestamp((annotationFrameMs ?? 0) / 1000)} · add a comment to attach
+        drawing
       </Typography>
     </>
   );
