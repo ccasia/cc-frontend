@@ -222,7 +222,12 @@
             '<div class="bt-main"><div class="bt-wrap">' + content + '</div></div></div>';
         }
 
-        if (boot.getAnimations) boot.getAnimations({ subtree: true }).forEach(function (a) { a.startTime = 0; });
+        // A snapshot can catch an enter animation (page slide, card reveal) at its first, often
+        // invisible frame, so one-shot animations jump to their end. Skeleton loops run on the page clock.
+        if (boot.getAnimations) boot.getAnimations({ subtree: true }).forEach(function (a) {
+          if (a.effect && a.effect.getTiming().iterations !== Infinity) a.finish();
+          else a.startTime = 0;
+        });
       })();
     </script>
     <div id="root"></div>
