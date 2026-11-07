@@ -67,7 +67,7 @@ const reducer = (state, action) => {
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const location = useLocation();
+  const { pathname } = useLocation();
 
   const initialize = useCallback(async () => {
     try {
@@ -89,9 +89,10 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Page changes only. Query changes such as ?tab= or ?q= do not refetch the user.
   useEffect(() => {
     initialize();
-  }, [initialize, location]);
+  }, [initialize, pathname]);
 
   // LOGIN
   const login = useCallback(async (email, password) => {
