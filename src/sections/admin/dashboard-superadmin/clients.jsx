@@ -9,7 +9,6 @@ import {
   Grid,
   Stack,
   Table,
-  Avatar,
   TableRow,
   TableBody,
   TableCell,
@@ -24,6 +23,7 @@ import {
 import { fetcher, endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 const SWR_OPTS = { revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 60000 };
 
@@ -104,13 +104,13 @@ ProgressBlock.propTypes = {
 
 function ClientLogo({ client }) {
   return (
-    <Avatar
+    <BrandLogoAvatar
       src={client.logo || undefined}
       variant="rounded"
       sx={{ width: 40, height: 40, borderRadius: '10px', bgcolor: '#F3F4F6', flexShrink: 0 }}
     >
       <Iconify icon="hugeicons:building-06" width={20} sx={{ color: '#6b7280' }} />
-    </Avatar>
+    </BrandLogoAvatar>
   );
 }
 

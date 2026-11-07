@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Avatar from '@mui/material/Avatar';
 import Drawer from '@mui/material/Drawer';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
@@ -12,6 +11,7 @@ import IconButton from '@mui/material/IconButton';
 import { useGetClientCampaignBreakdown } from 'src/api/finance';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import { CARD_BORDER, formatAmount } from '../utils';
 
@@ -106,13 +106,13 @@ export default function CampaignBreakdownDrawer({ client, onClose }) {
         <>
           <Box sx={{ p: 3, pb: 2 }}>
             <Stack direction="row" alignItems="flex-start" spacing={1.5}>
-              <Avatar
+              <BrandLogoAvatar
                 variant="rounded"
                 src={client.logo || undefined}
                 sx={{ width: 44, height: 44, bgcolor: '#F1F3F5', color: '#637381', borderRadius: 1.5 }}
               >
                 <Iconify icon="mdi:office-building-outline" width={22} />
-              </Avatar>
+              </BrandLogoAvatar>
 
               <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.3 }} noWrap>

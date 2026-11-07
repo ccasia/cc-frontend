@@ -33,6 +33,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 import FormProvider from 'src/components/hook-form/form-provider';
 import EmptyContent from 'src/components/empty-content/empty-content';
 import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
@@ -695,8 +696,8 @@ const PublicFinalDraft = ({ campaign, submission, creator }) => {
                               Client Feedback
                             </Typography>
                             {/* Use company logo or fallback avatar */}
-                            <Avatar
-                              src={campaign?.company?.logoURL || '/default-avatar.png'}
+                            <BrandLogoAvatar
+                              src={campaign?.company?.logo}
                               alt={campaign?.company?.name || 'Company'}
                               sx={{ mr: 2, mb: 2 }}
                             />
@@ -1027,8 +1028,8 @@ const PublicFinalDraft = ({ campaign, submission, creator }) => {
                           Client Feedback
                         </Typography>
                         {/* Use company logo or fallback avatar */}
-                        <Avatar
-                          src={campaign?.company?.logoURL || '/default-avatar.png'}
+                        <BrandLogoAvatar
+                          src={campaign?.company?.logo}
                           alt={campaign?.company?.name || 'Company'}
                           sx={{ mr: 2, mb: 2 }}
                         />

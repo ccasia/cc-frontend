@@ -45,6 +45,7 @@ import { fToNow, fDateTime } from 'src/utils/format-time';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { varFade, varContainer } from 'src/components/animate';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import DateFilterSelect from '../components/date-filter-select';
@@ -1204,7 +1205,7 @@ function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
                 sx={{ width: 56, height: 56 }}
               />
               {isClient && company?.logo && (
-                <Avatar
+                <BrandLogoAvatar
                   src={company.logo}
                   alt={companyName}
                   sx={{
@@ -1218,7 +1219,7 @@ function FeedbackDrawer({ row, rows = [], onClose, onNavigate }) {
                   }}
                 >
                   {companyName?.charAt(0)}
-                </Avatar>
+                </BrandLogoAvatar>
               )}
             </Box>
             <Box sx={{ minWidth: 0, flex: 1 }}>
