@@ -898,7 +898,7 @@ CampaignItem.propTypes = {
   onEdit: PropTypes.func,
   onView: PropTypes.func,
   campaign: PropTypes.object,
-  status: PropTypes.bool,
+  status: PropTypes.string,
   pitchStatus: PropTypes.string,
   showAdmins: PropTypes.bool,
   highlighted: PropTypes.bool,
