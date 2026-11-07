@@ -48,6 +48,8 @@ import useGetCampaignDrafts from 'src/hooks/use-get-campaign-drafts';
 import useSWR from 'swr';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
+import socket from 'src/hooks/socket';
+
 import { fetcher } from 'src/utils/axios';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -587,14 +589,27 @@ const CampaignView = () => {
     };
   }, [mutate]);
 
+  // Cached pages show at once, but they never refetch by themselves (revalidateFirstPage is off).
+  // So when this list comes back from cache (Back, another page, a tab seen before), fetch the
+  // loaded pages again: a campaign created, ended or edited elsewhere then shows without a refresh.
+  useEffect(() => {
+    if (data && !isShowingStaleList) mutate();
+    // Only when the list (tab, search, admin filter) changes; the cache is read at that moment
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listKey]);
+
   // Last known counts show at once on refresh; fresh ones replace them when they arrive.
   const countCache = useMemo(() => readCountCache(user?.id), [user?.id]);
 
-  const { data: campaignStatusData } = useSWR('/api/campaign/campaignStatus', fetcher, {
-    focusThrottleInterval: 60000,
-    fallbackData: countCache.status,
-    onSuccess: (status) => writeCountCache(user?.id, { status }),
-  });
+  const { data: campaignStatusData, mutate: mutateStatusCounts } = useSWR(
+    '/api/campaign/campaignStatus',
+    fetcher,
+    {
+      focusThrottleInterval: 60000,
+      fallbackData: countCache.status,
+      onSuccess: (status) => writeCountCache(user?.id, { status }),
+    }
+  );
 
   // Fetch count for "All Campaigns" (other admins' active campaigns) - only for CSM users
   const { data: allCampaignsData } = useSWR(
@@ -609,6 +624,22 @@ const CampaignView = () => {
         writeCountCache(user?.id, { all: { data: { totalCount: result?.data?.totalCount } } }),
     }
   );
+
+  // The server tells every open list when a campaign is created, activated, ended or changes
+  // stage, so this list and the tab counts update live, also for changes by other admins.
+  useEffect(() => {
+    if (!socket) return undefined;
+    const refresh = () => {
+      mutate();
+      mutateStatusCounts();
+    };
+    socket.on('campaign', refresh);
+    socket.on('campaignStatus', refresh);
+    return () => {
+      socket.off('campaign', refresh);
+      socket.off('campaignStatus', refresh);
+    };
+  }, [mutate, mutateStatusCounts]);
 
   // Use independent datasets for counts so they persist regardless of the current tab
   // With no cached or fresh data a count stays undefined, so the tabs never show a false (0)
