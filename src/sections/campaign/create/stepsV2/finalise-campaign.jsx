@@ -27,6 +27,7 @@ import { isClientManager } from 'src/utils/campaign-flow';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 import { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 import { PRIMARY_ACTION_SX } from 'src/components/campaign/action-button-styles';
 
@@ -469,9 +470,13 @@ const FinaliseCampaign = ({
                 <Chip
                   label={picked.name}
                   avatar={
-                    <Avatar src={picked.logo} alt="" sx={{ ...chipAvatarSx, borderRadius: '4px' }}>
+                    <BrandLogoAvatar
+                      src={picked.logo}
+                      alt=""
+                      sx={{ ...chipAvatarSx, borderRadius: '4px' }}
+                    >
                       {picked.name.charAt(0)}
-                    </Avatar>
+                    </BrandLogoAvatar>
                   }
                   onDelete={(event) => onChange(event, null)}
                   deleteIcon={<CloseGlyph aria-label={`Remove ${picked.name}`} />}
@@ -489,9 +494,9 @@ const FinaliseCampaign = ({
               <Iconify icon="eva:plus-fill" width={16} />
             </Box>
           ) : (
-            <Avatar src={option?.logo} alt={option.name} sx={optionLeadSx}>
+            <BrandLogoAvatar src={option?.logo} alt={option.name} sx={optionLeadSx}>
               {option.name?.charAt(0)}
-            </Avatar>
+            </BrandLogoAvatar>
           )}
           <Box
             component="span"

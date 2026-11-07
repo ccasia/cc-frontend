@@ -15,7 +15,9 @@ export const useGetReleaseNotes = (enabled = true) => {
 
 // Latest published release the current admin hasn't seen, or null
 export const useGetUnseenReleaseNote = () => {
-  const { data, isLoading, mutate } = useSWR(endpoints.releaseNotes.unseen, fetcher);
+  const { data, isLoading, mutate } = useSWR(endpoints.releaseNotes.unseen, fetcher, {
+    revalidateOnFocus: false,
+  });
 
   return useMemo(
     () => ({ releaseNote: data?.data || null, isLoading, mutate }),
