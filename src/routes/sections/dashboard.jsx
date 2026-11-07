@@ -6,10 +6,6 @@ import { AuthGuard, RoleBasedGuard } from 'src/auth/guard';
 
 import { BootRelease, LoadingScreen } from 'src/components/loading-screen';
 
-import { ChatView } from 'src/sections/chat/view';
-import { CalendarView } from 'src/sections/calendar/view';
-import ReportingView from 'src/sections/report/view/reporting-view';
-
 // Import the client dashboard directly without lazy loading to avoid issues
 import ClientHomeRoute from '../../sections/client/home';
 
@@ -27,6 +23,15 @@ const CreatorInbox = lazy(() => import('src/pages/dashboard/creator/inbox'));
 
 // APP
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
+
+// Loaded on their own routes only, so they are not in every dashboard page's startup code.
+const ChatView = lazy(() =>
+  import('src/sections/chat/view').then((module) => ({ default: module.ChatView }))
+);
+const CalendarView = lazy(() =>
+  import('src/sections/calendar/view').then((module) => ({ default: module.CalendarView }))
+);
+const ReportingView = lazy(() => import('src/sections/report/view/reporting-view'));
 
 // Analytics
 const AnalyticsView = lazy(() => import('src/sections/analytics/view/analytic-view-v2'));

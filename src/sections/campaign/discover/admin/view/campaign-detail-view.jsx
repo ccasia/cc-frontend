@@ -1,25 +1,16 @@
-import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import { pdf } from '@react-pdf/renderer';
-import { Page, Document } from 'react-pdf';
-import { enqueueSnackbar } from 'notistack';
 import { useSearchParams } from 'react-router-dom';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { lazy, useState, Suspense, useEffect } from 'react';
 
-import { LoadingButton } from '@mui/lab';
-import { deepOrange } from '@mui/material/colors';
 import {
   Box,
   Stack,
-  Radio,
   Button,
   Dialog,
   Container,
   Typography,
   IconButton,
-  DialogTitle,
   DialogActions,
-  DialogContent,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -31,10 +22,7 @@ import useGetInvoicesByCampId from 'src/hooks/use-get-invoices-by-campId';
 import { useGetCampaignByIdScoped } from 'src/hooks/use-get-campaign-by-id';
 import { useCampaignPermissions } from 'src/hooks/use-campaign-permissions';
 
-import axiosInstance, { endpoints } from 'src/utils/axios';
-
 import { useAuthContext } from 'src/auth/hooks';
-import AgreementTemplate from 'src/template/agreement';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
@@ -43,12 +31,8 @@ import ViewOnlyBanner from 'src/components/banner/view-only-banner';
 import PageEnter, { markPageEnter } from 'src/components/page-enter';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
-import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
-import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
 import { dialogEnterSx } from 'src/sections/campaign/create/components/motion';
-// HIDE: logistics
-import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 import {
   setOpenModal,
   usePublicUrl,
@@ -59,32 +43,57 @@ import {
   setOpenCopyDialog,
 } from 'src/sections/campaign/discover/admin/store/use-spreadsheet';
 
-import CampaignFAQ from '../campaign-faq';
 import CampaignOverview from '../campaign-overview';
-import CampaignAnalysis from '../campaign-analytics';
 import CampaignTabs from '../components/campaign-tabs';
-import CampaignAgreements from '../campaign-agreements';
 import { useTabs, setCurrentTab } from '../store/use-tabs';
-import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignHeader from '../components/campaign-header';
-import CampaignInvoicesList from '../campaign-invoices-list';
 import CampaignOverviewClient from '../campaign-overview-client';
-import CampaignDraftSubmissions from '../campaign-draft-submission';
-import CampaignCreatorDeliverables from '../campaign-creator-deliverables';
-import CampaignDetailContentClient from '../campaign-detail-content-client';
-import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import ClientCampaignHeader from '../../client/overview/client-campaign-header';
 import CreatorMasterListSkeleton from '../components/creator-master-list-skeleton';
 import CampaignAgreementsSkeleton from '../components/campaign-agreements-skeleton';
 import ClientCampaignOverview from '../../client/overview/client-campaign-overview';
-import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
-import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
-import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
-import CampaignCreatorSubmissions from '../creator-submissions/CampaignCreatorSubmissions';
 import CampaignTabContentSkeleton, {
   CampaignTabListSkeleton,
 } from '../components/campaign-tab-content-skeleton';
+
+// Tab value -> chunk. A `-client` key is the client variant of the same tab.
+const TAB_LOADERS = {
+  'campaign-content': () => import('../campaign-detail-content-client'),
+  'creator-master-list': () => import('../campaign-creator-master-list-client'),
+  pitch: () => import('../../client/v3-pitches/campaign-v3-pitches-wrapper'),
+  agreement: () => import('../campaign-agreements'),
+  // HIDE: logistics
+  logistics: () => import('src/sections/logistics/campaign-logistics-view'),
+  invoices: () => import('../campaign-invoices-list'),
+  client: () => import('../campaign-detail-brand'),
+  submission: () => import('../campaign-draft-submission'),
+  deliverables: () => import('../campaign-creator-deliverables'),
+  'deliverables-client': () => import('../campaign-creator-deliverables-client'),
+  'submissions-v4': () => import('../creator-submissions/CampaignCreatorSubmissions'),
+  'submissions-v4-client': () => import('../campaign-creator-submissions-v4'),
+  analytics: () => import('../campaign-analytics'),
+  faq: () => import('../campaign-faq'),
+};
+
+const CampaignDetailContentClient = lazy(TAB_LOADERS['campaign-content']);
+const CampaignCreatorMasterListClient = lazy(TAB_LOADERS['creator-master-list']);
+const CampaignV3PitchesWrapper = lazy(TAB_LOADERS.pitch);
+const CampaignAgreements = lazy(TAB_LOADERS.agreement);
+const CampaignLogisticsView = lazy(TAB_LOADERS.logistics);
+const CampaignInvoicesList = lazy(TAB_LOADERS.invoices);
+const CampaignDetailBrand = lazy(TAB_LOADERS.client);
+const CampaignDraftSubmissions = lazy(TAB_LOADERS.submission);
+const CampaignCreatorDeliverables = lazy(TAB_LOADERS.deliverables);
+const CampaignCreatorDeliverablesClient = lazy(TAB_LOADERS['deliverables-client']);
+const CampaignCreatorSubmissions = lazy(TAB_LOADERS['submissions-v4']);
+const CampaignCreatorSubmissionsV4 = lazy(TAB_LOADERS['submissions-v4-client']);
+const CampaignAnalysis = lazy(TAB_LOADERS.analytics);
+const CampaignFAQ = lazy(TAB_LOADERS.faq);
+const CreateCampaignFormV2 = lazy(() => import('src/sections/campaign/create/form-v2'));
+
+// Same tree in the skeleton and the content, so these keep their instance between the two.
+const keepInstance = (node) => <Suspense fallback={<CampaignTabListSkeleton />}>{node}</Suspense>;
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -123,10 +132,7 @@ const CampaignDetailView = ({
     mutate: campaignMutate,
   } = useGetCampaignByIdScoped(id, publicReadonly, isDemo);
 
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
-
   const copy = useBoolean();
-  const pdfModal = useBoolean();
 
   const { user } = useAuthContext();
 
@@ -136,46 +142,12 @@ const CampaignDetailView = ({
 
   const isDisabled = isViewOnly;
 
-  const [pages, setPages] = useState(0);
-  const lgUp = useResponsive('up', 'lg');
   const smDown = useResponsive('down', 'sm');
-  const templateModal = useBoolean();
-  const linking = useBoolean();
 
   const campaignLog = useBoolean();
   const activateDialog = useBoolean();
   const initialActivateDialog = useBoolean();
   const bulkAssign = useBoolean();
-
-  const generateNewAgreement = useCallback(async (template) => {
-    try {
-      if (template) {
-        const blob = await pdf(
-          <AgreementTemplate
-            DATE={dayjs().format('LL')}
-            ccEmail="hello@cultcreative.com"
-            ccPhoneNumber="+60162678757"
-            NOW_DATE={dayjs().format('LL')}
-            VERSION_NUMBER="V1"
-            ADMIN_IC_NUMBER={template?.adminICNumber ?? 'Default'}
-            ADMIN_NAME={template?.adminName ?? 'Default'}
-            SIGNATURE={template?.signURL ?? 'Default'}
-          />
-        ).toBlob();
-        return blob;
-      }
-      return null;
-    } catch (err) {
-      console.log(err);
-      return err;
-    }
-  }, []);
-
-  const onSelectAgreement = async (template) => {
-    await generateNewAgreement(template);
-    // setDisplayPdf(newAgreement);
-    setSelectedTemplate(template);
-  };
 
   // const [currentTab, setCurrentTab] = useState(
   //   forcedTab ||
@@ -219,6 +191,11 @@ const CampaignDetailView = ({
 
   // Demo and public read-only views can't call the client overview endpoint.
   const showClientOverview = user?.role === 'client' && !isDemo && !publicReadonly;
+
+  const handleTabIntent = (tab) => {
+    const load = (isClient && TAB_LOADERS[`${tab}-client`]) || TAB_LOADERS[tab];
+    load?.();
+  };
 
   const returnTo = searchParams.get('returnTo');
   const safeReturnTo = returnTo && returnTo.startsWith('/') ? returnTo : null;
@@ -281,10 +258,10 @@ const CampaignDetailView = ({
     if (tab === 'agreement') return <CampaignAgreementsSkeleton campaignId={id} />;
     // Its own loading state already shows the real toolbar with loading cards.
     if (tab === 'submissions-v4' && !isClient)
-      return <CampaignCreatorSubmissions campaignId={id} />;
+      return keepInstance(<CampaignCreatorSubmissions campaignId={id} />);
     // Invoices only need the campaign id, so they start loading right away.
     if (tab === 'invoices')
-      return <CampaignInvoicesList campId={id} isDisabled={isDisabled || isDemo} />;
+      return keepInstance(<CampaignInvoicesList campId={id} isDisabled={isDisabled || isDemo} />);
     return <CampaignTabListSkeleton />;
   };
 
@@ -327,7 +304,7 @@ const CampaignDetailView = ({
           />
         );
       case 'invoices':
-        return (
+        return keepInstance(
           <CampaignInvoicesList
             campId={campaign?.id}
             campaignMutate={campaignMutate}
@@ -364,7 +341,7 @@ const CampaignDetailView = ({
             onRated={campaignMutate}
           />
         ) : (
-          <CampaignCreatorSubmissions campaign={campaign} campaignId={id} />
+          keepInstance(<CampaignCreatorSubmissions campaign={campaign} campaignId={id} />)
         );
       case 'analytics':
         return (
@@ -395,25 +372,6 @@ const CampaignDetailView = ({
       .catch((err) => {
         console.error('Failed to copy text: ', err);
       });
-  };
-
-  const linkTemplate = async () => {
-    try {
-      linking.onTrue();
-      const res = await axiosInstance.patch(endpoints.campaign.linkNewAgreement, {
-        template: selectedTemplate,
-        campaignId: campaign?.id,
-      });
-      enqueueSnackbar(res?.data?.message);
-      templateModal.onFalse();
-      campaignMutate();
-    } catch (error) {
-      enqueueSnackbar(error?.message, {
-        variant: 'error',
-      });
-    } finally {
-      linking.onFalse();
-    }
   };
 
   const copyDialogContainer = (
@@ -476,7 +434,9 @@ const CampaignDetailView = ({
         <ClientCampaignHeader
           campaignId={campaign?.id || id}
           onBack={handleBackNavigation}
-          tabs={<CampaignTabs campaign={campaign} variant="compact" />}
+          tabs={
+            <CampaignTabs campaign={campaign} variant="compact" onTabIntent={handleTabIntent} />
+          }
         />
       ) : (
         <PageEnter source="list">
@@ -503,25 +463,21 @@ const CampaignDetailView = ({
             isDemo={isDemo}
             publicReadonly={publicReadonly}
             forcedTab={forcedTab}
+            onTabIntent={handleTabIntent}
           />
         )}
 
         {/* The refresh frame clears this slot when it borrows another tab's snapshot. */}
         <Box data-boot-slot sx={{ display: 'contents' }}>
           <PageEnter key={currentTab} source="tab" size="small">
-            {!campaignLoading && !linkedTab ? renderTabContent() : renderTabSkeleton()}
+            <Suspense fallback={renderTabSkeleton()}>
+              {!campaignLoading && !linkedTab ? renderTabContent() : renderTabSkeleton()}
+            </Suspense>
           </PageEnter>
         </Box>
       </PageEnter>
 
       {copyDialogContainer}
-
-      <PDFEditorModal
-        open={pdfModal.value}
-        onClose={pdfModal.onFalse}
-        user={user}
-        campaignId={campaign?.id}
-      />
 
       <PublicUrlModal
         open={openModal}
@@ -558,12 +514,14 @@ const CampaignDetailView = ({
         open={activateDialog.value}
       >
         {activateDialog.value && (
-          <CreateCampaignFormV2
-            mode="activate"
-            campaignId={id}
-            onClose={() => activateDialog.onFalse()}
-            onSuccess={() => campaignMutate()}
-          />
+          <Suspense fallback={null}>
+            <CreateCampaignFormV2
+              mode="activate"
+              campaignId={id}
+              onClose={() => activateDialog.onFalse()}
+              onSuccess={() => campaignMutate()}
+            />
+          </Suspense>
         )}
       </Dialog>
 
@@ -572,130 +530,6 @@ const CampaignDetailView = ({
         onClose={() => initialActivateDialog.onFalse()}
         campaignId={id}
       />
-
-      <Dialog open={templateModal.value} fullWidth maxWidth="md" onClose={templateModal.onFalse}>
-        <DialogTitle>
-          <Stack direction={{ sm: 'column', md: 'row' }} justifyContent="space-between">
-            <Typography variant="subtitle2" mt={2}>
-              You may select one template to be use:
-            </Typography>
-            <LoadingButton
-              sx={{
-                border: 1,
-                borderColor: deepOrange[500],
-                borderRadius: 2,
-                p: 2,
-                boxShadow: `0px -3px 0px 0px ${deepOrange[500]} inset`,
-              }}
-              disabled={!selectedTemplate}
-              onClick={linkTemplate}
-              loading={linking.value}
-            >
-              Link now
-            </LoadingButton>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'repeat(1, 1fr)',
-                sm: 'repeat(1, 1fr)',
-                md: 'repeat(2, 1fr)',
-              },
-              columnGap: 1,
-              justifyItems: 'center',
-              alignItems: 'center',
-            }}
-          >
-            {/* {templateLoading && (
-              <Box
-                sx={{
-                  // position: 'relative',
-                  // top: 200,
-                  textAlign: 'center',
-                }}
-              >
-                <CircularProgress
-                  thickness={7}
-                  size={25}
-                  sx={{
-                    color: (theme) => theme.palette.common.black,
-                    strokeLinecap: 'round',
-                  }}
-                />
-              </Box>
-            )} */}
-            {user?.agreementTemplate?.length > 0 &&
-              user?.agreementTemplate?.map((template) => (
-                <Box
-                  key={template?.id}
-                  my={4}
-                  overflow="auto"
-                  textAlign="center"
-                  height={400}
-                  // width={{ md: 360 }}
-                  sx={{
-                    border: selectedTemplate?.id === template?.id ? 4 : 1,
-                    borderRadius: 2,
-                    borderColor: selectedTemplate?.id === template?.id && 'green',
-                    cursor: 'pointer',
-                    transition: 'transform 0.3s ease-in-out',
-                    position: 'relative',
-                    '&:hover': {
-                      transform: 'scale(1.03)',
-                      zIndex: 10,
-                    },
-                    '::-webkit-scrollbar': {
-                      display: 'none', //
-                    },
-
-                    overflow: 'hidden',
-                  }}
-                  component="div"
-                  onClick={() => onSelectAgreement(template)}
-                >
-                  <Radio
-                    checked={selectedTemplate?.id === template?.id}
-                    onChange={() => onSelectAgreement(template)}
-                    value={template?.id}
-                    name="template-selection"
-                    inputProps={{ 'aria-label': `Select template ${template?.id}` }}
-                    sx={{
-                      position: 'absolute',
-                      top: 10,
-                      left: 10,
-                      zIndex: 100,
-                    }}
-                  />
-
-                  <Box sx={{ width: 1, height: 1, overflow: 'auto', scrollbarWidth: 'none' }}>
-                    <Box sx={{ display: 'inline-block' }}>
-                      <Document
-                        file={template?.url}
-                        onLoadSuccess={({ numPages }) => setPages(numPages)}
-                      >
-                        <Stack spacing={2}>
-                          {Array.from({ length: pages }, (_, index) => (
-                            <Page
-                              key={index}
-                              pageIndex={index}
-                              renderTextLayer={false}
-                              pageNumber={index + 1}
-                              scale={1}
-                              width={lgUp ? 400 : 300}
-                            />
-                          ))}
-                        </Stack>
-                      </Document>
-                    </Box>
-                  </Box>
-                </Box>
-              ))}
-          </Box>
-        </DialogContent>
-      </Dialog>
     </Container>
   );
 };

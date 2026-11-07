@@ -89,6 +89,11 @@ const newCardSx = {
   },
 };
 
+// The card root is a link (inline). A grid parent makes it a block again,
+// as it was when it sat in the list grid directly.
+const cardSx = { position: 'relative', '& > .card-body': { display: 'grid' } };
+const newCardWrapSx = { ...cardSx, ...newCardSx };
+
 // One campaign card in the list. The just-published card (`isNew`) fades and
 // grows in after the others start to move, then a shine sweeps across it.
 export default function CampaignCardMotion({ id, isNew, delayMs = 0, onEntered, children }) {
@@ -101,9 +106,7 @@ export default function CampaignCardMotion({ id, isNew, delayMs = 0, onEntered, 
     <Box
       data-campaign-id={id}
       onAnimationEnd={isNew ? handleEnd : undefined}
-      // The card root is a link (inline). A grid parent makes it a block again,
-      // as it was when it sat in the list grid directly.
-      sx={{ position: 'relative', '& > .card-body': { display: 'grid' }, ...(isNew && newCardSx) }}
+      sx={isNew ? newCardWrapSx : cardSx}
       style={
         isNew
           ? {
