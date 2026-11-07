@@ -508,7 +508,9 @@ const CampaignDetailView = ({
 
         {/* The refresh frame clears this slot when it borrows another tab's snapshot. */}
         <Box data-boot-slot sx={{ display: 'contents' }}>
-          {!campaignLoading && !linkedTab ? renderTabContent() : renderTabSkeleton()}
+          <PageEnter key={currentTab} source="tab" size="small">
+            {!campaignLoading && !linkedTab ? renderTabContent() : renderTabSkeleton()}
+          </PageEnter>
         </Box>
       </PageEnter>
 

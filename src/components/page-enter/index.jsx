@@ -22,7 +22,11 @@ const enter = (x) => keyframes`
   to { opacity: 1; transform: none; }
 `;
 
-const ANIMATIONS = { forward: enter(12), back: enter(-12) };
+// Pages move 12px. Tabs are switched far more often, so they move less and finish sooner.
+const SIZES = {
+  page: { forward: enter(12), back: enter(-12), duration: 240, fade: 200 },
+  small: { forward: enter(8), back: enter(-8), duration: 200, fade: 150 },
+};
 
 const fade = keyframes`
   from { opacity: 0; }
@@ -31,7 +35,7 @@ const fade = keyframes`
 
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';
 
-export default function PageEnter({ source, children, sx }) {
+export default function PageEnter({ source, size = 'page', children, sx }) {
   const [direction] = useState(() => {
     if (!pending || Date.now() - pending.at >= MARK_TTL_MS) return null;
     if (source && pending.source !== source) return null;
@@ -42,13 +46,15 @@ export default function PageEnter({ source, children, sx }) {
     pending = null;
   }, []);
 
+  const motion = SIZES[size];
+
   return (
     <Box
       sx={{
         ...(direction && {
-          animation: `${ANIMATIONS[direction]} 240ms ${EASE_OUT} both`,
+          animation: `${motion[direction]} ${motion.duration}ms ${EASE_OUT} both`,
           '@media (prefers-reduced-motion: reduce)': {
-            animation: `${fade} 200ms ease-out both`,
+            animation: `${fade} ${motion.fade}ms ease-out both`,
           },
         }),
         ...sx,
@@ -61,6 +67,7 @@ export default function PageEnter({ source, children, sx }) {
 
 PageEnter.propTypes = {
   source: PropTypes.string,
+  size: PropTypes.oneOf(['page', 'small']),
   children: PropTypes.node,
   sx: PropTypes.object,
 };

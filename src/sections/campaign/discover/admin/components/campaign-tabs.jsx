@@ -12,6 +12,8 @@ import { bgBlur } from 'src/theme/css';
 import { useAuthContext } from 'src/auth/hooks';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
+import { markPageEnter } from 'src/components/page-enter';
+
 import { useTabs, setCurrentTab } from '../store/use-tabs';
 import CampaignTabIndicator from './campaign-tab-indicator';
 import { readCampaignCache, writeCampaignCache } from './campaign-cache';
@@ -83,11 +85,12 @@ const CampaignTabs = ({
   );
 
   const handleChangeTab = useCallback(
-    (event, newValue) => {
+    (event, newValue, direction) => {
       const allowed = getClientAllowedTabs();
       if (isClient && !allowed.includes(newValue)) {
         return;
       }
+      if (direction) markPageEnter(direction, 'tab');
       localStorage.setItem('campaigndetail', newValue);
       setCurrentTab(newValue);
     },
@@ -406,7 +409,7 @@ const CampaignTabs = ({
             )
               .filter(Boolean)
               .filter((tab) => !isDemo || demoAllowedTabs.includes(tab.value))
-              .map((tab) => (
+              .map((tab, index, list) => (
                 <Button
                   key={tab.value}
                   disableRipple
@@ -414,7 +417,12 @@ const CampaignTabs = ({
                   data-boot-tab={tab.value}
                   data-boot-active={currentTab === tab.value}
                   data-tab-active={currentTab === tab.value}
-                  onClick={() => handleChangeTab(null, tab.value)}
+                  onClick={(event) => {
+                    // Only a pointer click slides the content in; keyboard switches stay instant.
+                    const from = list.findIndex((item) => item.value === currentTab);
+                    const slide = event.detail > 0 && tab.value !== currentTab;
+                    handleChangeTab(null, tab.value, slide && (index > from ? 'forward' : 'back'));
+                  }}
                   sx={{
                     px: compact ? 0 : { xs: 1, sm: 1.2 },
                     py: 0.5,
