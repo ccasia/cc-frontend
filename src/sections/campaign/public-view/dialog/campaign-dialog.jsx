@@ -18,7 +18,6 @@ import {
   Stack,
   Paper,
   Button,
-  Avatar,
   Divider,
   Typography,
   IconButton,
@@ -30,6 +29,7 @@ import { fDate } from 'src/utils/format-time';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 const ChipStyle = {
   bgcolor: '#FFF',
@@ -260,7 +260,7 @@ const CampaignModal = ({
           />
 
           {/* Company Avatar */}
-          <Avatar
+          <BrandLogoAvatar
             src={campaign?.company?.logo}
             alt={campaign?.company?.name}
             sx={{

@@ -15,7 +15,6 @@ import {
   Grid,
   Stack,
   Button,
-  Avatar,
   Dialog,
   Divider,
   Typography,
@@ -36,6 +35,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import MediaKitPopup from './media-kit-popup';
 // import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
@@ -435,7 +435,7 @@ const CampaignModal = ({
           </Box>
 
           {/* Company Avatar */}
-          <Avatar
+          <BrandLogoAvatar
             src={campaign?.company?.logo}
             alt={campaign?.company?.name}
             sx={{
@@ -1084,7 +1084,7 @@ const CampaignModal = ({
                       Client
                     </Typography>
                     <Stack direction="row" spacing={1} alignItems="center">
-                      <Avatar
+                      <BrandLogoAvatar
                         src={campaign?.company?.logo ?? campaign?.brand?.logo}
                         alt={campaign?.company?.name ?? campaign?.brand?.name}
                         sx={{

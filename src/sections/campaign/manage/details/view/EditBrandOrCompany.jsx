@@ -8,7 +8,6 @@ import {
   Stack,
   Button,
   Dialog,
-  Avatar,
   DialogTitle,
   ListItemText,
   DialogActions,
@@ -22,6 +21,7 @@ import { useGetCampaignBrandOption } from 'src/hooks/use-get-company-brand';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { RHFAutocomplete } from 'src/components/hook-form';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 import FormProvider from 'src/components/hook-form/form-provider';
 
 const filter = createFilterOptions();
@@ -89,7 +89,7 @@ export const EditBrandOrCompany = ({ open, campaign, onClose }) => {
                 getOptionLabel={(option) => option.name}
                 renderOption={(props, option) => (
                   <Stack direction="row" spacing={1} p={1} {...props} key={option.id}>
-                    <Avatar src={option?.logo}>{option.name.slice(0, 1)}</Avatar>
+                    <BrandLogoAvatar src={option?.logo}>{option.name.slice(0, 1)}</BrandLogoAvatar>
                     <ListItemText primary={option.name} />
                   </Stack>
                 )}

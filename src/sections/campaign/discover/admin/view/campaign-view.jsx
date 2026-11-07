@@ -1,9 +1,10 @@
 import { debounce } from 'lodash';
 import useSWRInfinite from 'swr/infinite';
-import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
-import { m, useScroll, AnimatePresence, useMotionValueEvent } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
+import React, { useRef, useMemo, useState, useEffect, useCallback, useLayoutEffect } from 'react';
+import { m, useScroll, AnimatePresence, useReducedMotion, useMotionValueEvent } from 'framer-motion';
 
-import { useTheme } from '@mui/material/styles';
+import { useTheme, keyframes } from '@mui/material/styles';
 import {
   Box,
   Menu,
@@ -47,6 +48,51 @@ import { SECONDARY_ACTION_SX } from 'src/components/campaign/action-button-style
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 
 import CampaignItem from '../campaign-item';
+import CampaignTabButton from '../components/campaign-tab-button';
+import CampaignEmptyState from '../components/campaign-empty-state';
+import { preloadCampaignImages } from '../components/campaign-banner';
+import CampaignTabIndicator from '../components/campaign-tab-indicator';
+import CampaignItemSkeleton from '../components/campaign-item-skeleton';
+
+const PAGE_SIZE = 12;
+const EASE_OUT = [0.23, 1, 0.32, 1];
+const REVEAL_LIMIT = 9;
+
+const revealUp = keyframes`
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+`;
+
+const revealFade = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
+
+const textShimmer = keyframes`
+  from { background-position: 100% 0; }
+  to { background-position: 0% 0; }
+`;
+
+const shimmerTextSx = {
+  color: 'transparent',
+  backgroundImage: 'linear-gradient(90deg, #636366 40%, #c7c7cc 50%, #636366 60%)',
+  backgroundSize: '300% 100%',
+  WebkitBackgroundClip: 'text',
+  backgroundClip: 'text',
+  animation: `${textShimmer} 1.6s linear infinite`,
+  '@media (prefers-reduced-motion: reduce)': {
+    animation: 'none',
+    color: '#636366',
+    backgroundImage: 'none',
+  },
+};
+
+const revealSx = (i) => ({
+  animation: `${revealUp} 280ms cubic-bezier(0.23, 1, 0.32, 1) ${i * 40}ms both`,
+  '@media (prefers-reduced-motion: reduce)': {
+    animation: `${revealFade} 200ms ease-out both`,
+  },
+});
 
 const CampaignView = () => {
   const settings = useSettingsContext();
@@ -55,18 +101,53 @@ const CampaignView = () => {
   const pageSizing = localStorage.getItem('pageSizing');
   const scrollTop = localStorage.getItem('scrollTop');
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialQuery = searchParams.get('q') ?? '';
+
   const [search, setSearch] = useState({
-    query: '',
+    query: initialQuery,
     results: [],
   });
 
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+  const urlQuery = searchParams.get('q') ?? '';
+  const syncedQuery = useRef(initialQuery);
+
+  useEffect(() => {
+    const q = debouncedQuery.trim();
+    if (syncedQuery.current === q) return;
+    syncedQuery.current = q;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (q) next.set('q', q);
+        else next.delete('q');
+        return next;
+      },
+      { replace: true }
+    );
+  }, [debouncedQuery, setSearchParams]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSetQuery = useCallback(
-    debounce((q) => setDebouncedQuery(q), 300), // 300ms delay
+    debounce((q) => setDebouncedQuery(q.trim()), 300), // 300ms delay
     []
   );
+
+  // Back/forward or a link can change ?q= without typing; follow it.
+  useEffect(() => {
+    if (syncedQuery.current === urlQuery) return;
+    syncedQuery.current = urlQuery;
+    debouncedSetQuery.cancel();
+    setSearch((prev) => ({ ...prev, query: urlQuery }));
+    setDebouncedQuery(urlQuery);
+  }, [urlQuery, debouncedSetQuery]);
+
+  const clearSearch = useCallback(() => {
+    setSearch((prev) => ({ ...prev, query: '' }));
+    debouncedSetQuery.cancel();
+    setDebouncedQuery('');
+  }, [debouncedSetQuery]);
 
   const create = useBoolean();
 
@@ -78,6 +159,10 @@ const CampaignView = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const hasRestoredRef = useRef(false);
   const isRestoringScroll = useRef(null);
+  const [highlightIndex, setHighlightIndex] = useState(() => {
+    const stored = localStorage.getItem('lastOpenedIndex');
+    return stored === null ? null : Number(stored);
+  });
 
   // Fetch admins list for filter dropdown - only when in "All" tab
   // Using /api/user/alladmins endpoint which is accessible by all admins (not just superadmin)
@@ -160,7 +245,7 @@ const CampaignView = () => {
         // For pending tab, we need to search for all pending statuses
         status = 'SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION';
       }
-      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}${excludeParam}${filterAdminParam}`;
+      return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${PAGE_SIZE}${excludeParam}${filterAdminParam}`;
     }
 
     // If there's no more data (previousPageData is empty or no nextCursor), stop fetching
@@ -172,12 +257,20 @@ const CampaignView = () => {
       // For pending tab, we need to search for all pending statuses
       status = 'SCHEDULED,PENDING_CSM_REVIEW,PENDING_ADMIN_ACTIVATION';
     }
-    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(debouncedQuery)}&status=${status}&limit=${10}&cursor=${previousPageData?.metaData?.lastCursor}${excludeParam}${filterAdminParam}`;
+    const pageSearch = previousPageData?.metaData?.search ?? debouncedQuery;
+    return `/api/campaign/getAllCampaignsByAdminId/${user?.id}?search=${encodeURIComponent(pageSearch)}&status=${status}&limit=${PAGE_SIZE}&cursor=${previousPageData?.metaData?.lastCursor}${excludeParam}${filterAdminParam}`;
   };
 
-  const { data, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(getKey, fetcher, {
-    revalidateFirstPage: false,
-  });
+  const listFetcher = (url) => fetcher(url).then((res) => ({ ...res, key: url }));
+
+  const { data, error, size, setSize, isValidating, mutate, isLoading } = useSWRInfinite(
+    getKey,
+    listFetcher,
+    {
+      revalidateFirstPage: false,
+      keepPreviousData: true,
+    }
+  );
 
   const dataFiltered = useMemo(
     () => (data ? data?.flatMap((item) => item?.data?.campaigns) : []),
@@ -193,23 +286,49 @@ const CampaignView = () => {
     count: rowCount,
     getScrollElement: () => mainRef?.current,
     estimateSize: () => 370 + 16,
-    overscan: 2,
+    overscan: 3,
   });
 
   const virtualRows = rowVirtualizer.getVirtualItems();
-  const isLoadingMore = isValidating && dataFiltered && dataFiltered?.length > size;
+  const isLoadingMore = size > 1 && !!data && typeof data[size - 1] === 'undefined';
+  const listKey = getKey(0, null);
+  const isShowingStaleList = !!data && data[0]?.key !== listKey;
+  const listFailed = !!error && !isValidating && (!data || isShowingStaleList);
+  const showSkeleton =
+    !listFailed &&
+    ((isLoading && !data) || isShowingStaleList || search.query.trim() !== debouncedQuery.trim());
+  const hideList = showSkeleton || listFailed;
+  const freshPage = isShowingStaleList ? undefined : data?.[0];
+  const totalCount = freshPage?.data?.totalCount;
+  const searchCorrection = freshPage?.data?.searchCorrection;
+
+  // Stagger the first cards in after a skeleton; cards that mount while scrolling stay still.
+  const [isRevealing, setIsRevealing] = useState(false);
+  const wasSkeletonRef = useRef(showSkeleton);
+  useLayoutEffect(() => {
+    const ended = wasSkeletonRef.current && !showSkeleton;
+    wasSkeletonRef.current = showSkeleton;
+    if (!ended) return undefined;
+    setIsRevealing(true);
+    const timer = setTimeout(() => setIsRevealing(false), 800);
+    return () => clearTimeout(timer);
+  }, [showSkeleton]);
+
+  useEffect(() => {
+    preloadCampaignImages(dataFiltered.map((c) => c?.campaignBrief?.images?.[0]));
+  }, [dataFiltered]);
   const isReachingEnd = data && data[data.length - 1]?.metaData?.lastCursor === null;
 
   useEffect(() => {
     const [lastItem] = [...virtualRows].reverse();
 
-    if (!lastItem) return;
+    if (!lastItem || showSkeleton) return;
 
-    // Trigger load when scrolled to last 2 rows (not items)
-    if (lastItem.index >= rowCount - 2 && !isValidating && !isReachingEnd) {
+    // Trigger load when scrolled to last 3 rows (not items)
+    if (lastItem.index >= rowCount - 3 && !isValidating && !isReachingEnd) {
       setSize(size + 1);
     }
-  }, [virtualRows, rowCount, isReachingEnd, setSize, size, isValidating]);
+  }, [virtualRows, rowCount, isReachingEnd, setSize, size, isValidating, showSkeleton]);
 
   // Make mutate function available globally for campaign activation
   useEffect(() => {
@@ -219,15 +338,14 @@ const CampaignView = () => {
     };
   }, [mutate]);
 
-  const { data: campaignStatusData, isLoading: campaignStatusLoading } = useSWR(
-    '/api/campaign/campaignStatus',
-    fetcher
-  );
+  const { data: campaignStatusData } = useSWR('/api/campaign/campaignStatus', fetcher, {
+    focusThrottleInterval: 60000,
+  });
 
   // Fetch count for "All Campaigns" (other admins' active campaigns) - only for CSM users
   const { data: allCampaignsData } = useSWR(
     isCSM
-      ? `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=&excludeOwn=true&limit=500`
+      ? `/api/campaign/getAllCampaignsByAdminId/${user?.id}?status=&excludeOwn=true&limit=1`
       : null,
     fetcher,
     { revalidateOnFocus: false }
@@ -238,7 +356,7 @@ const CampaignView = () => {
   const completedCount = campaignStatusData?.completedCampaigns || 0;
   const pausedCount = campaignStatusData?.pausedCampaigns || 0;
   const pendingCount = campaignStatusData?.pendingCampaigns || 0;
-  const allCampaignsCount = allCampaignsData?.data?.campaigns?.length || 0;
+  const allCampaignsCount = allCampaignsData?.data?.totalCount || 0;
 
   // Restore smDown and menu handlers
   const smDown = useResponsive('down', 'sm');
@@ -315,6 +433,7 @@ const CampaignView = () => {
       if (isRestoringScroll.current) {
         if (localStorage.getItem('lastOpenedIndex')) {
           localStorage.removeItem('lastOpenedIndex');
+          setHighlightIndex(null);
         }
         return;
       }
@@ -366,6 +485,7 @@ const CampaignView = () => {
   }, [dataFiltered, lastCampaignOpenId, lgUp, mainRef, mdUp, rowVirtualizer, scrollTop]);
 
   const { scrollY } = useScroll({ container: mainRef });
+  const reduceMotion = useReducedMotion();
   const [showModal, setShowModal] = useState(false);
 
   useMotionValueEvent(scrollY, 'change', (current) => {
@@ -378,15 +498,15 @@ const CampaignView = () => {
       <AnimatePresence mode="wait">
         {showModal && (
           <m.div
-            initial={{ opacity: 0, y: -100 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -100 }}
-            style={{
-              position: 'absolute',
-              left: '50%',
-              x: '-50%',
-              zIndex: 100,
+            initial={{ opacity: 0, transform: `translate(-50%, ${reduceMotion ? 0 : -12}px)` }}
+            animate={{ opacity: 1, transform: 'translate(-50%, 0px)' }}
+            exit={{
+              opacity: 0,
+              transform: `translate(-50%, ${reduceMotion ? 0 : -12}px)`,
+              transition: { duration: 0.15, ease: EASE_OUT },
             }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
+            style={{ position: 'absolute', left: '50%', zIndex: 100 }}
           >
             <Box
               sx={{
@@ -488,272 +608,68 @@ const CampaignView = () => {
             direction="row"
             spacing={0.5}
             sx={{
+              position: 'relative',
               display: { xs: 'none', sm: 'flex' },
               width: { xs: '100%', sm: 'auto' },
               flexWrap: 'wrap',
             }}
           >
-            <Button
-              disableRipple
-              size="large"
+            <CampaignTabButton
+              label={`Active (${activeCount})`}
+              active={filter === 'active' && !showAllCampaigns}
               onClick={() => {
                 handleChangeTab('active');
                 setShowAllCampaigns(false);
                 setSelectedAdmin(null);
               }}
-              sx={{
-                px: 0.5,
-                py: 0.5,
-                pb: 1,
-                minWidth: 'fit-content',
-                color: filter === 'active' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
-                position: 'relative',
-                fontSize: '1.05rem',
-                fontWeight: 650,
-                transition: 'transform 0.1s ease-in-out',
-                '&:focus': {
-                  outline: 'none',
-                  bgcolor: 'transparent',
-                },
-                '&:active': {
-                  transform: 'scale(0.95)',
-                  bgcolor: 'transparent',
-                },
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: '2px',
-                  width: filter === 'active' && !showAllCampaigns ? '100%' : '0%',
-                  bgcolor: '#1340ff',
-                  transition: 'all 0.3s ease-in-out',
-                  transform: 'scaleX(1)',
-                  transformOrigin: 'left',
-                },
-                '&:hover': {
-                  bgcolor: 'transparent',
-                  '&::after': {
-                    width: '100%',
-                    opacity: filter === 'active' && !showAllCampaigns ? 1 : 0.5,
-                  },
-                },
-              }}
-            >
-              Active ({activeCount})
-            </Button>
+              sx={{ px: 0.5 }}
+            />
             {/* Show Pending tab for superadmins and CSM/CSL users */}
             {(isSuperAdmin || isCSM) && (
-              <Button
-                disableRipple
-                size="large"
+              <CampaignTabButton
+                label={`Pending (${pendingCount})`}
+                active={filter === 'pending' && !showAllCampaigns}
                 onClick={() => {
                   handleChangeTab('pending');
                   setShowAllCampaigns(false);
                   setSelectedAdmin(null);
                 }}
-                sx={{
-                  px: 1,
-                  py: 0.5,
-                  pb: 1,
-                  ml: 2,
-                  minWidth: 'fit-content',
-                  color:
-                    filter === 'pending' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
-                  position: 'relative',
-                  fontSize: '1.05rem',
-                  fontWeight: 650,
-                  transition: 'transform 0.1s ease-in-out',
-                  '&:focus': {
-                    outline: 'none',
-                    bgcolor: 'transparent',
-                  },
-                  '&:active': {
-                    transform: 'scale(0.95)',
-                    bgcolor: 'transparent',
-                  },
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '2px',
-                    width: filter === 'pending' && !showAllCampaigns ? '100%' : '0%',
-                    bgcolor: '#1340ff',
-                    transition: 'all 0.3s ease-in-out',
-                    transform: 'scaleX(1)',
-                    transformOrigin: 'left',
-                  },
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                    '&::after': {
-                      width: '100%',
-                      opacity: filter === 'pending' && !showAllCampaigns ? 1 : 0.5,
-                    },
-                  },
-                }}
-              >
-                Pending ({pendingCount})
-              </Button>
+                sx={{ ml: 2 }}
+              />
             )}
-            <Button
-              disableRipple
-              size="large"
+            <CampaignTabButton
+              label={`Completed (${completedCount})`}
+              active={filter === 'completed' && !showAllCampaigns}
               onClick={() => {
                 handleChangeTab('completed');
                 setShowAllCampaigns(false);
                 setSelectedAdmin(null);
               }}
-              sx={{
-                px: 1,
-                py: 0.5,
-                pb: 1,
-                ml: 2,
-                minWidth: 'fit-content',
-                color:
-                  filter === 'completed' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
-                position: 'relative',
-                fontSize: '1.05rem',
-                fontWeight: 650,
-                transition: 'transform 0.1s ease-in-out',
-                '&:focus': {
-                  outline: 'none',
-                  bgcolor: 'transparent',
-                },
-                '&:active': {
-                  transform: 'scale(0.95)',
-                  bgcolor: 'transparent',
-                },
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: '2px',
-                  width: filter === 'completed' && !showAllCampaigns ? '100%' : '0%',
-                  bgcolor: '#1340ff',
-                  transition: 'all 0.3s ease-in-out',
-                  transform: 'scaleX(1)',
-                  transformOrigin: 'left',
-                },
-                '&:hover': {
-                  bgcolor: 'transparent',
-                  '&::after': {
-                    width: '100%',
-                    opacity: filter === 'completed' && !showAllCampaigns ? 1 : 0.5,
-                  },
-                },
-              }}
-            >
-              Completed ({completedCount})
-            </Button>
-            <Button
-              disableRipple
-              size="large"
+              sx={{ ml: 2 }}
+            />
+            <CampaignTabButton
+              label={`Paused (${pausedCount})`}
+              active={filter === 'paused' && !showAllCampaigns}
               onClick={() => {
                 handleChangeTab('paused');
                 setShowAllCampaigns(false);
                 setSelectedAdmin(null);
               }}
-              sx={{
-                px: 1,
-                py: 0.5,
-                pb: 1,
-                ml: 2,
-                minWidth: 'fit-content',
-                color: filter === 'paused' && !showAllCampaigns ? theme.palette.common : '#8e8e93',
-                position: 'relative',
-                fontSize: '1.05rem',
-                fontWeight: 650,
-                transition: 'transform 0.1s ease-in-out',
-                '&:focus': {
-                  outline: 'none',
-                  bgcolor: 'transparent',
-                },
-                '&:active': {
-                  transform: 'scale(0.95)',
-                  bgcolor: 'transparent',
-                },
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: '2px',
-                  width: filter === 'paused' && !showAllCampaigns ? '100%' : '0%',
-                  bgcolor: '#1340ff',
-                  transition: 'all 0.3s ease-in-out',
-                  transform: 'scaleX(1)',
-                  transformOrigin: 'left',
-                },
-                '&:hover': {
-                  bgcolor: 'transparent',
-                  '&::after': {
-                    width: '100%',
-                    opacity: filter === 'paused' && !showAllCampaigns ? 1 : 0.5,
-                  },
-                },
-              }}
-            >
-              Paused ({pausedCount})
-            </Button>
+              sx={{ ml: 2 }}
+            />
             {/* All Campaigns tab - only visible to CSM admins */}
             {isCSM && (
-              <Button
-                disableRipple
-                size="large"
+              <CampaignTabButton
+                label={`All (${allCampaignsCount})`}
+                active={showAllCampaigns}
                 onClick={() => {
                   setFilter('');
                   setShowAllCampaigns(true);
                 }}
-                sx={{
-                  px: 1,
-                  py: 0.5,
-                  pb: 1,
-                  ml: 2,
-                  minWidth: 'fit-content',
-                  color: showAllCampaigns ? theme.palette.common : '#8e8e93',
-                  position: 'relative',
-                  fontSize: '1.05rem',
-                  fontWeight: 650,
-                  transition: 'transform 0.1s ease-in-out',
-                  '&:focus': {
-                    outline: 'none',
-                    bgcolor: 'transparent',
-                  },
-                  '&:active': {
-                    transform: 'scale(0.95)',
-                    bgcolor: 'transparent',
-                  },
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '2px',
-                    width: showAllCampaigns ? '100%' : '0%',
-                    bgcolor: '#1340ff',
-                    transition: 'all 0.3s ease-in-out',
-                    transform: 'scaleX(1)',
-                    transformOrigin: 'left',
-                  },
-                  '&:hover': {
-                    bgcolor: 'transparent',
-                    '&::after': {
-                      width: '100%',
-                      opacity: showAllCampaigns ? 1 : 0.5,
-                    },
-                  },
-                }}
-              >
-                All ({allCampaignsCount})
-              </Button>
+                sx={{ ml: 2 }}
+              />
             )}
+            <CampaignTabIndicator activeKey={showAllCampaigns ? 'all' : filter} />
           </Stack>
 
           {/* Phone controls: the tab row collapses to a dropdown, with Drafts
@@ -902,15 +818,23 @@ const CampaignView = () => {
               sx={{
                 bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
                 color: isDisabled ? '#9e9e9e' : 'white',
-                borderBottom: isDisabled ? '3px solid #bdbdbd' : '3px solid #102387',
+                boxShadow: `inset 0px -3px 0px ${isDisabled ? '#bdbdbd' : '#102387'}`,
                 borderRadius: '8px',
                 px: 2.5,
-                py: 1,
+                pt: 1,
+                pb: '11px',
                 fontSize: '0.9rem',
                 cursor: isDisabled ? 'not-allowed' : 'pointer',
+                transition:
+                  'transform 140ms cubic-bezier(0.23, 1, 0.32, 1), opacity 150ms ease, box-shadow 140ms ease-out',
                 '&:hover': {
                   bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
+                  boxShadow: `inset 0px -3px 0px ${isDisabled ? '#bdbdbd' : '#102387'}`,
                   opacity: isDisabled ? 1 : 0.9,
+                },
+                '&:active': {
+                  transform: 'translateY(2px)',
+                  boxShadow: `inset 0px -1px 0px ${isDisabled ? '#bdbdbd' : '#102387'}`,
                 },
               }}
             >
@@ -931,10 +855,12 @@ const CampaignView = () => {
               color: 'white',
               zIndex: 1100,
               boxShadow: '0 2px 12px rgba(32, 63, 245, 0.3)',
+              transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1), opacity 150ms ease',
               '&:hover': {
                 bgcolor: '#203ff5',
                 opacity: 0.9,
               },
+              '&:active': { transform: 'scale(0.97)' },
             }}
           >
             <Iconify icon="eva:plus-fill" width={24} height={24} />
@@ -946,7 +872,7 @@ const CampaignView = () => {
         <Box
           component={m.div}
           layout="position"
-          transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+          transition={{ duration: 0.2, ease: EASE_OUT }}
           sx={{
             flex: 1,
             border: '1px solid',
@@ -968,7 +894,7 @@ const CampaignView = () => {
             }}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
-            placeholder="Search"
+            placeholder="Search campaigns or clients"
             startAdornment={
               <Iconify
                 icon="eva:search-fill"
@@ -981,6 +907,70 @@ const CampaignView = () => {
                   flexShrink: 0,
                 }}
               />
+            }
+            endAdornment={
+              search.query && (
+                <Stack direction="row" alignItems="center" sx={{ flexShrink: 0, pl: 1 }}>
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    aria-live="polite"
+                    noWrap
+                    sx={{ maxWidth: { xs: 120, sm: 320 }, color: '#636366', fontSize: 13, fontWeight: 500 }}
+                  >
+                    {showSkeleton && (
+                      <Box component="span" sx={shimmerTextSx}>
+                        Searching…
+                      </Box>
+                    )}
+                    {!showSkeleton && searchCorrection && (
+                      <>
+                        {!smDown && 'Showing '}
+                        <Box
+                          component="button"
+                          type="button"
+                          title={`Search for "${searchCorrection}"`}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            setSearch((prev) => ({ ...prev, query: searchCorrection }));
+                            debouncedSetQuery.cancel();
+                            setDebouncedQuery(searchCorrection);
+                          }}
+                          sx={{
+                            p: 0,
+                            border: 0,
+                            bgcolor: 'transparent',
+                            font: 'inherit',
+                            fontWeight: 600,
+                            color: '#1340ff',
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            textDecorationColor: 'transparent',
+                            textUnderlineOffset: 3,
+                            transition: 'text-decoration-color 150ms ease',
+                            '&:hover': { textDecorationColor: 'currentColor' },
+                          }}
+                        >
+                          {searchCorrection}
+                        </Box>
+                        {' · '}
+                      </>
+                    )}
+                    {!showSkeleton &&
+                      totalCount > 0 &&
+                      `${totalCount} ${totalCount === 1 ? 'result' : 'results'}`}
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    aria-label="Clear search"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={clearSearch}
+                    sx={{ mr: 1, ml: 0.5 }}
+                  >
+                    <Iconify icon="eva:close-fill" width={18} />
+                  </IconButton>
+                </Stack>
+              )
             }
             sx={{
               width: '100%',
@@ -998,11 +988,11 @@ const CampaignView = () => {
         <AnimatePresence initial={false}>
           {showAllCampaigns && (isSuperAdmin || user?.admin?.mode === 'advanced' || isCSM) && (
             <m.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 262, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-              style={{ overflow: 'hidden', flexShrink: 0, display: 'flex' }}
+              initial={{ opacity: 0, transform: `translateX(${reduceMotion ? 0 : 8}px)` }}
+              animate={{ opacity: 1, transform: 'translateX(0px)' }}
+              exit={{ opacity: 0, transition: { duration: 0.12, ease: EASE_OUT } }}
+              transition={{ duration: 0.2, ease: EASE_OUT }}
+              style={{ width: 262, flexShrink: 0, display: 'flex' }}
             >
               <Autocomplete
                 size="small"
@@ -1108,70 +1098,108 @@ const CampaignView = () => {
         </AnimatePresence>
       </Stack>
 
-      {(isLoading || campaignStatusLoading) && (
-        <Box sx={{ position: 'relative', top: 200, textAlign: 'center' }}>
-          <CircularProgress
-            thickness={7}
-            size={25}
-            sx={{
-              color: theme.palette.common.black,
-              strokeLinecap: 'round',
-            }}
-          />
+      {showSkeleton && (
+        <Box gap={2} display="grid" gridTemplateColumns={`repeat(${columns}, 1fr)`} sx={{ mt: 2 }}>
+          {Array.from({ length: columns * 2 }).map((_, i) => (
+            <CampaignItemSkeleton key={i} />
+          ))}
         </Box>
       )}
+
+      {listFailed && (
+        <CampaignEmptyState
+          emoji="😵‍💫"
+          title="Couldn’t load campaigns"
+          description="Check your connection, then try again."
+          actionLabel="Try again"
+          onAction={() => mutate()}
+        />
+      )}
+
+      {!showSkeleton &&
+        !listFailed &&
+        !isValidating &&
+        dataFiltered.length === 0 &&
+        (debouncedQuery.trim() ? (
+          <CampaignEmptyState
+            emoji="🕵️"
+            title={`No results for “${debouncedQuery.trim()}”`}
+            description="Check the spelling, or try a campaign, brand or client name."
+            actionLabel="Clear search"
+            onAction={clearSearch}
+          />
+        ) : (
+          <CampaignEmptyState
+            emoji="😿"
+            title="No campaigns to show"
+            description="Campaigns in this tab will show up here."
+          />
+        ))}
 
       <div
         style={{
           height: `${rowVirtualizer.getTotalSize()}px`,
           position: 'relative',
           marginBottom: 40,
+          display: hideList ? 'none' : 'block',
         }}
       >
-        {virtualRows.map((virtualRow) => {
-          // eslint-disable-next-line no-nested-ternary
-          const cols = lgUp ? 3 : mdUp ? 2 : 1;
+        {!hideList &&
+          virtualRows.map((virtualRow) => {
+            // eslint-disable-next-line no-nested-ternary
+            const cols = lgUp ? 3 : mdUp ? 2 : 1;
 
-          const startIndex = virtualRow.index * cols;
+            const startIndex = virtualRow.index * cols;
 
-          const endIndex = Math.min(startIndex + cols, dataFiltered.length);
-          const rowCampaigns = dataFiltered.slice(startIndex, endIndex);
+            const endIndex = Math.min(startIndex + cols, dataFiltered.length);
+            const rowCampaigns = dataFiltered.slice(startIndex, endIndex);
 
-          return (
-            <div
-              key={virtualRow.key}
-              data-index={virtualRow.index}
-              ref={rowVirtualizer.measureElement}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
-            >
-              <Box
-                gap={2}
-                display="grid"
-                gridTemplateColumns={
-                  // eslint-disable-next-line no-nested-ternary
-                  `repeat(${cols}, 1fr)`
-                }
-                sx={{ mt: 2 }}
+            return (
+              <div
+                key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={rowVirtualizer.measureElement}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
               >
-                {rowCampaigns?.map((a, index) => (
-                  <CampaignItem
-                    index={index + startIndex}
-                    key={a?.id}
-                    campaign={a}
-                    status={a?.status}
-                    showAdmins={showAllCampaigns}
-                  />
-                ))}
-              </Box>
-            </div>
-          );
-        })}
+                <Box
+                  gap={2}
+                  display="grid"
+                  gridTemplateColumns={
+                    // eslint-disable-next-line no-nested-ternary
+                    `repeat(${cols}, 1fr)`
+                  }
+                  sx={{ mt: 2 }}
+                >
+                  {rowCampaigns?.map((a, index) => {
+                    const itemIndex = index + startIndex;
+                    return (
+                      <Box
+                        key={a?.id}
+                        sx={{
+                          display: 'grid',
+                          ...(isRevealing && itemIndex < REVEAL_LIMIT && revealSx(itemIndex)),
+                        }}
+                      >
+                        <CampaignItem
+                          index={itemIndex}
+                          isHighlighted={highlightIndex === itemIndex}
+                          campaign={a}
+                          status={a?.status}
+                          showAdmins={showAllCampaigns}
+                        />
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </div>
+            );
+          })}
       </div>
 
       {isLoadingMore && (
