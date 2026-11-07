@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom';
 import DashboardLayout from 'src/layouts/dashboard';
 import { AuthGuard, RoleBasedGuard } from 'src/auth/guard';
 
-import { LoadingScreen } from 'src/components/loading-screen';
+import { BootRelease, LoadingScreen } from 'src/components/loading-screen';
 
 import { ChatView } from 'src/sections/chat/view';
 import { CalendarView } from 'src/sections/calendar/view';
@@ -160,6 +160,7 @@ export const dashboardRoutes = [
         <DashboardLayout>
           <Suspense fallback={<LoadingScreen />}>
             <Outlet />
+            <BootRelease />
           </Suspense>
         </DashboardLayout>
       </AuthGuard>

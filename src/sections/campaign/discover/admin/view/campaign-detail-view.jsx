@@ -39,8 +39,8 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
-import { LoadingScreen } from 'src/components/loading-screen';
 import ViewOnlyBanner from 'src/components/banner/view-only-banner';
+import PageEnter, { markPageEnter } from 'src/components/page-enter';
 import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
@@ -53,6 +53,7 @@ import {
   setOpenModal,
   usePublicUrl,
 } from 'src/sections/campaign/discover/admin/store/use-public-url';
+import PublicCampaignDetailSkeleton from 'src/sections/public-access/components/public-campaign-detail-skeleton';
 import {
   useSpreadSheet,
   setOpenCopyDialog,
@@ -74,11 +75,16 @@ import CampaignDetailContentClient from '../campaign-detail-content-client';
 import CampaignCreatorSubmissionsV4 from '../campaign-creator-submissions-v4';
 import InitialActivateCampaignDialog from '../initial-activate-campaign-dialog';
 import ClientCampaignHeader from '../../client/overview/client-campaign-header';
+import CreatorMasterListSkeleton from '../components/creator-master-list-skeleton';
+import CampaignAgreementsSkeleton from '../components/campaign-agreements-skeleton';
 import ClientCampaignOverview from '../../client/overview/client-campaign-overview';
 import CampaignCreatorMasterListClient from '../campaign-creator-master-list-client';
 import CampaignCreatorDeliverablesClient from '../campaign-creator-deliverables-client';
 import CampaignV3PitchesWrapper from '../../client/v3-pitches/campaign-v3-pitches-wrapper';
 import CampaignCreatorSubmissions from '../creator-submissions/CampaignCreatorSubmissions';
+import CampaignTabContentSkeleton, {
+  CampaignTabListSkeleton,
+} from '../components/campaign-tab-content-skeleton';
 
 // Ensure campaignTabs exists and is loaded from localStorage
 if (typeof window !== 'undefined') {
@@ -102,7 +108,7 @@ const CampaignDetailView = ({
 }) => {
   const settings = useSettingsContext();
   const router = useRouter();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const publicUrl = usePublicUrl((state) => state.publicUrl);
   const password = usePublicUrl((state) => state.password);
@@ -180,13 +186,30 @@ const CampaignDetailView = ({
 
   const currentTab = useTabs((state) => state.currentTab);
 
-  const [linkedTab, setLinkedTab] = useState(() => searchParams.get('tab'));
+  // The link owns the open tab (?tab=), so a refresh keeps it and each campaign opens on Overview.
+  const [linkedTab, setLinkedTab] = useState(() =>
+    forcedTab ? null : searchParams.get('tab') || 'overview'
+  );
 
   useEffect(() => {
     if (!linkedTab) return;
     setCurrentTab(linkedTab);
     setLinkedTab(null);
   }, [linkedTab]);
+
+  useEffect(() => {
+    if (linkedTab || forcedTab) return;
+    setSearchParams(
+      (prev) => {
+        if ((prev.get('tab') ?? 'overview') === currentTab) return prev;
+        const next = new URLSearchParams(prev);
+        if (currentTab === 'overview') next.delete('tab');
+        else next.set('tab', currentTab);
+        return next;
+      },
+      { replace: true }
+    );
+  }, [currentTab, linkedTab, forcedTab, setSearchParams]);
 
   // Check if user is client (demo sessions render the read-only client view)
   const isClient =
@@ -201,6 +224,7 @@ const CampaignDetailView = ({
   const safeReturnTo = returnTo && returnTo.startsWith('/') ? returnTo : null;
 
   const handleBackNavigation = () => {
+    markPageEnter('back');
     if (safeReturnTo) {
       router.push(safeReturnTo);
       return;
@@ -248,6 +272,21 @@ const CampaignDetailView = ({
       invoiceSocket.emit('leave-campaign', id);
     };
   }, [invoiceSocket, id, isDemo, mutateCampaignInvoices, campaignMutate]);
+
+  const renderTabSkeleton = () => {
+    const tab = linkedTab || currentTab;
+    if (tab === 'overview') return <CampaignTabContentSkeleton />;
+    if (tab === 'campaign-content') return <PublicCampaignDetailSkeleton />;
+    if (tab === 'pitch') return <CreatorMasterListSkeleton campaignId={id} />;
+    if (tab === 'agreement') return <CampaignAgreementsSkeleton campaignId={id} />;
+    // Its own loading state already shows the real toolbar with loading cards.
+    if (tab === 'submissions-v4' && !isClient)
+      return <CampaignCreatorSubmissions campaignId={id} />;
+    // Invoices only need the campaign id, so they start loading right away.
+    if (tab === 'invoices')
+      return <CampaignInvoicesList campId={id} isDisabled={isDisabled || isDemo} />;
+    return <CampaignTabListSkeleton />;
+  };
 
   const renderTabContent = () => {
     switch (currentTab) {
@@ -325,7 +364,7 @@ const CampaignDetailView = ({
             onRated={campaignMutate}
           />
         ) : (
-          <CampaignCreatorSubmissions campaign={campaign} />
+          <CampaignCreatorSubmissions campaign={campaign} campaignId={id} />
         );
       case 'analytics':
         return (
@@ -440,9 +479,10 @@ const CampaignDetailView = ({
           tabs={<CampaignTabs campaign={campaign} variant="compact" />}
         />
       ) : (
-        <>
+        <PageEnter source="list">
           <CampaignHeader
             campaign={campaign}
+            campaignId={id}
             onBack={handleBackNavigation}
             isClient={isClient}
             openInitialActivateDialog={initialActivateDialog.onTrue}
@@ -452,17 +492,25 @@ const CampaignDetailView = ({
 
           {/* View-only banner for CSMs viewing non-managed campaigns */}
           {isViewOnly && !isClient && <ViewOnlyBanner />}
+        </PageEnter>
+      )}
 
+      <PageEnter>
+        {!showClientOverview && (
           <CampaignTabs
             campaign={campaign}
+            campaignId={id}
             isDemo={isDemo}
             publicReadonly={publicReadonly}
             forcedTab={forcedTab}
           />
-        </>
-      )}
+        )}
 
-      {!campaignLoading && !linkedTab ? renderTabContent() : <LoadingScreen />}
+        {/* The refresh frame clears this slot when it borrows another tab's snapshot. */}
+        <Box data-boot-slot sx={{ display: 'contents' }}>
+          {!campaignLoading && !linkedTab ? renderTabContent() : renderTabSkeleton()}
+        </Box>
+      </PageEnter>
 
       {copyDialogContainer}
 
