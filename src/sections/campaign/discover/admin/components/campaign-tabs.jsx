@@ -50,6 +50,45 @@ const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';
 
 const withCount = (label, count) => (count == null ? label : `${label} (${count})`);
 
+const getAgreementsCount = (submissions, agreements, pitches, shortlisted) => {
+  // Get approved pitch user IDs
+  const approvedPitchUserIds = new Set(
+    (pitches || [])
+      .filter(
+        (pitch) =>
+          (pitch?.status === 'APPROVED' ||
+            pitch?.status === 'AGREEMENT_SUBMITTED' ||
+            pitch?.status === 'AGREEMENT_PENDING') &&
+          pitch?.userId
+      )
+      .map((pitch) => pitch.userId)
+  );
+
+  // Get shortlisted user IDs (for backwards compatibility) — only those without a pitch.
+  // V4 caveat: a ShortListedCreator row can exist BEFORE client approval (e.g. after admin
+  // uses Link Creator on a SENT_TO_CLIENT pitch); the pitch's approval gate is the source
+  // of truth when both exist.
+  const allPitchUserIds = new Set((pitches || []).map((pitch) => pitch?.userId).filter(Boolean));
+  const shortlistedUserIds = new Set(
+    (shortlisted || [])
+      .filter((s) => s?.userId && !allPitchUserIds.has(s.userId))
+      .map((s) => s.userId)
+  );
+
+  // Combine both sets for total agreements
+  const totalAgreementsUserIds = new Set([...approvedPitchUserIds, ...shortlistedUserIds]);
+
+  const totalAgreements = (agreements || []).filter((a) => {
+    if (!totalAgreementsUserIds.has(a.userId)) return false;
+    const isUnlinkedGuest = a?.user?.creator?.isGuest === true;
+    if (!isUnlinkedGuest) return true;
+    const hasSubmission = (submissions || []).some((s) => s.userId === a.userId);
+    return hasSubmission;
+  }).length;
+
+  return totalAgreements;
+};
+
 const CampaignTabs = ({
   campaign,
   campaignId,
@@ -57,6 +96,7 @@ const CampaignTabs = ({
   publicReadonly,
   forcedTab,
   variant = 'default',
+  onTabIntent,
 }) => {
   const compact = variant === 'compact';
   const { user } = useAuthContext();
@@ -102,50 +142,10 @@ const CampaignTabs = ({
     [campaign?.submission]
   );
 
-  const getAgreementsCount = (submissions, agreements, pitches, shortlisted) => {
-    // Get approved pitch user IDs
-    const approvedPitchUserIds = new Set(
-      (pitches || [])
-        .filter(
-          (pitch) =>
-            (pitch?.status === 'APPROVED' ||
-              pitch?.status === 'AGREEMENT_SUBMITTED' ||
-              pitch?.status === 'AGREEMENT_PENDING') &&
-            pitch?.userId
-        )
-        .map((pitch) => pitch.userId)
-    );
-
-    // Get shortlisted user IDs (for backwards compatibility) — only those without a pitch.
-    // V4 caveat: a ShortListedCreator row can exist BEFORE client approval (e.g. after admin
-    // uses Link Creator on a SENT_TO_CLIENT pitch); the pitch's approval gate is the source
-    // of truth when both exist.
-    const allPitchUserIds = new Set((pitches || []).map((pitch) => pitch?.userId).filter(Boolean));
-    const shortlistedUserIds = new Set(
-      (shortlisted || [])
-        .filter((s) => s?.userId && !allPitchUserIds.has(s.userId))
-        .map((s) => s.userId)
-    );
-
-    // Combine both sets for total agreements
-    const totalAgreementsUserIds = new Set([...approvedPitchUserIds, ...shortlistedUserIds]);
-
-    const totalAgreements = (agreements || []).filter((a) => {
-      if (!totalAgreementsUserIds.has(a.userId)) return false;
-      const isUnlinkedGuest = a?.user?.creator?.isGuest === true;
-      if (!isUnlinkedGuest) return true;
-      const hasSubmission = (submissions || []).some((s) => s.userId === a.userId);
-      return hasSubmission;
-    }).length;
-
-    return totalAgreements;
-  };
-
   // Counts show the last known numbers on refresh and update in place when fresh data arrives.
   const cachedCounts = useMemo(() => readCampaignCache(campaignId), [campaignId]);
-  const counts = {
-    pitch: campaign ? campaign.pitch?.length || 0 : cachedCounts.pitchCount,
-    agreement:
+  const agreementCount = useMemo(
+    () =>
       campaign && campaignAgreements
         ? getAgreementsCount(
             agreementSubmissions,
@@ -153,7 +153,12 @@ const CampaignTabs = ({
             campaign.pitch,
             campaign.shortlisted
           )
-        : cachedCounts.agreementCount,
+        : null,
+    [campaign, campaignAgreements, agreementSubmissions]
+  );
+  const counts = {
+    pitch: campaign ? campaign.pitch?.length || 0 : cachedCounts.pitchCount,
+    agreement: agreementCount ?? cachedCounts.agreementCount,
     invoice:
       campaign && !invoicesLoading ? campaignInvoices?.length || 0 : cachedCounts.invoiceCount,
   };
@@ -172,12 +177,7 @@ const CampaignTabs = ({
   const { scrollY } = useScroll({ container: mainRef });
 
   useMotionValueEvent(scrollY, 'change', (cur) => {
-    const bar = stickyRef.current?.getBoundingClientRect();
-    const main = mainRef.current?.getBoundingClientRect();
     setIsStuck(cur > 100);
-    // if(cur > 100)setIsStuck(true);
-
-    // if (bar && main) setIsStuck(bar.top <= main.top + 1);
   });
 
   useEffect(() => {
@@ -252,6 +252,19 @@ const CampaignTabs = ({
     window.addEventListener('switchCampaignTab', handleSwitchTab);
     return () => window.removeEventListener('switchCampaignTab', handleSwitchTab);
   }, [isClient, getClientAllowedTabs]);
+
+  // Arrow keys move between tabs without the slide animation.
+  const handleTabKeyDown = (event) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    const buttons = Array.from(event.currentTarget.querySelectorAll('[role="tab"]'));
+    const from = buttons.indexOf(document.activeElement);
+    if (from === -1) return;
+    event.preventDefault();
+    const step = event.key === 'ArrowRight' ? 1 : -1;
+    const next = buttons[(from + step + buttons.length) % buttons.length];
+    handleChangeTab(null, next.dataset.bootTab);
+    next.focus();
+  };
 
   return (
     <Box
@@ -339,6 +352,8 @@ const CampaignTabs = ({
             direction="row"
             justifyContent="space-between"
             data-boot-tabs="overview"
+            role="tablist"
+            onKeyDown={handleTabKeyDown}
             sx={{
               position: 'relative',
               width: 'max-content',
@@ -417,6 +432,10 @@ const CampaignTabs = ({
                   data-boot-tab={tab.value}
                   data-boot-active={currentTab === tab.value}
                   data-tab-active={currentTab === tab.value}
+                  role="tab"
+                  aria-selected={currentTab === tab.value}
+                  onPointerEnter={() => onTabIntent?.(tab.value)}
+                  onFocus={() => onTabIntent?.(tab.value)}
                   onClick={(event) => {
                     // Only a pointer click slides the content in; keyboard switches stay instant.
                     const from = list.findIndex((item) => item.value === currentTab);
@@ -435,10 +454,8 @@ const CampaignTabs = ({
                     whiteSpace: 'nowrap',
                     mr: compact ? 3.5 : { xs: 1, sm: 2 },
                     transition: `transform 160ms ${EASE_OUT}, color 150ms ease`,
-                    '&:focus': {
-                      outline: 'none',
-                      bgcolor: 'transparent',
-                    },
+                    '&:focus': { bgcolor: 'transparent' },
+                    '&:focus-visible': { outline: '2px solid #1340FF', outlineOffset: 2 },
                     '&:active': {
                       transform: 'scale(0.97)',
                       bgcolor: 'transparent',
@@ -491,4 +508,5 @@ CampaignTabs.propTypes = {
   publicReadonly: PropTypes.bool,
   forcedTab: PropTypes.string,
   variant: PropTypes.oneOf(['default', 'compact']),
+  onTabIntent: PropTypes.func,
 };

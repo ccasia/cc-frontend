@@ -370,9 +370,9 @@ const CampaignHeader = ({
 
             {!isClient && (
               <Box
-                onClick={isViewOnly ? undefined : handleMenuOpen}
+                onClick={handleMenuOpen}
                 component="button"
-                disabled={isViewOnly}
+                aria-label="More actions"
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -380,17 +380,23 @@ const CampaignHeader = ({
                   height: 42,
                   width: 42,
                   borderRadius: 1,
-                  color: isViewOnly ? '#9e9e9e' : '#221f20',
+                  color: '#221f20',
                   border: '1px solid #e7e7e7',
                   borderBottom: '4px solid #e7e7e7',
                   padding: 0,
                   backgroundColor: 'transparent',
-                  cursor: isViewOnly ? 'not-allowed' : 'pointer',
-                  opacity: isViewOnly ? 0.6 : 1,
-                  '&:hover': {
-                    backgroundColor: isViewOnly ? 'transparent' : 'rgba(34, 31, 32, 0.04)',
-                    border: isViewOnly ? '1px solid #e7e7e7' : '1px solid #231F20',
-                    borderBottom: isViewOnly ? '4px solid #e7e7e7' : '4px solid #231F20',
+                  cursor: 'pointer',
+                  transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1)',
+                  '@media (hover: hover) and (pointer: fine)': {
+                    '&:hover': {
+                      backgroundColor: 'rgba(34, 31, 32, 0.04)',
+                      border: '1px solid #231F20',
+                      borderBottom: '4px solid #231F20',
+                    },
+                  },
+                  '&:active': { transform: 'scale(0.97)' },
+                  '@media (prefers-reduced-motion: reduce)': {
+                    '&:active': { transform: 'none' },
                   },
                 }}
               >
@@ -445,6 +451,7 @@ const CampaignHeader = ({
                   generatePublicUrl();
                   handleMenuClose();
                 }}
+                disabled={isViewOnly || loading.value}
                 sx={{ py: 1 }}
               >
                 <img
