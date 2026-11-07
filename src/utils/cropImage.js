@@ -9,6 +9,9 @@ export default function getCroppedImg(imageSrc, pixelCrop) {
       canvas.width = pixelCrop.width;
       canvas.height = pixelCrop.height;
       const ctx = canvas.getContext('2d');
+      // JPEG has no transparency, so paint white first or clear areas turn black
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.drawImage(
         image,
