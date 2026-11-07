@@ -230,7 +230,7 @@ const CampaignInfo = ({ campaign }) => {
 
               <Box>
                 <Typography sx={SectionTitleStyle}>Campaign Info</Typography>
-                <Typography sx={SectionBodyStyle}>
+                <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
                   {campaign?.description || 'No campaign description available.'}
                 </Typography>
               </Box>
