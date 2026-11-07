@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import 'react-pdf/dist/Page/TextLayer.css';
 import { enqueueSnackbar } from 'notistack';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { m, useReducedMotion } from 'framer-motion';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
@@ -15,17 +16,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
-import {
-  Stack,
-  Avatar,
-  Dialog,
-  IconButton,
-  Typography,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  LinearProgress,
-} from '@mui/material';
+import { Stack, Avatar, Typography, LinearProgress } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import useGetCompany from 'src/hooks/use-get-company';
@@ -33,29 +24,31 @@ import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import useGetDefaultTimeLine from 'src/hooks/use-get-default-timeline';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
-import {
-  isCsManager,
-  isClientManager,
-  CS_MANAGER_REQUIRED_MESSAGE,
-} from 'src/utils/campaign-flow';
+import { isCsManager, isClientManager, CS_MANAGER_REQUIRED_MESSAGE } from 'src/utils/campaign-flow';
 
 import { useAuthContext } from 'src/auth/hooks';
-import NextStepsIcon from 'src/assets/icons/next-steps-icon';
 
-import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form';
+import {
+  PRIMARY_ACTION_SX,
+  SECONDARY_ACTION_SX,
+} from 'src/components/campaign/action-button-styles';
 
 import CloseDraftDialog from './close-draft-dialog';
-import DraftSaveIndicator from './draft-save-indicator';
-import { diffUserContent } from './utils/has-user-content';
+import MoreBelowPill from './components/more-below-pill';
+import CloseSaveGroup from './components/close-save-group';
+import useScrollEdges from './components/use-scroll-edges';
+import ConfirmPublishDialog from './confirm-publish-dialog';
+import { StepOpenedProvider } from './components/section-in';
+import useBottomOverlap from './components/use-bottom-overlap';
 import { getCreditLimitError } from './utils/campaign-credits';
 import useCampaignDraftAutosave from './hooks/use-campaign-draft-autosave';
+import { diffUserContent, diffFromBaseline } from './utils/has-user-content';
+import { markPublished } from '../discover/admin/store/use-published-campaign';
+import { StepProgress, StepProgressCompact } from './components/step-progress';
 import { registerFailedNext, resetCampaignCreate } from './store/use-campaign-create-store';
 import {
-  isInBackSection,
   isInFrontSection,
-  backSectionLabels,
-  frontSectionLabels,
   getBackSectionIndicatorIndex,
   getFrontSectionIndicatorIndex,
 } from './utils/campaign-steps';
@@ -72,7 +65,44 @@ import {
   CampaignTargetAudience,
 } from './stepsV2';
 
+// Shows there is more to scroll: a line under the header, a fade at the bottom
+const scrollEdgeSx = {
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  zIndex: 2,
+  pointerEvents: 'none',
+  transition: 'opacity 150ms ease',
+};
+
+// Same raised shape as the campaign dialog buttons, in the header's own colours and a smaller size
+const EDGE = 3;
+const HEADER_SIZE_SX = {
+  height: 40,
+  fontSize: 14,
+  lineHeight: '18px',
+  padding: `8px 14px ${8 + EDGE}px`,
+};
+const { '&.Mui-disabled': primaryDisabled, ...PRIMARY_SHAPE_SX } = PRIMARY_ACTION_SX;
+const NEXT_BUTTON_SX = {
+  ...PRIMARY_SHAPE_SX,
+  ...HEADER_SIZE_SX,
+  '&:hover': { ...PRIMARY_ACTION_SX['&:hover'], bgcolor: '#47474a' },
+};
+const CONFIRM_BUTTON_SX = {
+  ...PRIMARY_SHAPE_SX,
+  ...HEADER_SIZE_SX,
+  bgcolor: '#1340FF',
+  '&:hover': { ...PRIMARY_ACTION_SX['&:hover'], bgcolor: '#0030e0' },
+  '&:active': { ...PRIMARY_ACTION_SX['&:active'], bgcolor: '#0030e0' },
+};
+const BACK_BUTTON_SX = { ...SECONDARY_ACTION_SX, ...HEADER_SIZE_SX, color: '#3A3A3C' };
+
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
+
+const EASE_OUT_ARRAY = [0.23, 1, 0.32, 1];
+
+const WEBSITE_PATTERN = /^(https?:\/\/)?([\w-]+\.)+[a-z]{2,}(:\d+)?(\/\S*)?$/i;
 
 // Base internal steps (includes sub-steps for logistics)
 // Visual indicator maps: 0=General, 1=Objective, 2=Audience, 3-5=Logistics, 6=Finalise, 7=Next Steps
@@ -144,6 +174,18 @@ function CreateCampaignFormV2({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [closeDraftOpen, setCloseDraftOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
+
+  // The furthest indicator reached in each section, so steps already filled in stay
+  // done (and clickable) after going back
+  const [reached, setReached] = useState({ back: 0, front: -1 });
+  useEffect(() => {
+    setReached((prev) => {
+      const next = isInFrontSection(activeStep)
+        ? { ...prev, front: Math.max(prev.front, getFrontSectionIndicatorIndex(activeStep)) }
+        : { ...prev, back: Math.max(prev.back, getBackSectionIndicatorIndex(activeStep)) };
+      return next.back === prev.back && next.front === prev.front ? prev : next;
+    });
+  }, [activeStep]);
   const [isLoading, setIsLoading] = useState(false);
   const [brandState, setBrandState] = useState('');
   const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
@@ -154,27 +196,31 @@ function CreateCampaignFormV2({
   // Derive steps based on showAdditionalDetails state
   const steps = getSteps(showAdditionalDetails);
 
-  // Determine if we're in the front or back section
-  const inFrontSection = isInFrontSection(activeStep);
-  const inBackSection = isInBackSection(activeStep);
-
   // General Campaign Information schema (Step 0)
   const campaignInformationSchema = Yup.object().shape({
     campaignName: Yup.string()
-      .required('Campaign title is required')
-      .max(40, 'Campaign title must be 40 characters or less'),
-    campaignDescription: Yup.string().required('Campaign Description is required.'),
+      .trim()
+      .required('Enter a campaign name')
+      .max(40, 'Use 40 characters or fewer'),
+    campaignDescription: Yup.string().trim().required('Describe the campaign'),
     brandAbout: Yup.string(),
-    campaignStartDate: Yup.date().required('Campaign Start Date is required.'),
-    campaignEndDate: Yup.date().required('Campaign End Date is required.'),
-    postingStartDate: Yup.date().required('Posting Start Date is required.'),
-    postingEndDate: Yup.date().required('Posting End Date is required.'),
-    productName: Yup.string().required('Product/service name required.'),
+    campaignStartDate: Yup.date().required('Pick a start date'),
+    campaignEndDate: Yup.date()
+      .required('Pick an end date')
+      .min(Yup.ref('campaignStartDate'), 'Pick a date on or after the start date'),
+    postingStartDate: Yup.date().required('Pick a start date'),
+    postingEndDate: Yup.date()
+      .required('Pick an end date')
+      .min(Yup.ref('postingStartDate'), 'Pick a date on or after the start date'),
+    productName: Yup.string().trim().required('Enter the product or service name'),
     campaignIndustries: Yup.array()
-      .min(1, 'At least one industry is required')
-      .required('Campaign industry is required.'),
-    campaignImages: Yup.array().min(1, 'Must have at least 1 image'),
-    websiteLink: Yup.string(),
+      .min(1, 'Choose at least one industry')
+      .required('Choose at least one industry'),
+    campaignImages: Yup.array().min(1, 'Upload a campaign image'),
+    websiteLink: Yup.string().trim().matches(WEBSITE_PATTERN, {
+      message: 'Enter a full link, like https://www.cultcreativeasia.com',
+      excludeEmptyString: true,
+    }),
   });
 
   // Campaign Objectives schema (Step 2)
@@ -189,25 +235,31 @@ function CreateCampaignFormV2({
   // Target Audience schema (Step 3)
   const targetAudienceSchema = Yup.object().shape({
     audienceGender: Yup.array()
-      .min(1, 'At least 1 option')
-      .required('Audience Gender is required.'),
-    audienceAge: Yup.array().min(1, 'At least 1 option').required('Audience age is required.'),
-    country: Yup.string().required('Country is required.'),
+      .min(1, 'Pick at least one gender.')
+      .required('Pick at least one gender.'),
+    audienceAge: Yup.array()
+      .min(1, 'Pick at least one age range.')
+      .required('Pick at least one age range.'),
+    // A cleared country is null, which must show this message, not a type error
+    country: Yup.string().nullable().required('Pick a country.'),
     audienceLanguage: Yup.array()
-      .min(1, 'At least 1 option')
-      .required('Audience language is required.'),
+      .min(1, 'Pick at least one language.')
+      .required('Pick at least one language.'),
     audienceCreatorPersona: Yup.array()
-      .min(1, 'At least 1 option')
-      .required('Audience creator interests is required.'),
-    audienceUserPersona: Yup.string().required('Audience user persona is required.'),
+      .min(1, 'Pick at least one interest.')
+      .required('Pick at least one interest.'),
+    audienceUserPersona: Yup.string().trim().required('Describe who this audience is.'),
     // Secondary Audience - all optional
     secondaryAudienceGender: Yup.array(),
     secondaryAudienceAge: Yup.array(),
     secondaryAudienceLanguage: Yup.array(),
     secondaryAudienceCreatorPersona: Yup.array(),
     secondaryAudienceUserPersona: Yup.string(),
-    geographicFocus: Yup.string().required('Geographic focus is required.'),
-    geographicFocusOthers: Yup.string(),
+    geographicFocus: Yup.string().required('Pick a geographic focus.'),
+    geographicFocusOthers: Yup.string().when('geographicFocus', {
+      is: 'others',
+      then: (schema) => schema.trim().required('Type the geographic focus.'),
+    }),
   });
 
   // Logistics schema (Step 4)
@@ -262,8 +314,8 @@ function CreateCampaignFormV2({
             .required(),
         })
       )
-      .min(1, 'At least one reservation rule is required')
-      .required(),
+      .min(1, 'Save at least one set of dates and times.')
+      .required('Save at least one set of dates and times.'),
   });
 
   // Finalise Campaign schema (Step 6) - includes client/brand/credits fields
@@ -467,13 +519,20 @@ function CreateCampaignFormV2({
     setShowAdditionalDetails,
   });
 
+  // The form values right after a draft loads; null for a new campaign
+  const loadedBaseline = useRef(null);
+
   const handleClose = async () => {
     // Only ask about the draft when the form really holds something. A draft
     // record can exist while being completely empty, so compare the values
     // against the baseline React Hook Form itself captured on first render --
     // rebuilding `defaultValues` here would drift (e.g. `campaignManager`
     // resolves to [] before `user` loads and to [user] afterwards).
-    const changed = isActivateMode ? [] : diffUserContent(getValues(), pristineDefaults.current);
+    // A resumed draft is already saved, so only ask when it changed since it loaded
+    const values = getValues();
+    let changed = [];
+    if (loadedBaseline.current) changed = diffFromBaseline(values, loadedBaseline.current);
+    else if (!isActivateMode) changed = diffUserContent(values, pristineDefaults.current);
 
     if (changed.length) {
       setCloseDraftOpen(true);
@@ -505,6 +564,7 @@ function CreateCampaignFormV2({
     await discardDraft();
     reset();
     setActiveStep(0);
+    setReached({ back: 0, front: -1 });
     setShowAdditionalDetails(false);
   };
 
@@ -518,10 +578,14 @@ function CreateCampaignFormV2({
   useEffect(() => {
     if (isActivateMode || !initialDraftId || !user?.id || initialDraftLoadedRef.current) return;
     initialDraftLoadedRef.current = true;
-    loadDraft(initialDraftId).catch(() =>
-      enqueueSnackbar('Draft could not be opened. Please try again.', { variant: 'error' })
-    );
-  }, [initialDraftId, isActivateMode, loadDraft, user?.id]);
+    loadDraft(initialDraftId)
+      .then(() => {
+        loadedBaseline.current = getValues();
+      })
+      .catch(() =>
+        enqueueSnackbar('Draft could not be opened. Please try again.', { variant: 'error' })
+      );
+  }, [initialDraftId, isActivateMode, loadDraft, getValues, user?.id]);
 
   const handleDraftDialogDone = () => {
     setCloseDraftOpen(false);
@@ -709,6 +773,7 @@ function CreateCampaignFormV2({
           'productName',
           'campaignIndustries',
           'campaignImages',
+          'websiteLink',
         ];
       case 1: // Objective
         return ['campaignObjectives', 'secondaryObjectives'];
@@ -719,10 +784,12 @@ function CreateCampaignFormV2({
           'audienceGender',
           'audienceLanguage',
           'audienceCreatorPersona',
+          'audienceUserPersona',
           'geographicFocus',
+          'geographicFocusOthers',
         ];
       case 3: // Logistics
-        return ['logisticsType'];
+        return ['logisticsType', 'products', 'locations'];
       case 4: // Reservation Slots
         return ['availabilityRules'];
       case 5: // Logistic Remarks
@@ -747,17 +814,19 @@ function CreateCampaignFormV2({
     }
   };
 
-  const handleNext = async () => {
-    // Only validate fields for the current step
+  // Only the current step's fields; Finalise (6) also checks the credit limit
+  const validateCurrentStep = async () => {
     const fieldsToValidate = getFieldsForStep(activeStep);
     const result = fieldsToValidate.length > 0 ? await trigger(fieldsToValidate) : true;
-
-    // For finalise step (6), also check credit error
     const shouldCheckCreditError = activeStep === 6;
     const hasCreditError = Boolean(
       getCreditLimitError(getValues('client'), getValues('campaignCredits'))
     );
-    if (result && (!shouldCheckCreditError || !hasCreditError)) {
+    return result && (!shouldCheckCreditError || !hasCreditError);
+  };
+
+  const handleNext = async () => {
+    if (await validateCurrentStep()) {
       const logisticsType = getValues('logisticsType');
       let nextStep = activeStep + 1;
 
@@ -782,31 +851,38 @@ function CreateCampaignFormV2({
         nextStep = 9;
       }
 
-      localStorage.setItem('adminActiveStep', nextStep);
       setActiveStep(nextStep);
     } else {
       registerFailedNext();
     }
   };
 
+  // Going back is always allowed. Going forward to a step already reached first checks
+  // the current step, the same as Next, so a jump cannot skip a field left empty here.
+  const jumpTo = async (targetStep, forward) => {
+    if (forward && !(await validateCurrentStep())) {
+      registerFailedNext();
+      return;
+    }
+    setActiveStep(targetStep);
+  };
+
   // Handle clicking on step indicator to navigate directly
   const handleBackSectionStepClick = (indicatorIndex) => {
+    if (activeStep > 7 || indicatorIndex > reached.back) return;
     const currentBackIndicator = getBackSectionIndicatorIndex(activeStep);
-    if (indicatorIndex <= currentBackIndicator && activeStep <= 7) {
-      const targetStep = backSectionIndicatorToStepMap[indicatorIndex];
-      setActiveStep(targetStep);
-      localStorage.setItem('adminActiveStep', targetStep);
-    }
+    jumpTo(backSectionIndicatorToStepMap[indicatorIndex], indicatorIndex > currentBackIndicator);
   };
 
   const handleFrontSectionStepClick = (indicatorIndex) => {
+    if (activeStep < 8 || indicatorIndex > reached.front) return;
     const currentFrontIndicator = getFrontSectionIndicatorIndex(activeStep);
-    // Allow navigation to any indicator that has been visited or previous indicators
-    if (indicatorIndex <= currentFrontIndicator && activeStep >= 8) {
-      const targetStep = frontSectionIndicatorToStepMap[indicatorIndex];
-      setActiveStep(targetStep);
-      localStorage.setItem('adminActiveStep', targetStep);
-    }
+    jumpTo(frontSectionIndicatorToStepMap[indicatorIndex], indicatorIndex > currentFrontIndicator);
+  };
+
+  const handleNextStepsClick = () => {
+    setShowAdditionalDetails(false);
+    jumpTo(7, activeStep < 7);
   };
 
   const handleBack = () => {
@@ -838,14 +914,12 @@ function CreateCampaignFormV2({
       prevStep = 3;
     }
 
-    localStorage.setItem('adminActiveStep', prevStep);
     setActiveStep(prevStep);
   };
 
   const handleContinueAdditionalDetails = useCallback(() => {
     setShowAdditionalDetails(true);
     setActiveStep(8);
-    localStorage.setItem('adminActiveStep', 8);
   }, []);
 
   const onSubmit = handleSubmit(async (data, stage) => {
@@ -1109,6 +1183,8 @@ function CreateCampaignFormV2({
       if (!isActivateMode && draftSource?.id) await clearLocalDraft(draftSource.id);
       if (!isActivateMode) resumeAutosave();
       reset();
+      // The campaign list plays its entrance for this card once it arrives
+      markPublished(res?.data?.campaign?.id);
       if (mutateCampaignList) {
         mutateCampaignList();
       }
@@ -1118,7 +1194,6 @@ function CreateCampaignFormV2({
       setStatus('');
       confirmation.onFalse();
       setActiveStep(0);
-      localStorage.setItem('adminActiveStep', 0);
       onClose();
     } catch (error) {
       if (!isActivateMode) resumeAutosave();
@@ -1221,9 +1296,11 @@ function CreateCampaignFormV2({
     ]
   );
 
-  // Finalise keeps Next enabled: pressing it runs handleNext's validation, which shows each
-  // unmet field's error instead of leaving the admin guessing why the button is disabled
+  // General, Audience, Logistics and Finalise keep Next enabled: pressing it runs handleNext's
+  // validation, which shows each unmet field's error instead of leaving the admin guessing why
   const isFinaliseStep = activeStep === 6;
+  // Logistics keeps Next off until the chosen type is filled in
+  const nextAlwaysEnabled = [0, 2, 4].includes(activeStep) || isFinaliseStep;
 
   // Check if current step has required fields filled
   const isStepValid = () => {
@@ -1283,8 +1360,8 @@ function CreateCampaignFormV2({
         }
 
         if (type === 'RESERVATION') {
-          const { locations } = formValues;
-          return locations?.some((l) => l.name?.trim().length > 0);
+          const { locations, schedulingOption } = formValues;
+          return !!schedulingOption && locations?.some((l) => l.name?.trim().length > 0);
         }
 
         return true;
@@ -1326,17 +1403,26 @@ function CreateCampaignFormV2({
     }
   };
 
-  // Get the current indicator indices for both sections
-  const backSectionIndicator = getBackSectionIndicatorIndex(activeStep);
-  const frontSectionIndicator = getFrontSectionIndicatorIndex(activeStep);
-
-  // Determine if Next Steps should be highlighted (step 7 or beyond)
-  const isNextStepsActive = activeStep >= 7;
-
   const campaignStartDate = watch('campaignStartDate');
 
+  // Each step change starts at the top and slides in from the side it came from
+  const scrollRef = useRef(null);
+  const scrollEdges = useScrollEdges(scrollRef);
+  // Below md the fixed bottom bar covers the end of the form; the fade and pill sit above it
+  const mobileBarRef = useRef(null);
+  const bottomInset = useBottomOverlap(scrollRef, mobileBarRef);
+  const reduceMotion = useReducedMotion();
+  const previousStep = useRef(activeStep);
+  const direction = activeStep >= previousStep.current ? 1 : -1;
+  const stepOffset = reduceMotion ? 0 : direction * 16;
+
+  useEffect(() => {
+    previousStep.current = activeStep;
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [activeStep]);
+
   return (
-    <Box>
+    <Box sx={{ height: 1, '& > form': { height: 1, display: 'flex', flexDirection: 'column' } }}>
       <FormProvider methods={methods} onSubmit={methods.handleSubmit(onSubmit)}>
         {/* 3-column grid: the two `1fr` side columns stay equal, so the step
             indicator in the middle lands on the true centre of the header. */}
@@ -1357,37 +1443,17 @@ function CreateCampaignFormV2({
             spacing={1}
             sx={{ justifySelf: 'start', minWidth: 0, flexWrap: 'wrap', rowGap: 1 }}
           >
-            <IconButton
-              sx={{
-                border: 1,
-                borderRadius: 1,
-                boxShadow: '0px -1.5px 0px 0px #E7E7E7 inset',
-                borderColor: '#E7E7E7',
-                height: 45,
-                width: 45,
-                padding: 1,
-                flexShrink: 0,
-              }}
-              size="large"
+            <CloseSaveGroup
+              onClose={handleClose}
               disabled={isLoading}
-              onClick={handleClose}
-            >
-              <Iconify icon="material-symbols:close" width={20} color="#231F20" />
-            </IconButton>
-
-            {!isActivateMode && (
-              <Box sx={{ display: 'flex', alignItems: 'center', pl: 0.5, minWidth: 0 }}>
-                <DraftSaveIndicator
-                  status={draftSaveStatus}
-                  lastSavedAt={lastSavedAt}
-                  onRetry={handleSaveButton}
-                />
-              </Box>
-            )}
+              showStatus={!isActivateMode}
+              status={draftSaveStatus}
+              lastSavedAt={lastSavedAt}
+              onRetry={handleSaveButton}
+            />
           </Stack>
 
-          {/* Step Indicator - Clickable navigation.
-              In flow (not absolute) so the header never overlaps the nav buttons. */}
+          {/* Step indicator, in flow so it never overlaps the nav buttons */}
           <Box
             sx={{
               minWidth: 0,
@@ -1396,218 +1462,45 @@ function CreateCampaignFormV2({
               alignItems: 'center',
             }}
           >
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="center"
-              sx={{ width: '100%', maxWidth: 900, minWidth: 0 }}
-            >
-              {/* Back Section (Client, General, Objective, Audience, Logistics, Finalise) */}
-              {inBackSection &&
-                backSectionLabels.map((label, index) => (
-                  <React.Fragment key={label}>
-                    <Box
-                      onClick={() => handleBackSectionStepClick(index)}
-                      sx={{
-                        minWidth: { sm: 62, md: 84, lg: 100 },
-                        flexShrink: 1,
-                        px: { sm: 0.75, md: 1.5 },
-                        height: 45,
-                        py: 1.2,
-                        textAlign: 'center',
-                        borderRadius: 1,
-                        fontSize: { sm: 11, md: 12, lg: 13 },
-                        fontWeight: 400,
-                        bgcolor:
-                          backSectionIndicator === index
-                            ? '#1340FF'
-                            : backSectionIndicator > index
-                              ? '#1340FF'
-                              : '#fff',
-                        color:
-                          backSectionIndicator === index
-                            ? '#fff'
-                            : backSectionIndicator > index
-                              ? '#fff'
-                              : '#636366',
-                        border: '1px solid #636366',
-                        borderColor: backSectionIndicator >= index ? '#1340FF' : '#636366',
-                        cursor: index <= backSectionIndicator ? 'pointer' : 'default',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          opacity: index <= backSectionIndicator ? 0.85 : 1,
-                        },
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      <Box component="span">{label}</Box>
-                    </Box>
-                    {/* Connector Line after each back section label */}
-                    {index < backSectionLabels.length - 1 && (
-                      <Box
-                        sx={{
-                          height: 1.2,
-                          flexGrow: 1,
-                          minWidth: { sm: 6, md: 12, lg: 20 },
-                          maxWidth: { sm: 16, md: 28, lg: 40 },
-                          bgcolor: backSectionIndicator > index ? '#1340FF' : '#636366',
-                        }}
-                      />
-                    )}
-                  </React.Fragment>
-                ))}
-
-              {/* Next Steps Section (icon-based navigation) */}
-              {inBackSection && (
-                <Box
-                  sx={{
-                    height: 1.2,
-                    flexGrow: 1,
-                    minWidth: { sm: 6, md: 12, lg: 20 },
-                    maxWidth: { sm: 16, md: 28, lg: 40 },
-                    bgcolor: isNextStepsActive ? '#1340FF' : '#636366',
-                  }}
-                />
-              )}
-
-              <Box
-                onClick={() => {
-                  if (activeStep >= 8) {
-                    setActiveStep(7);
-                    setShowAdditionalDetails(false);
-                    localStorage.setItem('adminActiveStep', 7);
-                  }
-                }}
-                px={1}
-                py={0.5}
-                borderRadius={1}
-                border="1px solid #636366"
-                bgcolor={isNextStepsActive ? '#1340FF' : '#fff'}
-                sx={{
-                  borderColor: isNextStepsActive ? '#1340FF' : '#636366',
-                  '&:hover': {
-                    opacity: activeStep >= 8 ? 0.85 : 1,
-                  },
-                  cursor: activeStep >= 8 ? 'pointer' : 'default',
-                }}
-              >
-                <NextStepsIcon active={isNextStepsActive} size={35} />
-              </Box>
-
-              {/* Front Section Labels (Additional Details 1, Additional Details 2) */}
-              {inFrontSection && (
-                <>
-                  {frontSectionLabels.map((label, index) => (
-                    <React.Fragment key={label}>
-                      {/* Connector Line before each front section label */}
-                      <Box
-                        sx={{
-                          height: 1.2,
-                          flexGrow: 1,
-                          minWidth: { sm: 6, md: 12, lg: 20 },
-                          maxWidth: { sm: 16, md: 28, lg: 40 },
-                          bgcolor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
-                        }}
-                      />
-                      <Box
-                        onClick={() => handleFrontSectionStepClick(index)}
-                        sx={{
-                          minWidth: { sm: 62, md: 84, lg: 100 },
-                          flexShrink: 1,
-                          px: { sm: 0.75, md: 1.5 },
-                          height: 45,
-                          py: 1.2,
-                          textAlign: 'center',
-                          borderRadius: 1,
-                          fontSize: { sm: 11, md: 12, lg: 13 },
-                          fontWeight: 400,
-                          bgcolor:
-                            frontSectionIndicator === index
-                              ? '#1340FF'
-                              : frontSectionIndicator > index
-                                ? '#1340FF'
-                                : '#fff',
-                          color:
-                            frontSectionIndicator === index
-                              ? '#fff'
-                              : frontSectionIndicator > index
-                                ? '#fff'
-                                : '#636366',
-                          border: '1px solid #636366',
-                          borderColor: frontSectionIndicator >= index ? '#1340FF' : '#636366',
-                          cursor: index <= frontSectionIndicator ? 'pointer' : 'default',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            opacity: index <= frontSectionIndicator ? 0.85 : 1,
-                          },
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        <Box component="span">{label}</Box>
-                      </Box>
-                    </React.Fragment>
-                  ))}
-                </>
-              )}
-            </Stack>
+            <StepProgress
+              activeStep={activeStep}
+              onBackStepClick={handleBackSectionStepClick}
+              onFrontStepClick={handleFrontSectionStepClick}
+              onNextStepsClick={handleNextStepsClick}
+              reachedBack={reached.back}
+              reachedFront={reached.front}
+            />
           </Box>
 
           {/* Step navigation -- right column of the same header row, so the
-              header never grows a second row of controls. */}
+              header never grows a second row of controls. Below md the fixed
+              bottom bar holds these buttons instead. */}
           <Stack
             direction="row"
             alignItems="center"
             justifyContent="flex-end"
             sx={{
+              display: { xs: 'none', md: 'flex' },
               justifySelf: 'end',
               minWidth: 0,
               flexWrap: 'wrap',
               gap: 1,
             }}
           >
-            <Button
-              color="inherit"
-              disabled={activeStep === 0}
-              onClick={handleBack}
-              sx={{
-                height: 45,
-                bgcolor: 'white',
-                border: '1px solid #E7E7E7',
-                color: '#3A3A3C',
-                '&:hover': {
-                  bgcolor: '#F8F8F8',
-                  border: '1px solid #E7E7E7',
-                },
-                fontWeight: 600,
-                boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
-              }}
-            >
-              Back
-            </Button>
-
-            <Box sx={{ flexGrow: 1 }} />
+            {/* One gap (8px) between every button: no spacer, no nested row */}
+            {activeStep > 0 && (
+              <Button color="inherit" onClick={handleBack} sx={BACK_BUTTON_SX}>
+                Back
+              </Button>
+            )}
 
             {/* Steps 0-6: Show Next button */}
             {activeStep >= 0 && activeStep <= 6 && (
               <Button
                 variant="contained"
                 onClick={handleNext}
-                disabled={(!isFinaliseStep && !isStepValid()) || isLoading}
-                sx={{
-                  height: 45,
-                  bgcolor: '#3A3A3C',
-                  '&:hover': {
-                    bgcolor: '#47474a',
-                  },
-                  boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                  fontWeight: 600,
-                }}
+                disabled={(!nextAlwaysEnabled && !isStepValid()) || isLoading}
+                sx={NEXT_BUTTON_SX}
               >
                 Next
               </Button>
@@ -1617,20 +1510,12 @@ function CreateCampaignFormV2({
 
             {/* Step 8: Show Next and Confirm Campaign buttons */}
             {activeStep === 8 && (
-              <Stack direction="row" spacing={1}>
+              <>
                 <Button
                   variant="contained"
                   onClick={handleNext}
                   disabled={!isStepValid() || isLoading}
-                  sx={{
-                    height: 45,
-                    bgcolor: '#3A3A3C',
-                    '&:hover': {
-                      bgcolor: '#47474a',
-                    },
-                    boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                    fontWeight: 600,
-                  }}
+                  sx={NEXT_BUTTON_SX}
                 >
                   Next
                 </Button>
@@ -1638,18 +1523,11 @@ function CreateCampaignFormV2({
                   variant="contained"
                   onClick={handleOpenConfirm}
                   disabled={isLoading || !isStepValid()}
-                  sx={{
-                    bgcolor: '#1340FF',
-                    '&:hover': {
-                      bgcolor: '#0030e0',
-                    },
-                    boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                    fontWeight: 600,
-                  }}
+                  sx={CONFIRM_BUTTON_SX}
                 >
                   {isLoading ? confirmLoadingLabel : confirmLabel}
                 </LoadingButton>
-              </Stack>
+              </>
             )}
 
             {/* Step 9: Show only Confirm Campaign button (last step) */}
@@ -1658,19 +1536,16 @@ function CreateCampaignFormV2({
                 variant="contained"
                 onClick={handleOpenConfirm}
                 disabled={isLoading || !isStepValid()}
-                sx={{
-                  bgcolor: '#1340FF',
-                  '&:hover': {
-                    bgcolor: '#0030e0',
-                  },
-                  boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                  fontWeight: 600,
-                }}
+                sx={CONFIRM_BUTTON_SX}
               >
                 {isLoading ? 'Creating Campaign...' : 'Confirm Campaign'}
               </LoadingButton>
             )}
           </Stack>
+
+          <Box sx={{ gridColumn: '1 / -1', display: { xs: 'block', sm: 'none' } }}>
+            <StepProgressCompact activeStep={activeStep} />
+          </Box>
         </Box>
 
         {/* Close-with-unsaved-draft confirmation */}
@@ -1683,142 +1558,91 @@ function CreateCampaignFormV2({
         />
 
         {/* Confirmation Dialog */}
-        <Dialog
+        <ConfirmPublishDialog
           open={confirmOpen}
           onClose={handleCloseConfirm}
-          maxWidth="xs"
-          fullWidth
-          PaperProps={{
-            sx: {
-              borderRadius: 3,
-            },
+          loading={isLoading}
+          activate={isActivateMode}
+          startDate={campaignStartDate}
+          onConfirm={() => {
+            const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
+              ? 'ACTIVE'
+              : 'SCHEDULED';
+            setStatus(campaignStatus);
+            onSubmit(campaignStatus);
           }}
-        >
-          <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>
-            <Iconify icon="mdi:rocket-launch" width={32} sx={{ color: '#1340FF' }} />
-            <Typography variant="h6" mt={1}>
-              {isActivateMode ? 'Confirm Activation' : 'Confirm Campaign'}
-            </Typography>
-          </DialogTitle>
-          <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              {isActivateMode
-                ? 'Are you sure you want to activate this campaign?'
-                : 'Are you sure you want to publish this campaign?'}
-            </Typography>
-          </DialogContent>
-          <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
-            <Button variant="contained" onClick={handleCloseConfirm} sx={{ px: 2, py: 1.2 }}>
-              Cancel
-            </Button>
-            {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
-              <Button
-                variant="contained"
-                onClick={() => {
-                  const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
-                    ? 'ACTIVE'
-                    : 'SCHEDULED';
-                  setStatus(campaignStatus);
-                  // Directly trigger form submission with the campaign status
-                  onSubmit(campaignStatus);
-                }}
-                startIcon={<Iconify icon="material-symbols:publish" />}
-                disabled={isLoading}
-                sx={{
-                  bgcolor: '#1340FF',
-                  px: 4,
-                  py: 1.2,
-                  fontWeight: 600,
-                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                  '&:hover': {
-                    bgcolor: '#0030e0',
-                  },
-                }}
-              >
-                {(() => {
-                  if (isActivateMode) return isLoading ? 'Activating...' : 'Activate Now';
-                  return isLoading ? 'Publishing...' : 'Publish Now';
-                })()}
-              </Button>
-            ) : (
-              <Button
-                variant="contained"
-                onClick={() => {
-                  const campaignStatus = dayjs(campaignStartDate).isSame(dayjs(), 'date')
-                    ? 'ACTIVE'
-                    : 'SCHEDULED';
-                  setStatus(campaignStatus);
-                  // Directly trigger form submission with the campaign status
-                  onSubmit(campaignStatus);
-                }}
-                disabled={isLoading}
-                startIcon={<Iconify icon="mdi:calendar-clock" />}
-                sx={{
-                  bgcolor: '#1340FF',
-                  px: 4,
-                  py: 1.2,
-                  fontWeight: 600,
-                  boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                  '&:hover': {
-                    bgcolor: '#0030e0',
-                  },
-                }}
-              >
-                {isLoading
-                  ? 'Scheduling...'
-                  : `Schedule on ${dayjs(campaignStartDate).format('ddd LL')}`}
-              </Button>
-            )}
-          </DialogActions>
-        </Dialog>
+        />
 
-        <Box
-          sx={{
-            height: '85vh',
-            overflow: 'auto',
-            mt: 1,
-            scrollbarWidth: 'thin',
-            pb: { xs: 10, md: 0 },
-          }}
-        >
+        <Box sx={{ position: 'relative', flex: 1, minHeight: 0, mt: 1, display: 'flex' }}>
           <Box
             sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              mt: 4,
-              maxWidth: 1000,
-              width: 1,
-              mx: 'auto',
+              ...scrollEdgeSx,
+              top: 0,
+              height: '1px',
+              bgcolor: '#EBEBEB',
+              opacity: scrollEdges.above ? 1 : 0,
+            }}
+          />
+          <Box
+            sx={{
+              ...scrollEdgeSx,
+              bottom: bottomInset,
+              height: 72,
+              background:
+                'linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.85) 60%, #FFFFFF)',
+              opacity: scrollEdges.below ? 1 : 0,
+            }}
+          />
+          <MoreBelowPill scrollRef={scrollRef} stepKey={activeStep} inset={bottomInset} />
+          <Box
+            ref={scrollRef}
+            sx={{
+              flex: 1,
+              minHeight: 0,
               overflow: 'auto',
+              scrollbarWidth: 'thin',
+              pb: { xs: 10, md: 0 },
             }}
           >
-            <Stack alignItems="center" spacing={2}>
-              <Avatar
-                sx={{ bgcolor: steps[activeStep].color, width: 60, height: 60, fontSize: 35 }}
-              >
-                {steps[activeStep].logo}
-              </Avatar>
-              <Typography
-                sx={{
-                  fontFamily: (theme) => theme.typography.fontSecondaryFamily,
-                  fontSize: 35,
-                  textAlign: 'center',
-                }}
-              >
-                {steps[activeStep].title}
-              </Typography>
-            </Stack>
+            <m.div
+              key={activeStep}
+              initial={{ opacity: 0, transform: `translateX(${stepOffset}px)` }}
+              animate={{
+                opacity: 1,
+                transform: 'translateX(0px)',
+                transitionEnd: { transform: 'none' },
+              }}
+              transition={{ duration: 0.22, ease: EASE_OUT_ARRAY }}
+              style={{ maxWidth: 1000, width: '100%', margin: '0 auto', paddingTop: 16 }}
+            >
+              <Stack alignItems="center" spacing={2}>
+                <Avatar
+                  sx={{ bgcolor: steps[activeStep].color, width: 60, height: 60, fontSize: 35 }}
+                >
+                  {steps[activeStep].logo}
+                </Avatar>
+                <Typography
+                  sx={{
+                    fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                    fontSize: 35,
+                    textAlign: 'center',
+                  }}
+                >
+                  {steps[activeStep].title}
+                </Typography>
+              </Stack>
 
-            <Box mt={1} mb={5} overflow="auto" minHeight={400}>
-              {getStepContent(activeStep)}
-            </Box>
+              <Box mt={1} mb={5} minHeight={400}>
+                <StepOpenedProvider>{getStepContent(activeStep)}</StepOpenedProvider>
+              </Box>
+            </m.div>
           </Box>
         </Box>
       </FormProvider>
 
       {/* Mobile Navigation Buttons */}
       <Box
+        ref={mobileBarRef}
         sx={{
           display: { xs: 'flex', md: 'none' },
           position: 'fixed',
@@ -1835,42 +1659,30 @@ function CreateCampaignFormV2({
           boxShadow: '0px -4px 12px rgba(0, 0, 0, 0.08)',
         }}
       >
-        <Button
-          color="inherit"
-          disabled={activeStep === 0}
-          onClick={handleBack}
-          sx={{
-            height: 48,
-            flex: 1,
-            bgcolor: 'white',
-            border: '1px solid #E7E7E7',
-            color: '#3A3A3C',
-            '&:hover': {
-              bgcolor: '#F8F8F8',
-              border: '1px solid #E7E7E7',
-            },
-            fontWeight: 600,
-            boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.05) inset',
-          }}
-        >
-          Back
-        </Button>
+        {activeStep > 0 && (
+          <Button
+            color="inherit"
+            onClick={handleBack}
+            sx={{
+              ...BACK_BUTTON_SX,
+              height: 48,
+              flex: 1,
+            }}
+          >
+            Back
+          </Button>
+        )}
 
         {/* Steps 0-6: Show Next button */}
         {activeStep >= 0 && activeStep <= 6 && (
           <Button
             variant="contained"
             onClick={handleNext}
-            disabled={(!isFinaliseStep && !isStepValid()) || isLoading}
+            disabled={(!nextAlwaysEnabled && !isStepValid()) || isLoading}
             sx={{
+              ...NEXT_BUTTON_SX,
               height: 48,
               flex: 1,
-              bgcolor: '#3A3A3C',
-              '&:hover': {
-                bgcolor: '#47474a',
-              },
-              boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
-              fontWeight: 600,
             }}
           >
             Next
@@ -1888,14 +1700,9 @@ function CreateCampaignFormV2({
               onClick={handleNext}
               disabled={!isStepValid() || isLoading}
               sx={{
+                ...NEXT_BUTTON_SX,
                 height: 48,
                 flex: 1,
-                bgcolor: '#3A3A3C',
-                '&:hover': {
-                  bgcolor: '#47474a',
-                },
-                boxShadow: '0px -1.5px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                fontWeight: 600,
               }}
             >
               Next
@@ -1905,14 +1712,9 @@ function CreateCampaignFormV2({
               onClick={handleOpenConfirm}
               disabled={isLoading || !isStepValid()}
               sx={{
+                ...CONFIRM_BUTTON_SX,
                 height: 48,
                 flex: 1,
-                bgcolor: '#1340FF',
-                '&:hover': {
-                  bgcolor: '#0030e0',
-                },
-                boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                fontWeight: 600,
                 fontSize: '0.8rem',
               }}
             >
@@ -1928,14 +1730,9 @@ function CreateCampaignFormV2({
             onClick={handleOpenConfirm}
             disabled={isLoading || !isStepValid()}
             sx={{
+              ...CONFIRM_BUTTON_SX,
               height: 48,
               flex: 1,
-              bgcolor: '#1340FF',
-              '&:hover': {
-                bgcolor: '#0030e0',
-              },
-              boxShadow: '0px -2px 0px 0px rgba(0, 0, 0, 0.15) inset',
-              fontWeight: 600,
             }}
           >
             {isLoading ? confirmShortLoadingLabel : confirmLabel}

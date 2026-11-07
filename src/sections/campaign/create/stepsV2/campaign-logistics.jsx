@@ -1,19 +1,227 @@
-import { memo, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { memo, useRef, useEffect } from 'react';
+import { m, useReducedMotion } from 'framer-motion';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import {
   Box,
   Stack,
-  Radio,
-  Switch,
-  MenuItem,
   FormLabel,
+  ButtonBase,
   Typography,
   IconButton,
+  useMediaQuery,
+  FormHelperText,
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
-import { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import { RHFTextField } from 'src/components/hook-form';
+import { SECONDARY_ACTION_SX } from 'src/components/campaign/action-button-styles';
+
+import { EASE_OUT } from '../components/motion';
+import SectionIn from '../components/section-in';
+import ChipSelect from '../components/chip-select';
+import useScrollToFirstError from '../components/use-scroll-to-first-error';
+import { FIELD_HEIGHT, singleLineSx, helperTextSx } from '../components/field-styles';
+import {
+  BLUE,
+  cardSx,
+  titleSx,
+  ToggleCard,
+  cardIconSx,
+  descriptionSx,
+} from '../components/option-card';
+
+const LOGISTICS_TYPES = {
+  PRODUCT_DELIVERY: {
+    title: 'Product Delivery',
+    description: 'Send products to creators by courier.',
+  },
+  RESERVATION: {
+    title: 'Reservation',
+    description: 'Creators book a time slot to visit your outlet.',
+  },
+};
+const TYPE_OPTIONS = Object.keys(LOGISTICS_TYPES);
+const typeTitle = (type) => LOGISTICS_TYPES[type]?.title ?? type;
+const typeDescription = (type) => LOGISTICS_TYPES[type]?.description;
+
+const SCHEDULING_OPTIONS = [
+  {
+    value: 'confirmation',
+    icon: 'eva:person-done-outline',
+    title: 'Ask for my confirmation',
+    description: 'I approve each time a creator asks to reschedule.',
+  },
+  {
+    value: 'auto',
+    icon: 'eva:flash-outline',
+    title: 'Auto-schedule',
+    description: 'Creators book their time slots with no approval needed.',
+  },
+];
+
+const LOCATION_COLUMNS = [
+  { key: 'name', title: 'Outlet', placeholder: 'e.g. Pavilion KL' },
+  { key: 'pic', title: 'PIC', optional: true, placeholder: 'e.g. Aisyah' },
+  {
+    key: 'contactNumber',
+    title: 'Contact number',
+    optional: true,
+    placeholder: 'e.g. 012-345 6789',
+    inputProps: { inputMode: 'tel' },
+  },
+];
+
+const EMPTY_LOCATION = { name: '', pic: '', contactNumber: '' };
+
+const FormField = ({ label, hint, required = false, children }) => (
+  <Stack spacing={0.75}>
+    <Stack spacing={0.25}>
+      <FormLabel
+        required={required}
+        sx={{
+          fontWeight: 700,
+          fontSize: '0.875rem',
+          color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+          '& .MuiFormLabel-asterisk': { color: '#FF3500' },
+        }}
+      >
+        {label}
+      </FormLabel>
+      {hint && (
+        <Typography variant="caption" color="#8E8E93">
+          {hint}
+        </Typography>
+      )}
+    </Stack>
+    {children}
+  </Stack>
+);
+
+FormField.propTypes = {
+  label: PropTypes.string.isRequired,
+  hint: PropTypes.node,
+  required: PropTypes.bool,
+  children: PropTypes.node.isRequired,
+};
+
+const removeButtonSx = {
+  ...SECONDARY_ACTION_SX,
+  width: FIELD_HEIGHT,
+  minWidth: FIELD_HEIGHT,
+  height: FIELD_HEIGHT,
+  p: 0,
+  pb: '3px',
+  flexShrink: 0,
+  color: '#8E8E93',
+  transition: `${SECONDARY_ACTION_SX.transition}, color 140ms ease-out`,
+  '@media (hover: hover) and (pointer: fine)': {
+    '&:hover:not(:disabled)': { color: '#FF5630' },
+  },
+  '&.Mui-disabled': { ...SECONDARY_ACTION_SX['&.Mui-disabled'], opacity: 0.5 },
+};
+
+const addButtonSx = {
+  ...SECONDARY_ACTION_SX,
+  alignSelf: 'flex-start',
+  height: 36,
+  px: 1.5,
+  pt: '7px',
+  pb: '10px',
+  gap: 0.75,
+  fontSize: 14,
+  lineHeight: '18px',
+  color: '#3A3A3C',
+};
+
+const hiddenInputSx = {
+  position: 'absolute',
+  opacity: 0,
+  width: 1,
+  height: 1,
+  m: 0,
+  pointerEvents: 'none',
+};
+
+function PickMark({ selected }) {
+  return (
+    <Box
+      aria-hidden
+      sx={{
+        width: 18,
+        height: 18,
+        mt: '1px',
+        flexShrink: 0,
+        display: 'grid',
+        placeItems: 'center',
+        borderRadius: '50%',
+        border: '1.5px solid',
+        borderColor: selected ? BLUE : '#C4CDD5',
+        bgcolor: selected ? BLUE : '#FFFFFF',
+        color: '#FFFFFF',
+        transition: 'background-color 150ms ease, border-color 150ms ease',
+      }}
+    >
+      <Iconify
+        icon="eva:checkmark-fill"
+        width={12}
+        sx={{
+          opacity: selected ? 1 : 0,
+          transform: selected ? 'scale(1)' : 'scale(0.6)',
+          transition: `opacity 150ms ease, transform 200ms ${EASE_OUT}`,
+          '@media (prefers-reduced-motion: reduce)': { transform: 'none' },
+        }}
+      />
+    </Box>
+  );
+}
+
+PickMark.propTypes = { selected: PropTypes.bool };
+
+const ROW_EASE = [0.23, 1, 0.32, 1];
+
+// A row added with the button opens its height, so the button below glides down. A removed
+// row leaves at once: during an exit its inputs would already show the next row's values.
+function Row({ appear, instant, children }) {
+  return (
+    <m.div
+      initial={appear ? { height: 0, opacity: 0 } : false}
+      animate={{ height: 'auto', opacity: 1 }}
+      transition={instant ? { duration: 0 } : { duration: 0.2, ease: ROW_EASE }}
+      style={{ overflow: 'hidden' }}
+    >
+      {children}
+    </m.div>
+  );
+}
+
+Row.propTypes = { appear: PropTypes.bool, instant: PropTypes.bool, children: PropTypes.node };
+
+function RemoveButton({ label, disabled, onClick }) {
+  return (
+    <IconButton aria-label={label} disabled={disabled} onClick={onClick} sx={removeButtonSx}>
+      <Iconify icon="eva:trash-2-outline" width={20} />
+    </IconButton>
+  );
+}
+
+RemoveButton.propTypes = {
+  label: PropTypes.string,
+  disabled: PropTypes.bool,
+  onClick: PropTypes.func,
+};
+
+function AddButton({ children, onClick }) {
+  return (
+    <ButtonBase sx={addButtonSx} onClick={onClick}>
+      <Iconify icon="mingcute:add-line" width={16} sx={{ color: '#1340FF' }} />
+      {children}
+    </ButtonBase>
+  );
+}
+
+AddButton.propTypes = { children: PropTypes.node, onClick: PropTypes.func };
 
 const CampaignLogistics = () => {
   const {
@@ -24,455 +232,281 @@ const CampaignLogistics = () => {
     trigger,
     formState: { errors },
   } = useFormContext();
-  const [editingIndex, setEditingIndex] = useState(-1);
-  const [editValue, setEditValue] = useState('');
-  const [lastAddedIndex, setLastAddedIndex] = useState(0);
+  const reduceMotion = useReducedMotion();
+  // Phones hide the column headers, so each placeholder names its field
+  const showHeaders = useMediaQuery((theme) => theme.breakpoints.up('sm'));
+  const containerRef = useRef(null);
+  useScrollToFirstError(containerRef);
 
   const logisticsType = watch('logisticsType');
   const schedulingOption = watch('schedulingOption');
-  const allowMultipleBookings = watch('allowMultipleBookings');
+  const allowMultipleBookings = !!watch('allowMultipleBookings');
 
-  // For product delivery - multiple products
   const {
     fields: productFields,
     append: appendProduct,
     remove: removeProduct,
-  } = useFieldArray({
-    control,
-    name: 'products',
-  });
+  } = useFieldArray({ control, name: 'products' });
 
-  // For reservation - multiple locations
   const {
     fields: locationFields,
     append: appendLocation,
     remove: removeLocation,
-  } = useFieldArray({
-    control,
-    name: 'locations',
-  });
+  } = useFieldArray({ control, name: 'locations' });
 
-  // Initialize arrays if needed
+  // A type change resets what the other type needs; the first render keeps a loaded draft
+  const previousType = useRef(logisticsType);
+  useEffect(() => {
+    if (previousType.current === logisticsType) return;
+    previousType.current = logisticsType;
+    const dirty = { shouldDirty: true };
+    if (logisticsType === 'PRODUCT_DELIVERY') {
+      setValue('schedulingOption', '', dirty);
+    } else if (logisticsType === 'RESERVATION') {
+      setValue('schedulingOption', 'confirmation', dirty);
+    } else {
+      setValue('schedulingOption', '', dirty);
+      setValue('products', [{ name: '' }], dirty);
+      setValue('locations', [EMPTY_LOCATION], dirty);
+    }
+  }, [logisticsType, setValue]);
+
+  // Each type always shows at least one row to type in
   useEffect(() => {
     if (logisticsType === 'PRODUCT_DELIVERY' && productFields.length === 0) {
-      appendProduct({ name: '' });
-      // setLastAddedIndex(0);
+      appendProduct({ name: '' }, { shouldFocus: false });
     }
     if (logisticsType === 'RESERVATION' && locationFields.length === 0) {
-      appendLocation({ name: '' });
-      // setValue('schedulingOption', 'confirmation');
+      appendLocation(EMPTY_LOCATION, { shouldFocus: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logisticsType]);
 
-  const handleEdit = (index, value) => {
-    setEditingIndex(index);
-    setEditValue(value);
+  // The list the Add button just grew; its new last row opens and takes focus
+  const added = useRef(null);
+  const isNewRow = (list, index) => {
+    const count = list === 'products' ? productFields.length : locationFields.length;
+    return added.current === list && index === count - 1;
   };
-
-  const handleSave = (index) => {
-    setValue(`products.${index}.name`, editValue);
-    setEditingIndex(-1);
+  const addRow = (list) => {
+    added.current = list;
+    if (list === 'products') appendProduct({ name: '' }, { shouldFocus: false });
+    else appendLocation(EMPTY_LOCATION, { shouldFocus: false });
   };
-
-  const handleCancel = () => {
-    setEditingIndex(-1);
-  };
-
-  const handleAddProduct = () => {
-    appendProduct({ name: '' });
-    setLastAddedIndex(productFields.length);
-    setEditingIndex(-1);
-  };
-
+  // RHFTextField's ref is the field box, not the input, so focus the input by its name
   useEffect(() => {
-    console.log('allowMultipleBookings status', allowMultipleBookings);
-  }, [allowMultipleBookings]);
+    const list = added.current;
+    if (!list) return;
+    added.current = null;
+    const count = list === 'products' ? productFields.length : locationFields.length;
+    containerRef.current
+      ?.querySelector(`input[name="${list}.${count - 1}.name"]`)
+      ?.focus({ preventScroll: true });
+  }, [productFields.length, locationFields.length]);
+
+  // A list-level error (from the schema's .test) sits under `root` for a field array
+  const listError = (name) => {
+    const message = errors[name]?.root?.message ?? errors[name]?.message;
+    return typeof message === 'string' ? message : '';
+  };
+  const productsError = listError('products');
+  const locationsError = listError('locations');
+
+  // Once an error shows, typing re-checks the list, so the error leaves as soon as it is fixed
+  const recheck = (name) => {
+    if (errors[name]) trigger(name);
+  };
 
   return (
     <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignContent: 'center',
-        gap: 3,
-        p: 3,
-        maxWidth: 600,
-        mx: 'auto',
-      }}
+      ref={containerRef}
+      sx={{ maxWidth: 600, mx: 'auto', px: { xs: 0, sm: 3 }, pt: 3, mb: 10, ...helperTextSx }}
     >
-      <Typography
-        textAlign="center"
-        sx={{
-          mb: 2,
-          fontFamily: 'Inter Display, sans-serif',
-          fontWeight: 400,
-          fontSize: '16px',
-          lineHeight: '20px',
-          letterSpacing: '0%',
-          color: '#231F20',
-        }}
-      >
-        This includes examples like sending products to creators through a courier service, or
-        setting a reservation for a restaurant
-      </Typography>
-
-      <Stack spacing={2} mb={10}>
-        <Stack spacing={1}>
-          <FormLabel
-            sx={{
-              fontWeight: 600,
-              fontSize: '14px',
-              color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-            }}
-          >
-            Logistics Type
-          </FormLabel>
-          <RHFSelect
+      <Stack spacing={3}>
+        <FormField label="Logistics Type" hint="Optional. Leave empty if creators need nothing.">
+          <ChipSelect
+            single
+            clearable
             name="logisticsType"
+            options={TYPE_OPTIONS}
+            getTitle={typeTitle}
+            getDescription={typeDescription}
             placeholder="Select logistics type"
-            sx={{ boxShadow: 'none' }}
-            onChange={(e) => {
-              setValue('logisticsType', e.target.value);
-              // Reset fields when logistics type changes
-              if (e.target.value === 'PRODUCT_DELIVERY') {
-                setValue('schedulingOption', '');
-                if (getValues('products').length === 0) setValue('products', [{ name: '' }]);
-              } else if (e.target.value === 'RESERVATION') {
-                // Initialize reservation fields
-                setValue('schedulingOption', 'confirmation');
-                if (getValues('locations').length === 0) setValue('locations', [{ name: '' }]);
-              } else {
-                // We clear the data and the scheduling option
-                setValue('schedulingOption', '');
-                setValue('products', [{ name: '' }]);
-                setValue('locations', [{ name: '' }]);
-              }
-            }}
-          >
-            <MenuItem value="">Select logistics type</MenuItem>
-            <MenuItem value="PRODUCT_DELIVERY">Product Delivery</MenuItem>
-            <MenuItem value="RESERVATION">Reservation</MenuItem>
-          </RHFSelect>
-        </Stack>
+          />
+        </FormField>
 
         {logisticsType === 'PRODUCT_DELIVERY' && (
-          <Stack spacing={3} mb={10}>
-            {productFields.map((field, index) => (
-              <Stack key={field.id} spacing={1}>
-                <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Typography
-                    sx={{
-                      fontWeight: 600,
-                      fontSize: '14px',
-                      color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                    }}
-                  >
-                    {index === 0 ? 'Product' : `Product ${index + 1}`}
-                  </Typography>
-                </Box>
-
-                <Stack direction="row" spacing={1} sx={{ display: 'flex', alignItems: 'center' }}>
-                  <RHFTextField
-                    fullWidth
-                    placeholder="Product Name"
-                    name={`products.${index}.name`}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 1,
-                      },
-                    }}
-                  />
-
-                  <IconButton
-                    onClick={() => removeProduct(index)}
-                    disabled={productFields.length === 1}
-                    sx={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: 1,
-                      border: '1px solid #E7E7E7',
-                      color: '#FF3030',
-                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                      '&:hover': { bgcolor: '#FFF5F5' },
-                    }}
-                  >
-                    <Iconify icon="eva:trash-2-outline" width={22} />
-                  </IconButton>
-                </Stack>
-              </Stack>
-            ))}
-
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-              <IconButton
-                onClick={handleAddProduct}
-                sx={{
-                  width: 38,
-                  height: 38,
-                  gap: '4px',
-                  opacity: 1,
-                  borderRadius: '8px',
-                  padding: '8px 12px 11px 12px',
-                  borderWidth: '1px',
-                  background: '#FFFFFF',
-                  border: '1px solid #E7E7E7',
-                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                  '&:hover': { bgcolor: '#f5f5f5' },
-                }}
-              >
-                <Iconify icon="eva:plus-fill" sx={{ color: '#1340FF' }} />
-              </IconButton>
-            </Box>
-          </Stack>
+          <SectionIn component={Stack} key="products" spacing={1.5}>
+            <FormField label="Products" required>
+              <>
+                {productFields.map((field, index) => (
+                  <Row key={field.id} appear={isNewRow('products', index)} instant={!!reduceMotion}>
+                    <Stack direction="row" spacing={1} sx={{ pb: 1 }}>
+                      <RHFTextField
+                        fullWidth
+                        size="small"
+                        placeholder="Product name"
+                        name={`products.${index}.name`}
+                        onKeyUp={() => recheck('products')}
+                        error={!!productsError && !getValues(`products.${index}.name`)?.trim()}
+                        sx={singleLineSx}
+                      />
+                      <RemoveButton
+                        label="Remove product"
+                        disabled={productFields.length === 1}
+                        onClick={() => removeProduct(index)}
+                      />
+                    </Stack>
+                  </Row>
+                ))}
+              </>
+              {productsError && (
+                <FormHelperText error sx={{ mt: '-2px !important' }}>
+                  {productsError}
+                </FormHelperText>
+              )}
+            </FormField>
+            <AddButton onClick={() => addRow('products')}>Add product</AddButton>
+          </SectionIn>
         )}
 
         {logisticsType === 'RESERVATION' && (
-          <>
-            <Stack spacing={1}>
-              <FormLabel
-                sx={{
-                  fontWeight: 600,
-                  color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                }}
-              >
-                Scheduling Option{' '}
-                <Typography component="span" color="error">
-                  *
-                </Typography>
-              </FormLabel>
-
-              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                <Box
-                  sx={{
-                    flex: 1,
-                    p: 2,
-                    borderRadius: 1,
-                    border: '1px solid',
-                    borderColor: schedulingOption === 'confirmation' ? '#3366FF' : '#E7E7E7',
-                    bgcolor: schedulingOption === 'confirmation' ? '#F0F7FF' : 'transparent',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setValue('schedulingOption', 'confirmation')}
+          <SectionIn component={Stack} key="reservation" spacing={3}>
+            <Stack spacing={1.5}>
+              <FormField label="Scheduling Option" required>
+                <Stack
+                  role="radiogroup"
+                  aria-label="Scheduling option"
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={1.5}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                    <Radio
-                      checked={schedulingOption === 'confirmation'}
-                      sx={{
-                        p: 0,
-                        mr: 1,
-                        color: '#3366FF',
-                        '&.Mui-checked': {
-                          color: '#3366FF',
-                        },
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{
-                          fontWeight: 600,
-                          mb: 0.5,
-                          color: schedulingOption === 'confirmation' ? '#1340FF' : 'text.primary',
-                        }}
+                  {SCHEDULING_OPTIONS.map((option) => {
+                    const selected = schedulingOption === option.value;
+                    return (
+                      <Box
+                        key={option.value}
+                        component="label"
+                        sx={{ ...cardSx(selected), flex: 1 }}
                       >
-                        Ask for my confirmation
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontSize: '14px',
-                          color: schedulingOption === 'confirmation' ? '#1340FF' : 'text.secondary',
-                        }}
-                      >
-                        Prompt me for confirmation each time the creator requests a reschedule.
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
+                        <Box
+                          component="input"
+                          type="radio"
+                          name="schedulingOption"
+                          value={option.value}
+                          checked={selected}
+                          onChange={() =>
+                            setValue('schedulingOption', option.value, { shouldDirty: true })
+                          }
+                          sx={hiddenInputSx}
+                        />
+                        <Iconify
+                          icon={option.icon}
+                          width={20}
+                          sx={{ mt: '1px', ...cardIconSx(selected) }}
+                        />
+                        <Box sx={{ flex: 1 }}>
+                          <Typography sx={titleSx(selected)}>{option.title}</Typography>
+                          <Typography sx={descriptionSx}>{option.description}</Typography>
+                        </Box>
+                        <PickMark selected={selected} />
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              </FormField>
 
-                <Box
-                  sx={{
-                    flex: 1,
-                    p: 2,
-                    borderRadius: 1,
-                    border: '1px solid',
-                    borderColor: schedulingOption === 'auto' ? '#3366FF' : '#E7E7E7',
-                    bgcolor: schedulingOption === 'auto' ? '#F0F7FF' : 'transparent',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setValue('schedulingOption', 'auto')}
+              <ToggleCard
+                icon="eva:people-outline"
+                title="Allow multiple creators per time slot"
+                description={
+                  allowMultipleBookings
+                    ? 'Several creators can visit your outlet at the same time.'
+                    : 'Each time slot is for one creator only.'
+                }
+                checked={allowMultipleBookings}
+                onChange={(checked) =>
+                  setValue('allowMultipleBookings', checked, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
+              />
+            </Stack>
+            <Stack spacing={1.5}>
+              <FormField label="Locations" required>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{ display: { xs: 'none', sm: 'flex' }, pr: `${FIELD_HEIGHT + 8}px` }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                    <Radio
-                      checked={schedulingOption === 'auto'}
+                  {LOCATION_COLUMNS.map((column) => (
+                    <Typography
+                      key={column.key}
                       sx={{
-                        p: 0,
-                        mr: 1,
-                        '&.Mui-checked': {
-                          color: '#3366FF',
-                        },
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{
-                          fontWeight: 600,
-                          mb: 0.5,
-                          color: schedulingOption === 'auto' ? '#1340FF' : 'text.primary',
-                        }}
-                      >
-                        Auto-Schedule
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontSize: '14px',
-                          color: schedulingOption === 'auto' ? '#1340FF' : 'text.secondary',
-                        }}
-                      >
-                        Allow creators to schedule their time slots without needing confirmation.
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
-            </Stack>
-
-            <Stack spacing={0}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  Allow multiple creators to book the same timeslot
-                </Typography>
-                <Switch
-                  checked={watch('allowMultipleBookings')}
-                  onChange={(e) =>
-                    setValue('allowMultipleBookings', e.target.checked, { shouldValidate: true })
-                  }
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                      backgroundColor: '#1340FF',
-                    },
-                  }}
-                />
-              </Stack>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                Enabling this option allows <strong>multiple</strong> creators to visit your outlet
-                at the same time. Leaving this option disabled restricts <strong>one</strong>{' '}
-                timeslot to <strong>one</strong> creator only.
-              </Typography>
-            </Stack>
-
-            <Stack spacing={1}>
-              <FormLabel
-                sx={{
-                  fontWeight: 600,
-                  color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                }}
-              >
-                Location
-                <Typography component="span" color="error">
-                  *
-                </Typography>
-              </FormLabel>
-
-              <Stack direction="row" spacing={2} sx={{ px: 0.5 }}>
-                <Typography variant="caption" sx={{ flex: 1.5, color: '#636366', fontWeight: 500 }}>
-                  Outlet
-                </Typography>
-                <Typography variant="caption" sx={{ flex: 1.5, color: '#636366', fontWeight: 500 }}>
-                  PIC{' '}
-                  <Box component="span" sx={{ fontWeight: 400 }}>
-                    (Optional)
-                  </Box>
-                </Typography>
-                <Typography variant="caption" sx={{ flex: 1.5, color: '#636366', fontWeight: 500 }}>
-                  Contact Number{' '}
-                  <Box component="span" sx={{ fontWeight: 400 }}>
-                    (Optional)
-                  </Box>
-                </Typography>
-                <Box sx={{ width: 48 }} />
-              </Stack>
-
-              <Stack spacing={1.5}>
-                {locationFields.map((field, index) => (
-                  <Stack key={field.id} direction="row" spacing={2} alignItems="center">
-                    <RHFTextField
-                      name={`locations.${index}.name`}
-                      placeholder="Outlet"
-                      onChange={(e) => {
-                        setValue(`locations.${index}.name`, e.target.value, {
-                          shouldValidate: true,
-                        });
-                        trigger('locations');
-                      }}
-                      error={
-                        index === 0
-                          ? !!errors.locations && !Array.isArray(errors.locations)
-                          : !!errors?.locations?.[index]?.name
-                      }
-                      sx={{ flex: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-                    />
-                    <RHFTextField
-                      name={`locations.${index}.pic`}
-                      placeholder="PIC"
-                      sx={{ flex: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-                    />
-                    <RHFTextField
-                      name={`locations.${index}.contactNumber`}
-                      placeholder="Contact Number"
-                      sx={{ flex: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-                    />
-
-                    <IconButton
-                      onClick={() => removeLocation(index)}
-                      disabled={locationFields.length === 1}
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 1,
-                        border: '1px solid #E7E7E7',
-                        color: '#FF3030',
-                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                        '&:hover': { bgcolor: '#FFF5F5' },
+                        flex: 1,
+                        fontSize: 12,
+                        lineHeight: '16px',
+                        fontWeight: 600,
+                        color: '#636366',
                       }}
                     >
-                      <Iconify icon="eva:trash-2-outline" width={22} />
-                    </IconButton>
-                  </Stack>
-                ))}
-              </Stack>
-
-              {errors.locations && !Array.isArray(errors.locations) && (
-                <Typography variant="caption" color="error" sx={{ fontWeight: 400 }}>
-                  {typeof errors.locations.message === 'string' ? errors.locations.message : ''}
-                </Typography>
-              )}
-
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <IconButton
-                  onClick={() => appendLocation({ name: '' })}
-                  sx={{
-                    width: 38,
-                    height: 38,
-                    gap: '4px',
-                    opacity: 1,
-                    borderRadius: '8px',
-                    padding: '8px 12px 11px 12px',
-                    borderWidth: '1px',
-                    background: '#FFFFFF',
-                    border: '1px solid #E7E7E7',
-                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                    '&:hover': { bgcolor: '#f5f5f5' },
-                  }}
-                >
-                  <Iconify icon="eva:plus-fill" sx={{ color: '#1340FF' }} />
-                </IconButton>
-              </Box>
+                      {column.title}
+                      {column.optional && (
+                        <Box component="span" sx={{ fontWeight: 400, color: '#8E8E93' }}>
+                          {' '}
+                          (optional)
+                        </Box>
+                      )}
+                    </Typography>
+                  ))}
+                </Stack>
+                <>
+                  {locationFields.map((field, index) => (
+                    <Row
+                      key={field.id}
+                      appear={isNewRow('locations', index)}
+                      instant={!!reduceMotion}
+                    >
+                      <Stack direction="row" spacing={1} sx={{ pb: 1 }}>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ flex: 1 }}>
+                          {LOCATION_COLUMNS.map((column) => (
+                            <RHFTextField
+                              key={column.key}
+                              size="small"
+                              name={`locations.${index}.${column.key}`}
+                              placeholder={
+                                showHeaders
+                                  ? column.placeholder
+                                  : `${column.title}${column.optional ? ' (optional)' : ''}`
+                              }
+                              inputProps={{ 'aria-label': column.title, ...column.inputProps }}
+                              {...(column.key === 'name' && {
+                                onKeyUp: () => recheck('locations'),
+                                error:
+                                  !!locationsError && !getValues(`locations.${index}.name`)?.trim(),
+                              })}
+                              sx={{ flex: 1, ...singleLineSx }}
+                            />
+                          ))}
+                        </Stack>
+                        <RemoveButton
+                          label="Remove location"
+                          disabled={locationFields.length === 1}
+                          onClick={() => removeLocation(index)}
+                        />
+                      </Stack>
+                    </Row>
+                  ))}
+                </>
+                {locationsError && (
+                  <FormHelperText error sx={{ mt: '-2px !important' }}>
+                    {locationsError}
+                  </FormHelperText>
+                )}
+              </FormField>
+              <AddButton onClick={() => addRow('locations')}>Add location</AddButton>
             </Stack>
-          </>
+          </SectionIn>
         )}
       </Stack>
     </Box>

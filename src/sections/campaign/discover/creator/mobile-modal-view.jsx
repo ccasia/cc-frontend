@@ -9,7 +9,6 @@ import {
   Chip,
   Stack,
   Button,
-  Avatar,
   Dialog,
   Divider,
   Container,
@@ -33,6 +32,7 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 import { LoadingScreen } from 'src/components/loading-screen';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import CreatorForm from './creator-form';
 import CampaignModalMobile from './campaign-modal-mobile';
@@ -626,7 +626,7 @@ const MobileModalView = () => {
             />
           </Box>
 
-          <Avatar
+          <BrandLogoAvatar
             src={campaignData?.company?.logo}
             sx={{
               position: 'absolute',

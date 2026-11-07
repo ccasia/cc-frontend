@@ -235,6 +235,7 @@ const CampaignDetailManageView = ({ id }) => {
           }}
           secondaryTypographyProps={{
             typography: 'subtitle2',
+            whiteSpace: 'pre-line',
           }}
         />
 

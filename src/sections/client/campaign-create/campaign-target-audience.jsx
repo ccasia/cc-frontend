@@ -1,28 +1,37 @@
 import PropTypes from 'prop-types';
-import React, { memo } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { useFormContext } from 'react-hook-form';
+import React, { memo, useRef, useState, useEffect } from 'react';
 
-import { Box, Grid, Stack, MenuItem, FormLabel, Typography } from '@mui/material';
+import { Box, Fade, Grid, Stack, Collapse, FormLabel, ButtonBase, Typography } from '@mui/material';
 
+import { countries } from 'src/assets/data';
 import { langList } from 'src/contants/language';
 import { countriesCities } from 'src/contants/countries';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
-import { RHFSelectV2, RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
+import { RHFTextField } from 'src/components/hook-form';
+import { SECONDARY_ACTION_SX } from 'src/components/campaign/action-button-styles';
 
-import { CustomRHFMultiSelect } from './custom-rhf-multi-select';
+import ChipSelect from 'src/sections/campaign/create/components/chip-select';
+import { pressSx, EASE_OUT, pressTransition } from 'src/sections/campaign/create/components/motion';
+import useScrollToFirstError from 'src/sections/campaign/create/components/use-scroll-to-first-error';
+import {
+  multiLineSx,
+  FIELD_HEIGHT,
+  singleLineSx,
+  helperTextSx,
+} from 'src/sections/campaign/create/components/field-styles';
 
-// Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
-  <Stack spacing={0.5}>
+  <Stack spacing={0.75}>
     <FormLabel
       required={required}
       sx={{
         fontWeight: 700,
         color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
         fontSize: '0.875rem',
-        mb: 0.5,
         '& .MuiFormLabel-asterisk': {
           display: required ? 'inline-block' : 'none',
           color: '#FF3500',
@@ -41,340 +50,434 @@ FormField.propTypes = {
   required: PropTypes.bool,
 };
 
+const SectionTitle = ({ children, action }) => (
+  <Stack
+    direction="row"
+    alignItems="center"
+    justifyContent="space-between"
+    spacing={1}
+    sx={{ mb: 1.5, minHeight: REMOVE_HEIGHT }}
+  >
+    <Typography
+      sx={{
+        fontWeight: 700,
+        fontSize: 15,
+        color: (theme) => (theme.palette.mode === 'light' ? '#000' : '#fff'),
+      }}
+    >
+      {children}
+    </Typography>
+    {action}
+  </Stack>
+);
+
+SectionTitle.propTypes = { children: PropTypes.node, action: PropTypes.node };
+
+// Both headings get this height, so the two columns stay level with the button shown
+const REMOVE_HEIGHT = 28;
+
+// The white raised button from the dialog actions, small enough for the heading row
+const removeButtonSx = {
+  ...SECONDARY_ACTION_SX,
+  height: REMOVE_HEIGHT,
+  gap: 0.5,
+  px: 1.25,
+  pt: '5px',
+  pb: '7px',
+  borderRadius: '6px',
+  fontSize: 13,
+  lineHeight: '16px',
+  color: '#3A3A3C',
+};
+
+// A small grey text button that fits inside the heading row
+const textButtonSx = {
+  height: 22,
+  px: 0.75,
+  gap: 0.5,
+  borderRadius: 0.75,
+  fontSize: 13,
+  fontWeight: 600,
+  color: '#637381',
+  transition: `${pressTransition}, color 150ms ease`,
+  '@media (hover: hover) and (pointer: fine)': {
+    '&:hover': { bgcolor: '#F4F6F8', color: '#212B36' },
+  },
+  ...pressSx,
+};
+
+// ChipSelect stores the value; the label is what the chip and the menu show
+const titleFrom = (list) => {
+  const labels = new Map(list.map((option) => [option.value, option.label]));
+  return (value) => labels.get(value) ?? value;
+};
+
 const GENDER_OPTIONS = [
   { value: 'female', label: 'Female' },
   { value: 'male', label: 'Male' },
   { value: 'nonbinary', label: 'Non-Binary' },
 ];
+const GENDERS = GENDER_OPTIONS.map((option) => option.value);
+const genderTitle = titleFrom(GENDER_OPTIONS);
 
-const AGE_OPTIONS = [
-  { value: '18-25', label: '18-25' },
-  { value: '26-34', label: '26-34' },
-  { value: '35-40', label: '35-40' },
-  { value: '>40', label: '>40' },
-];
+const AGES = ['18-25', '26-34', '35-40', '>40'];
 
-// Prefer Malay and English at the top, then list remaining languages alphabetically
-const LANGUAGE_OPTIONS = (() => {
-  const preferredLanguages = ['Malay', 'English'];
-  const remainingLanguages = [...langList]
-    .filter((language) => !preferredLanguages.includes(language))
+// Malay and English first, then the other languages A to Z
+const LANGUAGES = (() => {
+  const preferred = ['Malay', 'English'];
+  const rest = langList
+    .filter((language) => !preferred.includes(language))
     .sort((a, b) => a.localeCompare(b));
-
-  const orderedLanguages = [...preferredLanguages, ...remainingLanguages];
-  return orderedLanguages.map((language) => ({ value: language, label: language }));
+  return [...preferred, ...rest];
 })();
 
-const CREATOR_PERSONA_OPTIONS = interestsLists.map((item) => ({
-  value: item.toLowerCase(),
-  label: item,
-}));
+const INTEREST_OPTIONS = interestsLists.map((item) => ({ value: item.toLowerCase(), label: item }));
+const INTERESTS = INTEREST_OPTIONS.map((option) => option.value);
+const interestTitle = titleFrom(INTEREST_OPTIONS);
+
+const COUNTRIES = Object.keys(countriesCities);
 
 const GEOGRAPHIC_FOCUS_OPTIONS = [
   { value: 'SEAregion', label: 'SEA Region' },
   { value: 'global', label: 'Global' },
-  { value: 'EastMalaysia', label: 'East Malaysia' },
-  { value: 'KualaLumpur', label: 'Kuala Lumpur' },
+  { value: 'EastMalaysia', label: 'East Malaysia', malaysiaOnly: true },
+  { value: 'KualaLumpur', label: 'Kuala Lumpur', malaysiaOnly: true },
   { value: 'others', label: 'Others' },
 ];
+const geographicTitle = titleFrom(GEOGRAPHIC_FOCUS_OPTIONS);
+const MALAYSIA_ONLY = GEOGRAPHIC_FOCUS_OPTIONS.filter((o) => o.malaysiaOnly).map((o) => o.value);
+
+const SECONDARY_FIELDS = [
+  'secondaryAudienceGender',
+  'secondaryAudienceAge',
+  'secondaryCountry',
+  'secondaryAudienceLanguage',
+  'secondaryAudienceCreatorPersona',
+  'secondaryAudienceUserPersona',
+];
+
+const hasValue = (value) => (Array.isArray(value) ? value.length > 0 : !!value);
+const emptyOf = (value) => (Array.isArray(value) ? [] : '');
+
+// The country list uses its own names; these differ from the ISO list
+const FLAG_ALIASES = {
+  Brunei: 'BN',
+  Congo: 'CG',
+  'Hashemite Kingdom of Jordan': 'JO',
+  Iran: 'IR',
+  Macedonia: 'MK',
+  'Myanmar [Burma]': 'MM',
+  Palestine: 'PS',
+  'Republic of Korea': 'KR',
+  'Republic of Lithuania': 'LT',
+  'Republic of Moldova': 'MD',
+  Russia: 'RU',
+  Taiwan: 'TW',
+  Tanzania: 'TZ',
+  'U.S. Virgin Islands': 'VI',
+};
+const ISO_CODES = new Map(countries.map((c) => [c.label.toLowerCase(), c.code]));
+const flagIcon = (name) => {
+  const code = name && (FLAG_ALIASES[name] ?? ISO_CODES.get(name.toLowerCase()));
+  return code ? `circle-flags:${code.toLowerCase()}` : null;
+};
+
+// Passes other props on, so a Chip can give the flag its icon class
+const Flag = ({ name, size = 20, sx, ...other }) => {
+  const icon = flagIcon(name);
+  return icon ? (
+    <Iconify icon={icon} width={size} sx={{ flexShrink: 0, ...sx }} {...other} />
+  ) : (
+    <Box sx={{ width: size, flexShrink: 0, ...sx }} {...other} />
+  );
+};
+
+Flag.propTypes = { name: PropTypes.string, size: PropTypes.number, sx: PropTypes.object };
+
+const renderFlag = (name) => <Flag name={name} size={16} />;
+
+// The white raised button from the dialog actions, shaped like a field so it lines
+// up with the Gender field beside it
+const addButtonSx = {
+  ...SECONDARY_ACTION_SX,
+  width: 1,
+  height: FIELD_HEIGHT,
+  justifyContent: 'flex-start',
+  gap: 1,
+  pl: '14px',
+  pr: 2,
+  pb: '13px',
+  fontSize: 14,
+  color: '#3A3A3C',
+};
+
+const AudienceFields = ({ prefix, required, country }) => {
+  const name = (field) => (prefix ? `${prefix}${field}` : `audience${field}`);
+  return (
+    <>
+      <FormField label="Gender" required={required}>
+        <ChipSelect
+          name={name('Gender')}
+          options={GENDERS}
+          getTitle={genderTitle}
+          placeholder="Select gender"
+        />
+      </FormField>
+      <FormField label="Age" required={required}>
+        <ChipSelect name={name('Age')} options={AGES} placeholder="Select age range" />
+      </FormField>
+      {country}
+      <FormField label="Language" required={required}>
+        <ChipSelect
+          name={name('Language')}
+          options={LANGUAGES}
+          placeholder="Select language"
+          noOptionsText="No matching language"
+        />
+      </FormField>
+      <FormField label="Creator Interests" required={required}>
+        <ChipSelect
+          name={name('CreatorPersona')}
+          options={INTERESTS}
+          getTitle={interestTitle}
+          placeholder="Select interests"
+          noOptionsText="No matching interest"
+        />
+      </FormField>
+      <FormField label="User Persona" required={required}>
+        <RHFTextField
+          name={name('UserPersona')}
+          placeholder="Who is this audience? e.g. new mums who shop online"
+          size="small"
+          multiline
+          sx={multiLineSx}
+        />
+      </FormField>
+    </>
+  );
+};
+
+AudienceFields.propTypes = {
+  prefix: PropTypes.string,
+  required: PropTypes.bool,
+  country: PropTypes.node,
+};
 
 const CampaignTargetAudience = () => {
-  const { watch } = useFormContext();
+  const { watch, setValue, getValues } = useFormContext();
+  const reduceMotion = useReducedMotion();
+  const containerRef = useRef(null);
+  const secondaryRef = useRef(null);
+  const othersRef = useRef(null);
+  const focusSecondary = useRef(false);
+  const addButtonRef = useRef(null);
+  const removing = useRef(false);
+
+  useScrollToFirstError(containerRef);
 
   const country = watch('country');
-  const secondaryCountry = watch('secondaryCountry');
   const geographicFocus = watch('geographicFocus');
+  const secondaryFilled = watch(SECONDARY_FIELDS).some(hasValue);
 
-  // Determine which Geographic Focus options to show
-  const showMalaysiaOptions = country === 'Malaysia';
-  const filteredGeographicFocusOptions = showMalaysiaOptions
-    ? GEOGRAPHIC_FOCUS_OPTIONS
-    : [GEOGRAPHIC_FOCUS_OPTIONS[0], GEOGRAPHIC_FOCUS_OPTIONS[1], GEOGRAPHIC_FOCUS_OPTIONS[4]];
+  const isMalaysia = country === 'Malaysia';
+  const geographicOptions = GEOGRAPHIC_FOCUS_OPTIONS.filter(
+    (o) => isMalaysia || !o.malaysiaOnly
+  ).map((o) => o.value);
+
+  // A Malaysia-only focus would stay saved but show as empty once the country changes
+  useEffect(() => {
+    if (!isMalaysia && MALAYSIA_ONLY.includes(geographicFocus)) {
+      setValue('geographicFocus', '', { shouldDirty: true });
+    }
+  }, [isMalaysia, geographicFocus, setValue]);
+
+  // A draft with secondary data opens the section by itself; it never closes while in use
+  const [showSecondary, setShowSecondary] = useState(secondaryFilled);
+  useEffect(() => {
+    if (secondaryFilled && !removing.current) setShowSecondary(true);
+  }, [secondaryFilled]);
+
+  // What a Remove took away, so Undo can put it back; null when there is nothing to undo
+  const [removed, setRemoved] = useState(null);
+
+  const addSecondary = () => {
+    removing.current = false;
+    focusSecondary.current = true;
+    setRemoved(null);
+    setShowSecondary(true);
+  };
+
+  // The fields empty only after the section has closed, so they do not blank out mid-motion
+  const removeSecondary = () => {
+    removing.current = true;
+    const values = getValues(SECONDARY_FIELDS);
+    setRemoved(values.some(hasValue) ? values : null);
+    setShowSecondary(false);
+  };
+
+  const clearRemoved = () => {
+    if (!removing.current) return;
+    removing.current = false;
+    SECONDARY_FIELDS.forEach((field, i) => {
+      const value = removed ? removed[i] : getValues(field);
+      setValue(field, emptyOf(value), { shouldDirty: true });
+    });
+    addButtonRef.current?.focus();
+  };
+
+  const undoRemove = () => {
+    removing.current = false;
+    SECONDARY_FIELDS.forEach((field, i) => setValue(field, removed[i], { shouldDirty: true }));
+    setRemoved(null);
+    setShowSecondary(true);
+  };
+
+  // Closing is the system answering, so it is quicker than opening
+  const othersTimeout = reduceMotion ? 0 : { enter: 250, exit: 150 };
+  const sectionTimeout = reduceMotion ? 0 : { enter: 250, exit: 200 };
+  const removeFadeTimeout = reduceMotion ? 0 : { enter: 150, exit: 100 };
+  const showOthers = geographicFocus === 'others';
+  const othersFadeMs = showOthers ? othersTimeout.enter : othersTimeout.exit;
 
   return (
-    <Box sx={{ maxWidth: '816px', mx: 'auto', mb: { xs: 10, sm: 25 } }}>
-      <Box sx={{ mt: 4 }}>
-        <Grid container spacing={3}>
-          {/* PRIMARY AUDIENCE SECTION */}
-          <Grid item xs={12} md={6}>
-            <Typography
-              sx={{
-                fontWeight: 700,
-                fontSize: 15,
-                mb: 1,
-                color: (theme) => (theme.palette.mode === 'light' ? '#000' : '#fff'),
-              }}
-            >
-              Primary Audience
-            </Typography>
-            <Stack spacing={2}>
-              {/* Gender */}
-              <FormField label="Gender">
-                <CustomRHFMultiSelect
-                  name="audienceGender"
-                  placeholder="Select Gender"
-                  options={GENDER_OPTIONS}
-                  size="small"
-                  checkbox
-                  sx={{
-                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                  }}
-                />
-              </FormField>
-
-              {/* Age */}
-              <FormField label="Age">
-                <CustomRHFMultiSelect
-                  name="audienceAge"
-                  placeholder="Select Age"
-                  options={AGE_OPTIONS}
-                  size="small"
-                  checkbox
-                  sx={{
-                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                  }}
-                />
-              </FormField>
-
-              {/* Country */}
-              <FormField label="Country">
-                <RHFAutocomplete
-                  name="country"
-                  placeholder="Select Country"
-                  options={Object.keys(countriesCities)}
-                  getOptionLabel={(option) => option || ''}
-                  value={country ?? null}
-                  slotProps={{
-                    paper: {
-                      sx: {
-                        '& .MuiAutocomplete-listbox': {
-                          maxHeight: 300,
-                          overflowY: 'auto',
-                          '&::-webkit-scrollbar': {
-                            width: 8,
-                          },
-                          '&::-webkit-scrollbar-track': {
-                            backgroundColor: '#f1f1f1',
-                            borderRadius: 8,
-                          },
-                          '&::-webkit-scrollbar-thumb': {
-                            backgroundColor: '#888',
-                            borderRadius: 8,
-                          },
-                          '&::-webkit-scrollbar-thumb:hover': {
-                            backgroundColor: '#555',
-                          },
-                          scrollbarWidth: 'thin',
-                          scrollbarColor: '#888 #fff00',
-                        },
-                      },
-                    },
-                  }}
-                  renderOption={(props, option) => {
-                    const { ...optionProps } = props;
-                    return (
-                      <Box {...optionProps} sx={{ display: 'flex', gap: 1 }}>
-                        <Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={20} />
-                        <Typography variant="subtitle2">{option}</Typography>
+    <Box
+      ref={containerRef}
+      sx={{ maxWidth: '816px', mx: 'auto', mb: { xs: 10, sm: 25 }, ...helperTextSx }}
+    >
+      <Grid container spacing={3} sx={{ mt: 1 }}>
+        <Grid item xs={12} md={6}>
+          <SectionTitle>Primary Audience</SectionTitle>
+          <Stack spacing={2}>
+            <AudienceFields
+              required
+              country={
+                <>
+                  <FormField label="Country">
+                    <ChipSelect
+                      single
+                      name="country"
+                      options={COUNTRIES}
+                      placeholder="Select country"
+                      noOptionsText="No matching country"
+                      getIcon={renderFlag}
+                    />
+                  </FormField>
+                  <FormField label="Geographic Focus">
+                    <ChipSelect
+                      single
+                      name="geographicFocus"
+                      options={geographicOptions}
+                      getTitle={geographicTitle}
+                      placeholder="Select geographic focus"
+                    />
+                    <Collapse
+                      in={showOthers}
+                      timeout={othersTimeout}
+                      easing={EASE_OUT}
+                      onEntered={() => othersRef.current?.focus()}
+                      onExited={() => setValue('geographicFocusOthers', '', { shouldDirty: true })}
+                    >
+                      <Box
+                        sx={{
+                          pt: 1,
+                          opacity: showOthers ? 1 : 0,
+                          transition: `opacity ${othersFadeMs ?? 0}ms ${EASE_OUT}`,
+                        }}
+                      >
+                        <RHFTextField
+                          name="geographicFocusOthers"
+                          placeholder="Type the geographic focus"
+                          size="small"
+                          inputRef={othersRef}
+                          sx={singleLineSx}
+                        />
                       </Box>
-                    );
-                  }}
-                />
-              </FormField>
-
-              {/* Language */}
-              <FormField label="Language">
-                <CustomRHFMultiSelect
-                  name="audienceLanguage"
-                  placeholder="Select Language"
-                  options={LANGUAGE_OPTIONS}
-                  size="small"
-                  checkbox
-                  sx={{
-                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                  }}
-                />
-              </FormField>
-
-              {/* Interests */}
-              <FormField label="Creator's Interest">
-                <CustomRHFMultiSelect
-                  name="audienceCreatorPersona"
-                  placeholder="Select Creator's Interest"
-                  options={CREATOR_PERSONA_OPTIONS}
-                  size="small"
-                  checkbox
-                  sx={{
-                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                  }}
-                />
-              </FormField>
-
-              {/* User Persona */}
-              <FormField label="User Persona">
-                <RHFTextField
-                  name="audienceUserPersona"
-                  placeholder="User Persona"
-                  size="medium"
-                  multiline
-                />
-              </FormField>
-            </Stack>
-          </Grid>
-
-          {/* SECONDARY AUDIENCE SECTION */}
-          <Grid item xs={12} md={6}>
-            <Typography
-              sx={{
-                fontWeight: 700,
-                fontSize: 15,
-                mb: 1,
-                color: (theme) => (theme.palette.mode === 'light' ? '#000' : '#fff'),
-              }}
-            >
-              Secondary Audience (optional)
-            </Typography>
-            <Stack spacing={2}>
-              {/* Gender */}
-              <FormField label="Gender" required={false}>
-                <CustomRHFMultiSelect
-                  name="secondaryAudienceGender"
-                  placeholder="Select Gender"
-                  options={GENDER_OPTIONS}
-                  size="small"
-                  checkbox
-                  sx={{
-                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                  }}
-                />
-              </FormField>
-
-              {/* Age */}
-              <FormField label="Age" required={false}>
-                <CustomRHFMultiSelect
-                  name="secondaryAudienceAge"
-                  placeholder="Select Age"
-                  options={AGE_OPTIONS}
-                  size="small"
-                  checkbox
-                  sx={{
-                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                  }}
-                />
-              </FormField>
-
-              {/* Country */}
-              <FormField label="Country" required={false}>
-                <RHFAutocomplete
-                  name="secondaryCountry"
-                  placeholder="Select country"
-                  options={Object.keys(countriesCities)}
-                  getOptionLabel={(option) => option || ''}
-                  value={secondaryCountry ?? null}
-                  slotProps={{
-                    paper: {
-                      sx: {
-                        '& .MuiAutocomplete-listbox': {
-                          maxHeight: 300,
-                          overflowY: 'auto',
-                          '&::-webkit-scrollbar': {
-                            width: 8,
-                          },
-                          '&::-webkit-scrollbar-track': {
-                            backgroundColor: '#f1f1f1',
-                            borderRadius: 8,
-                          },
-                          '&::-webkit-scrollbar-thumb': {
-                            backgroundColor: '#888',
-                            borderRadius: 8,
-                          },
-                          '&::-webkit-scrollbar-thumb:hover': {
-                            backgroundColor: '#555',
-                          },
-                          scrollbarWidth: 'thin',
-                          scrollbarColor: '#888 #fff00',
-                        },
-                      },
-                    },
-                  }}
-                  renderOption={(props, option) => {
-                    const { ...optionProps } = props;
-                    return (
-                      <Box {...optionProps} sx={{ display: 'flex', gap: 1 }}>
-                        <Iconify icon={`emojione:flag-for-${option.toLowerCase()}`} width={20} />
-                        <Typography variant="subtitle2">{option}</Typography>
-                      </Box>
-                    );
-                  }}
-                />
-              </FormField>
-
-              {/* Language */}
-              <FormField label="Language" required={false}>
-                <CustomRHFMultiSelect
-                  name="secondaryAudienceLanguage"
-                  placeholder="Select Language"
-                  options={LANGUAGE_OPTIONS}
-                  size="small"
-                  checkbox
-                  sx={{
-                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                  }}
-                />
-              </FormField>
-
-              {/* Interests */}
-              <FormField label="Interests" required={false}>
-                <CustomRHFMultiSelect
-                  name="secondaryAudienceCreatorPersona"
-                  placeholder="Select interests"
-                  options={CREATOR_PERSONA_OPTIONS}
-                  size="small"
-                  checkbox
-                  sx={{
-                    '& .MuiOutlinedInput-root': { minHeight: '50px' },
-                  }}
-                />
-              </FormField>
-
-              {/* User Persona */}
-              <FormField label="User Persona" required={false}>
-                <RHFTextField
-                  name="secondaryAudienceUserPersona"
-                  placeholder="User Persona"
-                  size="medium"
-                  multiline
-                />
-              </FormField>
-            </Stack>
-          </Grid>
-        </Grid>
-      </Box>
-
-      {/* Geographic Focus */}
-      <Box mt={2} sx={{ display: { xs: 'inherit', sm: 'flex' },  justifyContent: 'center' }}>
-        <FormField label="Geographic Focus">
-          <Stack spacing={1} direction="row" minWidth={{ xs: '100%', sm: 400 }}>
-            <RHFSelectV2
-              name="geographicFocus"
-              placeholder="Select Geographic Focus"
-            >
-              {filteredGeographicFocusOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </RHFSelectV2>
-            {geographicFocus === 'others' && (
-              <RHFTextField
-                name="geographicFocusOthers"
-                placeholder="Geographic Focus"
-                sx={{ minWidth: { xs: '50%', sm: 300 } }}
-              />
-            )}
+                    </Collapse>
+                  </FormField>
+                </>
+              }
+            />
           </Stack>
-        </FormField>
-      </Box>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <SectionTitle
+            action={
+              <Fade
+                in={showSecondary}
+                timeout={removeFadeTimeout}
+                easing={EASE_OUT}
+                unmountOnExit
+              >
+                <ButtonBase sx={removeButtonSx} onClick={removeSecondary}>
+                  <Iconify icon="mingcute:close-line" width={14} />
+                  Remove
+                </ButtonBase>
+              </Fade>
+            }
+          >
+            Secondary Audience (optional)
+          </SectionTitle>
+          <Collapse in={!showSecondary} timeout={sectionTimeout} easing={EASE_OUT}>
+            {/* Same rows as a field: a line where the label sits, then the field */}
+            <Stack spacing={0.75}>
+              {removed ? (
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={0.5}
+                  sx={{ height: '20.125px' }}
+                >
+                  <Typography sx={{ fontSize: '0.875rem', color: '#8E8E93' }}>
+                    Secondary audience removed.
+                  </Typography>
+                  <ButtonBase sx={{ ...textButtonSx, color: '#1340FF' }} onClick={undoRemove}>
+                    Undo
+                  </ButtonBase>
+                </Stack>
+              ) : (
+                <Typography sx={{ fontSize: '0.875rem', lineHeight: '1.4375em', color: '#8E8E93' }}>
+                  Reach a second group, like another age range or country.
+                </Typography>
+              )}
+              <ButtonBase ref={addButtonRef} sx={addButtonSx} onClick={addSecondary}>
+                <Iconify icon="mingcute:add-line" width={18} />
+                Add secondary audience
+              </ButtonBase>
+            </Stack>
+          </Collapse>
+          <Collapse
+            in={showSecondary}
+            timeout={sectionTimeout}
+            easing={EASE_OUT}
+            onEntered={() => {
+              if (!focusSecondary.current) return;
+              focusSecondary.current = false;
+              secondaryRef.current?.querySelector('[role="combobox"]')?.focus();
+            }}
+            onExited={clearRemoved}
+          >
+            <Stack ref={secondaryRef} spacing={2}>
+              <AudienceFields
+                prefix="secondaryAudience"
+                required={false}
+                country={
+                  <FormField label="Country" required={false}>
+                    <ChipSelect
+                      single
+                      name="secondaryCountry"
+                      options={COUNTRIES}
+                      placeholder="Select country"
+                      noOptionsText="No matching country"
+                      getIcon={renderFlag}
+                    />
+                  </FormField>
+                }
+              />
+            </Stack>
+          </Collapse>
+        </Grid>
+      </Grid>
     </Box>
   );
 };

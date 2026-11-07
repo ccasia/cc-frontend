@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
-import React, { useState } from 'react';
+import React, { memo, useState } from 'react';
 
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
@@ -31,18 +31,19 @@ import { formatText } from 'src/utils/format-test';
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 
-import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
+import { dialogEnterSx } from 'src/sections/campaign/create/components/motion';
 
+import CampaignBanner from './components/campaign-banner';
 import { CampaignLog } from '../../manage/list/CampaignLog';
 import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({
-  index,
+function CampaignItem({
   campaign,
   onView,
   onEdit,
@@ -50,6 +51,8 @@ export default function CampaignItem({
   status,
   pitchStatus,
   showAdmins = false,
+  highlighted = false,
+  onHighlightEnd,
 }) {
   const theme = useTheme();
   const smDown = useResponsive('down', 'sm');
@@ -61,9 +64,9 @@ export default function CampaignItem({
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
+  const [logMounted, setLogMounted] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [initialActivateDialogOpen, setInitialActivateDialogOpen] = useState(false);
-  const currentIndex = localStorage.getItem('lastOpenedIndex');
 
   // Handle menu open
   const handleClick = (event) => {
@@ -206,16 +209,7 @@ export default function CampaignItem({
   const renderImages = (
     <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
       {campaign?.campaignBrief?.images?.[0] ? (
-        <Image
-          alt={campaign?.name}
-          src={campaign?.campaignBrief?.images?.[0]}
-          sx={{
-            height: '100%',
-            width: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center',
-          }}
-        />
+        <CampaignBanner alt={campaign?.name} src={campaign?.campaignBrief?.images?.[0]} />
       ) : (
         <Box
           sx={{
@@ -403,7 +397,7 @@ export default function CampaignItem({
 
   const renderTexts = (
     <Box sx={{ position: 'relative', px: 2, pt: 2 }}>
-      <Avatar
+      <BrandLogoAvatar
         src={campaign?.brand?.logo || campaign?.company?.logo}
         alt={campaign?.brand?.name || campaign?.company?.name}
         sx={{
@@ -727,6 +721,7 @@ export default function CampaignItem({
           <MenuItem
             onClick={(event) => {
               event.stopPropagation();
+              setLogMounted(true);
               setCampaignLogIsOpen(true);
               handleClose();
             }}
@@ -776,25 +771,41 @@ export default function CampaignItem({
       component={RouterLink}
       href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
       onClick={() => {
-        localStorage.setItem('lastOpenedIndex', String(index));
+        localStorage.setItem('lastOpenedCampaignId', String(campaign?.id));
         localStorage.removeItem('lastScrollPosition');
+      }}
+      onAnimationEnd={(event) => {
+        if (event.animationName === 'lastOpenedFade') onHighlightEnd?.();
       }}
       sx={{
         overflow: 'hidden',
         textDecoration: 'none',
         cursor: 'pointer',
-        transition: 'all 0.3s',
+        transition: 'border-color 200ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1)',
         bgcolor: 'background.default',
         borderRadius: '15px',
         border: '1.2px solid',
-        borderColor: Number(currentIndex) === index ? '#1340ff' : theme.palette.divider,
+        borderColor: theme.palette.divider,
+        // The campaign the user just came back from: blue for a moment, then fades
+        ...(highlighted && {
+          '@keyframes lastOpenedFade': {
+            from: { borderColor: '#1340ff' },
+            to: { borderColor: theme.palette.divider },
+          },
+          animation: 'lastOpenedFade 600ms ease 1600ms backwards',
+        }),
         position: 'relative',
         pb: 1.5,
         mb: -0.5,
         maxHeight: 370,
-        '&:hover': {
-          borderColor: '#1340ff',
-          transform: 'translateY(-2px)',
+        '&:hover': { borderColor: '#1340ff' },
+        // Pressing the card (not its menu button) sinks it slightly before navigating.
+        '@media (prefers-reduced-motion: no-preference)': {
+          '&:active:not(:has(button:active))': { transform: 'scale(0.99)' },
+        },
+        '@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)': {
+          '&:hover': { transform: 'translateY(-2px)' },
+          '&:active:not(:has(button:active))': { transform: 'translateY(0) scale(0.99)' },
         },
       }}
     >
@@ -834,7 +845,9 @@ export default function CampaignItem({
           e.preventDefault();
         }}
       >
-        <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
+        {logMounted && (
+          <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
+        )}
         <Dialog
           fullWidth
           fullScreen
@@ -845,6 +858,7 @@ export default function CampaignItem({
               p: 4,
               m: 2,
               height: '97vh',
+              ...dialogEnterSx,
               overflow: 'hidden',
               ...(smDown && {
                 height: 1,
@@ -880,12 +894,15 @@ export default function CampaignItem({
 }
 
 CampaignItem.propTypes = {
-  index: PropTypes.number,
   onDelete: PropTypes.func,
   onEdit: PropTypes.func,
   onView: PropTypes.func,
   campaign: PropTypes.object,
-  status: PropTypes.bool,
+  status: PropTypes.string,
   pitchStatus: PropTypes.string,
   showAdmins: PropTypes.bool,
+  highlighted: PropTypes.bool,
+  onHighlightEnd: PropTypes.func,
 };
+
+export default memo(CampaignItem);

@@ -46,6 +46,7 @@ import PublicUrlModal from 'src/components/publicurl/publicURLModal';
 import PDFEditorModal from 'src/sections/campaign/create/pdf-editor';
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 import { CampaignLog } from 'src/sections/campaign/manage/list/CampaignLog';
+import { dialogEnterSx } from 'src/sections/campaign/create/components/motion';
 // HIDE: logistics
 import CampaignLogisticsView from 'src/sections/logistics/campaign-logistics-view';
 import {
@@ -58,11 +59,11 @@ import {
 } from 'src/sections/campaign/discover/admin/store/use-spreadsheet';
 
 import CampaignFAQ from '../campaign-faq';
-import { useTabs, setCurrentTab } from '../store/use-tabs';
 import CampaignOverview from '../campaign-overview';
 import CampaignAnalysis from '../campaign-analytics';
 import CampaignTabs from '../components/campaign-tabs';
 import CampaignAgreements from '../campaign-agreements';
+import { useTabs, setCurrentTab } from '../store/use-tabs';
 import CampaignDetailBrand from '../campaign-detail-brand';
 import CampaignHeader from '../components/campaign-header';
 import CampaignInvoicesList from '../campaign-invoices-list';
@@ -495,6 +496,7 @@ const CampaignDetailView = ({
             p: 4,
             m: 2,
             height: '97vh',
+            ...dialogEnterSx,
             overflow: 'hidden',
             ...(smDown && {
               height: 1,
