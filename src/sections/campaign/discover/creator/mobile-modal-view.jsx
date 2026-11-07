@@ -11,6 +11,7 @@ import {
   Button,
   Dialog,
   Divider,
+  Skeleton,
   Container,
   Typography,
   DialogTitle,
@@ -31,13 +32,13 @@ import { useAuthContext } from 'src/auth/hooks';
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
-import { LoadingScreen } from 'src/components/loading-screen';
 import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import CreatorForm from './creator-form';
 import CampaignModalMobile from './campaign-modal-mobile';
 // import CampaignPitchOptionsModal from './campaign-pitch-options-modal';
 import CampaignPitchTextModal from './pitch/pitch-text-modal';
+import CampaignModalMobileSkeleton from './components/campaign-modal-mobile-skeleton';
 
 // ----------------------------------------------------------------------
 
@@ -582,75 +583,101 @@ const MobileModalView = () => {
 
         <Box sx={{ position: 'relative', mb: 4 }}>
           <Box sx={{ position: 'absolute', top: 20, left: 20, zIndex: 2 }}>
-            <Chip
-              icon={
-                <Box sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}>
-                  <CircularProgress
-                    variant="determinate"
-                    value={100}
-                    size={20}
-                    thickness={7}
-                    sx={{ color: 'grey.300' }}
-                  />
-                  <CircularProgress
-                    variant="determinate"
-                    value={Math.min(Math.round(calculateMatchPercentage(user, campaignData)), 100)}
-                    size={20}
-                    thickness={7}
-                    sx={{
-                      color: '#5abc6f',
-                      position: 'absolute',
-                      left: 0,
-                      strokeLinecap: 'round',
-                    }}
-                  />
-                </Box>
-              }
-              label={`${Math.min(Math.round(calculateMatchPercentage(user, campaignData)), 100)}% MATCH FOR YOU!`}
-              sx={{
-                backgroundColor: theme.palette.common.white,
-                color: '#48484a',
-                fontWeight: 'bold',
-                fontSize: '0.875rem',
-                borderRadius: '6px',
-                height: '35px',
-                border: '1px solid #ebebeb',
-                borderBottom: '3px solid #ebebeb',
-                '& .MuiChip-label': {
-                  padding: '0 8px 0 12px',
-                },
-                '&:hover': {
+            {!campaignData ? (
+              <Skeleton
+                sx={{ width: 190, height: 35, borderRadius: '6px', bgcolor: 'common.white' }}
+              />
+            ) : (
+              <Chip
+                icon={
+                  <Box sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}>
+                    <CircularProgress
+                      variant="determinate"
+                      value={100}
+                      size={20}
+                      thickness={7}
+                      sx={{ color: 'grey.300' }}
+                    />
+                    <CircularProgress
+                      variant="determinate"
+                      value={Math.min(Math.round(calculateMatchPercentage(user, campaignData)), 100)}
+                      size={20}
+                      thickness={7}
+                      sx={{
+                        color: '#5abc6f',
+                        position: 'absolute',
+                        left: 0,
+                        strokeLinecap: 'round',
+                      }}
+                    />
+                  </Box>
+                }
+                label={`${Math.min(Math.round(calculateMatchPercentage(user, campaignData)), 100)}% MATCH FOR YOU!`}
+                sx={{
                   backgroundColor: theme.palette.common.white,
-                },
-              }}
-            />
+                  color: '#48484a',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
+                  borderRadius: '6px',
+                  height: '35px',
+                  border: '1px solid #ebebeb',
+                  borderBottom: '3px solid #ebebeb',
+                  '& .MuiChip-label': {
+                    padding: '0 8px 0 12px',
+                  },
+                  '&:hover': {
+                    backgroundColor: theme.palette.common.white,
+                  },
+                }}
+              />
+            )}
           </Box>
 
-          <BrandLogoAvatar
-            src={campaignData?.company?.logo}
-            sx={{
-              position: 'absolute',
-              top: 215,
-              left: 25,
-              width: 64,
-              height: 64,
-              border: '3px solid',
-              borderColor: 'common.white',
-              zIndex: 9,
-            }}
-          />
-
-          <Box sx={{ height: 250, overflow: 'hidden', borderRadius: 2, mx: 1 }}>
-            <Image
-              alt={campaignData?.name}
-              src={campaignData?.campaignBrief?.images[0]}
+          {!campaignData ? (
+            <Skeleton
+              variant="circular"
               sx={{
-                height: '100%',
-                width: '100%',
-                objectFit: 'cover',
-                objectPosition: 'center',
+                position: 'absolute',
+                top: 215,
+                left: 25,
+                width: 64,
+                height: 64,
+                border: '3px solid',
+                borderColor: 'common.white',
+                zIndex: 9,
               }}
             />
+          ) : (
+            <BrandLogoAvatar
+              src={campaignData?.company?.logo}
+              sx={{
+                position: 'absolute',
+                top: 215,
+                left: 25,
+                width: 64,
+                height: 64,
+                border: '3px solid',
+                borderColor: 'common.white',
+                zIndex: 9,
+              }}
+            />
+          )}
+
+          <Box sx={{ height: 250, overflow: 'hidden', borderRadius: 2, mx: 1 }}>
+            {!campaignData ? (
+              <Skeleton sx={{ width: 1, height: 1, borderRadius: 0 }} />
+            ) : (
+              <Image
+                alt={campaignData?.name}
+                src={campaignData?.campaignBrief?.images[0]}
+                sx={{
+                  height: '100%',
+                  width: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center',
+                }}
+              />
+            )}
           </Box>
         </Box>
 
@@ -664,7 +691,7 @@ const MobileModalView = () => {
               mt: -3,
             }}
           >
-            {campaignData?.name}
+            {campaignData ? campaignData.name : <Skeleton variant="text" sx={{ width: 0.7 }} />}
           </Typography>
           <Typography
             variant="subtitle1"
@@ -675,10 +702,16 @@ const MobileModalView = () => {
               mt: '-4px !important',
             }}
           >
-            {campaignData?.company?.name}
+            {campaignData ? (
+              campaignData.company?.name
+            ) : (
+              <Skeleton variant="text" sx={{ width: 0.4 }} />
+            )}
           </Typography>
 
-          <Box sx={{ mt: 2 }}>{renderActionButton()}</Box>
+          <Box sx={{ mt: 2 }}>
+            {campaignData ? renderActionButton() : <Skeleton sx={{ width: 1, height: 44 }} />}
+          </Box>
         </Stack>
       </Stack>
 
@@ -713,7 +746,11 @@ const MobileModalView = () => {
         </Box>
       )}
 
-      {campaignData ? <CampaignModalMobile campaign={campaignData} /> : <LoadingScreen />}
+      {campaignData ? (
+        <CampaignModalMobile campaign={campaignData} />
+      ) : (
+        <CampaignModalMobileSkeleton />
+      )}
       {/* Pitch-type selection (Letter vs Video) removed — only Letter pitches allowed.
           Kept for reference in case Video pitches return:
       <CampaignPitchOptionsModal

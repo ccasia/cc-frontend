@@ -14,6 +14,7 @@ import {
   Dialog,
   Container,
   Typography,
+  IconButton,
   DialogTitle,
   DialogActions,
   DialogContent,
@@ -35,6 +36,9 @@ import withPermission from 'src/auth/guard/withPermissions';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import PageEnter, { markPageEnter } from 'src/components/page-enter';
+
+import CampaignTabIndicator from 'src/sections/campaign/discover/admin/components/campaign-tab-indicator';
 
 import UpdateAudience from '../UpdateAudience';
 import UpdateLogistics from '../UpdateLogistics';
@@ -48,6 +52,8 @@ import UpdateGeneralInformation from '../UpdateGeneralInformation';
 const EDIT_FORM_ID = 'campaign-edit-form';
 
 // Tab configuration
+const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';
+
 const TABS = [
   { label: 'General Information', value: 'general' },
   { label: 'Campaign Objectives', value: 'objective' },
@@ -100,6 +106,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
   }, []);
 
   const handleBackNavigation = () => {
+    markPageEnter('back');
     const historyIndex = window.history.state?.idx;
     if (typeof historyIndex === 'number' && historyIndex > 0) {
       router.back();
@@ -274,6 +281,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
           direction="row"
           justifyContent="space-between"
           sx={{
+            position: 'relative',
             width: { xs: '100%', sm: 'auto' },
           }}
         >
@@ -283,6 +291,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
               disableRipple
               size="large"
               onClick={() => handleChangeTab(tab.value)}
+              data-tab-active={currentTab === tab.value}
               sx={{
                 px: 0,
                 py: 0.5,
@@ -294,15 +303,16 @@ const CampaignDetailManageViewV2 = ({ id }) => {
                 fontWeight: 650,
                 whiteSpace: 'nowrap',
                 mr: { xs: 2, sm: 3 },
-                transition: 'transform 0.1s ease-in-out',
+                transition: `transform 160ms ${EASE_OUT}, color 150ms ease`,
                 '&:focus': {
                   outline: 'none',
                   bgcolor: 'transparent',
                 },
                 '&:active': {
-                  transform: 'scale(0.95)',
+                  transform: 'scale(0.97)',
                   bgcolor: 'transparent',
                 },
+                // The active underline is the shared CampaignTabIndicator; this is only a hover preview.
                 '&::after': {
                   content: '""',
                   position: 'absolute',
@@ -310,24 +320,29 @@ const CampaignDetailManageViewV2 = ({ id }) => {
                   left: 0,
                   right: 0,
                   height: '2px',
-                  width: currentTab === tab.value ? '100%' : '0%',
                   bgcolor: '#1340ff',
-                  transition: 'all 0.3s ease-in-out',
-                  transform: 'scaleX(1)',
+                  transform: 'scaleX(0)',
                   transformOrigin: 'left',
+                  opacity: 0,
+                  transition: `transform 200ms ${EASE_OUT}, opacity 150ms ease`,
                 },
-                '&:hover': {
-                  bgcolor: 'transparent',
-                  '&::after': {
-                    width: '100%',
-                    opacity: currentTab === tab.value ? 1 : 0.5,
+                '&:hover': { bgcolor: 'transparent' },
+                // Touch screens fire a hover on tap, so only real pointers preview the underline.
+                '@media (hover: hover) and (pointer: fine)': {
+                  '&:hover::after': currentTab !== tab.value && {
+                    transform: 'scaleX(1)',
+                    opacity: 0.5,
                   },
+                },
+                '@media (prefers-reduced-motion: reduce)': {
+                  '&, &::after': { transition: 'opacity 150ms ease' },
                 },
               }}
             >
               {tab.label}
             </Button>
           ))}
+          <CampaignTabIndicator activeKey={currentTab} />
         </Stack>
       </Stack>
     </Box>
@@ -342,68 +357,80 @@ const CampaignDetailManageViewV2 = ({ id }) => {
         pb: { xs: 12, sm: 0 },
       }}
     >
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-        <Button
-          color="inherit"
-          startIcon={<Iconify icon="eva:arrow-ios-back-fill" width={20} />}
-          onClick={handleBackNavigation}
-          sx={{
-            alignSelf: 'flex-start',
-            color: '#636366',
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-          }}
-        >
-          Back
-        </Button>
-
-        {campaign?.status && (
-          <Chip
-            label={campaign.status.replace(/_/g, ' ')}
-            size="medium"
-            variant="outlined"
-            sx={{
-              fontWeight: 600,
-              fontSize: '0.75rem',
-              textTransform: 'capitalize',
-              ...(campaign.status === 'ACTIVE' && {
-                bgcolor: '#E8F5E9',
-                color: '#2E7D32',
-              }),
-              ...(campaign.status === 'PAUSED' && {
-                bgcolor: '#FFF3E0',
-                color: '#E65100',
-              }),
-              ...(campaign.status === 'SCHEDULED' && {
-                bgcolor: '#E3F2FD',
-                color: '#1565C0',
-              }),
-              ...(campaign.status === 'DRAFT' && {
-                bgcolor: '#F5F5F5',
-                color: '#616161',
-              }),
-              ...((campaign.status === 'COMPLETED' || campaign.status === 'CLOSED') && {
-                bgcolor: '#ECEFF1',
-                color: '#546E7A',
-              }),
-            }}
-          />
-        )}
-      </Stack>
-
-      <Box sx={{ mb: { xs: 1 } }}>
+      <Box sx={{ mb: { xs: 1, sm: '17px' } }}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           alignItems={{ xs: 'flex-start', sm: 'center' }}
           spacing={{ xs: 1.5, sm: 2 }}
+          // Same size as the campaign page header, so moving between the two does not jump.
+          sx={{ minHeight: { sm: 76 }, mt: -1 }}
         >
-          <Box sx={{ flexGrow: 1, width: { xs: '100%', sm: 'auto' } }}>
-            <Typography variant="h2" fontFamily="fontSecondaryFamily" fontWeight="normal" sx={{ mb: 0 }}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ flexGrow: 1, width: { xs: '100%', sm: 'auto' } }}
+          >
+            <IconButton
+              aria-label="Back"
+              onClick={handleBackNavigation}
+              sx={{ color: '#636366', fontSize: { xs: '0.875rem', sm: '1rem' } }}
+            >
+              <Iconify icon="eva:arrow-ios-back-fill" width={20} />
+            </IconButton>
+            <Typography
+              variant="h5"
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontSize: { xs: '1.5rem', sm: '2rem' },
+                fontWeight: 550,
+              }}
+            >
               Edit Campaign Details
             </Typography>
-          </Box>
+            {campaign?.status && (
+              <Chip
+                label={campaign.status.replace(/_/g, ' ')}
+                size="small"
+                variant="outlined"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  textTransform: 'capitalize',
+                  ...(campaign.status === 'ACTIVE' && {
+                    bgcolor: '#E8F5E9',
+                    color: '#2E7D32',
+                  }),
+                  ...(campaign.status === 'PAUSED' && {
+                    bgcolor: '#FFF3E0',
+                    color: '#E65100',
+                  }),
+                  ...(campaign.status === 'SCHEDULED' && {
+                    bgcolor: '#E3F2FD',
+                    color: '#1565C0',
+                  }),
+                  ...(campaign.status === 'DRAFT' && {
+                    bgcolor: '#F5F5F5',
+                    color: '#616161',
+                  }),
+                  ...((campaign.status === 'COMPLETED' || campaign.status === 'CLOSED') && {
+                    bgcolor: '#ECEFF1',
+                    color: '#546E7A',
+                  }),
+                }}
+              />
+            )}
+          </Stack>
 
           <Box sx={{ flexShrink: 0, width: { xs: '100%', sm: 'auto' } }}>
-            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              flexWrap="wrap"
+              useFlexGap
+              sx={{ '& .MuiButton-root': { height: 42, fontSize: '0.95rem' } }}
+            >
               {smUp && saveButton}
               {campaign && campaign?.status === 'ACTIVE' && (
                 <LoadingButton
@@ -516,10 +543,10 @@ const CampaignDetailManageViewV2 = ({ id }) => {
       </Box>
 
       {!campaignLoading ? (
-        <>
+        <PageEnter>
           {renderTabs}
           <Box>{renderTabContent[currentTab]}</Box>
-        </>
+        </PageEnter>
       ) : (
         <Box
           sx={{

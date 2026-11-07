@@ -5,45 +5,45 @@ import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useMemo, useEffect, useCallback } from 'react';
 
-import { Box, Grid, Stack, MenuItem, FormLabel, Typography } from '@mui/material';
+import { Box, Grid, Stack } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFSelectV2, RHFTextField } from 'src/components/hook-form';
 
-// Form field component with consistent styling
-const FormField = ({ label, children, required = false, helperText }) => (
-  <Stack spacing={0.5} mb={2}>
-    <FormLabel
-      required={required}
-      sx={{
-        fontWeight: 700,
-        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-        fontSize: '0.875rem',
-        mb: 0.5,
-        '& .MuiFormLabel-asterisk': {
-          display: required ? 'inline-block' : 'none',
-          color: '#FF3500',
-        },
-      }}
-    >
-      {label}
-    </FormLabel>
-    {helperText && (
-      <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5, mb: 0.5 }}>
-        {helperText}
-      </Typography>
-    )}
-    {children}
-  </Stack>
-);
+import ChipSelect from 'src/sections/campaign/create/components/chip-select';
+import {
+  multiLineSx,
+  singleLineSx,
+  helperTextSx,
+} from 'src/sections/campaign/create/components/field-styles';
 
-FormField.propTypes = {
-  label: PropTypes.string.isRequired,
-  children: PropTypes.node.isRequired,
-  required: PropTypes.bool,
-  helperText: PropTypes.string,
+import FormField from './components/form-field';
+
+const CTA = 'Call to Action';
+
+const AD_OPTIONS = ['yes', 'no'];
+const AD_TITLES = { yes: 'Yes', no: 'No' };
+const adTitle = (option) => AD_TITLES[option] ?? option;
+
+// The textarea fills what is left of the column, so both columns end level
+const fillSx = {
+  ...multiLineSx,
+  flex: 1,
+  '& .MuiOutlinedInput-root': {
+    ...multiLineSx['& .MuiOutlinedInput-root'],
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+  '& .MuiInputBase-inputMultiline': {
+    ...multiLineSx['& .MuiInputBase-inputMultiline'],
+    flex: 1,
+    height: 'auto !important',
+    minHeight: 66,
+    overflow: 'auto !important',
+  },
 };
 
 // Validation schema - all fields optional
@@ -132,82 +132,124 @@ const UpdateAdditionalTwo = ({ campaign, campaignMutate, formId, onFormStateChan
 
   return (
     <FormProvider id={formId} methods={methods} onSubmit={handleSubmit(onSubmit)}>
-      <Box sx={{ maxWidth: '850px' }}>
-        <Grid container spacing={2} mb={4}>
-          {/* Column One */}
-          <Grid item xs={12} sm={6}>
-            {/* Hashtags to Use */}
-            <FormField label="Hashtags to Use">
-              <RHFTextField name="hashtagsToUse" placeholder="Hashtags to Use" />
-            </FormField>
+      <Box sx={{ maxWidth: '816px', ...helperTextSx }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} sm={6} sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Stack spacing={2} sx={{ flex: 1 }}>
+              <FormField label="Hashtags to Use">
+                <RHFTextField
+                  name="hashtagsToUse"
+                  placeholder="#brandname #campaign"
+                  size="small"
+                  inputProps={{ autoCapitalize: 'none', spellCheck: false }}
+                  sx={singleLineSx}
+                />
+              </FormField>
 
-            {/* Mentions/Tags Required */}
-            <FormField label="Mentions/Tags Required">
-              <Typography variant="caption" color="#8E8E93" sx={{ mt: -0.5, mb: 0.5 }}>
-                [Eg:- @brandname]
-              </Typography>
-              <RHFTextField name="mentionsTagsRequired" placeholder="Mentions/Tags" />
-            </FormField>
+              <FormField label="Mentions/Tags Required">
+                <RHFTextField
+                  name="mentionsTagsRequired"
+                  placeholder="Accounts creators must tag"
+                  helperText="E.g. @brandname"
+                  size="small"
+                  inputProps={{ autoCapitalize: 'none', spellCheck: false }}
+                  sx={singleLineSx}
+                />
+              </FormField>
 
-            {/* Creator Compensation - Value to Creator */}
-            <FormField label="Creator Compensation - Value to Creator">
-              <RHFTextField name="creatorCompensation" placeholder="Creator Compensation" multiline />
-            </FormField>
+              <FormField label="Creator Compensation" asideInline aside="Value to Creator">
+                <RHFTextField
+                  name="creatorCompensation"
+                  placeholder="What creators get, e.g. free product or a fee"
+                  size="small"
+                  multiline
+                  sx={multiLineSx}
+                />
+              </FormField>
 
-            {/* Call to Action - Desired Action */}
-            <FormField label="Call to Action - Desired Action">
-              <Typography variant="caption" color="#8E8E93" sx={{ mt: -0.5, mb: 0.5 }}>
-                [E.g., &quot;Visit website,&quot; &quot;Use promo code,&quot; &quot;Sign up&quot;]
-              </Typography>
-              <RHFTextField name="ctaDesiredAction" placeholder="Desired Action" multiline />
-            </FormField>
-
-            {/* Call to Action - Link/URL */}
-            <FormField label="Call to Action - Link/URL">
-              <RHFTextField name="ctaLinkUrl" placeholder="Link/URL" type="url" />
-            </FormField>
+              <FormField label="Special Notes/Instructions" sx={{ flex: 1 }}>
+                <RHFTextField
+                  name="specialNotesInstructions"
+                  placeholder="Anything else creators should know"
+                  size="small"
+                  multiline
+                  minRows={3}
+                  sx={fillSx}
+                />
+              </FormField>
+            </Stack>
           </Grid>
 
-          {/* Column Two */}
           <Grid item xs={12} sm={6}>
-            {/* Call to Action - Promo Code */}
-            <FormField label="Call to Action - Promo Code">
-              <RHFTextField name="ctaPromoCode" placeholder="Promo Code" />
-            </FormField>
+            <Stack spacing={2}>
+              <FormField prefix={CTA} label="Desired Action">
+                <RHFTextField
+                  name="ctaDesiredAction"
+                  placeholder="What viewers should do"
+                  helperText='E.g. "Visit website", "Use promo code", "Sign up"'
+                  size="small"
+                  multiline
+                  sx={multiLineSx}
+                />
+              </FormField>
 
-            {/* Call to Action - Link in Bio Requirements */}
-            <FormField label="Call to Action - Link in Bio Requirements [Additional Charges Apply]">
-              <RHFTextField
-                name="ctaLinkInBioRequirements"
-                placeholder="Link in Bio Requirements"
-                multiline
-              />
-            </FormField>
+              <FormField prefix={CTA} label="Link/URL">
+                <RHFTextField
+                  name="ctaLinkUrl"
+                  placeholder="https://"
+                  type="url"
+                  size="small"
+                  inputProps={{ inputMode: 'url', autoCapitalize: 'none', spellCheck: false }}
+                  sx={singleLineSx}
+                />
+              </FormField>
 
-            {/* Special Notes/Instructions */}
-            <FormField label="Special Notes/Instructions">
-              <RHFTextField
-                name="specialNotesInstructions"
-                placeholder="Special Notes/Instructions"
-                multiline
-              />
-            </FormField>
+              <FormField prefix={CTA} label="Promo Code">
+                <RHFTextField
+                  name="ctaPromoCode"
+                  placeholder="Promo code"
+                  size="small"
+                  inputProps={{ autoCapitalize: 'characters', spellCheck: false }}
+                  sx={singleLineSx}
+                />
+              </FormField>
 
-            {/* Do you need ads? */}
-            <FormField label="Do you need ads?">
-              <Typography variant="caption" color="#8E8E93" sx={{ mt: -0.5, mb: 0.5 }}>
-                Ads are added charges of RM300 per video for 1 month for MY and ID Market, $300 per
-                video for SG
-              </Typography>
-              <RHFSelectV2 name="needAds" placeholder="Select an option">
-                <MenuItem value="">Select an option</MenuItem>
-                <MenuItem value="yes">Yes</MenuItem>
-                <MenuItem value="no">No</MenuItem>
-              </RHFSelectV2>
-            </FormField>
+              <FormField
+                prefix={CTA}
+                label="Link in Bio Requirements"
+                asideInline aside="Additional Charges Apply"
+              >
+                <RHFTextField
+                  name="ctaLinkInBioRequirements"
+                  placeholder="What goes in the bio link, and for how long"
+                  size="small"
+                  multiline
+                  sx={multiLineSx}
+                />
+              </FormField>
+
+              <FormField label="Do you need ads?">
+                <Box>
+                  <ChipSelect
+                    name="needAds"
+                    options={AD_OPTIONS}
+                    getTitle={adTitle}
+                    placeholder="Select an option"
+                    single
+                    clearable
+                  />
+                  <Box
+                    component="p"
+                    sx={{ m: 0, mt: 0.75, fontSize: 12, lineHeight: '16px', color: '#8E8E93' }}
+                  >
+                    Ads are added charges of RM300 per video for 1 month for MY and ID Market, $300
+                    per video for SG
+                  </Box>
+                </Box>
+              </FormField>
+            </Stack>
           </Grid>
         </Grid>
-
       </Box>
     </FormProvider>
   );

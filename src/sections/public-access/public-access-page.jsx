@@ -3,17 +3,18 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 import { useParams } from 'react-router-dom';
 
-import { Box, Stack, Button, Container, Typography } from '@mui/material';
+import { Box, Stack, Button, Skeleton, Container, Typography } from '@mui/material';
 
 import { useSettingsContext } from 'src/components/settings';
 
 import { useGetCampaignById } from 'src/routes/hooks/use-public-campaign';
 //  import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 import { format } from 'date-fns';
-import { LoadingScreen } from 'src/components/loading-screen';
 
 import CampaignLogistics from '../campaign/discover/admin/campaign-logistics';
 import CampaignDetailBrand from '../campaign/discover/admin/campaign-detail-brand';
+import PublicCampaignDetailSkeleton from './components/public-campaign-detail-skeleton';
+import CampaignTabContentSkeleton from '../campaign/discover/admin/components/campaign-tab-content-skeleton';
 import CampaignInvoicesList from '../campaign/discover/admin/campaign-invoices-list';
 import CampaignDraftSubmissions from '../campaign/discover/admin/campaign-draft-submission';
 import CampaignDetailPitch from '../campaign/discover/admin/campaign-detail-pitch/campaign-detail-pitch';
@@ -82,11 +83,13 @@ const PublicAccessPage = () => {
             { label: 'Campaign Details', value: 'campaign-content' },
             // { label: 'Client Info', value: 'client' },
             {
-              label: `Pitches (${campaign?.pitch?.filter((p) => p.status === 'undecided').length || 0})`,
+              label: campaign
+                ? `Pitches (${campaign.pitch?.filter((p) => p.status === 'undecided').length || 0})`
+                : 'Pitches',
               value: 'pitch',
             },
             {
-              label: `Creators (${campaign?.shortlisted?.length || 0})`,
+              label: campaign ? `Creators (${campaign.shortlisted?.length || 0})` : 'Creators',
               value: 'creator',
             },
             // {
@@ -98,7 +101,7 @@ const PublicAccessPage = () => {
             //   value: 'invoices',
             // },
             {
-              label: `Logistics (${campaign?.logistic?.length || 0})`,
+              label: campaign ? `Logistics (${campaign.logistic?.length || 0})` : 'Logistics',
               value: 'logistics',
             },
           ].map((tab) => (
@@ -208,6 +211,9 @@ const PublicAccessPage = () => {
           width="100%"
         >
           <Stack direction="row" alignItems="center" spacing={2}>
+            {!campaign && (
+              <Skeleton sx={{ width: 80, height: 80, flexShrink: 0, borderRadius: '12px' }} />
+            )}
             {campaign?.campaignBrief?.images?.[0] && (
               <img
                 src={campaign?.campaignBrief.images[0]}
@@ -230,7 +236,11 @@ const PublicAccessPage = () => {
                 fontWeight: 550,
               }}
             >
-              {campaign?.name || 'Campaign Detail'}
+              {campaign ? (
+                campaign.name
+              ) : (
+                <Skeleton variant="text" sx={{ width: { xs: 180, sm: 320 } }} />
+              )}
             </Typography>
           </Stack>
 
@@ -266,8 +276,11 @@ const PublicAccessPage = () => {
                   fontSize: { xs: '0.875rem', sm: '1rem' },
                 }}
               >
-                {formatDate(campaign?.campaignBrief?.startDate)} -{' '}
-                {formatDate(campaign?.campaignBrief?.endDate)}
+                {campaign ? (
+                  `${formatDate(campaign.campaignBrief?.startDate)} - ${formatDate(campaign.campaignBrief?.endDate)}`
+                ) : (
+                  <Skeleton variant="text" sx={{ width: 220 }} />
+                )}
               </Typography>
             </Stack>
 
@@ -286,7 +299,13 @@ const PublicAccessPage = () => {
 
       {renderTabs}
 
-      {(!campaignLoading ? renderTabContent[currentTab] : <LoadingScreen />) || null}
+      {campaignLoading &&
+        (currentTab === 'overview' ? (
+          <CampaignTabContentSkeleton />
+        ) : (
+          <PublicCampaignDetailSkeleton />
+        ))}
+      {!campaignLoading && (renderTabContent[currentTab] || null)}
     </Container>
   );
 };

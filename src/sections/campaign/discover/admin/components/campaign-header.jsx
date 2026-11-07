@@ -2,9 +2,18 @@
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 
-import { Box, Menu, Stack, Button, MenuItem, Typography, IconButton } from '@mui/material';
+import {
+  Box,
+  Menu,
+  Stack,
+  Button,
+  MenuItem,
+  Skeleton,
+  Typography,
+  IconButton,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -17,6 +26,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import { markPageEnter } from 'src/components/page-enter';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
 
 import {
@@ -29,13 +39,30 @@ import {
   setPublicUrl,
 } from 'src/sections/campaign/discover/admin/store/use-public-url';
 
+import { readCampaignCache, writeCampaignCache } from './campaign-cache';
+
+// One fixed box for the campaign image and its skeleton, so nothing jumps when it loads.
+const THUMB_SIZE = { width: 80, height: 46 };
+
 const formatDate = (dateString) => {
   if (!dateString) return '';
   return format(new Date(dateString), 'MMMM d, yyyy');
 };
 
+// The header rarely changes, so a refresh shows the last known copy until fresh data arrives.
+const toSummary = (campaign) => ({
+  name: campaign.name,
+  image: campaign.campaignBrief?.images?.[0] ?? null,
+  startDate: campaign.campaignBrief?.startDate,
+  endDate: campaign.campaignBrief?.endDate,
+  status: campaign.status,
+  isCreditTier: campaign.isCreditTier,
+  submissionVersion: campaign.submissionVersion,
+});
+
 const CampaignHeader = ({
   campaign,
+  campaignId,
   onBack,
   isClient,
   openInitialActivateDialog,
@@ -48,6 +75,14 @@ const CampaignHeader = ({
   const loading = useBoolean();
 
   const { isViewOnly } = useCampaignPermissions(campaign, user);
+
+  const cached = useMemo(() => readCampaignCache(campaignId), [campaignId]);
+  const summary = useMemo(() => (campaign ? toSummary(campaign) : cached), [campaign, cached]);
+  const hasSummary = Boolean(summary.name);
+
+  useEffect(() => {
+    if (campaign?.id) writeCampaignCache(campaign.id, toSummary(campaign));
+  }, [campaign]);
 
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const menuOpen = Boolean(menuAnchorEl);
@@ -63,9 +98,8 @@ const CampaignHeader = ({
   };
 
   const isPendingCampaign = useMemo(
-    () =>
-      campaign?.status === 'PENDING_CSM_REVIEW' || campaign?.status === 'PENDING_ADMIN_ACTIVATION',
-    [campaign]
+    () => summary.status === 'PENDING_CSM_REVIEW' || summary.status === 'PENDING_ADMIN_ACTIVATION',
+    [summary.status]
   );
 
   const canInitialActivate = user?.admin?.role?.name === 'CSL' || user?.admin?.mode === 'god';
@@ -179,9 +213,10 @@ const CampaignHeader = ({
               }}
             />
           }
-          onClick={() =>
-            router.push(paths.dashboard.campaign.adminCampaignManageDetail(campaign?.id))
-          }
+          onClick={() => {
+            markPageEnter('forward');
+            router.push(paths.dashboard.campaign.adminCampaignManageDetail(campaign?.id));
+          }}
           disabled={isViewOnly}
           sx={{
             height: 42,
@@ -247,14 +282,15 @@ const CampaignHeader = ({
         sx={{ mt: -1 }}
       >
         <Stack direction="row" alignItems="center" spacing={2} width="100%">
-          {campaign?.campaignBrief?.images?.[0] && (
+          {!hasSummary && <Skeleton sx={{ ...THUMB_SIZE, flexShrink: 0, borderRadius: '12px' }} />}
+          {summary.image && (
             <img
-              src={campaign?.campaignBrief.images[0]}
-              alt={campaign?.name}
+              src={summary.image}
+              alt={summary.name}
               style={{
-                width: '100%',
-                maxWidth: 80,
-                height: 'auto',
+                ...THUMB_SIZE,
+                flexShrink: 0,
+                boxSizing: 'border-box',
                 borderRadius: '12px',
                 border: '1px solid #e0e0e0',
                 objectFit: 'cover',
@@ -269,7 +305,11 @@ const CampaignHeader = ({
               fontWeight: 550,
             }}
           >
-            {campaign?.name || 'Campaign Detail'}
+            {hasSummary ? (
+              summary.name
+            ) : (
+              <Skeleton variant="text" sx={{ width: { xs: 180, sm: 280 } }} />
+            )}
           </Typography>
         </Stack>
 
@@ -306,8 +346,11 @@ const CampaignHeader = ({
                 whiteSpace: 'nowrap',
               }}
             >
-              {formatDate(campaign?.campaignBrief?.startDate)} -{' '}
-              {formatDate(campaign?.campaignBrief?.endDate)}
+              {hasSummary ? (
+                `${formatDate(summary.startDate)} - ${formatDate(summary.endDate)}`
+              ) : (
+                <Skeleton variant="text" sx={{ width: 220 }} />
+              )}
             </Typography>
           </Stack>
 
@@ -433,6 +476,7 @@ export default CampaignHeader;
 
 CampaignHeader.propTypes = {
   campaign: PropTypes.object,
+  campaignId: PropTypes.string,
   onBack: PropTypes.func,
   isClient: PropTypes.bool,
   openInitialActivateDialog: PropTypes.func,

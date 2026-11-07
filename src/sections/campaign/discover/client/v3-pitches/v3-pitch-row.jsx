@@ -100,7 +100,7 @@ const NAME_REVEAL_STYLE = {
 
 // Proportional column widths, so the fields sit in the same place on every row
 // instead of shifting with whatever text each creator happens to have.
-const COLUMN_WIDTHS = {
+export const COLUMN_WIDTHS = {
   index: 40,
   creator: '24%',
   outreach: '14%',
@@ -371,6 +371,8 @@ const NEW_ROW_FLASH = keyframes`
 `;
 
 const ROW_EASE = [0.22, 1, 0.36, 1];
+// Rows replace a skeleton that already held their place, so they only fade (no rise).
+const ROW_FADE_EASE = [0.23, 1, 0.32, 1];
 
 const PitchRow = ({
   pitch,
@@ -504,15 +506,15 @@ const PitchRow = ({
     <TableRow
       hover
       component={m.tr}
-      // Enter: fade and rise. First load staggers (capped); a new row comes at once.
+      // Enter: fade only. First load staggers the first rows; a new row comes at once.
       layout="position"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       exit={{ opacity: 0, x: -16, transition: { duration: 0.2 } }}
       transition={{
-        duration: 0.32,
-        ease: ROW_EASE,
-        delay: isNew ? 0 : Math.min(enterIndex * 0.04, 0.4),
+        duration: 0.2,
+        ease: ROW_FADE_EASE,
+        delay: isNew ? 0 : Math.min(enterIndex, 4) * 0.04,
         layout: { duration: 0.3, ease: ROW_EASE },
       }}
       onClick={() => onViewPitch(pitch)}

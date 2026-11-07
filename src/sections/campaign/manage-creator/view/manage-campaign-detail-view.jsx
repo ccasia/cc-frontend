@@ -3,7 +3,16 @@ import PropTypes from 'prop-types';
 import { enqueueSnackbar } from 'notistack';
 import React, { useEffect, useCallback } from 'react';
 
-import { Box, Chip, Stack, Button, Container, Typography, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Chip,
+  Stack,
+  Button,
+  Skeleton,
+  Container,
+  Typography,
+  CircularProgress,
+} from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -13,9 +22,9 @@ import { fetcher, endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
-import { LoadingScreen } from 'src/components/loading-screen';
 
 import CampaignDetailItem from '../campaign-detail-item';
+import CampaignDetailItemSkeleton from '../components/campaign-detail-item-skeleton';
 
 const ManageCampaignDetailView = ({ id }) => {
   const { user } = useAuthContext();
@@ -26,6 +35,8 @@ const ManageCampaignDetailView = ({ id }) => {
     revalidateOnFocus: true,
     revalidateOnMount: true,
   });
+
+  const isPending = isLoading || !data;
 
   // Check if user is shortlisted
   const checkIfUserIsShortlisted = useCallback(() => {
@@ -115,7 +126,7 @@ const ManageCampaignDetailView = ({ id }) => {
                 textAlign: { xs: 'left', sm: 'left' },
               }}
             >
-              {data?.name || 'Campaign Detail'}
+              {isPending ? <Skeleton width={240} height={32} /> : data?.name || 'Campaign Detail'}
             </Typography>
           </Stack>
 
@@ -132,20 +143,24 @@ const ManageCampaignDetailView = ({ id }) => {
               >
                 ENDS IN:
               </Typography>
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  color:
-                    data?.campaignBrief?.endDate &&
-                    new Date(data?.campaignBrief?.endDate) < new Date()
-                      ? 'error.main'
-                      : '#221f20',
-                  fontWeight: 500,
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                }}
-              >
-                {calculateDaysLeft(data?.campaignBrief?.endDate)}
-              </Typography>
+              {isPending ? (
+                <Skeleton width={56} height={16} sx={{ my: 0.5 }} />
+              ) : (
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color:
+                      data?.campaignBrief?.endDate &&
+                      new Date(data?.campaignBrief?.endDate) < new Date()
+                        ? 'error.main'
+                        : '#221f20',
+                    fontWeight: 500,
+                    fontSize: { xs: '0.875rem', sm: '1rem' },
+                  }}
+                >
+                  {calculateDaysLeft(data?.campaignBrief?.endDate)}
+                </Typography>
+              )}
             </Stack>
 
             <Box
@@ -157,53 +172,57 @@ const ManageCampaignDetailView = ({ id }) => {
               }}
             />
 
-            <Chip
-              icon={
-                <Box sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}>
-                  <CircularProgress
-                    variant="determinate"
-                    value={100}
-                    size={20}
-                    thickness={7}
-                    sx={{ color: 'grey.300' }}
-                  />
-                  <CircularProgress
-                    variant="determinate"
-                    value={Math.min(Math.round(data?.totalCompletion), 100)}
-                    size={20}
-                    thickness={7}
-                    sx={{
-                      color: '#5abc6f',
-                      position: 'absolute',
-                      left: 0,
-                      strokeLinecap: 'round',
-                    }}
-                  />
-                </Box>
-              }
-              label={`${Math.min(Math.round(data?.totalCompletion), 100)}% COMPLETED`}
-              sx={{
-                backgroundColor: 'common.white',
-                color: '#48484a',
-                fontWeight: 'bold',
-                fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                borderRadius: '8px',
-                height: '35px',
-                border: '1px solid #ebebeb',
-                borderBottom: '3px solid #ebebeb',
-                '& .MuiChip-label': {
-                  padding: '0 8px 0 12px',
-                },
-                '&:hover': {
+            {isPending ? (
+              <Skeleton width={150} height={35} />
+            ) : (
+              <Chip
+                icon={
+                  <Box sx={{ position: 'relative', display: 'inline-flex', mr: 2, ml: -0.5 }}>
+                    <CircularProgress
+                      variant="determinate"
+                      value={100}
+                      size={20}
+                      thickness={7}
+                      sx={{ color: 'grey.300' }}
+                    />
+                    <CircularProgress
+                      variant="determinate"
+                      value={Math.min(Math.round(data?.totalCompletion), 100)}
+                      size={20}
+                      thickness={7}
+                      sx={{
+                        color: '#5abc6f',
+                        position: 'absolute',
+                        left: 0,
+                        strokeLinecap: 'round',
+                      }}
+                    />
+                  </Box>
+                }
+                label={`${Math.min(Math.round(data?.totalCompletion), 100)}% COMPLETED`}
+                sx={{
                   backgroundColor: 'common.white',
-                },
-              }}
-            />
+                  color: '#48484a',
+                  fontWeight: 'bold',
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  borderRadius: '8px',
+                  height: '35px',
+                  border: '1px solid #ebebeb',
+                  borderBottom: '3px solid #ebebeb',
+                  '& .MuiChip-label': {
+                    padding: '0 8px 0 12px',
+                  },
+                  '&:hover': {
+                    backgroundColor: 'common.white',
+                  },
+                }}
+              />
+            )}
           </Stack>
         </Stack>
       </Stack>
 
-      {!isLoading && data ? <CampaignDetailItem campaign={data} /> : <LoadingScreen />}
+      {isPending ? <CampaignDetailItemSkeleton /> : <CampaignDetailItem campaign={data} />}
     </Container>
   );
 };

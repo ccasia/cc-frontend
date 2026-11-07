@@ -7,7 +7,7 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 const UnreadMessageCountContext = createContext();
 
 export function UnreadMessageCountProvider({ children }) {
-  const { unreadCount, isLoading, isError, triggerRefetch } = useTotalUnreadCount(); // Fetch initial unread count
+  const { unreadCount } = useTotalUnreadCount();
   const { socket } = useSocketContext();
   const [unreadMessageCount, setUnreadMessageCount] = useState(unreadCount);
 
@@ -28,14 +28,12 @@ export function UnreadMessageCountProvider({ children }) {
   // }, [isError]);
 
   useEffect(() => {
-    if (isLoading) {
-      console.log('Loading unread message count...');
-    }
-  }, [isLoading]);
+    setUnreadMessageCount(unreadCount);
+  }, [unreadCount]);
 
   return (
     <UnreadMessageCountContext.Provider value={unreadMessageCount}>
-      {isLoading ? <div>Loading...</div> : children}
+      {children}
     </UnreadMessageCountContext.Provider>
   );
 }
