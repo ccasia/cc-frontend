@@ -32,6 +32,7 @@ import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import { markPageEnter } from 'src/components/page-enter';
 import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
@@ -771,6 +772,7 @@ function CampaignItem({
       component={RouterLink}
       href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
       onClick={() => {
+        markPageEnter('forward', 'list');
         localStorage.setItem('lastOpenedCampaignId', String(campaign?.id));
         localStorage.removeItem('lastScrollPosition');
       }}

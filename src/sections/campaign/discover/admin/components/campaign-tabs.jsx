@@ -13,6 +13,8 @@ import { useAuthContext } from 'src/auth/hooks';
 import { useMainContext } from 'src/layouts/dashboard/hooks/dsahboard-context';
 
 import { useTabs, setCurrentTab } from '../store/use-tabs';
+import CampaignTabIndicator from './campaign-tab-indicator';
+import { readCampaignCache, writeCampaignCache } from './campaign-cache';
 
 const clientAllowedTabs = [
   'overview',
@@ -42,11 +44,23 @@ const getAllowedTabs = (submissionVersion) => {
   return clientAllowedTabs.filter((tab) => tab !== 'submissions-v4');
 };
 
-const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = 'default' }) => {
+const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';
+
+const withCount = (label, count) => (count == null ? label : `${label} (${count})`);
+
+const CampaignTabs = ({
+  campaign,
+  campaignId,
+  isDemo,
+  publicReadonly,
+  forcedTab,
+  variant = 'default',
+}) => {
   const compact = variant === 'compact';
   const { user } = useAuthContext();
   const { mainRef } = useMainContext();
   const theme = useTheme();
+  const underlineColor = compact ? theme.palette.text.primary : '#1340ff';
 
   const lgUp = useResponsive('up', 'lg');
 
@@ -55,7 +69,9 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
 
   const tabsContainerRef = useRef(null);
 
-  const { campaigns: campaignInvoices } = useGetInvoicesByCampId(isDemo ? null : campaign?.id);
+  const { campaigns: campaignInvoices, isLoading: invoicesLoading } = useGetInvoicesByCampId(
+    isDemo ? null : campaign?.id
+  );
   const { data: campaignAgreements } = useGetAgreements(isDemo ? null : campaign?.id);
 
   const isClient =
@@ -83,7 +99,7 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
     [campaign?.submission]
   );
 
-  const getAgreementsLabel = (submissions, agreements, pitches, shortlisted) => {
+  const getAgreementsCount = (submissions, agreements, pitches, shortlisted) => {
     // Get approved pitch user IDs
     const approvedPitchUserIds = new Set(
       (pitches || [])
@@ -119,8 +135,34 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
       return hasSubmission;
     }).length;
 
-    return `Agreements (${totalAgreements})`;
+    return totalAgreements;
   };
+
+  // Counts show the last known numbers on refresh and update in place when fresh data arrives.
+  const cachedCounts = useMemo(() => readCampaignCache(campaignId), [campaignId]);
+  const counts = {
+    pitch: campaign ? campaign.pitch?.length || 0 : cachedCounts.pitchCount,
+    agreement:
+      campaign && campaignAgreements
+        ? getAgreementsCount(
+            agreementSubmissions,
+            campaignAgreements,
+            campaign.pitch,
+            campaign.shortlisted
+          )
+        : cachedCounts.agreementCount,
+    invoice:
+      campaign && !invoicesLoading ? campaignInvoices?.length || 0 : cachedCounts.invoiceCount,
+  };
+
+  useEffect(() => {
+    if (isDemo || !campaign?.id) return;
+    writeCampaignCache(campaign.id, {
+      pitchCount: counts.pitch,
+      agreementCount: counts.agreement,
+      invoiceCount: counts.invoice,
+    });
+  }, [isDemo, campaign?.id, counts.pitch, counts.agreement, counts.invoice]);
 
   const stickyRef = useRef(null);
   const [isStuck, setIsStuck] = useState(false);
@@ -230,7 +272,6 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
         sx={{
           mt: isStuck || compact ? 0 : 2,
           mb: isStuck || compact ? 0 : 2.5,
-          transition: theme.transitions.create(['margin']),
           position: 'relative',
           '&::before': {
             content: '""',
@@ -294,7 +335,9 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             direction="row"
             justifyContent="space-between"
+            data-boot-tabs="overview"
             sx={{
+              position: 'relative',
               width: 'max-content',
               mx: isStuck ? 'auto' : 0,
             }}
@@ -305,7 +348,7 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
                   { label: 'Overview', value: 'overview' },
                   { label: 'Campaign Details', value: 'campaign-content' },
                   { label: 'Creator Master List', value: 'creator-master-list' },
-                  ...(campaign?.submissionVersion === 'v4'
+                  ...(!campaign || campaign.submissionVersion === 'v4'
                     ? [{ label: 'Creator Submissions', value: 'submissions-v4' }]
                     : [{ label: 'Creator Deliverables', value: 'deliverables' }]),
                   { label: 'Campaign Analytics', value: 'analytics' },
@@ -323,19 +366,14 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
                   { label: 'Overview', value: 'overview' },
                   { label: 'Campaign Details', value: 'campaign-content' },
                   {
-                    label: `Creator Master List (${campaign?.pitch?.length || 0})`,
+                    label: withCount('Creator Master List', counts.pitch),
                     value: 'pitch',
                   },
                   {
-                    label: getAgreementsLabel(
-                      agreementSubmissions,
-                      campaignAgreements,
-                      campaign?.pitch,
-                      campaign?.shortlisted
-                    ),
+                    label: withCount('Agreements', counts.agreement),
                     value: 'agreement',
                   },
-                  ...(campaign?.submissionVersion === 'v4'
+                  ...(!campaign || campaign.submissionVersion === 'v4'
                     ? [
                         {
                           label: 'Creator Submissions',
@@ -353,7 +391,7 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
                     value: 'analytics',
                   },
                   {
-                    label: `Invoices (${campaignInvoices?.length || 0})`,
+                    label: withCount('Invoices', counts.invoice),
                     value: 'invoices',
                   },
                   campaign?.logisticsType && campaign.logisticsType !== ''
@@ -373,6 +411,9 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
                   key={tab.value}
                   disableRipple
                   size="large"
+                  data-boot-tab={tab.value}
+                  data-boot-active={currentTab === tab.value}
+                  data-tab-active={currentTab === tab.value}
                   onClick={() => handleChangeTab(null, tab.value)}
                   sx={{
                     px: compact ? 0 : { xs: 1, sm: 1.2 },
@@ -385,15 +426,16 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
                     fontWeight: 650,
                     whiteSpace: 'nowrap',
                     mr: compact ? 3.5 : { xs: 1, sm: 2 },
-                    transition: 'transform 0.1s ease-in-out',
+                    transition: `transform 160ms ${EASE_OUT}, color 150ms ease`,
                     '&:focus': {
                       outline: 'none',
                       bgcolor: 'transparent',
                     },
                     '&:active': {
-                      transform: 'scale(0.95)',
+                      transform: 'scale(0.97)',
                       bgcolor: 'transparent',
                     },
+                    // The active underline is the shared CampaignTabIndicator; this is only a hover preview.
                     '&::after': {
                       content: '""',
                       position: 'absolute',
@@ -401,18 +443,22 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
                       left: 0,
                       right: 0,
                       height: '2px',
-                      width: currentTab === tab.value ? '100%' : '0%',
-                      bgcolor: compact ? 'text.primary' : '#1340ff',
-                      transition: 'all 0.3s ease-in-out',
-                      transform: 'scaleX(1)',
+                      bgcolor: underlineColor,
+                      transform: 'scaleX(0)',
                       transformOrigin: 'left',
+                      opacity: 0,
+                      transition: `transform 200ms ${EASE_OUT}, opacity 150ms ease`,
                     },
-                    '&:hover': {
-                      bgcolor: 'transparent',
-                      '&::after': {
-                        width: '100%',
-                        opacity: currentTab === tab.value ? 1 : 0.5,
+                    '&:hover': { bgcolor: 'transparent' },
+                    // Touch screens fire a hover on tap, so only real pointers preview the underline.
+                    '@media (hover: hover) and (pointer: fine)': {
+                      '&:hover::after': currentTab !== tab.value && {
+                        transform: 'scaleX(1)',
+                        opacity: 0.5,
                       },
+                    },
+                    '@media (prefers-reduced-motion: reduce)': {
+                      '&, &::after': { transition: 'opacity 150ms ease' },
                     },
                     // mr: 2,
                   }}
@@ -420,6 +466,7 @@ const CampaignTabs = ({ campaign, isDemo, publicReadonly, forcedTab, variant = '
                   {tab.label}
                 </Button>
               ))}
+            <CampaignTabIndicator activeKey={currentTab} color={underlineColor} />
           </Stack>
         </Stack>
       </Box>
@@ -431,6 +478,7 @@ export default CampaignTabs;
 
 CampaignTabs.propTypes = {
   campaign: PropTypes.object,
+  campaignId: PropTypes.string,
   isDemo: PropTypes.bool,
   publicReadonly: PropTypes.bool,
   forcedTab: PropTypes.string,

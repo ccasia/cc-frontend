@@ -1,11 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import { Box, Alert, CircularProgress } from '@mui/material';
+import { Box, Alert } from '@mui/material';
 
 import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
 import CampaignV3Pitches from './campaign-v3-pitches';
+import CreatorMasterListSkeleton from '../../admin/components/creator-master-list-skeleton';
 
 const CampaignV3PitchesWrapper = ({ campaign, campaignMutate, isDisabled = false }) => {
   const { pitches, isLoading, isError, mutate } = useGetV3Pitches(campaign?.id);
@@ -40,13 +41,7 @@ const CampaignV3PitchesWrapper = ({ campaign, campaignMutate, isDisabled = false
     }
   };
 
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (isLoading) return <CreatorMasterListSkeleton campaignId={campaign?.id} />;
 
   if (isError) {
     return (

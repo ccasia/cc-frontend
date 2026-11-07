@@ -6,6 +6,7 @@ import { HelmetProvider } from 'react-helmet-async';
 
 //  import TagManager from 'react-gtm-module';
 import App from './app';
+import { SplashScreen } from './components/loading-screen';
 
 // ----------------------------------------------------------------------
 
@@ -14,7 +15,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <HelmetProvider>
     <BrowserRouter>
-      <Suspense>
+      <Suspense fallback={<SplashScreen />}>
         <App />
         <Toaster />
       </Suspense>

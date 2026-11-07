@@ -63,6 +63,7 @@ import { StatusChip, useOneLineChipWidth } from 'src/components/status-chip';
 
 import { INDEX_SX } from '../master-list-row-kit';
 import AgreementBudgetCell from './agreement-budget-cell';
+import { CONTENT_FADE_IN } from './components/content-fade';
 import AgreementOutreachCell from './agreement-outreach-cell';
 import CampaignAgreementEdit from './campaign-agreement-edit';
 import ReceiptRequiredToggle from './receipt-required-toggle';
@@ -71,6 +72,7 @@ import RegenerateInvoiceDialog from './regenerate-invoice-dialog';
 import usePitchSocket from '../client/v3-pitches/use-pitch-socket';
 import SendAdditionalAgreementModal from './send-additional-agreement-modal';
 import OutreachFilterMenu, { OUTREACH_NOT_SET } from './outreach-filter-menu';
+import CampaignAgreementsSkeleton from './components/campaign-agreements-skeleton';
 import {
   useColumnOrder,
   REORDER_TABLE_ATTR,
@@ -2254,7 +2256,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
   );
 
   if (isLoading || loadingSubmissions) {
-    return <div>Loading...</div>; // A loading message while the data is being fetched
+    return <CampaignAgreementsSkeleton columns={visibleColumns} campaignId={campaign?.id} />;
   }
 
   return (
@@ -2740,7 +2742,7 @@ const CampaignAgreements = ({ campaign, campaignMutate, isDisabled: propIsDisabl
                     </TableCell>
                   </TableRow>
                 </TableHead>
-                <TableBody>
+                <TableBody sx={CONTENT_FADE_IN}>
                   {filteredData.map((item, index) => (
                     <AgreementRow
                       key={item.id}

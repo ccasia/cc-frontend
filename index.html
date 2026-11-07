@@ -29,14 +29,96 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
     <link
       href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
 
     <!-- Font Aileron -->
-    <link href="https://fonts.cdnfonts.com/css/aileron" rel="stylesheet" />
+    <link href="https://fonts.cdnfonts.com/css/aileron" rel="stylesheet" media="print" onload="this.media='all'" />
+
+    <style id="boot-css">
+      @font-face { font-family: 'Instrument Serif'; font-display: block; src: url('/fonts/instrument-serif/InstrumentSerif-Regular.ttf') format('truetype'); }
+      html, body { margin: 0; background: #F4F4F4; }
+      #boot { position: fixed; inset: 0; z-index: 10000; background: #F4F4F4; color: #212B36; }
+      #boot[data-mode='ring'] { display: flex; align-items: center; justify-content: center; }
+      #boot[data-mode='snap'] { overflow: hidden; }
+      #boot .bt-ring { width: 36px; height: 36px; animation: bt-spin 0.8s linear infinite; }
+      #boot .bt-ring .arc { stroke-dasharray: 80 200; animation: bt-dash 1.4s cubic-bezier(0.77, 0, 0.175, 1) infinite; }
+      @keyframes bt-spin { to { transform: rotate(360deg); } }
+      @keyframes bt-dash {
+        0% { stroke-dasharray: 1 200; stroke-dashoffset: 0; }
+        50% { stroke-dasharray: 90 200; stroke-dashoffset: -30; }
+        100% { stroke-dasharray: 90 200; stroke-dashoffset: -124; }
+      }
+
+      #boot .bt-sk { display: block; position: relative; overflow: hidden; background: #F4F6F8; border-radius: 8px; }
+      #boot .bt-sk::after { content: ''; position: absolute; inset: 0; transform: translateX(100%); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent); animation: bt-shimmer 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+      @keyframes bt-pulse { from { opacity: 1; } to { opacity: 0.6; } }
+      @keyframes bt-shimmer { 0% { transform: translateX(100%); } 60%, 100% { transform: translateX(-100%); } }
+
+      #boot .bt-nav { display: none; }
+      #boot .bt-panel { position: fixed; top: 1.5vh; left: 1.5vw; width: 97vw; height: 97vh; border-radius: 16px; background: #FFFFFF; overflow: hidden; }
+      #boot .bt-header { position: relative; height: 64px; }
+      #boot .bt-avatar { position: absolute; top: 12px; right: 16px; width: 40px; height: 40px; border-radius: 50%; }
+      #boot .bt-main { padding-top: 8px; }
+      #boot .bt-wrap { box-sizing: border-box; width: 100%; margin: 0 auto; padding: 0 16px; }
+      #boot .bt-sp { display: block; }
+      #boot .bt-title { height: 30px; margin-top: 8px; }
+      #boot .bt-tabs { height: 44px; margin-top: 21px; }
+      #boot .bt-search { height: 40px; margin-top: 33px; }
+      #boot .bt-grid { display: grid; grid-template-columns: 1fr; gap: 12px 16px; margin-top: 19px; }
+
+      #boot .bt-card { position: relative; height: 338px; border-radius: 15px; background: #F4F4F4; border: 1.2px solid rgba(145, 158, 171, 0.2); overflow: hidden; }
+      #boot .bt-card .bt-sk { background: rgba(145, 158, 171, 0.2); border-radius: 6px; }
+      #boot .bt-card .bt-img { height: 180px; border-radius: 0; }
+      #boot .bt-card .bt-chip { position: absolute; top: 20px; left: 20px; width: 116px; height: 32px; border-radius: 8px; background: rgba(255, 255, 255, 0.75); }
+      #boot .bt-logo { position: absolute; top: 140px; left: 17px; width: 56px; height: 56px; box-sizing: border-box; border: 2px solid #EBEBEB; border-radius: 50%; background: #FFFFFF; overflow: hidden; }
+      #boot .bt-card .bt-logo .bt-sk { width: 100%; height: 100%; border-radius: 50%; }
+      #boot .bt-body { padding: 16px 16px 0; }
+      #boot .bt-row { display: flex; align-items: center; gap: 10px; }
+      #boot .bt-card .bt-icon { flex-shrink: 0; width: 20px; height: 20px; border-radius: 5px; }
+      #boot .bt-card .bt-dot { flex-shrink: 0; width: 22px; height: 22px; margin: 0 3px 0 auto; border-radius: 50%; }
+      #boot .bt-block { margin-top: 20px; }
+
+      @media (min-width: 600px) {
+        #boot .bt-wrap { padding: 0 24px; }
+        #boot .bt-title { height: 32px; margin-top: 11px; }
+        #boot .bt-tabs { height: 48px; margin-top: 27px; }
+        #boot .bt-search { margin-top: 21px; }
+        #boot .bt-card { height: 340px; }
+      }
+      @media (min-width: 900px) {
+        #boot .bt-wrap { padding: 0 32px; }
+        #boot .bt-title { height: 36px; margin-top: 12px; }
+        #boot .bt-grid { grid-template-columns: repeat(2, 1fr); }
+        #boot .bt-card { height: 341px; }
+      }
+      @media (min-width: 1200px) {
+        #boot .bt-nav { display: block; position: fixed; top: 0; bottom: 0; left: 0; width: 70px; }
+        #boot .bt-nav img { position: absolute; top: 16px; left: 16px; width: 40px; height: 40px; border-radius: 8px; }
+        #boot .bt-panel { left: 70px; right: 16px; width: auto; }
+        #boot .bt-header { height: 80px; }
+        #boot .bt-avatar { top: 20px; right: 40px; }
+        #boot .bt-main { padding: 8px 16px 0; }
+        #boot .bt-title { height: 40px; margin-top: 12px; }
+        #boot .bt-tabs { margin-top: 29px; }
+        #boot .bt-grid { grid-template-columns: repeat(3, 1fr); }
+      }
+      @media (min-width: 1536px) {
+        #boot .bt-wrap { max-width: 1536px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #boot .bt-ring { animation-duration: 1.6s; }
+        #boot .bt-ring .arc, #boot .bt-sk::after { animation: none; }
+        #boot .bt-sk { animation: bt-pulse 2s ease-in-out infinite alternate; }
+      }
+    </style>
 
     <title>Cult Creative</title>
 
@@ -56,6 +138,93 @@
   </noscript>
   <!-- End Google Tag Manager (noscript) -->
     <!-- <noscript>You need to enable JavaScript to run this app.</noscript> -->
+    <div id="boot" aria-busy="true" aria-label="Loading"></div>
+    <script>
+      (function () {
+        var boot = document.getElementById('boot');
+        var path = location.pathname;
+        var hasSession = false;
+        try { hasSession = localStorage.getItem('cc-boot-shell') === '1'; } catch (e) {}
+        var isDashboard = /^\/dashboard(\/|$)/.test(path) && path.indexOf('/dashboard/invoice/xeroVerfiy') !== 0;
+        var width = window.innerWidth;
+        var bp = width >= 1536 ? 'xl' : width >= 1200 ? 'lg' : width >= 900 ? 'md' : width >= 600 ? 'sm' : 'xs';
+        var snap = null;
+        var borrowed = false;
+        if (hasSession && isDashboard) {
+          try {
+            // Exact link first, else the newest frame of the same page (another tab or search).
+            var raw = localStorage.getItem('cc-boot-snap:' + path + location.search + '|' + bp);
+            var keys = raw ? [] : JSON.parse(localStorage.getItem('cc-boot-snaps') || '[]');
+            borrowed = !raw;
+            for (var i = 0; i < keys.length && !raw; i++) {
+              var rest = keys[i].slice(('cc-boot-snap:' + path).length);
+              if (keys[i].indexOf('cc-boot-snap:' + path) === 0 && /^(\?[^|]*)?\|/.test(rest) && rest.slice(-bp.length - 1) === '|' + bp) raw = localStorage.getItem(keys[i]);
+            }
+            snap = raw && JSON.parse(raw);
+          } catch (e) {}
+        }
+
+        if (snap && snap.html) {
+          // The app's own first frame from the last visit: real chrome, skeletons only where data loads.
+          var style = document.createElement('style');
+          style.textContent = snap.css || '';
+          boot.setAttribute('data-mode', 'snap');
+          boot.appendChild(style);
+          boot.insertAdjacentHTML('beforeend', snap.html);
+          if (borrowed) {
+            // Borrowed from another tab of this page: mark the right tab and drop the other tab's content.
+            var bar = boot.querySelector('[data-boot-tabs]');
+            var want = new URLSearchParams(location.search).get('tab') || (bar && bar.getAttribute('data-boot-tabs'));
+            var from = bar && bar.querySelector('[data-boot-active="true"]');
+            var to = null;
+            if (bar) bar.querySelectorAll('[data-boot-tab]').forEach(function (el) { if (el.getAttribute('data-boot-tab') === want) to = el; });
+            if (from && to && from !== to) {
+              var cls = from.className;
+              from.className = to.className;
+              to.className = cls;
+              // Move the sliding underline under the wanted tab (same math as CampaignTabIndicator).
+              boot.querySelectorAll('[data-boot-indicator]').forEach(function (el) {
+                el.style.transform = 'translate(' + to.offsetLeft + 'px, ' + (to.offsetTop + to.offsetHeight - 2) + 'px) scaleX(' + to.offsetWidth + ')';
+              });
+              boot.querySelectorAll('[data-boot-slot]').forEach(function (el) { el.innerHTML = ''; });
+            }
+          }
+        } else if (!hasSession || !isDashboard) {
+          boot.setAttribute('data-mode', 'ring');
+          boot.innerHTML =
+            '<svg class="bt-ring" viewBox="22 22 44 44">' +
+            '<circle cx="44" cy="44" r="20" fill="none" stroke="currentColor" stroke-width="3.2" opacity="0.12" />' +
+            '<circle class="arc" cx="44" cy="44" r="20" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" />' +
+            '</svg>';
+        } else {
+          var sk = function (cls) { return '<i class="bt-sk ' + cls + '"></i>'; };
+          var sp = function (cls) { return '<i class="bt-sp ' + cls + '"></i>'; };
+          var content;
+          if (/^\/dashboard\/campaign\/discover\/?$/.test(path)) {
+            var row = function (width, tail) { return '<div class="bt-row" style="height:' + (tail ? 28 : 22) + 'px;margin-top:' + (tail ? 4 : 21) + 'px">' + sk('bt-icon') + '<i class="bt-sk" style="width:' + width + ';height:12px"></i>' + (tail ? sk('bt-dot') : '') + '</div>'; };
+            var card =
+              '<div class="bt-card">' + sk('bt-img') + sk('bt-chip') + '<span class="bt-logo">' + sk('') + '</span>' +
+              '<div class="bt-body"><i class="bt-sk" style="width:68%;height:20px;margin-top:11px"></i>' +
+              '<i class="bt-sk" style="width:30%;height:14px;margin-top:10px"></i>' + row('42%') + row('36%', true) + '</div></div>';
+            content =
+              sp('bt-title') + sp('bt-tabs') + sp('bt-search') +
+              '<div class="bt-grid">' + card + card + card + card + card + card + '</div>';
+          } else {
+            content =
+              sp('bt-title') +
+              '<i class="bt-sk bt-block" style="height:120px"></i>' +
+              '<i class="bt-sk bt-block" style="height:360px"></i>';
+          }
+          boot.setAttribute('data-mode', 'shell');
+          boot.innerHTML =
+            '<aside class="bt-nav"><img src="/assets/icons/navbar/ic_navlogo.svg" alt="" /></aside>' +
+            '<div class="bt-panel"><div class="bt-header">' + sk('bt-avatar') + '</div>' +
+            '<div class="bt-main"><div class="bt-wrap">' + content + '</div></div></div>';
+        }
+
+        if (boot.getAnimations) boot.getAnimations({ subtree: true }).forEach(function (a) { a.startTime = 0; });
+      })();
+    </script>
     <div id="root"></div>
     <script>
       const global = globalThis;
