@@ -18,6 +18,13 @@ const BASE = {
     'transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 140ms ease-out, border-color 140ms ease-out, box-shadow 140ms ease-out',
 };
 
+// While loading, only the spinner shows. This comes after `&.Mui-disabled`,
+// whose text colour would otherwise show through the hidden label.
+const loading = (indicator) => ({
+  '&.MuiLoadingButton-loading': { color: 'transparent' },
+  '& .MuiLoadingButton-loadingIndicator': { color: indicator },
+});
+
 // The press still shows through the shadow; with reduced motion the button does not move.
 // Keep this last in each style, so it comes after `&:active`.
 const STILL_PRESS = {
@@ -41,6 +48,7 @@ export const PRIMARY_ACTION_SX = {
     color: 'rgba(255, 255, 255, 0.6)',
     boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
   },
+  ...loading('#FFFFFF'),
   ...STILL_PRESS,
 };
 
@@ -68,6 +76,7 @@ export const SECONDARY_ACTION_SX = {
     border: '1px solid #E8E8E8',
     boxShadow: 'inset 0px -3px 0px #E7E7E7',
   },
+  ...loading('#8E8E93'),
   ...STILL_PRESS,
 };
 
@@ -88,6 +97,7 @@ export const DANGER_ACTION_SX = {
     color: 'rgba(255, 255, 255, 0.6)',
     boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
   },
+  ...loading('#FFFFFF'),
   ...STILL_PRESS,
 };
 

@@ -11,15 +11,10 @@ import {
   Chip,
   Stack,
   Button,
-  Dialog,
   Container,
   Typography,
   IconButton,
-  DialogTitle,
-  DialogActions,
-  DialogContent,
   CircularProgress,
-  DialogContentText,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -46,6 +41,7 @@ import UpdateObjectives from '../UpdateObjectives';
 import UpdateAdditionalOne from '../UpdateAdditionalOne';
 import UpdateAdditionalTwo from '../UpdateAdditionalTwo';
 import UpdateFinaliseCampaign from '../UpdateFinaliseCampaign';
+import EndCampaignDialog from '../components/end-campaign-dialog';
 import UpdateGeneralInformation from '../UpdateGeneralInformation';
 
 // Shared id for the active tab's form so the header Save button can submit it
@@ -136,16 +132,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
         enqueueSnackbar('Campaign is paused');
       }
 
-      mutate(endpoints.campaign.getCampaignById(id), (currentData) => {
-        const newCampaign = {
-          ...currentData,
-          status: res?.status,
-        };
-        return {
-          ...currentData,
-          newCampaign,
-        };
-      });
+      mutate(endpoints.campaign.getCampaignById(id));
 
       loadingButton.onFalse();
     } catch (error) {
@@ -162,16 +149,7 @@ const CampaignDetailManageViewV2 = ({ id }) => {
       const res = await axiosInstance.patch(endpoints.campaign.closeCampaign(id));
       enqueueSnackbar(res?.data?.message);
 
-      mutate(endpoints.campaign.getCampaignById(id), (currentData) => {
-        const newCampaign = {
-          ...currentData,
-          status: 'past',
-        };
-        return {
-          ...currentData,
-          newCampaign,
-        };
-      });
+      mutate(endpoints.campaign.getCampaignById(id));
       modalConfirm.onFalse();
     } catch (error) {
       enqueueSnackbar('Error to close campaign', {
@@ -184,25 +162,12 @@ const CampaignDetailManageViewV2 = ({ id }) => {
 
   // Confirmation Modal
   const confirmationModal = (
-    <Dialog open={modalConfirm.value} onClose={modalConfirm.onFalse}>
-      <DialogTitle>Confirm end campaign</DialogTitle>
-      <DialogContent>
-        <DialogContentText>Are you sure you want to end the campaign?</DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={modalConfirm.onFalse} sx={{ borderRadius: 0.5 }}>
-          Cancel
-        </Button>
-        <LoadingButton
-          onClick={closeCampaign}
-          variant="contained"
-          sx={{ borderRadius: 0.5 }}
-          loading={isClosing.value}
-        >
-          Confirm
-        </LoadingButton>
-      </DialogActions>
-    </Dialog>
+    <EndCampaignDialog
+      open={modalConfirm.value}
+      onClose={modalConfirm.onFalse}
+      onConfirm={closeCampaign}
+      loading={isClosing.value}
+    />
   );
 
   // Tab content mapping
