@@ -11,6 +11,8 @@ import {
   ListItemText,
 } from '@mui/material';
 
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
+
 const FeedbackDisplay = ({ submission, campaign }) => {
   if (!submission?.feedback?.length && !submission?.publicFeedback?.length) {
     return null;
@@ -42,8 +44,8 @@ const FeedbackDisplay = ({ submission, campaign }) => {
                 Client Feedback
               </Typography>
               {/* Use company logo or fallback avatar */}
-              <Avatar
-                src={campaign?.company?.logoURL || '/default-avatar.png'}
+              <BrandLogoAvatar
+                src={campaign?.company?.logo}
                 alt={campaign?.company?.name || 'Company'}
                 sx={{ mr: 2, mb: 2 }}
               />

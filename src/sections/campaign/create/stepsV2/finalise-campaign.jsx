@@ -28,6 +28,7 @@ import { isClientManager } from 'src/utils/campaign-flow';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 import {
   RHFSwitch,
   RHFSelectV2,
@@ -253,7 +254,7 @@ const FinaliseCampaign = ({
                 {...optionProps}
                 key={option?.id}
               >
-                <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
+                <BrandLogoAvatar src={option?.logo} sx={{ width: 35, height: 35 }} />
                 <ListItemText primary={option.name} />
               </Stack>
             );
@@ -304,7 +305,7 @@ const FinaliseCampaign = ({
                   {...optionProps}
                   key={option?.id}
                 >
-                  <Avatar src={option?.logo} sx={{ width: 35, height: 35 }} />
+                  <BrandLogoAvatar src={option?.logo} sx={{ width: 35, height: 35 }} />
                   <ListItemText primary={option.name} />
                 </Stack>
               );
