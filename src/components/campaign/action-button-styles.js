@@ -18,6 +18,12 @@ const BASE = {
     'transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 140ms ease-out, border-color 140ms ease-out, box-shadow 140ms ease-out',
 };
 
+// The press still shows through the shadow; with reduced motion the button does not move.
+// Keep this last in each style, so it comes after `&:active`.
+const STILL_PRESS = {
+  '@media (prefers-reduced-motion: reduce)': { '&:active': { transform: 'none' } },
+};
+
 /** Dark primary. */
 export const PRIMARY_ACTION_SX = {
   ...BASE,
@@ -35,6 +41,7 @@ export const PRIMARY_ACTION_SX = {
     color: 'rgba(255, 255, 255, 0.6)',
     boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
   },
+  ...STILL_PRESS,
 };
 
 /** White secondary. */
@@ -61,6 +68,7 @@ export const SECONDARY_ACTION_SX = {
     border: '1px solid #E8E8E8',
     boxShadow: 'inset 0px -3px 0px #E7E7E7',
   },
+  ...STILL_PRESS,
 };
 
 /** Destructive. */
@@ -80,6 +88,7 @@ export const DANGER_ACTION_SX = {
     color: 'rgba(255, 255, 255, 0.6)',
     boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
   },
+  ...STILL_PRESS,
 };
 
 /** Plain text action, e.g. "Discard this Campaign". */

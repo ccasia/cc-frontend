@@ -835,7 +835,9 @@ const CampaignModal = ({
                     <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
                       Campaign Info
                     </Typography>
-                    <Typography variant="body2">{campaign?.description}</Typography>
+                    <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                      {campaign?.description}
+                    </Typography>
                   </Box>
                 </Box>
               </Box>
