@@ -5,19 +5,6 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Skeleton from '@mui/material/Skeleton';
 
-const shimmerSx = {
-  bgcolor: 'rgba(145, 158, 171, 0.2)',
-  '&::after': {
-    background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent)',
-    animationDuration: '2.2s',
-    animationTimingFunction: 'ease-in-out',
-    animationDelay: '0s',
-  },
-  '@media (prefers-reduced-motion: reduce)': {
-    '&::after': { animation: 'none' },
-  },
-};
-
 function Bone({ variant = 'rounded', sx, ...other }) {
   return (
     <Skeleton
@@ -25,8 +12,8 @@ function Bone({ variant = 'rounded', sx, ...other }) {
       animation="wave"
       sx={{
         flexShrink: 0,
+        bgcolor: 'rgba(145, 158, 171, 0.2)',
         ...(variant === 'rounded' && { borderRadius: '6px' }),
-        ...shimmerSx,
         ...sx,
       }}
       {...other}

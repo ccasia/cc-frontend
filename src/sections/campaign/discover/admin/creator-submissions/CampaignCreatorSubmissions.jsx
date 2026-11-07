@@ -17,6 +17,7 @@ import SubmissionViewer from './submission-viewer/SubmissionViewer';
 import CreatorSubmissionGrid from './components/CreatorSubmissionGrid';
 import CreatorSubmissionsToolbar from './components/CreatorSubmissionsToolbar';
 import { groupByCreator, getFilterCounts, filterSubmissions } from './utils/utils';
+import { getSkeletonCount, writeCampaignCache } from '../components/campaign-cache';
 import CreatorSubmissionCardSkeleton from './components/CreatorSubmissionCardSkeleton';
 import useV4SubmissionListSocket from '../submissions/v4/shared/use-v4-submission-list-socket';
 import {
@@ -25,7 +26,8 @@ import {
   useCreatorSubmissionsStore,
 } from './store/use-creator-submissions-store';
 
-const CampaignCreatorSubmissions = ({ campaign }) => {
+// `campaignId` lets the loading frame size itself before the campaign arrives.
+const CampaignCreatorSubmissions = ({ campaign, campaignId = campaign?.id }) => {
   const { submissions, isPending, isError, mutateSubmissions } = useGetSubmissions(campaign?.id);
   const { user } = useAuthContext();
   const { socket } = useSocketContext();
@@ -57,6 +59,12 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
   }, [campaign?.id, hasClient]);
 
   useEffect(() => () => resetCreatorSubmissions(), []);
+
+  // Remember how many creator cards there are, so the next loading frame shows that many.
+  useEffect(() => {
+    if (isPending || isError || isFiltering || !campaign?.id) return;
+    writeCampaignCache(campaign.id, { submissionCreatorCount: creators.length });
+  }, [isPending, isError, isFiltering, campaign?.id, creators.length]);
 
   useV4SubmissionListSocket({
     socket,
@@ -104,7 +112,11 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
               gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${MIN_CARD_WIDTH}px), 1fr))`,
             }}
           >
-            {[...Array(6)].map((_, index) => (
+            {[
+              ...Array(
+                getSkeletonCount(campaignId, 'submissionCreatorCount', { fallback: 3, max: 6 })
+              ),
+            ].map((_, index) => (
               <CreatorSubmissionCardSkeleton key={index} />
             ))}
           </Box>
@@ -120,4 +132,5 @@ export default CampaignCreatorSubmissions;
 
 CampaignCreatorSubmissions.propTypes = {
   campaign: PropTypes.object,
+  campaignId: PropTypes.string,
 };

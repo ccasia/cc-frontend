@@ -5,7 +5,7 @@ import Box from '@mui/material/Box';
 
 // One underline that slides to the active tab, so a switch reads as one moving object.
 // It measures its own parent row: a parent's ref is not attached yet when this mounts.
-export default function CampaignTabIndicator({ activeKey }) {
+export default function CampaignTabIndicator({ activeKey, color = '#1340ff' }) {
   const barRef = useRef(null);
   const [rect, setRect] = useState(null);
   const [animate, setAnimate] = useState(false);
@@ -47,6 +47,7 @@ export default function CampaignTabIndicator({ activeKey }) {
     <Box
       ref={barRef}
       aria-hidden
+      data-boot-indicator
       sx={{
         position: 'absolute',
         top: 0,
@@ -54,13 +55,11 @@ export default function CampaignTabIndicator({ activeKey }) {
         m: '0 !important',
         width: '1px',
         height: '2px',
-        bgcolor: '#1340ff',
+        bgcolor: color,
         pointerEvents: 'none',
         transformOrigin: 'left',
         opacity: rect ? 1 : 0,
-        transform: rect
-          ? `translate(${rect.x}px, ${rect.y}px) scaleX(${rect.width})`
-          : 'scaleX(0)',
+        transform: rect ? `translate(${rect.x}px, ${rect.y}px) scaleX(${rect.width})` : 'scaleX(0)',
         // On-screen movement from tab to tab: ease-in-out, so the slide is visible end to end.
         transition: animate ? 'transform 250ms cubic-bezier(0.77, 0, 0.175, 1)' : 'none',
         '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
@@ -71,4 +70,5 @@ export default function CampaignTabIndicator({ activeKey }) {
 
 CampaignTabIndicator.propTypes = {
   activeKey: PropTypes.string,
+  color: PropTypes.string,
 };

@@ -4,13 +4,15 @@ import Button from '@mui/material/Button';
 
 const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';
 
-export default function CampaignTabButton({ label, active, onClick, sx }) {
+export default function CampaignTabButton({ label, value, active, onClick, sx }) {
   return (
     <Button
       disableRipple
       size="large"
       onClick={onClick}
       data-tab-active={active}
+      data-boot-tab={value}
+      data-boot-active={active}
       sx={[
         {
           px: 1,
@@ -56,6 +58,7 @@ export default function CampaignTabButton({ label, active, onClick, sx }) {
 
 CampaignTabButton.propTypes = {
   label: PropTypes.node,
+  value: PropTypes.string,
   active: PropTypes.bool,
   onClick: PropTypes.func,
   sx: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),

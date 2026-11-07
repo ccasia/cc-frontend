@@ -8,7 +8,7 @@ import {
   Box,
   Card,
   Grid,
-  Zoom,
+  Fade,
   Chip,
   Stack,
   Dialog,
@@ -38,6 +38,8 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 
 import PitchModal from './pitch-modal';
+
+const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';
 
 const BoxStyle = {
   border: '1px solid #e0e0e0',
@@ -315,7 +317,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
   return (
     <Grid container spacing={{ xs: 1, sm: 2 }}>
       <Grid item xs={12} sm={6} md={3}>
-        <Zoom in>
+        <Fade in timeout={200} easing={EASE_OUT}>
           <Box component={Card} p={3} flexGrow={1} sx={cardStyle}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Stack direction="row" alignItems="center" spacing={2}>
@@ -345,11 +347,11 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
               </Stack>
             </Stack>
           </Box>
-        </Zoom>
+        </Fade>
       </Grid>
 
       <Grid item xs={12} sm={6} md={3}>
-        <Zoom in>
+        <Fade in timeout={200} easing={EASE_OUT}>
           <Box component={Card} py={3} flexGrow={1} sx={cardStyle}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Stack direction="row" alignItems="center" spacing={2}>
@@ -375,11 +377,11 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
               </Stack>
             </Stack>
           </Box>
-        </Zoom>
+        </Fade>
       </Grid>
 
       <Grid item xs={12} sm={6} md={3}>
-        <Zoom in>
+        <Fade in timeout={200} easing={EASE_OUT}>
           <Box component={Card} py={3} sx={cardStyle}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Stack direction="row" alignItems="center" spacing={2}>
@@ -411,11 +413,11 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
               </Stack>
             </Stack>
           </Box>
-        </Zoom>
+        </Fade>
       </Grid>
 
       <Grid item xs={12} sm={6} md={3}>
-        <Zoom in>
+        <Fade in timeout={200} easing={EASE_OUT}>
           <Box component={Card} p={3} sx={cardStyle}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Stack direction="row" alignItems="center" spacing={2}>
@@ -441,14 +443,14 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
               </Stack>
             </Stack>
           </Box>
-        </Zoom>
+        </Fade>
       </Grid>
 
       <Grid container spacing={{ xs: 1, sm: 2 }}>
         <Grid item xs={12} md={6}>
           <Grid container direction="column" spacing={2}>
             <Grid item>
-              <Zoom in>
+              <Fade in timeout={200} easing={EASE_OUT}>
                 <Box sx={BoxStyle}>
                   <Box className="header">
                     <Box
@@ -694,10 +696,10 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                     )}
                   </Stack>
                 </Box>
-              </Zoom>
+              </Fade>
             </Grid>
             <Grid item>
-              <Zoom in>
+              <Fade in timeout={200} easing={EASE_OUT}>
                 <Box sx={BoxStyle}>
                   <Box className="header">
                     <Box
@@ -819,7 +821,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                     )}
                   </Stack>
                 </Box>
-              </Zoom>
+              </Fade>
             </Grid>
           </Grid>
         </Grid>
@@ -827,7 +829,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
         <Grid item xs={12} md={6}>
           <Grid container direction="column" spacing={2}>
             <Grid item>
-              <Zoom in>
+              <Fade in timeout={200} easing={EASE_OUT}>
                 <Box sx={BoxStyle}>
                   <Box className="header">
                     <Iconify
@@ -886,10 +888,10 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                     )}
                   </Box>
                 </Box>
-              </Zoom>
+              </Fade>
             </Grid>
             <Grid item>
-              <Zoom in>
+              <Fade in timeout={200} easing={EASE_OUT}>
                 <Box sx={BoxStyle}>
                   <Box className="header">
                     <Box
@@ -992,7 +994,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                     )}
                   </Stack>
                 </Box>
-              </Zoom>
+              </Fade>
             </Grid>
           </Grid>
         </Grid>
