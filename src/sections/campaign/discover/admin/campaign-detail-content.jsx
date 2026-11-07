@@ -209,7 +209,7 @@ const CampaignDetailContent = ({ campaign }) => {
               </Typography>
             </Box>
 
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
               {campaign?.description || 'No campaign description available.'}
             </Typography>
           </Box>

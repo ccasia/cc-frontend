@@ -35,6 +35,7 @@ import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
 
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
+import { dialogEnterSx } from 'src/sections/campaign/create/components/motion';
 
 import { CampaignLog } from '../../manage/list/CampaignLog';
 import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
@@ -42,7 +43,6 @@ import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
 // ----------------------------------------------------------------------
 
 export default function CampaignItem({
-  index,
   campaign,
   onView,
   onEdit,
@@ -50,6 +50,8 @@ export default function CampaignItem({
   status,
   pitchStatus,
   showAdmins = false,
+  highlighted = false,
+  onHighlightEnd,
 }) {
   const theme = useTheme();
   const smDown = useResponsive('down', 'sm');
@@ -63,7 +65,6 @@ export default function CampaignItem({
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [initialActivateDialogOpen, setInitialActivateDialogOpen] = useState(false);
-  const currentIndex = localStorage.getItem('lastOpenedIndex');
 
   // Handle menu open
   const handleClick = (event) => {
@@ -776,8 +777,11 @@ export default function CampaignItem({
       component={RouterLink}
       href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
       onClick={() => {
-        localStorage.setItem('lastOpenedIndex', String(index));
+        localStorage.setItem('lastOpenedCampaignId', String(campaign?.id));
         localStorage.removeItem('lastScrollPosition');
+      }}
+      onAnimationEnd={(event) => {
+        if (event.animationName === 'lastOpenedFade') onHighlightEnd?.();
       }}
       sx={{
         overflow: 'hidden',
@@ -787,7 +791,15 @@ export default function CampaignItem({
         bgcolor: 'background.default',
         borderRadius: '15px',
         border: '1.2px solid',
-        borderColor: Number(currentIndex) === index ? '#1340ff' : theme.palette.divider,
+        borderColor: theme.palette.divider,
+        // The campaign the user just came back from: blue for a moment, then fades
+        ...(highlighted && {
+          '@keyframes lastOpenedFade': {
+            from: { borderColor: '#1340ff' },
+            to: { borderColor: theme.palette.divider },
+          },
+          animation: 'lastOpenedFade 600ms ease 1600ms backwards',
+        }),
         position: 'relative',
         pb: 1.5,
         mb: -0.5,
@@ -845,6 +857,7 @@ export default function CampaignItem({
               p: 4,
               m: 2,
               height: '97vh',
+              ...dialogEnterSx,
               overflow: 'hidden',
               ...(smDown && {
                 height: 1,
@@ -880,7 +893,6 @@ export default function CampaignItem({
 }
 
 CampaignItem.propTypes = {
-  index: PropTypes.number,
   onDelete: PropTypes.func,
   onEdit: PropTypes.func,
   onView: PropTypes.func,
@@ -888,4 +900,6 @@ CampaignItem.propTypes = {
   status: PropTypes.bool,
   pitchStatus: PropTypes.string,
   showAdmins: PropTypes.bool,
+  highlighted: PropTypes.bool,
+  onHighlightEnd: PropTypes.func,
 };

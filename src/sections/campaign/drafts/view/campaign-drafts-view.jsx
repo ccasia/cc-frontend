@@ -23,6 +23,7 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
+import { dialogEnterSx } from 'src/sections/campaign/create/components/motion';
 
 import getDraftName from '../get-draft-name';
 import DraftListItem from '../draft-list-item';
@@ -278,6 +279,7 @@ export default function CampaignDraftsView() {
             p: 4,
             m: 2,
             height: '97vh',
+            ...dialogEnterSx,
             overflow: 'hidden',
             ...(smDown && { height: 1, m: 0 }),
           },

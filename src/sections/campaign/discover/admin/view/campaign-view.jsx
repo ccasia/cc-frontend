@@ -45,8 +45,11 @@ import CampaignTabs from 'src/components/campaign/CampaignTabs';
 import { SECONDARY_ACTION_SX } from 'src/components/campaign/action-button-styles';
 
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
+import { dialogEnterSx } from 'src/sections/campaign/create/components/motion';
 
 import CampaignItem from '../campaign-item';
+import CampaignCardMotion, { useCardShuffle } from '../components/campaign-card-motion';
+import { clearPublished, usePublishedCampaign } from '../store/use-published-campaign';
 
 const CampaignView = () => {
   const settings = useSettingsContext();
@@ -78,6 +81,12 @@ const CampaignView = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const hasRestoredRef = useRef(false);
   const isRestoringScroll = useRef(null);
+
+  // The campaign the user opened before coming back here. It is used once:
+  // the list scrolls to it and its border shows briefly, then fades.
+  const [returnToId] = useState(() => localStorage.getItem('lastOpenedCampaignId'));
+  const [highlightId, setHighlightId] = useState(null);
+  const returnHandledRef = useRef(false);
 
   // Fetch admins list for filter dropdown - only when in "All" tab
   // Using /api/user/alladmins endpoint which is accessible by all admins (not just superadmin)
@@ -131,8 +140,12 @@ const CampaignView = () => {
   // letting SWR sit on a 403.
   const { drafts, mutate: mutateDrafts } = useGetCampaignDrafts(isSuperAdmin, user?.id);
 
+  // When the create dialog closed, so a just-published card waits for it to fade first
+  const createClosedAtRef = useRef(0);
+
   // The count goes stale after autosave, create, or discard.
   const handleCloseCreate = () => {
+    createClosedAtRef.current = performance.now();
     create.onFalse();
     mutateDrafts();
   };
@@ -197,6 +210,31 @@ const CampaignView = () => {
   });
 
   const virtualRows = rowVirtualizer.getVirtualItems();
+
+  // A just-published campaign: bring the top of the list into view, so the new card
+  // is seen arriving. Clear it if the card never shows (e.g. it went to Pending).
+  const publishedId = usePublishedCampaign((state) => state.publishedId);
+  useEffect(() => {
+    if (!publishedId) return undefined;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    mainRef?.current?.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+    const id = setTimeout(clearPublished, 10000);
+    return () => clearTimeout(id);
+  }, [publishedId, mainRef]);
+  const enterDelayMs = Math.max(0, 300 - (performance.now() - createClosedAtRef.current));
+
+  // The other cards slide over to make room for the new one
+  const listRef = useRef(null);
+  const campaignIds = useMemo(() => dataFiltered.map((campaign) => campaign?.id), [dataFiltered]);
+  useCardShuffle({
+    listRef,
+    ids: campaignIds,
+    columns,
+    rowStride: virtualRows.length > 1 ? virtualRows[1].start - virtualRows[0].start : 386,
+    active: !!publishedId,
+    delayMs: enterDelayMs,
+  });
+
   const isLoadingMore = isValidating && dataFiltered && dataFiltered?.length > size;
   const isReachingEnd = data && data[data.length - 1]?.metaData?.lastCursor === null;
 
@@ -312,12 +350,7 @@ const CampaignView = () => {
 
     const handleScroll = () => {
       // Don't save scroll position while we're restoring it
-      if (isRestoringScroll.current) {
-        if (localStorage.getItem('lastOpenedIndex')) {
-          localStorage.removeItem('lastOpenedIndex');
-        }
-        return;
-      }
+      if (isRestoringScroll.current) return;
 
       localStorage.setItem('lastScrollPosition', scrollElement.scrollTop.toString());
     };
@@ -335,17 +368,21 @@ const CampaignView = () => {
     if (!dataFiltered.length) return;
 
     const lastScrollPosition = Number(localStorage.getItem('lastScrollPosition'));
-    const lastOpenedIndex = Number(localStorage.getItem('lastOpenedIndex'));
+    // Only on the first load with data, so a later page load cannot jump the list
+    let lastOpenedIndex = -1;
+    if (!returnHandledRef.current) {
+      returnHandledRef.current = true;
+      localStorage.removeItem('lastOpenedCampaignId');
+      if (returnToId) {
+        lastOpenedIndex = dataFiltered.findIndex((campaign) => String(campaign?.id) === returnToId);
+      }
+      if (lastOpenedIndex >= 0) setHighlightId(returnToId);
+    }
 
     requestAnimationFrame(() => {
       isRestoringScroll.current = true;
 
-      if (
-        lastOpenedIndex &&
-        !Number.isNaN(lastOpenedIndex) &&
-        lastOpenedIndex >= 0 &&
-        lastOpenedIndex < dataFiltered.length
-      ) {
+      if (lastOpenedIndex >= 0) {
         // eslint-disable-next-line no-nested-ternary
         const cols = lgUp ? 3 : mdUp ? 2 : 1;
         const rowIndex = Math.floor(lastOpenedIndex / cols);
@@ -363,7 +400,7 @@ const CampaignView = () => {
         isRestoringScroll.current = false;
       }, 50);
     });
-  }, [dataFiltered, lastCampaignOpenId, lgUp, mainRef, mdUp, rowVirtualizer, scrollTop]);
+  }, [dataFiltered, lastCampaignOpenId, lgUp, mainRef, mdUp, rowVirtualizer, scrollTop, returnToId]);
 
   const { scrollY } = useScroll({ container: mainRef });
   const [showModal, setShowModal] = useState(false);
@@ -1122,6 +1159,7 @@ const CampaignView = () => {
       )}
 
       <div
+        ref={listRef}
         style={{
           height: `${rowVirtualizer.getTotalSize()}px`,
           position: 'relative',
@@ -1159,14 +1197,22 @@ const CampaignView = () => {
                 }
                 sx={{ mt: 2 }}
               >
-                {rowCampaigns?.map((a, index) => (
-                  <CampaignItem
-                    index={index + startIndex}
+                {rowCampaigns?.map((a) => (
+                  <CampaignCardMotion
                     key={a?.id}
-                    campaign={a}
-                    status={a?.status}
-                    showAdmins={showAllCampaigns}
-                  />
+                    id={a?.id}
+                    isNew={a?.id === publishedId}
+                    delayMs={enterDelayMs}
+                    onEntered={clearPublished}
+                  >
+                    <CampaignItem
+                      campaign={a}
+                      status={a?.status}
+                      showAdmins={showAllCampaigns}
+                      highlighted={String(a?.id) === highlightId}
+                      onHighlightEnd={() => setHighlightId(null)}
+                    />
+                  </CampaignCardMotion>
                 ))}
               </Box>
             </div>
@@ -1198,6 +1244,7 @@ const CampaignView = () => {
             p: 4,
             m: 2,
             height: '97vh',
+            ...dialogEnterSx,
             overflow: 'hidden',
             ...(smDown && {
               height: 1,
