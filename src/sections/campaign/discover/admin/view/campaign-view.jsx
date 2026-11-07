@@ -9,8 +9,10 @@ import {
   useMotionValueEvent,
 } from 'framer-motion';
 import React, {
+  lazy,
   useRef,
   useMemo,
+  Suspense,
   useState,
   useEffect,
   useReducer,
@@ -62,7 +64,6 @@ import { useSettingsContext } from 'src/components/settings';
 import CampaignTabs from 'src/components/campaign/CampaignTabs';
 import { SECONDARY_ACTION_SX } from 'src/components/campaign/action-button-styles';
 
-import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 import { dialogEnterSx } from 'src/sections/campaign/create/components/motion';
 
 import CampaignItem from '../campaign-item';
@@ -74,6 +75,10 @@ import CampaignItemSkeleton from '../components/campaign-item-skeleton';
 import { readCountCache, writeCountCache } from '../components/count-cache';
 import { clearPublished, usePublishedCampaign } from '../store/use-published-campaign';
 import CampaignCardMotion, { useCardShuffle } from '../components/campaign-card-motion';
+
+// The form and its PDF libraries load when the browser is idle or on hover, not with the list.
+const loadCreateForm = () => import('src/sections/campaign/create/form-v2');
+const CreateCampaignFormV2 = lazy(loadCreateForm);
 
 const PAGE_SIZE = 12;
 // How far the list may page to find the campaign the user is coming back to.
@@ -173,9 +178,8 @@ const CampaignView = () => {
     if (isPageLoad) localStorage.setItem('lastScrollPosition', '0');
   }, [isPageLoad]);
 
-  const lastCampaignOpenId = localStorage.getItem('lastCampaignOpenId');
-  const pageSizing = localStorage.getItem('pageSizing');
-  const scrollTop = localStorage.getItem('scrollTop');
+  const [lastCampaignOpenId] = useState(() => localStorage.getItem('lastCampaignOpenId'));
+  const [scrollTop] = useState(() => localStorage.getItem('scrollTop'));
 
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get('q') ?? '';
@@ -487,25 +491,24 @@ const CampaignView = () => {
   const isShowingStaleList = !!data && data[0]?.key !== listKey;
   const listFailed = !!error && !isValidating && (!data || isShowingStaleList);
   // The list for the current tab and search has not arrived yet
-  const isWaiting =
-    !listFailed &&
-    ((isLoading && !data) ||
-      isShowingStaleList ||
-      seekingReturn ||
-      search.query.trim() !== debouncedQuery.trim());
+  const isLoadingList =
+    !listFailed && ((isLoading && !data) || isShowingStaleList || seekingReturn);
+  // Typing alone keeps the current cards as they are: no dim, no skeleton.
+  const isTyping = search.query.trim() !== debouncedQuery.trim();
+  const isWaiting = isLoadingList || (!listFailed && isTyping);
   // With no data at mount the skeleton shows at once, so it stays until the list is ready
   // instead of a first page flashing between two skeletons.
   const [skeletonDue, setSkeletonDue] = useState(() => !data);
   useEffect(() => {
-    if (!isWaiting) {
+    if (!isLoadingList) {
       setSkeletonDue(false);
       return undefined;
     }
     const timer = setTimeout(() => setSkeletonDue(true), SKELETON_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [isWaiting]);
+  }, [isLoadingList]);
   // With nothing to show yet (first load) the skeleton comes at once
-  const showSkeleton = isWaiting && (!data || skeletonDue);
+  const showSkeleton = isLoadingList && (!data || skeletonDue);
   const hideList = showSkeleton || listFailed;
   // A half-loaded list is not saved, so a second refresh while paging keeps the first view.
   viewRef.current = {
@@ -541,9 +544,16 @@ const CampaignView = () => {
     ? (rowVirtualizer.getVirtualItemForOffset(savedView.offset)?.index ?? 0) * columns
     : 0;
 
+  // Warm only the covers on screen and the next two rows, not every loaded campaign.
+  const firstRowIndex = virtualRows[0]?.index ?? 0;
+  const lastRowIndex = virtualRows[virtualRows.length - 1]?.index ?? 0;
   useEffect(() => {
-    preloadCampaignImages(dataFiltered.map((c) => c?.campaignBrief?.images?.[0]));
-  }, [dataFiltered]);
+    preloadCampaignImages(
+      dataFiltered
+        .slice(firstRowIndex * columns, (lastRowIndex + 3) * columns)
+        .map((c) => c?.campaignBrief?.images?.[0])
+    );
+  }, [dataFiltered, firstRowIndex, lastRowIndex, columns]);
   const isReachingEnd = data && data[data.length - 1]?.metaData?.lastCursor === null;
 
   useEffect(() => {
@@ -640,6 +650,16 @@ const CampaignView = () => {
       socket.off('campaignStatus', refresh);
     };
   }, [mutate, mutateStatusCounts]);
+
+  // Once the list has loaded, warm the New Campaign form in idle time.
+  const hasListData = !!data;
+  useEffect(() => {
+    if (!hasListData) return undefined;
+    const idle = window.requestIdleCallback ?? ((cb) => setTimeout(cb, 1500));
+    const cancel = window.cancelIdleCallback ?? clearTimeout;
+    const handle = idle(() => loadCreateForm(), { timeout: 4000 });
+    return () => cancel(handle);
+  }, [hasListData]);
 
   // Use independent datasets for counts so they persist regardless of the current tab
   // With no cached or fresh data a count stays undefined, so the tabs never show a false (0)
@@ -745,19 +765,25 @@ const CampaignView = () => {
     const scrollElement = mainRef.current;
     if (!scrollElement) return;
 
+    // Storage is written once on leave, not on every scroll event. Leaving through a
+    // card clears it on purpose (the saved view restores that case), so keep it cleared.
+    const persist = () => {
+      if (!isRestoringScroll.current && !localStorage.getItem('lastOpenedCampaignId')) {
+        localStorage.setItem('lastScrollPosition', String(scrollOffsetRef.current));
+      }
+    };
     const handleScroll = () => {
       scrollOffsetRef.current = scrollElement.scrollTop;
-      // Don't save scroll position while we're restoring it
-      if (isRestoringScroll.current) return;
-
-      localStorage.setItem('lastScrollPosition', scrollElement.scrollTop.toString());
     };
 
     scrollElement.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('pagehide', persist);
 
     // eslint-disable-next-line consistent-return
     return () => {
+      persist();
       scrollElement.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('pagehide', persist);
     };
   }, [mainRef]);
 
@@ -849,50 +875,21 @@ const CampaignView = () => {
                   color: 'white',
                 }}
               >
-                <Button
-                  variant="outlined"
-                  sx={{ borderRadius: 10, borderColor: filter === 'active' && 'white' }}
-                  onClick={() => {
-                    handleChangeTab('active');
-                    setShowAllCampaigns(false);
-                    setSelectedAdmin(null);
-                  }}
-                >
-                  Active
-                </Button>
-                <Button
-                  variant="outlined"
-                  sx={{ borderRadius: 10, borderColor: filter === 'pending' && 'white' }}
-                  onClick={() => {
-                    handleChangeTab('pending');
-                    setShowAllCampaigns(false);
-                    setSelectedAdmin(null);
-                  }}
-                >
-                  Pending
-                </Button>
-                <Button
-                  variant="outlined"
-                  sx={{ borderRadius: 10, borderColor: filter === 'completed' && 'white' }}
-                  onClick={() => {
-                    handleChangeTab('completed');
-                    setShowAllCampaigns(false);
-                    setSelectedAdmin(null);
-                  }}
-                >
-                  Completed
-                </Button>
-                <Button
-                  variant="outlined"
-                  sx={{ borderRadius: 10, borderColor: filter === 'paused' && 'white' }}
-                  onClick={() => {
-                    handleChangeTab('paused');
-                    setShowAllCampaigns(false);
-                    setSelectedAdmin(null);
-                  }}
-                >
-                  Paused
-                </Button>
+                {/* Same tabs as the main row, so roles that cannot see Pending do not get it here */}
+                {filterOptions.map((option) => (
+                  <Button
+                    key={option.value}
+                    variant="outlined"
+                    aria-pressed={option.value === activeFilterValue}
+                    sx={{
+                      borderRadius: 10,
+                      borderColor: option.value === activeFilterValue && 'white',
+                    }}
+                    onClick={() => handleSelectFilter(option.value)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
               </Box>
             </m.div>
           )}
@@ -1149,6 +1146,8 @@ const CampaignView = () => {
 
               <Button
                 onClick={create.onTrue}
+                onPointerEnter={loadCreateForm}
+                onFocus={loadCreateForm}
                 startIcon={<Iconify icon="eva:plus-fill" width={20} height={20} />}
                 disabled={isDisabled}
                 sx={{
@@ -1166,7 +1165,9 @@ const CampaignView = () => {
                   '&:hover': {
                     bgcolor: isDisabled ? '#e0e0e0' : '#203ff5',
                     boxShadow: `inset 0px -3px 0px ${isDisabled ? '#bdbdbd' : '#102387'}`,
-                    opacity: isDisabled ? 1 : 0.9,
+                  },
+                  '@media (hover: hover) and (pointer: fine)': {
+                    '&:hover': { opacity: isDisabled ? 1 : 0.9 },
                   },
                   '&:active': {
                     transform: 'translateY(2px)',
@@ -1179,7 +1180,9 @@ const CampaignView = () => {
             </Box>
 
             <IconButton
+              aria-label="New campaign"
               onClick={create.onTrue}
+              onPointerDown={loadCreateForm}
               sx={{
                 display: { xs: 'flex', sm: 'none' },
                 position: 'fixed',
@@ -1208,6 +1211,7 @@ const CampaignView = () => {
           <Box
             component={m.div}
             layout="position"
+            layoutDependency={showAllCampaigns}
             transition={{ duration: 0.2, ease: EASE_OUT }}
             sx={{
               flex: 1,
@@ -1491,7 +1495,7 @@ const CampaignView = () => {
             display: hideList ? 'none' : 'block',
             // While the next list loads, the old cards stay put and dim, and cannot be
             // clicked. The dim waits a moment, so a fast load swaps the cards with no dip.
-            ...(isWaiting
+            ...(isLoadingList
               ? { opacity: 0.5, pointerEvents: 'none', transition: 'opacity 150ms ease 100ms' }
               : { opacity: 1, transition: 'none' }),
           }}
@@ -1599,7 +1603,9 @@ const CampaignView = () => {
           scroll="paper"
           open={create.value}
         >
-          <CreateCampaignFormV2 onClose={handleCloseCreate} mutate={mutate} />
+          <Suspense fallback={null}>
+            <CreateCampaignFormV2 onClose={handleCloseCreate} mutate={mutate} />
+          </Suspense>
         </Dialog>
       </PageEnter>
     </Container>

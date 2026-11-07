@@ -4,6 +4,7 @@ import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 import React, { useMemo, useState, useEffect } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import {
   Box,
   Card,
@@ -16,7 +17,6 @@ import {
   Button,
   Divider,
   TextField,
-  keyframes,
   Typography,
   IconButton,
   DialogTitle,
@@ -98,16 +98,6 @@ const findLatestPackage = (packages) => {
   return latestPackage;
 };
 
-const campaignCreditAnimation = keyframes`
-  from { width: 0 }
-  to { width: 80 }
-`;
-
-const closecampaignCreditAnimation = keyframes`
-  from { width: 80 }
-  to { width: 0 }
-`;
-
 const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = false }) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
@@ -132,7 +122,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
     creditsPending: null,
   });
 
-  const [animation, setCreditAnimation] = useState(undefined);
+  const [savingCredits, setSavingCredits] = useState(false);
   const [, setError] = useState();
   const approveCreditModal = useBoolean();
   const { mutate } = useGetCampaignById(campaign?.id);
@@ -200,7 +190,6 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
       creditsUtilized: null,
       creditsPending: null,
     });
-    setCreditAnimation(campaignCreditAnimation);
     setIsEditingCredit(true);
   };
 
@@ -240,7 +229,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
     approveCreditModal.onTrue();
   };
 
-  const handleCancelCreditChanges = async () => {
+  const handleCancelCreditChanges = () => {
     setError();
     setEditCredits({
       campaignCredits: null,
@@ -252,12 +241,19 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
       creditsUtilized: null,
       creditsPending: null,
     });
-    setCreditAnimation(closecampaignCreditAnimation);
-    await new Promise((resolve) => setTimeout(resolve, 500));
     setIsEditingCredit(false);
   };
 
+  // Enter saves, Escape cancels; letters and signs cannot be typed in the number fields.
+  const handleCreditKeyDown = (event) => {
+    if (['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();
+    if (event.key === 'Enter') handleCreditChangesConfirmation();
+    if (event.key === 'Escape') handleCancelCreditChanges();
+  };
+
   const handleCreditApproval = async () => {
+    if (savingCredits) return;
+    setSavingCredits(true);
     try {
       // Use the new endpoint that allows updating all credit fields
       const res = await axiosInstance.patch('/api/campaign/updateAllCredits', {
@@ -280,6 +276,8 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
     } catch (err) {
       console.error('Credit approval error:', err);
       toast.error(err?.response?.data?.message || 'Error updating credits');
+    } finally {
+      setSavingCredits(false);
     }
   };
 
@@ -519,15 +517,9 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                               onChange={(e) =>
                                 handleCreditFieldChange('campaignCredits', e.target.value)
                               }
-                              onKeyDown={(e) => {
-                                if (['e', 'E', '+', '-'].includes(e.key)) {
-                                  e.preventDefault();
-                                }
-                              }}
-                              sx={{
-                                width: 100,
-                                animation: `${animation} 0.5s ease-in-out`,
-                              }}
+                              onKeyDown={handleCreditKeyDown}
+                              autoFocus
+                              sx={{ width: 100 }}
                               error={!!creditErrors.campaignCredits}
                               helperText={creditErrors.campaignCredits}
                             />
@@ -573,11 +565,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                               onChange={(e) =>
                                 handleCreditFieldChange('creditsUtilized', e.target.value)
                               }
-                              onKeyDown={(e) => {
-                                if (['e', 'E', '+', '-'].includes(e.key)) {
-                                  e.preventDefault();
-                                }
-                              }}
+                              onKeyDown={handleCreditKeyDown}
                               sx={{ width: 100 }}
                               error={!!creditErrors.creditsUtilized}
                               helperText={creditErrors.creditsUtilized}
@@ -615,11 +603,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                               onChange={(e) =>
                                 handleCreditFieldChange('creditsPending', e.target.value)
                               }
-                              onKeyDown={(e) => {
-                                if (['e', 'E', '+', '-'].includes(e.key)) {
-                                  e.preventDefault();
-                                }
-                              }}
+                              onKeyDown={handleCreditKeyDown}
                               sx={{ width: 100 }}
                               error={!!creditErrors.creditsPending}
                               helperText={creditErrors.creditsPending}
@@ -671,6 +655,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                             <IconButton
                               size="small"
                               color="error"
+                              aria-label="Cancel credit changes"
                               onClick={handleCancelCreditChanges}
                             >
                               <Iconify icon="charm:cross" />
@@ -678,6 +663,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
                             <IconButton
                               size="small"
                               color="success"
+                              aria-label="Save credit changes"
                               onClick={handleCreditChangesConfirmation}
                               disabled={Object.values(creditErrors).some((err) => err !== null)}
                             >
@@ -1017,7 +1003,7 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
 
       <Dialog
         open={approveCreditModal.value}
-        onClose={approveCreditModal.onFalse}
+        onClose={savingCredits ? undefined : approveCreditModal.onFalse}
         PaperProps={{
           sx: {
             borderRadius: 1,
@@ -1061,20 +1047,22 @@ const CampaignOverview = ({ campaign, onUpdate, isDisabled: propIsDisabled = fal
         <DialogActions>
           <Button
             onClick={approveCreditModal.onFalse}
+            disabled={savingCredits}
             variant="outlined"
             size="small"
             sx={{ borderRadius: 0.5 }}
           >
             Cancel
           </Button>
-          <Button
+          <LoadingButton
             onClick={handleCreditApproval}
+            loading={savingCredits}
             variant="contained"
             size="small"
             sx={{ borderRadius: 0.5 }}
           >
             Confirm
-          </Button>
+          </LoadingButton>
         </DialogActions>
       </Dialog>
 
