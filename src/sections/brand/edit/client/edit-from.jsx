@@ -17,14 +17,13 @@ const CompanyEditForm = ({ company, fieldsArray, methods }) => {
   const handleDrop = useCallback(
     (acceptedFiles) => {
       const file = acceptedFiles[0];
+      if (!file) return;
 
       const newFile = Object.assign(file, {
         preview: URL.createObjectURL(file),
       });
 
-      if (file) {
-        setValue('companyLogo', newFile, { shouldValidate: true });
-      }
+      setValue('companyLogo', newFile, { shouldValidate: true, shouldDirty: true });
     },
     [setValue]
   );
