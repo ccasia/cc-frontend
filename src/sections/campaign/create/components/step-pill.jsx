@@ -29,6 +29,19 @@ const lookSx = {
     fontWeight: 500,
     transition: 'color 150ms ease, transform 140ms ease',
   },
+  // Visited but not filled in: no tick, but a darker label than a locked step, since
+  // it can still be clicked
+  reached: {
+    bgcolor: '#fff',
+    borderColor: '#E7E7E7',
+    boxShadow: '0px -1.5px 0px 0px #E7E7E7 inset',
+    color: '#636366',
+    fontWeight: 500,
+    transition: 'color 150ms ease, border-color 150ms ease, transform 140ms ease',
+    '@media (hover: hover) and (pointer: fine)': {
+      '&:hover:not(:disabled)': { borderColor: '#C7C7CC', color: '#231F20' },
+    },
+  },
   current: { fontWeight: 600 },
 };
 
@@ -42,7 +55,7 @@ const overlaySx = {
   transition: 'none',
 };
 
-// `look` is done/upcoming for a real button, or the real state for the highlight copy
+// `look` is done/reached/upcoming for a real button, or the real state for the highlight copy
 export const stepButtonSx = (look, clickable, overlay = false) => ({
   appearance: 'none',
   font: 'inherit',
@@ -144,8 +157,8 @@ export default function StepPill({ label, state, look, clickable, onClick, overl
 
 StepPill.propTypes = {
   label: PropTypes.string.isRequired,
-  state: PropTypes.oneOf(['current', 'done', 'upcoming']).isRequired,
-  look: PropTypes.oneOf(['done', 'upcoming']),
+  state: PropTypes.oneOf(['current', 'done', 'reached', 'upcoming']).isRequired,
+  look: PropTypes.oneOf(['done', 'reached', 'upcoming']),
   clickable: PropTypes.bool,
   onClick: PropTypes.func,
   overlay: PropTypes.bool,

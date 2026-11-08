@@ -45,7 +45,8 @@ import { getCreditLimitError } from './utils/campaign-credits';
 import useCampaignDraftAutosave from './hooks/use-campaign-draft-autosave';
 import { diffUserContent, diffFromBaseline } from './utils/has-user-content';
 import { markPublished } from '../discover/admin/store/use-published-campaign';
-import { StepProgress, StepProgressCompact } from './components/step-progress';
+import LiveStepProgress from './components/live-step-progress';
+import { StepProgressCompact } from './components/step-progress';
 import { registerFailedNext, resetCampaignCreate } from './store/use-campaign-create-store';
 import {
   isInFrontSection,
@@ -1462,7 +1463,9 @@ function CreateCampaignFormV2({
               alignItems: 'center',
             }}
           >
-            <StepProgress
+            <LiveStepProgress
+              control={methods.control}
+              getSchemaForStep={getSchemaForStep}
               activeStep={activeStep}
               onBackStepClick={handleBackSectionStepClick}
               onFrontStepClick={handleFrontSectionStepClick}
