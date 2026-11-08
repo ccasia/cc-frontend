@@ -9,8 +9,8 @@ import { Box, Stack, Button, Dialog, IconButton, Typography, DialogContent } fro
 import Iconify from 'src/components/iconify';
 import {
   DIALOG_PAPER_SX,
+  DISCARD_ACTION_SX,
   PRIMARY_ACTION_SX,
-  SECONDARY_ACTION_SX,
 } from 'src/components/campaign/action-button-styles';
 
 const BODY_FONT = 'InterDisplay';
@@ -57,23 +57,6 @@ const CLOSE_SX = {
   },
   '&:active': { transform: 'scale(0.92)' },
   '&.Mui-disabled': { color: '#636366' },
-};
-
-// White with red text at rest; a light red tint on hover marks it as the destructive choice
-const DISCARD_SX = {
-  ...SECONDARY_ACTION_SX,
-  color: RED,
-  '&:hover': {
-    bgcolor: '#FFF1EF',
-    border: '1px solid #F5C6BF',
-    boxShadow: 'inset 0px -3px 0px #F5C6BF',
-  },
-  '&:active': {
-    bgcolor: '#FDE4E0',
-    border: '1px solid #F5C6BF',
-    boxShadow: 'inset 0px -1px 0px #F5C6BF',
-    transform: 'translateY(2px)',
-  },
 };
 
 const TRACK_SX = { width: '100%', height: 4, borderRadius: 2, overflow: 'hidden' };
@@ -341,7 +324,7 @@ export default function CloseDraftDialog({ open, onKeepEditing, onSaveDraft, onD
                       fullWidth
                       onClick={() => setPhase('discardPending')}
                       disabled={busy}
-                      sx={DISCARD_SX}
+                      sx={DISCARD_ACTION_SX}
                     >
                       Discard this Campaign
                     </Button>
@@ -426,7 +409,7 @@ export default function CloseDraftDialog({ open, onKeepEditing, onSaveDraft, onD
                       fullWidth
                       onClick={runDiscard}
                       loading={isDiscarding}
-                      sx={DISCARD_SX}
+                      sx={DISCARD_ACTION_SX}
                     >
                       Discard Now
                     </LoadingButton>
