@@ -352,10 +352,18 @@ export default function useCampaignDraftAutosave({
     await clearCampaignDraftSnapshots(userId, id);
   }, [userId]);
 
+  // The form closes after a discard, so autosave stays off. Otherwise the reset that
+  // follows (and fields that re-fill on it) would save a new, empty draft.
   const discardDraft = useCallback(async () => {
+    frozenRef.current = true;
     await drain().catch(() => {});
     const id = draftRef.current?.id;
-    if (id) await axiosInstance.delete(endpoints.campaignCreationDrafts.delete(id));
+    try {
+      if (id) await axiosInstance.delete(endpoints.campaignCreationDrafts.delete(id));
+    } catch (error) {
+      frozenRef.current = false;
+      throw error;
+    }
     await clearLocalDraft(id);
     draftRef.current = null;
     latestRef.current = null;

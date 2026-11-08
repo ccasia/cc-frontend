@@ -21,17 +21,22 @@ import {
 const LOCKED_HINT = 'Finish the earlier steps first';
 const NEXT_STEPS_INDEX = backSectionLabels.length;
 
-// A step already reached stays done after going back, so it keeps its tick and can be
-// clicked to jump forward to it again
-const stateOf = (index, current, reached) => {
+// A step already reached stays clickable after going back, so it can be jumped to again.
+// It gets the tick only when its required fields are filled; otherwise it is 'reached'.
+const stateOf = (index, current, reached, complete = true) => {
   if (index === current) return 'current';
-  return index < current || index <= reached ? 'done' : 'upcoming';
+  if (index > current && index > reached) return 'upcoming';
+  return complete ? 'done' : 'reached';
 };
+
+const isClickable = (state) => state === 'done' || state === 'reached';
 
 export function StepProgress({
   activeStep,
   reachedBack = -1,
   reachedFront = -1,
+  completeBack = [],
+  completeFront = [],
   onBackStepClick,
   onFrontStepClick,
   onNextStepsClick,
@@ -42,7 +47,7 @@ export function StepProgress({
   const backRail = Math.max(backIndex, reachedBack);
   const frontRail = Math.max(frontIndex, reachedFront);
   const nextStepsState = stateOf(NEXT_STEPS_INDEX, backIndex, reachedBack);
-  const nextStepsClickable = nextStepsState === 'done';
+  const nextStepsClickable = isClickable(nextStepsState);
 
   // A real button never looks "current": it keeps its last done/upcoming look, and the
   // highlight's copy shows the current step on top of it
@@ -59,7 +64,7 @@ export function StepProgress({
         label={label}
         state={state}
         look={overlay ? undefined : lookOf(label, state)}
-        clickable={state === 'done'}
+        clickable={isClickable(state)}
         onClick={onClick}
         overlay={overlay}
       />
@@ -119,7 +124,7 @@ export function StepProgress({
           <Fragment key={label}>
             {renderPill(overlay, {
               label,
-              state: stateOf(index, backIndex, reachedBack),
+              state: stateOf(index, backIndex, reachedBack, completeBack[index] ?? true),
               onClick: () => onBackStepClick(index),
             })}
             <StepConnector filled={index < backRail} hidden={overlay} />
@@ -134,7 +139,7 @@ export function StepProgress({
             <StepConnector filled={index <= frontRail} hidden={overlay} />
             {renderPill(overlay, {
               label,
-              state: stateOf(index, frontIndex, reachedFront),
+              state: stateOf(index, frontIndex, reachedFront, completeFront[index] ?? true),
               onClick: () => onFrontStepClick(index),
             })}
           </Fragment>
@@ -161,6 +166,8 @@ StepProgress.propTypes = {
   activeStep: PropTypes.number.isRequired,
   reachedBack: PropTypes.number,
   reachedFront: PropTypes.number,
+  completeBack: PropTypes.arrayOf(PropTypes.bool),
+  completeFront: PropTypes.arrayOf(PropTypes.bool),
   onBackStepClick: PropTypes.func.isRequired,
   onFrontStepClick: PropTypes.func.isRequired,
   onNextStepsClick: PropTypes.func.isRequired,

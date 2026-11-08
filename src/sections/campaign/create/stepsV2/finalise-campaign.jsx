@@ -212,7 +212,9 @@ const optionLeadSx = {
   flexShrink: 0,
   display: 'grid',
   placeItems: 'center',
-  borderRadius: '6px',
+  borderRadius: '50%',
+  border: '1px solid #E7E7E7',
+  boxSizing: 'border-box',
   fontSize: 12,
   fontWeight: 600,
   // Only the letter fallback gets a fill; logos keep their own background
@@ -232,6 +234,8 @@ const chipAvatarSx = {
   height: '20px !important',
   ml: '5px !important',
   fontSize: '11px !important',
+  border: '1px solid #E7E7E7',
+  boxSizing: 'border-box',
   // Only the letter fallback gets a fill; logos keep their own background
   '&.MuiAvatar-colorDefault': { bgcolor: '#EBEBEB', color: '#636366 !important' },
 };
@@ -470,11 +474,7 @@ const FinaliseCampaign = ({
                 <Chip
                   label={picked.name}
                   avatar={
-                    <BrandLogoAvatar
-                      src={picked.logo}
-                      alt=""
-                      sx={{ ...chipAvatarSx, borderRadius: '4px' }}
-                    >
+                    <BrandLogoAvatar src={picked.logo} alt="" sx={chipAvatarSx}>
                       {picked.name.charAt(0)}
                     </BrandLogoAvatar>
                   }
@@ -490,7 +490,7 @@ const FinaliseCampaign = ({
       renderOption={({ key, ...props }, option) => (
         <li key={option?.id ?? `new-${option.inputValue}`} {...props}>
           {option.inputValue ? (
-            <Box sx={{ ...optionLeadSx, color: BLUE, bgcolor: '#F5F7FF' }}>
+            <Box sx={{ ...optionLeadSx, color: BLUE, bgcolor: '#F5F7FF', borderColor: '#DCE3FF' }}>
               <Iconify icon="eva:plus-fill" width={16} />
             </Box>
           ) : (
@@ -733,7 +733,6 @@ const FinaliseCampaign = ({
                     alt={option?.name}
                     sx={{
                       ...optionLeadSx,
-                      borderRadius: '50%',
                       bgcolor: '#EBEBEB',
                       color: '#636366',
                     }}
