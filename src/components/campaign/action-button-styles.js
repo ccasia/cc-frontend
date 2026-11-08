@@ -101,6 +101,24 @@ export const DANGER_ACTION_SX = {
   ...STILL_PRESS,
 };
 
+/** White with red text; a light red tint on hover marks it as the destructive choice. */
+export const DISCARD_ACTION_SX = {
+  ...SECONDARY_ACTION_SX,
+  color: '#D4321C',
+  '&:hover': {
+    bgcolor: '#FFF1EF',
+    border: '1px solid #F5C6BF',
+    boxShadow: 'inset 0px -3px 0px #F5C6BF',
+  },
+  '&:active': {
+    bgcolor: '#FDE4E0',
+    border: '1px solid #F5C6BF',
+    boxShadow: 'inset 0px -1px 0px #F5C6BF',
+    transform: 'translateY(2px)',
+  },
+  ...STILL_PRESS,
+};
+
 /** Plain text action, e.g. "Discard this Campaign". */
 export const TEXT_ACTION_SX = {
   fontFamily: 'InterDisplay',
