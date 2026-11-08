@@ -16,6 +16,9 @@ const BASE = {
   textTransform: 'none',
   transition:
     'transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 140ms ease-out, border-color 140ms ease-out, box-shadow 140ms ease-out',
+  // Keyboard focus gets a still ring, not MUI's pulsing grey ripple
+  '& .MuiTouchRipple-ripplePulsate': { display: 'none' },
+  '&.Mui-focusVisible': { outline: '2px solid #1340FF', outlineOffset: '2px' },
 };
 
 // While loading, only the spinner shows. This comes after `&.Mui-disabled`,
