@@ -17,7 +17,6 @@ import {
   Collapse,
   FormLabel,
   TextField,
-  ButtonBase,
   IconButton,
   Typography,
   CircularProgress,
@@ -36,10 +35,8 @@ import {
 
 import StatTile from '../campaign/create/components/stat-tile';
 import { EASE_OUT } from '../campaign/create/components/motion';
-import { BLUE } from '../campaign/create/components/option-card';
 import ChipSelect from '../campaign/create/components/chip-select';
 import {
-  FIELD_HEIGHT,
   singleLineSx,
   helperTextSx,
 } from '../campaign/create/components/field-styles';
@@ -95,71 +92,6 @@ Field.propTypes = {
   children: PropTypes.node,
   required: PropTypes.bool,
 };
-
-// Tabs on a grey track, as high as a field: the white pill slides to the pick
-const CurrencySwitch = ({ value, onChange }) => {
-  const index = CURRENCIES.indexOf(value);
-
-  return (
-    <Stack
-      role="radiogroup"
-      aria-label="Currency"
-      direction="row"
-      sx={{
-        position: 'relative',
-        height: FIELD_HEIGHT,
-        p: '4px',
-        borderRadius: 1,
-        bgcolor: '#F4F6F8',
-      }}
-    >
-      <Box
-        aria-hidden
-        sx={{
-          position: 'absolute',
-          top: 4,
-          bottom: 4,
-          left: 4,
-          width: `calc((100% - 8px) / ${CURRENCIES.length})`,
-          borderRadius: 0.75,
-          bgcolor: '#FFFFFF',
-          boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.08)',
-          opacity: index < 0 ? 0 : 1,
-          transform: `translateX(${Math.max(index, 0) * 100}%)`,
-          transition: `transform 200ms ${EASE_OUT}, opacity 150ms ease`,
-          '@media (prefers-reduced-motion: reduce)': { transition: 'opacity 150ms ease' },
-        }}
-      />
-      {CURRENCIES.map((currency) => {
-        const on = value === currency;
-        return (
-          <ButtonBase
-            key={currency}
-            role="radio"
-            aria-checked={on}
-            disableRipple
-            onClick={() => onChange(currency)}
-            sx={{
-              flex: 1,
-              zIndex: 1,
-              borderRadius: 0.75,
-              fontSize: 13,
-              fontWeight: 500,
-              color: on ? '#231F20' : '#8E8E93',
-              transition: 'color 150ms ease',
-              '@media (hover: hover) and (pointer: fine)': { '&:hover': { color: '#231F20' } },
-              '&.Mui-focusVisible': { outline: `2px solid ${BLUE}`, outlineOffset: 0 },
-            }}
-          >
-            {currency}
-          </ButtonBase>
-        );
-      })}
-    </Stack>
-  );
-};
-
-CurrencySwitch.propTypes = { value: PropTypes.string, onChange: PropTypes.func };
 
 const blockMinus = (e) => {
   if (e.key === '-' || e.key === 'e') e.preventDefault();
@@ -311,9 +243,11 @@ const PackageCreateDialog = ({ open, onClose, clientId, onRefresh }) => {
 
               <Box sx={{ width: { xs: 1, sm: 160 }, flexShrink: 0 }}>
                 <Field label="Currency">
-                  <CurrencySwitch
-                    value={currency}
-                    onChange={(value) => setValue('currency', value, { shouldValidate: true })}
+                  <ChipSelect
+                    single
+                    name="currency"
+                    options={CURRENCIES}
+                    placeholder="Select currency"
                   />
                 </Field>
               </Box>
