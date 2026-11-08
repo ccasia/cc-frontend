@@ -24,8 +24,6 @@ import {
   TextField,
   Typography,
   IconButton,
-  DialogTitle,
-  DialogContent,
   CircularProgress,
 } from '@mui/material';
 
@@ -34,13 +32,27 @@ import useGetCompany from 'src/hooks/use-get-company';
 import useGetPackages from 'src/hooks/use-get-packges';
 import { useResponsive } from 'src/hooks/use-responsive';
 
+import getCroppedImg from 'src/utils/cropImage';
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
+import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
-import { ConfirmDialog } from 'src/components/custom-dialog';
+import ImageCropDialog from 'src/components/upload/image-crop-dialog';
 import FormProvider, { RHFSelect, RHFTextField, RHFDatePicker } from 'src/components/hook-form';
+import { PRIMARY_ACTION_SX, SECONDARY_ACTION_SX } from 'src/components/campaign/action-button-styles';
 
 import UploadPhoto from 'src/sections/profile/dropzone';
+
+import DiscardCompanyDialog from './discard-company-dialog';
+import {
+  PackageStep,
+  closeButtonSx,
+  useSteadyHeight,
+  CompanyDialogSteps,
+  CompanyDetailsStep,
+  PersonInChargeStep,
+  companyDialogPaperSx,
+} from './company-dialog-steps';
 
 const COMPANY_STEPS = ['Company Information', 'Person In Charge', 'Package Information'];
 
@@ -92,6 +104,7 @@ const defaultValuesOne = {
   personInChargeDesignation: '',
   personInChargeEmail: '',
   packageId: '',
+  subsID: '',
   packageType: '',
   packageValue: '',
   totalUGCCredits: '',
@@ -114,6 +127,38 @@ const FormField = ({ label, children, ...others }) => (
       {label}
     </FormLabel>
     {children}
+  </Stack>
+);
+
+// How the cropped logo reads at a large and a small size
+const renderLogoPreview = (preview) => (
+  <Stack spacing={1.5} alignItems="center">
+    <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#636366' }}>Preview</Typography>
+    <Box
+      sx={{
+        width: 160,
+        borderRadius: '16px',
+        overflow: 'hidden',
+        bgcolor: '#FFFFFF',
+        border: '1px solid #E7E7E7',
+      }}
+    >
+      {preview}
+    </Box>
+    <Stack direction="row" alignItems="center" spacing={1}>
+      <Box
+        sx={{
+          width: 32,
+          borderRadius: '50%',
+          overflow: 'hidden',
+          bgcolor: '#FFFFFF',
+          border: '1px solid #E7E7E7',
+        }}
+      >
+        {preview}
+      </Box>
+      <Typography sx={{ fontSize: 13, color: '#8E8E93' }}>In lists</Typography>
+    </Stack>
   </Stack>
 );
 
@@ -172,6 +217,43 @@ const CreateCompany = ({
     [setValue]
   );
 
+  // The dialog crops every logo first. `logoSource` keeps the uncropped original, so
+  // Edit can crop again from it; `cropSource` is the image open in the crop dialog.
+  const [logoSource, setLogoSource] = useState(null);
+  const [cropSource, setCropSource] = useState(null);
+  const [applyingCrop, setApplyingCrop] = useState(false);
+
+  const pickLogo = (file) => setCropSource(URL.createObjectURL(file));
+  const editLogo = () => setCropSource(logoSource);
+
+  const closeCrop = () => {
+    if (cropSource && cropSource !== logoSource) URL.revokeObjectURL(cropSource);
+    setCropSource(null);
+  };
+
+  const applyCrop = async (pixels) => {
+    setApplyingCrop(true);
+    try {
+      const file = await getCroppedImg(cropSource, pixels, 'company-logo.jpg');
+      if (logoSource && logoSource !== cropSource) URL.revokeObjectURL(logoSource);
+      setLogoSource(cropSource);
+      setImage(file.preview);
+      setValue('image', file, { shouldDirty: true });
+      setCropSource(null);
+    } finally {
+      setApplyingCrop(false);
+    }
+  };
+
+  const clearLogo = () => {
+    if (logoSource) URL.revokeObjectURL(logoSource);
+    setLogoSource(null);
+    setImage(null);
+    setValue('image', undefined);
+  };
+
+  const [stepBodyRef, stepBodyMinHeight] = useSteadyHeight(!!openCreate);
+
   // eslint-disable-next-line
   const onSubmit = handleSubmit(async (data) => {
     const formData = new FormData();
@@ -181,7 +263,6 @@ const CreateCompany = ({
 
     try {
       setLoading(true);
-      await new Promise((resolve) => setTimeout(() => resolve(), 3000));
       const res = await axiosInstance.post(endpoints.company.create, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -211,6 +292,7 @@ const CreateCompany = ({
 
       setActiveStep(0);
       reset();
+      clearLogo();
       mutate();
       enqueueSnackbar('Company created successfully', {
         variant: 'success',
@@ -239,6 +321,8 @@ const CreateCompany = ({
     }
     
     reset();
+    
+    clearLogo();
     setActiveStep(0);
     setOpenCreate();
   };
@@ -250,6 +334,8 @@ const CreateCompany = ({
     }
     
     reset();
+    
+    clearLogo();
     openConfirmation.onFalse();
     setActiveStep(0);
     setOpenCreate();
@@ -446,7 +532,7 @@ const CreateCompany = ({
     }
   }, [setValue, packageType, currency, getUniqueId]);
 
-  if (companyLoading || isLoading) {
+  if (!isDialog && (companyLoading || isLoading)) {
     return (
       <Box
         sx={{
@@ -471,184 +557,106 @@ const CreateCompany = ({
     <>
       {isDialog ? (
         <Dialog
-          fullWidth
           open={!!openCreate}
           fullScreen={!smUp}
-          PaperProps={{
-            sx: { maxWidth: 720, borderRadius: 0.8 },
-          }}
           onClose={handleClose}
+          aria-labelledby="create-company-title"
+          PaperProps={{
+            sx: smUp
+              ? companyDialogPaperSx
+              : { ...companyDialogPaperSx, width: 1, m: 0, borderRadius: 0 },
+          }}
         >
-          <DialogTitle>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Iconify icon="mdi:company" width={28} />
-              <Typography
-                sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily, flexGrow: 1 }}
-                fontSize={30}
-              >
-                Create a new company
-              </Typography>
-              <IconButton
-                type="button"
-                size="small"
-                sx={{ borderRadius: 1 }}
-                onClick={handleClose}
-                aria-label="close"
-              >
-                <Iconify icon="material-symbols:close-rounded" width={24} />
-              </IconButton>
-            </Stack>
-          </DialogTitle>
+          <IconButton aria-label="Close" onClick={handleClose} sx={closeButtonSx}>
+            <Iconify icon="mingcute:close-line" width={24} />
+          </IconButton>
 
-          <DialogContent>
-            <FormProvider methods={methods}>
-              {type && (
-                <Stepper activeStep={activeStep}>
-                  {companySteps.map((label, index) => {
-                    const stepProps = {};
-                    const labelProps = {};
-
-                    return (
-                      <Step
-                        key={label}
-                        {...stepProps}
-                        sx={{
-                          '& .MuiStepIcon-root.Mui-completed': {
-                            color: 'black',
-                          },
-                          '& .MuiStepIcon-root.Mui-active': {
-                            color: 'black',
-                          },
-                          '& .MuiStepIcon-root.Mui-error': {
-                            color: 'red',
-                          },
-                        }}
-                      >
-                        <StepLabel {...labelProps}>{label}</StepLabel>
-                      </Step>
-                    );
-                  })}
-                </Stepper>
-              )}
-
-              {/* Step 1  */}
-              {activeStep === 0 && (
-                <Box
-                  rowGap={2}
-                  columnGap={3}
-                  display="grid"
-                  mt={1}
-                  gridTemplateColumns={{
-                    xs: 'repeat(1, 1fr)',
-                    sm: 'repeat(2, 1fr)',
+          <FormProvider methods={methods}>
+            <Stack spacing={3}>
+              <Stack spacing={0.75} sx={{ pr: 5 }}>
+                <Typography
+                  id="create-company-title"
+                  sx={{
+                    fontFamily: (theme) => theme.typography.fontSecondaryFamily,
+                    fontSize: 32,
+                    lineHeight: '36px',
+                    color: '#231F20',
                   }}
                 >
-                  <Box sx={{ flexGrow: 1 }} />
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      flexDirection: 'column',
-                      gap: 2,
-                      p: 1,
-                      gridColumn: '1 / -1',
-                    }}
-                  >
-                    <UploadPhoto onDrop={onDrop}>
-                      <Avatar
-                        sx={{
-                          width: 1,
-                          height: 1,
-                          borderRadius: '50%',
-                        }}
-                        src={image || null}
-                      />
-                    </UploadPhoto>
-                    <Typography
-                      variant="h4"
-                      sx={{ fontFamily: (theme) => theme.typography.fontSecondaryFamily }}
-                      letterSpacing={0.5}
-                    >
-                      Company Logo
+                  Create a new company
+                </Typography>
+                {/* The ID comes from the client type, so it shows once one is picked */}
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ minHeight: 24 }}>
+                  <Typography variant="caption" color="#8E8E93">
+                    Company ID
+                  </Typography>
+                  {values.companyID ? (
+                    <Label color="info">{values.companyID}</Label>
+                  ) : (
+                    <Typography variant="caption" color="#C7C7CC">
+                      Set by the client type
                     </Typography>
-                  </Box>
-                  <RHFTextField key="companyID" name="companyID" label="Company ID" disabled />
-                  <RHFTextField key="companyName" name="companyName" label="Company Name" />
-                  {/* <RHFTextField key="companyEmail" name="companyEmail" label="Company Email" /> */}
-                  <RHFTextField key="companyPhone" name="companyPhone" label="Company Phone" />
-                  <RHFTextField
-                    key="companyAddress"
-                    name="companyAddress"
-                    label="Company Address"
-                    multiline
-                  />
-                  <RHFTextField
-                    key="companyWebsite"
-                    name="companyWebsite"
-                    label="Company Website"
-                  />
-                  <RHFTextField
-                    key="companyAbout"
-                    name="companyAbout"
-                    label="Company About"
-                    multiline
-                  />
-                  <RHFTextField
-                    key="companyRegistrationNumber"
-                    name="companyRegistrationNumber"
-                    label="Company Registration Number"
-                  />
-                  <RHFSelect name="type" label="Client type">
-                    <MenuItem disabled>Select an option</MenuItem>
-                    <MenuItem value="agency">Agency</MenuItem>
-                    <MenuItem value="directClient">Direct Client</MenuItem>
-                  </RHFSelect>
+                  )}
+                </Stack>
+              </Stack>
+
+              <CompanyDialogSteps activeStep={activeStep} onStepClick={setActiveStep} />
+
+              {/* Keeps the tallest step's height, so Next and Back never move */}
+              <Box sx={{ minHeight: stepBodyMinHeight }}>
+                <Box ref={stepBodyRef} key={activeStep}>
+                  {activeStep === 0 && (
+                    <CompanyDetailsStep
+                      image={image}
+                      onPickLogo={pickLogo}
+                      onEditLogo={editLogo}
+                      onRemoveLogo={clearLogo}
+                    />
+                  )}
+                  {activeStep === 1 && <PersonInChargeStep />}
+                  {activeStep === 2 && <PackageStep packages={packages} />}
                 </Box>
-              )}
+              </Box>
 
-              {activeStep === 1 && renderPICForm}
-
-              {/* For Mohand to handle the package forms */}
-              {activeStep === 2 && companyPackage}
-
-              <Stack direction="row" spacing={1} justifyContent="end" my={3}>
+              <Stack direction="row" spacing={1} justifyContent="flex-end">
                 {activeStep > 0 && (
                   <Button
                     type="button"
                     onClick={() => setActiveStep(activeStep - 1)}
-                    disabled={activeStep === 0}
-                    variant="outlined"
-                    sx={{ borderRadius: 0.6 }}
+                    sx={SECONDARY_ACTION_SX}
                   >
                     Back
                   </Button>
                 )}
-
                 {activeStep === companySteps.length - 1 ? (
                   <LoadingButton
                     type="button"
                     loading={loading}
-                    variant="contained"
                     onClick={onSubmit}
-                    sx={{ borderRadius: 0.6 }}
+                    sx={PRIMARY_ACTION_SX}
                   >
-                    Create
+                    Create company
                   </LoadingButton>
                 ) : (
-                  <Button
-                    type="button"
-                    variant="contained"
-                    sx={{ borderRadius: 0.6 }}
-                    onClick={onNext}
-                    // onClick={() => setActiveStep(activeStep + 1)}
-                  >
+                  <Button type="button" onClick={onNext} sx={PRIMARY_ACTION_SX}>
                     Next
                   </Button>
                 )}
               </Stack>
-            </FormProvider>
-          </DialogContent>
+            </Stack>
+          </FormProvider>
+
+          <ImageCropDialog
+            image={cropSource}
+            aspect={1}
+            title="Crop company logo"
+            minOutputWidth={200}
+            lowResNote="This logo may look blurry. Zoom out or use a larger image."
+            applying={applyingCrop}
+            onCancel={closeCrop}
+            onApply={applyCrop}
+            renderPreview={renderLogoPreview}
+          />
         </Dialog>
       ) : (
         <FormProvider methods={methods}>
@@ -796,16 +804,10 @@ const CreateCompany = ({
         </FormProvider>
       )}
 
-      <ConfirmDialog
-        title="Unsaved Changes"
-        content="You have unsaved changes. Are you sure you want to leave?"
+      <DiscardCompanyDialog
         open={openConfirmation.value}
-        onClose={openConfirmation.onFalse}
-        action={
-          <Button type="button" variant="contained" onClick={confirmClose}>
-            Confirm
-          </Button>
-        }
+        onKeepEditing={openConfirmation.onFalse}
+        onDiscard={confirmClose}
       />
     </>
   );
@@ -815,7 +817,7 @@ export default CreateCompany;
 
 CreateCompany.propTypes = {
   setOpenCreate: PropTypes.func,
-  openCreate: PropTypes.string,
+  openCreate: PropTypes.oneOfType([PropTypes.bool, PropTypes.string]),
   set: PropTypes.func,
   isDialog: PropTypes.bool,
   isForCampaign: PropTypes.bool,

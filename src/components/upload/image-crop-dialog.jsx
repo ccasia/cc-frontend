@@ -91,6 +91,7 @@ export default function ImageCropDialog({
   title = 'Crop campaign image',
   applying = false,
   minOutputWidth = 1200,
+  lowResNote = 'This may look blurry on the card. Zoom out or use a larger image.',
   onCancel,
   onApply,
   renderPreview,
@@ -389,7 +390,7 @@ export default function ImageCropDialog({
               sx={{ color: '#FFAB00', flexShrink: 0, mt: '1px' }}
             />
             <Typography sx={{ fontSize: 13, lineHeight: '18px', color: '#636366' }}>
-              This may look blurry on the card. Zoom out or use a larger image.
+              {lowResNote}
             </Typography>
           </Stack>
         </Box>
@@ -437,6 +438,7 @@ ImageCropDialog.propTypes = {
   title: PropTypes.string,
   applying: PropTypes.bool,
   minOutputWidth: PropTypes.number,
+  lowResNote: PropTypes.string,
   onCancel: PropTypes.func.isRequired,
   onApply: PropTypes.func.isRequired,
   renderPreview: PropTypes.func,

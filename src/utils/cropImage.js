@@ -1,6 +1,6 @@
 // Takes the raw image URL and the crop area coordinates from react-easy-crop,
 // draws only the cropped portion onto an HTML canvas, and returns it as a File object.
-export default function getCroppedImg(imageSrc, pixelCrop) {
+export default function getCroppedImg(imageSrc, pixelCrop, fileName = 'campaign-image.jpg') {
   return new Promise((resolve) => {
     const image = new Image();
     image.src = imageSrc;
@@ -26,7 +26,7 @@ export default function getCroppedImg(imageSrc, pixelCrop) {
       );
 
       canvas.toBlob((blob) => {
-        const croppedFile = new File([blob], 'campaign-image.jpg', { type: 'image/jpeg' });
+        const croppedFile = new File([blob], fileName, { type: 'image/jpeg' });
         const fileWithPreview = Object.assign(croppedFile, {
           preview: URL.createObjectURL(croppedFile),
         });
