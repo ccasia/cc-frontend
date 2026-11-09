@@ -18,6 +18,7 @@ import CreatorSubmissionGrid from './components/CreatorSubmissionGrid';
 import CreatorSubmissionsToolbar from './components/CreatorSubmissionsToolbar';
 import { groupByCreator, getFilterCounts, filterSubmissions } from './utils/utils';
 import CreatorSubmissionCardSkeleton from './components/CreatorSubmissionCardSkeleton';
+import { getDisplayProducts } from '../submissions/v4/shared/get-display-products';
 import useV4SubmissionListSocket from '../submissions/v4/shared/use-v4-submission-list-socket';
 import {
   setCampaign,
@@ -41,8 +42,19 @@ const CampaignCreatorSubmissions = ({ campaign }) => {
       : 'No submissions yet';
 
   const creators = useMemo(
-    () => groupByCreator(filterSubmissions(submissions, { search, statusFilter, typeFilter })),
-    [submissions, search, statusFilter, typeFilter]
+    () =>
+      groupByCreator(filterSubmissions(submissions, { search, statusFilter, typeFilter })).map(
+        (group) => ({ ...group, products: getDisplayProducts(campaign, group.user?.id) })
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      submissions,
+      search,
+      statusFilter,
+      typeFilter,
+      campaign?.logistics,
+      campaign?.creatorAgreement,
+    ]
   );
 
   const filterCounts = useMemo(

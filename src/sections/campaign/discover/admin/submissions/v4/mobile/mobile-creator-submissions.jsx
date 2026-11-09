@@ -12,6 +12,7 @@ import Iconify from 'src/components/iconify';
 
 import MobileVideoSubmission from './mobile-video-submission';
 import MobilePhotoSubmission from './mobile-photo-submission';
+import { getDisplayProducts } from '../shared/get-display-products';
 import MobileRawFootageSubmission from './mobile-raw-footage-submission';
 
 // ----------------------------------------------------------------------
@@ -451,23 +452,11 @@ function MobileCreatorRowWithSubmissions({
 }) {
   const { submissions, submissionsLoading } = useGetV4Submissions(campaign?.id, creator?.userId);
 
-  const displayProducts = useMemo(() => {
-    if (!creator || !campaign?.logistics?.length) return '';
-
-    const { logistics } = campaign;
-
-    const info = logistics.find((a) => a.creatorId === creator.user.id);
-
-    const items = info?.deliveryDetails?.items ?? [];
-
-    return items
-      .map(({ product, quantity }) =>
-        quantity > 1 ? `${product.productName} (${quantity})` : product.productName
-      )
-      .join(', ');
-
+  const displayProducts = useMemo(
+    () => getDisplayProducts(campaign, creator?.user?.id),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [campaign.logistics, creator.id]);
+    [campaign.logistics, campaign.creatorAgreement, creator.id]
+  );
 
   // Don't render if loading or if no submissions exist
   if (submissionsLoading || submissions.length === 0) {

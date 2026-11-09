@@ -42,6 +42,7 @@ import EmptyContent from 'src/components/empty-content';
 import V4VideoSubmission from './submissions/v4/video-submission';
 import V4PhotoSubmission from './submissions/v4/photo-submission';
 import V4RawFootageSubmission from './submissions/v4/raw-footage-submission';
+import { getDisplayProducts } from './submissions/v4/shared/get-display-products';
 import MobileCreatorSubmissions from './submissions/v4/mobile/mobile-creator-submissions';
 import useV4SubmissionListSocket from './submissions/v4/shared/use-v4-submission-list-socket';
 
@@ -146,24 +147,6 @@ function CreatorAccordionWithSubmissions({
   // Get V4 submissions for this creator to check if they have any
   const { submissions, submissionsLoading } = useGetV4Submissions(campaign?.id, creator?.userId);
 
-  const displayProducts = useMemo(() => {
-    if (!creator || !campaign?.logistics?.length) return '';
-
-    const { logistics } = campaign;
-
-    const info = logistics.find((a) => a.creatorId === creator.user.id);
-
-    const items = info?.deliveryDetails?.items ?? [];
-
-    return items
-      .map(({ product, quantity }) =>
-        quantity > 1 ? `${product.productName} (${quantity})` : product.productName
-      )
-      .join(', ');
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [campaign.logistics, creator.id]);
-
   // Don't render if loading or if no submissions exist
   if (submissionsLoading || submissions.length === 0) {
     return null;
@@ -221,17 +204,11 @@ function CreatorAccordion({ creator, campaign, isDisabled = false, onRated, auto
   const hasRated = isClient ? Boolean(creator.clientRatedAt) : Boolean(creator.adminRatedAt);
   const isReadOnly = hasRated && !isDemo;
 
-  const displayProducts = useMemo(() => {
-    if (!creator || !campaign?.logistics?.length) return '';
-    const info = campaign.logistics.find((a) => a.creatorId === creator.user.id);
-    const items = info?.deliveryDetails?.items ?? [];
-    return items
-      .map(({ product, quantity }) =>
-        quantity > 1 ? `${product.productName} (${quantity})` : product.productName
-      )
-      .join(', ');
+  const displayProducts = useMemo(
+    () => getDisplayProducts(campaign, creator?.user?.id),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [campaign.logistics, creator.id]);
+    [campaign.logistics, campaign.creatorAgreement, creator.id]
+  );
 
   const { campaignType } = campaign;
 
