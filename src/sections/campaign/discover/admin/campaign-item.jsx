@@ -18,6 +18,8 @@ import {
   MenuItem,
   Typography,
   IconButton,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -38,6 +40,7 @@ import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
 
 import { CampaignLog } from '../../manage/list/CampaignLog';
 import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
+import { alpha } from '@mui/system';
 
 // ----------------------------------------------------------------------
 
@@ -188,6 +191,26 @@ export default function CampaignItem({
     (isCSL || isSuperAdmin) &&
     campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
     !isUserAssignedToCampaign;
+
+  // Superadmin/CSL see the item disabled while waiting on the assigned admin; admin/CSM always see it on PENDING_ADMIN_ACTIVATION (temporary).
+  const showActivate =
+    (canInitialActivate && campaign?.status === 'PENDING_CSM_REVIEW') ||
+    (canCompleteActivation && campaign?.status === 'PENDING_ADMIN_ACTIVATION') ||
+    isDisabled ||
+    ((isAdmin || isCSM) && campaign?.status === 'PENDING_ADMIN_ACTIVATION');
+
+  const menuItemSx = {
+    gap: 1.5,
+    minHeight: 40,
+    px: 1.25,
+    borderRadius: '10px',
+    fontSize: 14,
+    fontWeight: 500,
+    color: '#1d1d1f',
+    '&:hover, &.Mui-focusVisible': { bgcolor: '#f4f4f5' },
+  };
+
+  const menuIconSx = { flexShrink: 0, color: '#3a3a3c' };
 
   const handleCopyLink = async () => {
     const url = `${import.meta.env.VITE_BASE_URL}/campaign?campaign=${campaign.id}`;
@@ -586,33 +609,21 @@ export default function CampaignItem({
           open={open}
           onClose={handleClose}
           onClick={handleClose}
-          anchorOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
-          }}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          MenuListProps={{ sx: { p: 0 } }}
           slotProps={{
             paper: {
               sx: {
-                backgroundColor: 'white',
-                backgroundImage: 'none',
-                boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.1)',
-                border: '1px solid #e7e7e7',
-                borderBottom: '2px solid #e7e7e7',
-                borderRadius: 1,
-                mt: -1,
                 width: 200,
-                overflow: 'visible',
+                mt: -1,
+                p: 0.75,
+                borderRadius: '16px',
+                bgcolor: '#fff',
+                border: '1px solid',
+                borderColor: alpha('#000', 0.06),
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 16px 40px -12px rgba(0,0,0,0.16)',
               },
-            },
-          }}
-          MenuListProps={{
-            sx: {
-              backgroundColor: 'white',
-              p: 0.5,
             },
           }}
         >
@@ -622,54 +633,52 @@ export default function CampaignItem({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => handleClose()}
-            sx={{
-              borderRadius: 1,
-              backgroundColor: 'white',
-              color: 'black',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              p: 1.5,
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-              },
-            }}
+            sx={menuItemSx}
           >
-            Open in New Tab
+            <Iconify icon="solar:arrow-right-up-linear" width={18} sx={menuIconSx} />
+            Open in new tab
           </MenuItem>
 
-          {/* Activate Campaign - Different behavior based on user role and campaign status */}
-          {(() => {
-            // Show button for superadmin/CSL to assign admin (initial activation)
-            const showForInitialActivation =
-              canInitialActivate && campaign?.status === 'PENDING_CSM_REVIEW';
+          <MenuItem
+            onClick={(event) => {
+              event.stopPropagation();
+              handleCopyLink();
+            }}
+            sx={menuItemSx}
+          >
+            {isCopy.value ? (
+              <Iconify
+                icon="solar:check-circle-linear"
+                width={18}
+                sx={{ ...menuIconSx, color: 'success.main' }}
+              />
+            ) : (
+              <Iconify icon="solar:link-minimalistic-2-linear" width={18} sx={menuIconSx} />
+            )}
+            {isCopy.value ? 'Link copied' : 'Copy link'}
+          </MenuItem>
 
-            // Show button for assigned admin/CSM to complete activation
-            const showForCompleteActivation =
-              canCompleteActivation && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
+          <MenuItem
+            onClick={(event) => {
+              event.stopPropagation();
+              setCampaignLogIsOpen(true);
+              handleClose();
+            }}
+            sx={menuItemSx}
+          >
+            <Iconify icon="solar:document-text-linear" width={18} sx={menuIconSx} />
+            View log
+          </MenuItem>
 
-            // Show disabled button for superadmin/CSL after admin assignment (waiting for admin to complete)
-            const showDisabledForSuperadmin =
-              (isCSL || isSuperAdmin) &&
-              campaign?.status === 'PENDING_ADMIN_ACTIVATION' &&
-              !isUserAssignedToCampaign;
+          {showActivate && (
+            <Divider sx={{ mx: -0.75, my: 0.75, borderColor: alpha('#000', 0.06) }} />
+          )}
 
-            // TEMPORARY: Always show button for admin/CSM when status is PENDING_ADMIN_ACTIVATION
-            const showTemporaryForAdmin =
-              (isAdmin || isCSM) && campaign?.status === 'PENDING_ADMIN_ACTIVATION';
-
-            const shouldShow =
-              showForInitialActivation ||
-              showForCompleteActivation ||
-              showDisabledForSuperadmin ||
-              showTemporaryForAdmin;
-
-            return shouldShow;
-          })() && (
+          {showActivate && (
             <MenuItem
               onClick={(event) => {
                 event.stopPropagation();
 
-                // Don't do anything if disabled
                 if (isDisabled) {
                   return;
                 }
@@ -680,24 +689,11 @@ export default function CampaignItem({
                   }, Admin Mode: ${user?.admin?.mode}`
                 );
 
-                console.log('Activate Campaign clicked:', {
-                  userRole: user?.role,
-                  adminMode: user?.admin?.mode,
-                  adminRole: user?.admin?.role?.name,
-                  campaignStatus: campaign?.status,
-                  canInitialActivate,
-                  canCompleteActivation,
-                  isCSL,
-                  isSuperAdmin,
-                  isCSM,
-                });
-
-                // For superadmin on pending campaigns: use initial activation (admin assignment only)
+                // Superadmin on a pending campaign only assigns an admin; the assigned admin runs the full setup.
                 if (canInitialActivate && campaign?.status === 'PENDING_CSM_REVIEW') {
                   console.log('Opening InitialActivateDialog (admin assignment only)');
                   setInitialActivateDialogOpen(true);
                 } else if (campaign?.status === 'PENDING_ADMIN_ACTIVATION') {
-                  // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
                   console.log('Opening ActivateDialog (full setup)');
                   setActivateDialogOpen(true);
                 }
@@ -705,67 +701,35 @@ export default function CampaignItem({
               }}
               disabled={isDisabled}
               sx={{
-                borderRadius: 1,
-                backgroundColor: 'white',
-                color: isDisabled ? '#999' : 'black',
-                fontWeight: 600,
-                fontSize: '0.95rem',
-                p: 1.5,
-                cursor: isDisabled ? 'not-allowed' : 'pointer',
-                '&:hover': {
-                  backgroundColor: isDisabled ? 'white' : '#f5f5f5',
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: 'white',
-                  color: '#999',
-                },
+                ...menuItemSx,
+                '&.Mui-disabled': { opacity: 1, color: '#8e8e93' },
               }}
             >
-              {isDisabled ? 'Waiting for Admin Activation' : 'Activate Campaign'}
+              <Iconify icon="solar:bolt-linear" width={18} sx={menuIconSx} />
+              Activate campaign
+              {isDisabled && (
+                <Box
+                  component="span"
+                  sx={{
+                    ml: 'auto',
+                    px: 0.75,
+                    height: 22,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    borderRadius: '6px',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: '#1340ff',
+                    bgcolor: alpha('#1340ff', 0.08),
+                    border: '1px solid',
+                    borderColor: alpha('#1340ff', 0.2),
+                  }}
+                >
+                  Awaiting admin
+                </Box>
+              )}
             </MenuItem>
           )}
-          <MenuItem
-            onClick={(event) => {
-              event.stopPropagation();
-              setCampaignLogIsOpen(true);
-              handleClose();
-            }}
-            sx={{
-              borderRadius: 1,
-              backgroundColor: 'white',
-              color: 'black',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              p: 1.5,
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-              },
-            }}
-          >
-            View Log
-          </MenuItem>
-          <MenuItem
-            onClick={(event) => {
-              event.stopPropagation();
-              handleCopyLink();
-            }}
-            sx={{
-              borderRadius: 1,
-              backgroundColor: 'white',
-              color: !isCopy.value ? 'black' : 'success.main',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              p: 1.5,
-              '&:hover': {
-                backgroundColor: '#f5f5f5',
-              },
-            }}
-          >
-            {isCopy.value && (
-              <Iconify icon="charm:tick" width={20} sx={{ mr: 1 }} color="success.main" />
-            )}
-            Copy Link
-          </MenuItem>
         </Menu>
       </Stack>
     </Box>

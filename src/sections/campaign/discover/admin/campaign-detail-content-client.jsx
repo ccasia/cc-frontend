@@ -13,6 +13,7 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 
 import CampaignDetailContentMobile from './campaign-detail-content-mobile';
+import { HOST_API } from 'src/config-global';
 
 const ChipStyle = {
   bgcolor: '#FFF',
@@ -1333,9 +1334,15 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       borderColor: 'background.paper',
                     }}
                   />
-                  <Typography sx={{ ...SectionBodyStyle }}>
-                    {(campaign?.company?.name ?? campaign?.brand?.name) || 'Company Name'}
-                  </Typography>
+                  <Link
+                    color="black"
+                    sx={{ cursor: 'pointer' }}
+                    href={`${HOST_API}/edit/${campaign?.company?.id ?? campaign?.brand?.id}`}
+                  >
+                    <Typography sx={{ ...SectionBodyStyle }}>
+                      {(campaign?.company?.name ?? campaign?.brand?.name) || 'Company Name'}
+                    </Typography>
+                  </Link>
                 </Stack>
               </Box>
 
