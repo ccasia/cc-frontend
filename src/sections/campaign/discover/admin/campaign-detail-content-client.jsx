@@ -8,6 +8,7 @@ import { Box, Link, Chip, Stack, Avatar, Divider, Typography, useMediaQuery } fr
 import { normalizeUrl } from 'src/utils/normalizeUrl';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { HOST_API } from 'src/config-global';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
@@ -1334,9 +1335,15 @@ const CampaignDetailContentClient = ({ campaign }) => {
                       borderColor: 'background.paper',
                     }}
                   />
-                  <Typography sx={{ ...SectionBodyStyle }}>
-                    {(campaign?.company?.name ?? campaign?.brand?.name) || 'Company Name'}
-                  </Typography>
+                  <Link
+                    color="black"
+                    sx={{ cursor: 'pointer' }}
+                    href={`${HOST_API}/edit/${campaign?.company?.id ?? campaign?.brand?.id}`}
+                  >
+                    <Typography sx={{ ...SectionBodyStyle }}>
+                      {(campaign?.company?.name ?? campaign?.brand?.name) || 'Company Name'}
+                    </Typography>
+                  </Link>
                 </Stack>
               </Box>
 

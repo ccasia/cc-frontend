@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 
 import { Link, Stack, Avatar, Typography } from '@mui/material';
 
+import Iconify from 'src/components/iconify';
+
 import StatusBar from './StatusBar';
 import { COLORS, NEEDS_ACTION } from '../utils/constants';
 import { getInitials, getDisplayName, getCreatorHandle } from '../utils/utils';
@@ -18,7 +20,7 @@ const rowProps = {
 
 const leftSx = { flex: '1 1 120px', minWidth: 0 };
 
-const CreatorHeader = ({ creator, submissions, onSelect }) => {
+const CreatorHeader = ({ creator, submissions, products, onSelect }) => {
   const needAction = submissions.filter((s) => NEEDS_ACTION.includes(s.status)).length;
   const handle = getCreatorHandle(creator);
   const displayName = getDisplayName(creator);
@@ -71,6 +73,25 @@ const CreatorHeader = ({ creator, submissions, onSelect }) => {
           </Typography>
         </Stack>
 
+        {products && (
+          <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="flex-start">
+            <Iconify icon="solar:box-bold" width={14} sx={{ color: COLORS.link, mt: '1px' }} />
+            <Typography
+              title={products}
+              sx={{
+                minWidth: 0,
+                fontSize: 12,
+                lineHeight: '16px',
+                fontWeight: 600,
+                color: COLORS.link,
+                textAlign: 'right',
+              }}
+            >
+              {products}
+            </Typography>
+          </Stack>
+        )}
+
         <Stack {...rowProps} sx={{ minHeight: 16, rowGap: 0.5 }}>
           {handle ? (
             <Link
@@ -105,5 +126,6 @@ export default CreatorHeader;
 CreatorHeader.propTypes = {
   creator: PropTypes.object.isRequired,
   submissions: PropTypes.array.isRequired,
+  products: PropTypes.string,
   onSelect: PropTypes.func.isRequired,
 };
