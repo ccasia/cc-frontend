@@ -120,7 +120,7 @@ const DashboardSuperadminView = () => {
           lineHeight: 1.2,
         }}
       >
-        Super Overview
+        Superman Overview
       </Typography>
 
       {/* Platform totals */}
