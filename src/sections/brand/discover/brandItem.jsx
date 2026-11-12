@@ -6,7 +6,6 @@ import PropTypes from 'prop-types';
 import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 import {
@@ -28,6 +27,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 import CustomChip from 'src/components/custom-chip/custom-chip';
 import CustomPopover from 'src/components/custom-popover/custom-popover';
 
@@ -69,7 +69,7 @@ export default function BrandItem({ company, onView, onEdit, onDelete }) {
         </Stack>
 
         <Stack sx={{ p: 3 }}>
-          <Avatar alt={name} src={logo} variant="rounded" sx={{ width: 48, height: 48, mb: 2 }} />
+          <BrandLogoAvatar alt={name} src={logo} variant="rounded" sx={{ width: 48, height: 48, mb: 2 }} />
 
           <ListItemText
             primary={

@@ -3,12 +3,12 @@ import { useMemo, useState, useEffect } from 'react';
 import {
   Box,
   Stack,
-  Button,
   Dialog,
   Container,
   InputBase,
   Typography,
   Pagination,
+  IconButton,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -23,6 +23,8 @@ import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
 
 import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
+import { dialogEnterSx } from 'src/sections/campaign/create/components/motion';
+import CampaignEmptyState from 'src/sections/campaign/discover/admin/components/campaign-empty-state';
 
 import getDraftName from '../get-draft-name';
 import DraftListItem from '../draft-list-item';
@@ -72,9 +74,11 @@ export default function CampaignDraftsView() {
   const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const isSearching = Boolean(query.trim());
-  let emptyTitle = 'No saved drafts yet';
-  if (isLoading) emptyTitle = 'Loading drafts…';
-  else if (isSearching) emptyTitle = 'No drafts match that search';
+
+  const clearSearch = () => {
+    setQuery('');
+    setPage(1);
+  };
 
   const handleBack = () => {
     const historyIndex = window.history.state?.idx;
@@ -104,40 +108,28 @@ export default function CampaignDraftsView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'xl'} sx={{ px: { xs: 2, sm: 4 } }}>
       <Stack spacing={2.5} sx={{ width: '100%' }}>
-        <Button
-          onClick={handleBack}
-          startIcon={<Iconify icon="eva:chevron-left-fill" width={20} />}
-          sx={{
-            alignSelf: 'flex-start',
-            gap: '4px',
-            px: 0,
-            minWidth: 0,
-            color: '#636366',
-            fontFamily: 'InterDisplay',
-            fontWeight: 600,
-            fontSize: 14,
-            lineHeight: '18px',
-            textTransform: 'none',
-            '& .MuiButton-startIcon': { m: 0 },
-            '&:hover': { bgcolor: 'transparent', color: '#231F20' },
-          }}
-        >
-          Back
-        </Button>
-
         <Stack spacing={0.5}>
-          <Typography
-            component="h1"
-            sx={{
-              fontFamily: 'Instrument Serif, serif',
-              fontWeight: 400,
-              fontSize: { xs: 32, sm: 40 },
-              lineHeight: '44px',
-              color: '#231F20',
-            }}
-          >
-            Drafts 📝
-          </Typography>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <IconButton
+              onClick={handleBack}
+              aria-label="Back"
+              sx={{ color: '#636366', fontSize: { xs: '0.875rem', sm: '1rem' } }}
+            >
+              <Iconify icon="eva:arrow-ios-back-fill" width={20} />
+            </IconButton>
+            <Typography
+              component="h1"
+              sx={{
+                fontFamily: 'Instrument Serif, serif',
+                fontWeight: 400,
+                fontSize: { xs: 32, sm: 40 },
+                lineHeight: '44px',
+                color: '#231F20',
+              }}
+            >
+              Drafts 📝
+            </Typography>
+          </Stack>
           <Typography
             sx={{
               fontFamily: 'InterDisplay',
@@ -154,37 +146,63 @@ export default function CampaignDraftsView() {
 
         <Box
           sx={{
-            boxSizing: 'border-box',
+            border: '1px solid',
+            borderBottom: '3.5px solid',
+            borderColor: 'divider',
+            borderRadius: 1.5,
+            bgcolor: 'background.paper',
+            height: 44,
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            height: 40,
-            padding: '6px 10px 9px',
-            bgcolor: '#FFFFFF',
-            border: '1px solid #E8E8E8',
-            boxShadow: 'inset 0px -3px 0px #E7E7E7',
-            borderRadius: '8px',
-            transition: 'border-color 140ms ease-out',
-            '&:focus-within': { borderColor: '#D6D6D6' },
+            transition: 'border-color 0.2s ease',
+            '&:focus-within': { borderColor: '#1340ff' },
           }}
         >
-          <Iconify icon="eva:search-outline" width={16} sx={{ color: '#8E8E93', flexShrink: 0 }} />
           <InputBase
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
               setPage(1);
             }}
-            placeholder="Search"
+            placeholder="Search drafts"
             inputProps={{ 'aria-label': 'Search drafts' }}
+            startAdornment={
+              <Iconify
+                icon="eva:search-fill"
+                sx={{ width: 20, height: 20, mr: 1, ml: 1.5, color: 'text.disabled', flexShrink: 0 }}
+              />
+            }
+            endAdornment={
+              isSearching && (
+                <Stack direction="row" alignItems="center" sx={{ flexShrink: 0, pl: 1 }}>
+                  {filtered.length > 0 && (
+                    <Typography
+                      component="span"
+                      variant="caption"
+                      aria-live="polite"
+                      noWrap
+                      sx={{ color: '#636366', fontSize: 13, fontWeight: 500 }}
+                    >
+                      {`${filtered.length} ${filtered.length === 1 ? 'result' : 'results'}`}
+                    </Typography>
+                  )}
+                  <IconButton
+                    size="small"
+                    aria-label="Clear search"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={clearSearch}
+                    sx={{ mr: 1, ml: 0.5 }}
+                  >
+                    <Iconify icon="eva:close-fill" width={18} />
+                  </IconButton>
+                </Stack>
+              )
+            }
             sx={{
-              flex: 1,
-              fontFamily: 'InterDisplay',
-              fontWeight: 500,
-              fontSize: 14,
-              lineHeight: '18px',
-              color: '#231F20',
-              '& input::placeholder': { color: '#8E8E93', opacity: 1 },
+              width: '100%',
+              height: '100%',
+              color: 'text.primary',
+              '& input': { py: 0, px: 0.5 },
             }}
           />
         </Box>
@@ -199,40 +217,23 @@ export default function CampaignDraftsView() {
             />
           ))}
 
-          {!visible.length && (
-            <Box
-              sx={{
-                py: 8,
-                textAlign: 'center',
-                bgcolor: '#FFFFFF',
-                border: '1px dashed #EBEBEB',
-                borderRadius: '12px',
-              }}
-            >
-              <Typography
-                sx={{
-                  fontFamily: 'InterDisplay',
-                  fontWeight: 600,
-                  fontSize: 16,
-                  color: '#231F20',
-                }}
-              >
-                {emptyTitle}
-              </Typography>
-              {!isLoading && !isSearching && (
-                <Typography
-                  sx={{
-                    mt: 0.5,
-                    fontFamily: 'InterDisplay',
-                    fontSize: 14,
-                    color: '#8E8E93',
-                  }}
-                >
-                  Start a campaign and it saves itself here as you go.
-                </Typography>
-              )}
-            </Box>
-          )}
+          {!isLoading &&
+            !visible.length &&
+            (isSearching ? (
+              <CampaignEmptyState
+                emoji="🕵️"
+                title={`No results for “${query.trim()}”`}
+                description="Check the spelling, or try a draft name."
+                actionLabel="Clear search"
+                onAction={clearSearch}
+              />
+            ) : (
+              <CampaignEmptyState
+                emoji="📝"
+                title="No saved drafts yet"
+                description="Start a campaign and it saves itself here as you go."
+              />
+            ))}
         </Stack>
 
         {pageCount > 1 && (
@@ -278,6 +279,7 @@ export default function CampaignDraftsView() {
             p: 4,
             m: 2,
             height: '97vh',
+            ...dialogEnterSx,
             overflow: 'hidden',
             ...(smDown && { height: 1, m: 0 }),
           },

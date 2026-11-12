@@ -4,13 +4,13 @@ import { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react
 
 import { LoadingButton } from '@mui/lab';
 import { alpha } from '@mui/material/styles';
-import { Box, Stack, Button, Dialog, Typography, DialogContent } from '@mui/material';
+import { Box, Stack, Button, Dialog, IconButton, Typography, DialogContent } from '@mui/material';
 
+import Iconify from 'src/components/iconify';
 import {
-  TEXT_ACTION_SX,
   DIALOG_PAPER_SX,
+  DISCARD_ACTION_SX,
   PRIMARY_ACTION_SX,
-  SECONDARY_ACTION_SX,
 } from 'src/components/campaign/action-button-styles';
 
 const BODY_FONT = 'InterDisplay';
@@ -41,6 +41,25 @@ const TITLE_SX = {
   textAlign: 'center',
   color: '#231F20',
 };
+
+const CLOSE_SX = {
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  zIndex: 1,
+  width: 40,
+  height: 40,
+  color: '#636366',
+  transition:
+    'opacity 150ms ease-out, visibility 150ms, color 140ms ease, background-color 140ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1)',
+  '@media (hover: hover) and (pointer: fine)': {
+    '&:hover': { bgcolor: 'rgba(35, 31, 32, 0.06)', color: '#231F20' },
+  },
+  '&:active': { transform: 'scale(0.92)' },
+  '&.Mui-disabled': { color: '#636366' },
+};
+
+const TRACK_SX = { width: '100%', height: 4, borderRadius: 2, overflow: 'hidden' };
 
 const BODY_SX = {
   fontFamily: BODY_FONT,
@@ -109,6 +128,16 @@ export default function CloseDraftDialog({ open, onKeepEditing, onSaveDraft, onD
       clearTimeout(fire);
     };
   }, [isPending, runDiscard]);
+
+  // Keyboard focus follows the visible panel, so it never sits on a hidden button
+  const cancelRef = useRef(null);
+  const discardAskRef = useRef(null);
+  const wasPending = useRef(false);
+  useEffect(() => {
+    if (isPending) cancelRef.current?.focus();
+    else if (wasPending.current && phase === 'ask') discardAskRef.current?.focus();
+    wasPending.current = isPending;
+  }, [isPending, phase]);
 
   const handleSave = async () => {
     setPhase('saving');
@@ -195,7 +224,22 @@ export default function CloseDraftDialog({ open, onKeepEditing, onSaveDraft, onD
       aria-labelledby="close-draft-title"
       PaperProps={{ sx: DIALOG_PAPER_SX }}
     >
-      <DialogContent sx={{ p: 0, overflow: 'hidden' }}>
+      {/* Same as Escape or a backdrop click: back to the form. Only the question can be closed. */}
+      <IconButton
+        aria-label="Keep editing"
+        onClick={onKeepEditing}
+        disabled={phase !== 'ask'}
+        sx={{
+          ...CLOSE_SX,
+          opacity: activePanel === 'ask' ? 1 : 0,
+          visibility: activePanel === 'ask' ? 'visible' : 'hidden',
+        }}
+      >
+        <Iconify icon="mingcute:close-line" width={24} />
+      </IconButton>
+
+      {/* Visible, so the circle's pulse is not clipped at the top; the panel box below clips its own content */}
+      <DialogContent sx={{ p: 0, overflow: 'visible' }}>
         <Stack spacing={2} alignItems="center" sx={{ width: '100%' }}>
           {/* One circle throughout: it recolours and swaps its glyph rather than
               being replaced, so the dialog reads as a single object changing state. */}
@@ -276,19 +320,11 @@ export default function CloseDraftDialog({ open, onKeepEditing, onSaveDraft, onD
                     </LoadingButton>
 
                     <Button
-                      fullWidth
-                      onClick={onKeepEditing}
-                      disabled={busy}
-                      sx={SECONDARY_ACTION_SX}
-                    >
-                      Keep Editing
-                    </Button>
-
-                    <Button
+                      ref={discardAskRef}
                       fullWidth
                       onClick={() => setPhase('discardPending')}
                       disabled={busy}
-                      sx={{ ...TEXT_ACTION_SX, '&:hover': { bgcolor: 'transparent', color: RED } }}
+                      sx={DISCARD_ACTION_SX}
                     >
                       Discard this Campaign
                     </Button>
@@ -300,14 +336,12 @@ export default function CloseDraftDialog({ open, onKeepEditing, onSaveDraft, onD
             {/* Saved confirmation */}
             <Box {...panelProps('saved')}>
               <div ref={savedRef}>
-                <Stack spacing={0.5}>
+                <Stack spacing={0.5} role="status" sx={{ pb: 2 }}>
                   <Typography component="h2" sx={TITLE_SX}>
                     Campaign Saved as Draft
                   </Typography>
 
-                  <Typography sx={BODY_SX}>
-                    Pick it up any time from your campaigns list.
-                  </Typography>
+                  <Typography sx={BODY_SX}>Find it in Drafts and finish it any time.</Typography>
                 </Stack>
               </div>
             </Box>
@@ -326,14 +360,16 @@ export default function CloseDraftDialog({ open, onKeepEditing, onSaveDraft, onD
                     </Typography>
                   </Stack>
 
-                  <Stack spacing={1.5} alignItems="center">
+                  <Stack spacing={1} alignItems="center">
                     <Typography
+                      role="timer"
                       sx={{
                         fontFamily: BODY_FONT,
                         fontWeight: 600,
                         fontSize: 14,
                         lineHeight: '18px',
                         color: RED,
+                        fontVariantNumeric: 'tabular-nums',
                       }}
                     >
                       {isDiscarding
@@ -341,15 +377,7 @@ export default function CloseDraftDialog({ open, onKeepEditing, onSaveDraft, onD
                         : `Discarding in ${secondsLeft} second${secondsLeft === 1 ? '' : 's'}`}
                     </Typography>
 
-                    <Box
-                      sx={{
-                        width: '100%',
-                        height: 4,
-                        borderRadius: 2,
-                        bgcolor: alpha(RED, 0.16),
-                        overflow: 'hidden',
-                      }}
-                    >
+                    <Box sx={{ ...TRACK_SX, bgcolor: alpha(RED, 0.16) }}>
                       {/* Drains over the grace period, then holds at empty while
                           the discard runs -- snapping back to full would read as
                           the countdown restarting. */}
@@ -368,6 +396,7 @@ export default function CloseDraftDialog({ open, onKeepEditing, onSaveDraft, onD
 
                   <Stack spacing={1}>
                     <Button
+                      ref={cancelRef}
                       fullWidth
                       onClick={() => setPhase('ask')}
                       disabled={isDiscarding}
@@ -380,13 +409,9 @@ export default function CloseDraftDialog({ open, onKeepEditing, onSaveDraft, onD
                       fullWidth
                       onClick={runDiscard}
                       loading={isDiscarding}
-                      sx={{
-                        ...TEXT_ACTION_SX,
-                        color: RED,
-                        '&:hover': { bgcolor: alpha(RED, 0.08), color: RED },
-                      }}
+                      sx={DISCARD_ACTION_SX}
                     >
-                      Discard now
+                      Discard Now
                     </LoadingButton>
                   </Stack>
                 </Stack>

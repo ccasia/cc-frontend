@@ -1,8 +1,11 @@
 import PropTypes from 'prop-types';
+import isEqual from 'lodash/isEqual';
 import { useLocation } from 'react-router';
 import { useMemo, useEffect, useReducer, useCallback } from 'react';
 
 import axios, { endpoints } from 'src/utils/axios';
+
+import { forgetDashboardSession } from 'src/components/loading-screen';
 
 import { setSession } from './utils';
 import { AuthContext } from './auth-context';
@@ -23,11 +26,12 @@ const initialState = {
 
 const reducer = (state, action) => {
   if (action.type === 'INITIAL') {
-    return {
-      loading: false,
-      user: action.payload.user,
-      reauth_required: action.payload.reauth_required,
-    };
+    const { user, reauth_required } = action.payload;
+    // /me runs on every page change; an unchanged user keeps the same state, so the app does not re-render.
+    if (!state.loading && state.reauth_required === reauth_required && isEqual(state.user, user)) {
+      return state;
+    }
+    return { loading: false, user, reauth_required };
   }
   if (action.type === 'LOGIN') {
     return {
@@ -63,7 +67,7 @@ const reducer = (state, action) => {
 
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const location = useLocation();
+  const { pathname } = useLocation();
 
   const initialize = useCallback(async () => {
     try {
@@ -85,9 +89,10 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Page changes only. Query changes such as ?tab= or ?q= do not refetch the user.
   useEffect(() => {
     initialize();
-  }, [initialize, location]);
+  }, [initialize, pathname]);
 
   // LOGIN
   const login = useCallback(async (email, password) => {
@@ -183,6 +188,7 @@ export function AuthProvider({ children }) {
   const logout = useCallback(async () => {
     await axios.post(endpoints.auth.logout);
     setSession(null);
+    forgetDashboardSession();
     // Clear profile completion flags on logout
     localStorage.removeItem('profileCompleted');
     sessionStorage.removeItem('profileModalShown');

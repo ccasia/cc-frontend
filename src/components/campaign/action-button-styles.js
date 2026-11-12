@@ -16,6 +16,22 @@ const BASE = {
   textTransform: 'none',
   transition:
     'transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 140ms ease-out, border-color 140ms ease-out, box-shadow 140ms ease-out',
+  // Keyboard focus gets a still ring, not MUI's pulsing grey ripple
+  '& .MuiTouchRipple-ripplePulsate': { display: 'none' },
+  '&.Mui-focusVisible': { outline: '2px solid #1340FF', outlineOffset: '2px' },
+};
+
+// While loading, only the spinner shows. This comes after `&.Mui-disabled`,
+// whose text colour would otherwise show through the hidden label.
+const loading = (indicator) => ({
+  '&.MuiLoadingButton-loading': { color: 'transparent' },
+  '& .MuiLoadingButton-loadingIndicator': { color: indicator },
+});
+
+// The press still shows through the shadow; with reduced motion the button does not move.
+// Keep this last in each style, so it comes after `&:active`.
+const STILL_PRESS = {
+  '@media (prefers-reduced-motion: reduce)': { '&:active': { transform: 'none' } },
 };
 
 /** Dark primary. */
@@ -35,6 +51,8 @@ export const PRIMARY_ACTION_SX = {
     color: 'rgba(255, 255, 255, 0.6)',
     boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
   },
+  ...loading('#FFFFFF'),
+  ...STILL_PRESS,
 };
 
 /** White secondary. */
@@ -61,6 +79,8 @@ export const SECONDARY_ACTION_SX = {
     border: '1px solid #E8E8E8',
     boxShadow: 'inset 0px -3px 0px #E7E7E7',
   },
+  ...loading('#8E8E93'),
+  ...STILL_PRESS,
 };
 
 /** Destructive. */
@@ -80,6 +100,26 @@ export const DANGER_ACTION_SX = {
     color: 'rgba(255, 255, 255, 0.6)',
     boxShadow: 'inset 0px -3px 0px rgba(0, 0, 0, 0.45)',
   },
+  ...loading('#FFFFFF'),
+  ...STILL_PRESS,
+};
+
+/** White with red text; a light red tint on hover marks it as the destructive choice. */
+export const DISCARD_ACTION_SX = {
+  ...SECONDARY_ACTION_SX,
+  color: '#D4321C',
+  '&:hover': {
+    bgcolor: '#FFF1EF',
+    border: '1px solid #F5C6BF',
+    boxShadow: 'inset 0px -3px 0px #F5C6BF',
+  },
+  '&:active': {
+    bgcolor: '#FDE4E0',
+    border: '1px solid #F5C6BF',
+    boxShadow: 'inset 0px -1px 0px #F5C6BF',
+    transform: 'translateY(2px)',
+  },
+  ...STILL_PRESS,
 };
 
 /** Plain text action, e.g. "Discard this Campaign". */

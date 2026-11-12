@@ -20,6 +20,8 @@ const STATUS_CONFIG = {
   error: { color: '#FF5630', glyph: 'bang' },
 };
 
+export const hasDraftStatus = (status) => !!STATUS_CONFIG[status];
+
 const CHECK_PATH = 'M7.6 12.3l2.9 2.9 5.9-6.4';
 const BANG_PATH = 'M12 7.2v5.4';
 
@@ -66,7 +68,7 @@ function useRelativeTime(date, active) {
   return formatSavedAt(date);
 }
 
-export default function DraftSaveIndicator({ status, lastSavedAt, onRetry }) {
+export default function DraftSaveIndicator({ status, lastSavedAt, onRetry, bare = false }) {
   const config = STATUS_CONFIG[status];
   const reduceMotion = useReducedMotion();
 
@@ -107,12 +109,13 @@ export default function DraftSaveIndicator({ status, lastSavedAt, onRetry }) {
       sx={{
         minWidth: 0,
         // Quiet when things are fine, loud only when the save actually failed.
-        ...(isConflict && {
-          px: 1,
-          py: 0.25,
-          borderRadius: 1,
-          bgcolor: alpha(color, 0.08),
-        }),
+        ...(isConflict &&
+          !bare && {
+            px: 1,
+            py: 0.25,
+            borderRadius: 1,
+            bgcolor: alpha(color, 0.08),
+          }),
       }}
     >
       <Tooltip title={tooltip} placement="bottom-end" arrow>
@@ -122,24 +125,21 @@ export default function DraftSaveIndicator({ status, lastSavedAt, onRetry }) {
           spacing={0.75}
           sx={{ minWidth: 0, cursor: 'default' }}
         >
-          <Box
-            component={m.div}
-            animate={{ scale: isBusy || reduceMotion ? 1 : [1, 1.15, 1] }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            sx={{ width: 16, height: 16, flexShrink: 0, display: 'flex' }}
-          >
+          {/* No pop when a save lands: autosave runs often, and the ring closing is enough */}
+          <Box sx={{ width: 16, height: 16, flexShrink: 0, display: 'flex' }}>
+            {/* CSS spin, so it stays smooth while the save keeps the main thread busy.
+                Stopping snaps the angle, which a closed ring hides. */}
             <Box
-              component={m.svg}
+              component="svg"
               viewBox="0 0 24 24"
               width={16}
               height={16}
               aria-hidden
-              animate={{ rotate: isBusy && !reduceMotion ? 360 : 0 }}
-              transition={
-                isBusy && !reduceMotion
-                  ? { duration: 0.75, repeat: Infinity, ease: 'linear' }
-                  : { duration: 0 } // a closed ring is rotationally symmetric, so snapping is invisible
-              }
+              sx={{
+                '@keyframes draftSaveSpin': { to: { transform: 'rotate(360deg)' } },
+                animation: isBusy ? 'draftSaveSpin 750ms linear infinite' : 'none',
+                '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
+              }}
             >
               {/* The ring: an open arc while saving, closing into a full circle when done */}
               <m.circle
@@ -190,7 +190,13 @@ export default function DraftSaveIndicator({ status, lastSavedAt, onRetry }) {
               // The step indicator sits between this and the close button, so the
               // label only shows once the header is wide enough to carry it.
               display: { xs: 'none', md: 'block' },
-              color: isBusy ? 'text.secondary' : color,
+              // Only warnings and failures colour the text; a normal save stays quiet
+              color: (() => {
+                if (isBusy) return '#8E8E93';
+                if (bare) return isConflict ? color : '#3A3A3C';
+                return status === 'saved' ? '#8E8E93' : color;
+              })(),
+              fontSize: 13,
               fontWeight: 500,
               whiteSpace: 'nowrap',
             }}
@@ -227,4 +233,5 @@ DraftSaveIndicator.propTypes = {
   status: PropTypes.string,
   lastSavedAt: PropTypes.instanceOf(Date),
   onRetry: PropTypes.func,
+  bare: PropTypes.bool,
 };
