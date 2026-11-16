@@ -6,46 +6,62 @@ import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { memo, useMemo, useEffect, useCallback } from 'react';
 
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import { Box, Grid, Stack, FormLabel, Typography } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers';
+import { Box, Grid, Stack, Typography, InputAdornment } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import { interestsLists } from 'src/contants/interestLists';
 
-import Iconify from 'src/components/iconify';
+import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
 import { RHFUploadCover } from 'src/components/hook-form/rhf-upload-cover';
 
-// Form field component with consistent styling
-const FormField = ({ label, children, required = true }) => (
-  <Stack spacing={0.5}>
-    <FormLabel
-      required={required}
-      sx={{
-        fontWeight: 700,
-        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-        fontSize: '0.875rem',
-        mb: 0.5,
-        '& .MuiFormLabel-asterisk': {
-          display: required ? 'inline-block' : 'none',
-          color: '#FF3500',
-        },
-      }}
-    >
-      {label}
-    </FormLabel>
-    {children}
-  </Stack>
-);
+import ChipSelect from 'src/sections/campaign/create/components/chip-select';
+import { bulletInputProps } from 'src/sections/campaign/create/components/bullet-text';
+import CampaignCardPreview from 'src/sections/campaign/create/components/campaign-card-preview';
+import {
+  multiLineSx,
+  singleLineSx,
+  helperTextSx,
+} from 'src/sections/campaign/create/components/field-styles';
 
-FormField.propTypes = {
-  label: PropTypes.string.isRequired,
-  children: PropTypes.node.isRequired,
-  required: PropTypes.bool,
+import FormField from './components/form-field';
+
+const NAME_MAX = 40;
+
+const campaignInfoSx = {
+  ...multiLineSx,
+  '& .MuiInputBase-inputMultiline': {
+    ...multiLineSx['& .MuiInputBase-inputMultiline'],
+    maxHeight: 'min(176px, 30vh)',
+    overflowY: 'auto !important',
+  },
 };
+
+const IMAGE_ACCEPT = { 'image/jpeg': [], 'image/png': [] };
+
+const renderCardPreview = (image) => <CampaignCardPreview image={image} />;
+
+const formatPeriod = (start, end) => {
+  if (!start || !end) return null;
+  const days = dayjs(end).startOf('day').diff(dayjs(start).startOf('day'), 'day');
+  if (Number.isNaN(days) || days < 0) return null;
+  if (days === 0) return 'Same day';
+  return days === 1 ? '1 day' : `${days} days`;
+};
+
+const datePickerSlotProps = (placeholder, error) => ({
+  textField: {
+    fullWidth: true,
+    placeholder,
+    size: 'small',
+    error: !!error,
+    helperText: error?.message,
+    inputProps: { 'aria-label': placeholder },
+    sx: singleLineSx,
+  },
+});
 
 // Validation schema - only required fields are validated
 const UpdateGeneralInfoSchema = Yup.object().shape({
@@ -112,7 +128,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate, formId, onFormStat
     setValue,
     watch,
     reset,
-    formState: { isSubmitting, isDirty },
+    formState: { isSubmitting, isDirty, errors },
   } = methods;
 
   // Reset form when campaign data changes
@@ -126,6 +142,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate, formId, onFormStat
     onFormStateChange?.({ isDirty, isSubmitting });
   }, [isDirty, isSubmitting, onFormStateChange]);
 
+  const campaignName = watch('campaignName') ?? '';
   const startDate = watch('campaignStartDate');
   const endDate = watch('campaignEndDate');
   const postingStartDate = watch('postingStartDate');
@@ -188,245 +205,189 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate, formId, onFormStat
 
   return (
     <FormProvider id={formId} methods={methods} onSubmit={handleSubmit(onSubmit)}>
-      <Box sx={{ maxWidth: { xs: '100%', sm: '80%' } }}>
-        {/* Campaign Title & Industry - Two Columns */}
+      <Box sx={{ maxWidth: { xs: '100%', sm: '80%' }, ...helperTextSx }}>
         <Grid container spacing={2} mb={2}>
           <Grid item xs={12} sm={6}>
-            <FormField label="Campaign Name">
+            <FormField label="Campaign Name" required>
               <RHFTextField
                 name="campaignName"
-                placeholder="Campaign Name (max 40 characters)"
+                placeholder="Campaign name"
                 size="small"
-                inputProps={{
-                  maxLength: 40,
+                inputProps={{ maxLength: NAME_MAX }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: campaignName.length >= NAME_MAX ? '#FF3500' : '#8E8E93',
+                          fontVariantNumeric: 'tabular-nums',
+                          opacity: 0,
+                          transition: 'opacity 150ms ease',
+                          '.Mui-focused &': { opacity: 1 },
+                        }}
+                      >
+                        {campaignName.length}/{NAME_MAX}
+                      </Typography>
+                    </InputAdornment>
+                  ),
                 }}
-                sx={{ '& .MuiOutlinedInput-root': { height: '57px' } }}
+                sx={singleLineSx}
               />
             </FormField>
           </Grid>
           <Grid item xs={12} sm={6}>
-            <FormField label="Industry" required={false}>
-              <RHFMultiSelect
+            <FormField label="Industry">
+              <ChipSelect
                 name="campaignIndustries"
-                placeholder="Select Industry"
-                chip
-                checkbox
-                options={interestsLists.map((item) => ({ value: item, label: item }))}
+                noOptionsText="No matching industry"
+                options={interestsLists}
+                placeholder="Select industry"
               />
             </FormField>
           </Grid>
         </Grid>
 
-        {/* Campaign General Info - Two Columns */}
         <Grid container spacing={2}>
-          {/* Column one */}
           <Grid item xs={12} sm={6}>
-            {/* Campaign Info - Full width */}
-            <Box mb={2}>
-              <FormField label="Campaign Info">
+            <Stack spacing={2}>
+              <FormField label="Campaign Info" required>
                 <RHFTextField
                   name="campaignDescription"
-                  placeholder="Explain more about the campaign..."
+                  placeholder="What is the campaign about, and what should creators do?"
                   multiline
-                  rows={3}
+                  minRows={4}
+                  maxRows={8}
                   size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { padding: '12px' } }}
+                  inputProps={bulletInputProps}
+                  sx={campaignInfoSx}
                 />
               </FormField>
-            </Box>
 
-            {/* About Brand - Full width */}
-            <Box mb={2}>
-              <FormField label="About the Brand" required={false}>
-                <Typography mt={-1} mb={0.5} variant="caption" color="#8E8E93">
-                  Additional information about the brand.
-                </Typography>
+              <FormField label="About the Brand" hint="Let us know a bit more about the brand!">
                 <RHFTextField
                   name="brandAbout"
-                  placeholder="About"
+                  placeholder="What the brand does, its values and its audience"
                   multiline
+                  minRows={1}
+                  maxRows={8}
                   size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { padding: '12px' } }}
+                  inputProps={bulletInputProps}
+                  sx={multiLineSx}
                 />
               </FormField>
-            </Box>
 
-            {/* Campaign start/end date - Two columns */}
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <FormField label="Campaign Start Date">
+              <FormField label="Campaign Period" aside={formatPeriod(startDate, endDate)} required>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
                     <DatePicker
-                      value={startDateDayjs}
-                      format="DD/MM/YY"
+                      value={startDateDayjs?.toDate() ?? null}
                       onChange={(newValue) => {
                         setValue('campaignStartDate', newValue ? newValue.toISOString() : '', {
                           shouldValidate: true,
                           shouldDirty: true,
                         });
                       }}
-                      slots={{
-                        openPickerIcon: () => <Iconify icon="meteor-icons:calendar" width={22} />,
-                      }}
-                      slotProps={{
-                        textField: {
-                          fullWidth: true,
-                          placeholder: 'Select date',
-                          error: false,
-                          size: 'small',
-                          sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                        },
-                      }}
+                      slotProps={datePickerSlotProps('Start date', errors.campaignStartDate)}
                     />
-                  </FormField>
-                </Grid>
-                <Grid item xs={6}>
-                  <FormField label="Campaign End Date">
+                  </Grid>
+                  <Grid item xs={6}>
                     <DatePicker
-                      value={endDateDayjs}
-                      format="DD/MM/YY"
+                      value={endDateDayjs?.toDate() ?? null}
                       onChange={(newValue) => {
                         setValue('campaignEndDate', newValue ? newValue.toISOString() : '', {
                           shouldValidate: true,
                           shouldDirty: true,
                         });
                       }}
-                      slots={{
-                        openPickerIcon: () => <Iconify icon="meteor-icons:calendar" width={22} />,
-                      }}
-                      slotProps={{
-                        textField: {
-                          fullWidth: true,
-                          placeholder: 'Select date',
-                          error: false,
-                          size: 'small',
-                          sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                        },
-                      }}
+                      slotProps={datePickerSlotProps('End date', errors.campaignEndDate)}
                     />
-                  </FormField>
-                </Grid>
-              </Grid>
-            </LocalizationProvider>
-
-            {/* Posting start/end date - Two columns */}
-            <Box sx={{ mt: 2 }}>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <FormField label="Posting Period">
-                      <Box display="flex" flexDirection="row" gap={2}>
-                        <DatePicker
-                          value={postingStartDateDayjs}
-                          format="DD/MM/YY"
-                          onChange={(newValue) => {
-                            setValue('postingStartDate', newValue ? newValue.toISOString() : null, {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                            });
-                            // Auto-set postingEndDate to +5 days if not manually set
-                            if (newValue) {
-                              const newEndDate = dayjs(newValue).add(7, 'day');
-                              // Only auto-set if postingEndDate is empty or was previously auto-set
-                              if (
-                                !postingEndDateDayjs ||
-                                postingEndDateDayjs.isSame(dayjs(postingStartDate).add(7, 'day'))
-                              ) {
-                                setValue('postingEndDate', newEndDate.toISOString(), {
-                                  shouldValidate: true,
-                                  shouldDirty: true,
-                                });
-                              }
-                            }
-                          }}
-                          slots={{
-                            openPickerIcon: () => (
-                              <Iconify icon="meteor-icons:calendar" width={22} />
-                            ),
-                          }}
-                          slotProps={{
-                            textField: {
-                              fullWidth: true,
-                              placeholder: 'Start Date',
-                              error: false,
-                              size: 'small',
-                              sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                            },
-                          }}
-                        />
-                        <DatePicker
-                          value={postingEndDateDayjs}
-                          format="DD/MM/YY"
-                          onChange={(newValue) => {
-                            setValue('postingEndDate', newValue ? newValue.toISOString() : null, {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                            });
-                          }}
-                          slots={{
-                            openPickerIcon: () => (
-                              <Iconify icon="meteor-icons:calendar" width={22} />
-                            ),
-                          }}
-                          slotProps={{
-                            textField: {
-                              fullWidth: true,
-                              placeholder: 'End Date',
-                              error: false,
-                              size: 'small',
-                              sx: { '& .MuiOutlinedInput-root': { height: '50px' } },
-                            },
-                          }}
-                        />
-                      </Box>
-                    </FormField>
                   </Grid>
                 </Grid>
-              </LocalizationProvider>
-            </Box>
+              </FormField>
+
+              <FormField
+                label="Posting Period"
+                aside={formatPeriod(postingStartDate, postingEndDate)}
+                required
+              >
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <DatePicker
+                      value={postingStartDateDayjs?.toDate() ?? null}
+                      onChange={(newValue) => {
+                        setValue('postingStartDate', newValue ? newValue.toISOString() : null, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
+                        // Auto-set postingEndDate to +7 days if not manually set
+                        if (newValue) {
+                          const newEndDate = dayjs(newValue).add(7, 'day');
+                          if (
+                            !postingEndDateDayjs ||
+                            postingEndDateDayjs.isSame(dayjs(postingStartDate).add(7, 'day'))
+                          ) {
+                            setValue('postingEndDate', newEndDate.toISOString(), {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            });
+                          }
+                        }
+                      }}
+                      slotProps={datePickerSlotProps('Start date', errors.postingStartDate)}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <DatePicker
+                      value={postingEndDateDayjs?.toDate() ?? null}
+                      onChange={(newValue) => {
+                        setValue('postingEndDate', newValue ? newValue.toISOString() : null, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
+                      }}
+                      slotProps={datePickerSlotProps('End date', errors.postingEndDate)}
+                    />
+                  </Grid>
+                </Grid>
+              </FormField>
+            </Stack>
           </Grid>
 
-          {/* Column two */}
           <Grid item xs={12} sm={6}>
-            {/* Product/Service Name - Full width */}
-            <Box mb={2}>
-              <FormField label="Product/Service Name">
+            <Stack spacing={2}>
+              <FormField label="Product/Service Name" required>
                 <RHFTextField
                   name="productName"
-                  placeholder="Product/Service Name"
+                  placeholder="Product or service name"
                   size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { height: '50px' } }}
+                  sx={singleLineSx}
                 />
               </FormField>
-            </Box>
 
-            <Box mb={2}>
-              <FormField label="Website Link" required={false}>
+              <FormField label="Website Link">
                 <RHFTextField
                   name="websiteLink"
-                  placeholder="cultcreativeasia.com"
-                  multiline
-                  rows={1}
+                  placeholder="https://www.cultcreativeasia.com"
                   size="small"
-                  sx={{ '& .MuiOutlinedInput-root': { padding: '12px' } }}
+                  inputProps={{ inputMode: 'url', autoCapitalize: 'none', spellCheck: false }}
+                  sx={singleLineSx}
                 />
               </FormField>
-            </Box>
 
-            {/* Campaign Photo - Full width */}
-            <Box sx={{ mb: 4 }}>
-              <FormField label="Campaign Image">
+              <FormField label="Campaign Image" required>
                 <RHFUploadCover
                   name="campaignImages"
                   maxSize={10485760}
+                  accept={IMAGE_ACCEPT}
+                  renderPreview={renderCardPreview}
                   placeholderPrimaryTypographyProps={{ fontSize: 18, fontWeight: 600 }}
                   placeholderSecondaryTypographyProps={{ fontSize: 14, fontWeight: 400 }}
                 />
               </FormField>
-            </Box>
+            </Stack>
           </Grid>
         </Grid>
-
       </Box>
     </FormProvider>
   );

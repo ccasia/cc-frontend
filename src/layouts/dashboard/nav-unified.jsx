@@ -12,7 +12,6 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-import Image from 'src/components/image';
 import Scrollbar from 'src/components/scrollbar';
 import { useSettingsContext } from 'src/components/settings';
 import { NavSectionMini, NavSectionVertical } from 'src/components/nav-section';
@@ -46,14 +45,11 @@ export default function NavUnified({ openNav, onCloseNav }) {
         // ...(isMini && { my: 2 }),
       }}
     >
-      <Image
+      <Box
+        component="img"
         src="/assets/icons/navbar/ic_navlogo.svg"
         alt="Cult Creative Logo"
-        style={{
-          width: '100%',
-          height: '100%',
-          borderRadius: 'inherit',
-        }}
+        sx={{ display: 'block', width: 1, height: 1, borderRadius: 'inherit' }}
       />
     </Box>
   );

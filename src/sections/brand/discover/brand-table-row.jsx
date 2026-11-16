@@ -4,7 +4,6 @@ import React, { useMemo } from 'react';
 
 import {
   Box,
-  Avatar,
   Button,
   Tooltip,
   Checkbox,
@@ -22,6 +21,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import ClientDemoLinkModal from './client-demo-link-modal';
 
@@ -165,7 +165,7 @@ const BrandTableRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =
         </TableCell>
 
         <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar src={logo} alt={name} sx={{ mr: 2 }} />
+          <BrandLogoAvatar src={logo} alt={name} sx={{ mr: 2 }} />
 
           <ListItemText
             primary={name || 'null'}

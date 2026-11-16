@@ -10,7 +10,7 @@ const useGetCreatorById = (id) => {
   const demoCreator = getDemoCreatorById(id);
 
   const { data, error, isLoading } = useSWR(
-    demoCreator ? null : endpoints.creators.getCreatorFullInfo(id),
+    !id || demoCreator ? null : endpoints.creators.getCreatorFullInfo(id),
     fetcher
   );
 

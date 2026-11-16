@@ -47,6 +47,9 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
+import { menuPaperSx } from 'src/sections/campaign/create/components/chip-select';
+import { selectMenuProps } from 'src/sections/campaign/manage/details/components/select-menu-props';
+
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import usePitchSocket from './use-pitch-socket';
@@ -552,8 +555,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const canUseNotes =
     user?.role === 'superadmin' ||
     ['god', 'advanced'].includes(user?.admin?.mode) ||
-    (user?.role === 'admin' &&
-      (campaign?.campaignAdmin || []).some((a) => a.adminId === user?.id));
+    (user?.role === 'admin' && (campaign?.campaignAdmin || []).some((a) => a.adminId === user?.id));
 
   const creatorNotes = useCreatorNotes({ campaignId: campaign?.id, enabled: canUseNotes });
   const [unreadNotesOnly, setUnreadNotesOnly] = useState(false);
@@ -1867,33 +1869,76 @@ AddCreatorModal.propTypes = {
 };
 
 // Virtualized listbox for Autocomplete (reuses pattern from campaign-detail-creator)
-const LISTBOX_PADDING = 8;
+const OPTION_HEIGHT = 48;
+const OPTION_GAP = 4;
+const ITEM_SIZE = OPTION_HEIGHT + OPTION_GAP;
 
 const ListboxComponent = React.forwardRef((props, ref) => {
   // eslint-disable-next-line react/prop-types
   const { children, ...other } = props;
   const items = React.Children.toArray(children);
   const itemCount = items.length;
-  const itemSize = 60;
 
   return (
     <div ref={ref} {...other}>
       <FixedSizeList
-        height={
-          itemCount > 8 ? 8 * itemSize + LISTBOX_PADDING : itemCount * itemSize + LISTBOX_PADDING
-        }
+        height={Math.min(itemCount, 6.5) * ITEM_SIZE - OPTION_GAP}
         width="100%"
-        itemSize={itemSize}
+        itemSize={ITEM_SIZE}
         itemCount={itemCount}
         overscanCount={5}
       >
-        {({ index, style }) => (
-          <div style={{ ...style, top: style.top + LISTBOX_PADDING }}>{items[index]}</div>
-        )}
+        {({ index, style }) => <div style={style}>{items[index]}</div>}
       </FixedSizeList>
     </div>
   );
 });
+
+// The create-campaign menu look; the virtual list sets its own height and scroll
+const creatorPaperSx = {
+  ...menuPaperSx,
+  '& .MuiAutocomplete-listbox': { p: 0, maxHeight: 'none', overflow: 'visible' },
+  '& .MuiAutocomplete-listbox .MuiAutocomplete-option': {
+    ...menuPaperSx['& .MuiAutocomplete-listbox .MuiAutocomplete-option'],
+    height: OPTION_HEIGHT,
+    gap: 1.25,
+  },
+};
+
+const creatorAvatarSx = {
+  width: 28,
+  height: 28,
+  flexShrink: 0,
+  fontSize: 12,
+  fontWeight: 600,
+  bgcolor: '#EBEBEB',
+  color: '#636366',
+};
+
+// Profile link rows can wrap onto two lines, so they get room above and below
+const linkPaperSx = {
+  ...menuPaperSx,
+  '& .MuiAutocomplete-listbox .MuiAutocomplete-option': {
+    ...menuPaperSx['& .MuiAutocomplete-listbox .MuiAutocomplete-option'],
+    py: 0.75,
+  },
+  '& .MuiAutocomplete-listbox > li + li': { mt: 0.5 },
+};
+
+const linkMenuSx = {
+  ...selectMenuProps.PaperProps.sx,
+  '& .MuiMenuItem-root': { ...selectMenuProps.PaperProps.sx['& .MuiMenuItem-root'], py: 0.75 },
+};
+
+const ellipsisSx = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
+
+const emailSx = {
+  ...ellipsisSx,
+  fontSize: 12,
+  lineHeight: '16px',
+  fontWeight: 400,
+  color: '#8E8E93',
+};
 
 export function PlatformCreatorModal({
   open,
@@ -2645,28 +2690,24 @@ export function PlatformCreatorModal({
                                   }}
                                 />
                               )}
+                              slotProps={{
+                                paper: { sx: creatorPaperSx },
+                                popper: { placement: 'bottom-start', sx: { minWidth: 300 } },
+                              }}
                               renderOption={({ key, ...optionProps }, option) => (
-                                <Box
-                                  key={key}
-                                  component="li"
-                                  {...optionProps}
-                                  sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}
-                                >
-                                  <Avatar
-                                    src={option?.photoURL}
-                                    sx={{ width: 32, height: 32, bgcolor: '#e0e0e0' }}
-                                  >
+                                <li key={key} {...optionProps}>
+                                  <Avatar src={option?.photoURL} sx={creatorAvatarSx}>
                                     {option?.name?.charAt(0)}
                                   </Avatar>
-                                  <Box>
-                                    <Typography variant="body2" fontWeight={500}>
+                                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                                    <Box sx={{ ...ellipsisSx, lineHeight: '20px' }}>
                                       {option?.name}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: '#636366' }}>
+                                    </Box>
+                                    <Box className="option-description" sx={emailSx}>
                                       {option?.email}
-                                    </Typography>
+                                    </Box>
                                   </Box>
-                                </Box>
+                                </li>
                               )}
                             />
                           </Box>
@@ -2764,7 +2805,7 @@ export function PlatformCreatorModal({
                                         width: 'min(420px, calc(100vw - 32px)) !important',
                                       },
                                     },
-                                    paper: { sx: { width: '100%' } },
+                                    paper: { sx: { ...linkPaperSx, width: '100%' } },
                                   }}
                                   sx={{
                                     '&&& .MuiOutlinedInput-root': {
@@ -2838,10 +2879,12 @@ export function PlatformCreatorModal({
                                       );
                                     },
                                     MenuProps: {
+                                      ...selectMenuProps,
                                       anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
                                       transformOrigin: { vertical: 'top', horizontal: 'left' },
                                       PaperProps: {
                                         sx: {
+                                          ...linkMenuSx,
                                           width: 'max-content',
                                           minWidth: 240,
                                           maxWidth: 'calc(100vw - 32px)',

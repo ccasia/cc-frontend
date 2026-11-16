@@ -8,7 +8,6 @@ import {
   Stack,
   styled,
   Button,
-  Avatar,
   TableRow,
   TableCell,
   TableHead,
@@ -23,6 +22,7 @@ import { useRouter } from 'src/routes/hooks';
 import { formatCurrencyAmount } from 'src/utils/currency';
 
 import NewLabel from 'src/components/styleLabel/styleLabel';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 const StyledTableCell = styled(TableCell)(() => ({
   fontWeight: 600,
@@ -67,7 +67,7 @@ const InvoiceLists = ({ invoices }) => {
                 <TableCell>{invoice.invoiceNumber}</TableCell>
                 <TableCell>
                   <Stack direction="row" spacing={1.5} alignItems="center">
-                    <Avatar src={invoice.campaign.company?.logo ?? invoice.campaign.brand?.logo} />
+                    <BrandLogoAvatar src={invoice.campaign.company?.logo ?? invoice.campaign.brand?.logo} />
                     <ListItemText
                       primary={invoice.campaign.name}
                       secondary={invoice.campaign.company?.name ?? invoice.campaign.brand?.name}

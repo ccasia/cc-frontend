@@ -5,7 +5,7 @@ import { enqueueSnackbar } from 'notistack';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { memo, useRef, useMemo, useEffect } from 'react';
 
-import { Box, Stack, MenuItem, Collapse, FormLabel, Typography } from '@mui/material';
+import { Box, Collapse } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
@@ -17,35 +17,24 @@ import {
 } from 'src/contants/campaign-objectives';
 
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFSelectV2, RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFTextField } from 'src/components/hook-form';
 
-// Form field component with consistent styling
-const FormField = ({ label, children, required = true }) => (
-  <Stack spacing={0.5}>
-    <FormLabel
-      required={required}
-      sx={{
-        fontWeight: 700,
-        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-        fontSize: '0.875rem',
-        mb: 0.5,
-        '& .MuiFormLabel-asterisk': {
-          display: required ? 'inline-block' : 'none',
-          color: '#FF3500',
-        },
-      }}
-    >
-      {label}
-    </FormLabel>
-    {children}
-  </Stack>
-);
+import ChipSelect from 'src/sections/campaign/create/components/chip-select';
+import { helperTextSx } from 'src/sections/campaign/create/components/field-styles';
 
-FormField.propTypes = {
-  label: PropTypes.string.isRequired,
-  children: PropTypes.node.isRequired,
-  required: PropTypes.bool,
-};
+import FormField from './components/form-field';
+
+// Options read "Brand Awareness (Introduce brands to new audiences)"
+const OBJECTIVE_PARTS = /^(.*?)\s*\((.*)\)$/;
+const objectiveTitle = (option) => option.match(OBJECTIVE_PARTS)?.[1] ?? option;
+const objectiveDescription = (option) => option.match(OBJECTIVE_PARTS)?.[2];
+
+const BOOST_OPTIONS = boostContentOptions.map((option) => option.value);
+const boostTitle = (value) =>
+  boostContentOptions.find((option) => option.value === value)?.label ?? value;
+
+const BASELINE_HINT =
+  'This helps us measure campaign impact and improvement. Enter your current performance baseline (e.g., "2,000 website visits/day" or "500 clicks/post" or "200 leads/month" or "150 inquiries/month")';
 
 // Validation schema
 const UpdateObjectivesSchema = Yup.object().shape({
@@ -139,79 +128,62 @@ const UpdateObjectives = ({ campaign, campaignMutate, formId, onFormStateChange 
 
   return (
     <FormProvider id={formId} methods={methods} onSubmit={handleSubmit(onSubmit)}>
-      <Box sx={{ maxWidth: '600px' }}>
-        {/* Primary Campaign Objective */}
+      <Box sx={{ maxWidth: '600px', ...helperTextSx }}>
         <Box sx={{ mt: 2 }}>
-          <FormField label="Primary Campaign Objective">
-            <RHFSelectV2
+          <FormField label="Primary Campaign Objective" required>
+            <ChipSelect
+              single
               name="campaignObjectives"
-              placeholder="Select Primary Campaign Objective"
-              multiple={false}
-            >
-              {primaryObjectivesList.map((item) => (
-                <MenuItem key={item} value={item}>
-                  {item}
-                </MenuItem>
-              ))}
-            </RHFSelectV2>
+              options={primaryObjectivesList}
+              placeholder="Select primary objective"
+            />
           </FormField>
         </Box>
 
-        {/* Additional fields - only show after primary objective is selected */}
         <Collapse in={Boolean(primaryObjective)}>
-          {/* Secondary Campaign Objective */}
           <Box sx={{ mt: 2 }}>
-            <FormField label="Secondary Campaign Objective - Choose up to 2" required={false}>
-              <RHFMultiSelect
+            <FormField label="Secondary Campaign Objective">
+              <ChipSelect
                 name="secondaryObjectives"
-                placeholder="Select Secondary Campaign Objectives"
-                options={secondaryOptions.map((item) => ({
-                  value: item,
-                  label: item,
-                }))}
-                chip
-                disabled={secondaryOptions.length === 0}
+                options={secondaryOptions}
+                placeholder="Select up to 2 objectives"
+                noOptionsText="No matching objective"
+                max={2}
+                getTitle={objectiveTitle}
+                getDescription={objectiveDescription}
               />
             </FormField>
           </Box>
 
-          {/* Conditionally render these fields only for Performance */}
           {primaryObjective === 'Performance' && (
             <>
-              {/* Boost/Promote Content */}
               <Box sx={{ mt: 2 }}>
-                <FormField label="Boost/Promote Content" required={false}>
-                  <RHFSelectV2 name="boostContent" placeholder="Select an option" multiple={false}>
-                    {boostContentOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </RHFSelectV2>
+                <FormField label="Boost/Promote Content">
+                  <ChipSelect
+                    single
+                    clearable
+                    name="boostContent"
+                    options={BOOST_OPTIONS}
+                    getTitle={boostTitle}
+                    placeholder="Select an option"
+                  />
                 </FormField>
               </Box>
 
-              {/* Primary KPI */}
               <Box sx={{ mt: 2 }}>
-                <FormField label="Primary KPI" required={false}>
-                  <RHFSelectV2 name="primaryKPI" placeholder="Select an option" multiple={false}>
-                    {primaryKPIOptions.map((item) => (
-                      <MenuItem key={item} value={item}>
-                        {item}
-                      </MenuItem>
-                    ))}
-                  </RHFSelectV2>
+                <FormField label="Primary KPI">
+                  <ChipSelect
+                    single
+                    clearable
+                    name="primaryKPI"
+                    options={primaryKPIOptions}
+                    placeholder="Select an option"
+                  />
                 </FormField>
               </Box>
 
-              {/* Current Performance Baseline */}
               <Box sx={{ mt: 2, mb: 4 }}>
-                <FormField label="Current Performance Baseline" required={false}>
-                  <Typography mt={-1} mb={0.5} variant="caption" color="#8E8E93">
-                    This helps us measure campaign impact and improvement. Enter your current
-                    performance baseline (e.g., &quot;2,000 website visits/day&quot; or &quot;500
-                    clicks/post&quot; or &quot;200 leads/month&quot; or &quot;150 inquiries/month&quot;)
-                  </Typography>
+                <FormField label="Current Performance Baseline" hint={BASELINE_HINT}>
                   <RHFTextField
                     name="performanceBaseline"
                     placeholder="Current Performance Baseline"
@@ -223,7 +195,6 @@ const UpdateObjectives = ({ campaign, campaignMutate, formId, onFormStateChange 
             </>
           )}
         </Collapse>
-
       </Box>
     </FormProvider>
   );

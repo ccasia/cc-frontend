@@ -4,7 +4,6 @@ import { format, formatDistanceToNow } from 'date-fns';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
@@ -15,6 +14,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useGetNewPackageClients } from 'src/api/finance';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import { CARD_BORDER, formatAmount } from '../utils';
 
@@ -185,13 +185,13 @@ export default function NewClientsDialog({ open, onClose, count, startDate, endD
                 }}
               >
                 <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
-                  <Avatar
+                  <BrandLogoAvatar
                     variant="rounded"
                     src={client.logo || undefined}
                     sx={{ width: 44, height: 44, bgcolor: '#F0FDF4', color: '#16A34A', borderRadius: 1.5 }}
                   >
                     <Iconify icon="mdi:office-building-outline" width={22} />
-                  </Avatar>
+                  </BrandLogoAvatar>
 
                   <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }} noWrap>

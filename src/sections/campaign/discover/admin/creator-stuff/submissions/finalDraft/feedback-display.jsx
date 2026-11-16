@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 const FeedbackDisplay = ({ submission, firstDraftSubmission, deliverables, campaign }) => {
   // State for collapsible feedback
@@ -96,8 +97,8 @@ const FeedbackDisplay = ({ submission, firstDraftSubmission, deliverables, campa
                 Client Feedback
               </Typography>
               {/* Use company logo or fallback avatar */}
-              <Avatar
-                src={campaign?.company?.logoURL || '/default-avatar.png'}
+              <BrandLogoAvatar
+                src={campaign?.company?.logo}
                 alt={campaign?.company?.name || 'Company'}
                 sx={{ mr: 2, mb: 2 }}
               />

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { preload } from 'swr';
 import PropTypes from 'prop-types';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -11,69 +11,78 @@ import { Box, Stack, Button, IconButton, Typography } from '@mui/material';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import { fetcher, endpoints } from 'src/utils/axios';
+
+// ----------------------------------------------------------------------
+
+const EASE_OUT = [0.23, 1, 0.32, 1];
+const fetchedIds = new Set();
+
+const readTabs = () => {
+  if (!window.campaignTabs) {
+    try {
+      window.campaignTabs = JSON.parse(localStorage.getItem('campaignTabs')) || [];
+    } catch (error) {
+      window.campaignTabs = [];
+    }
+  }
+  return window.campaignTabs;
+};
+
+// Writers call this so open lists update at once, with no polling.
+export const saveCampaignTabs = (tabs) => {
+  window.campaignTabs = tabs;
+  try {
+    localStorage.setItem('campaignTabs', JSON.stringify(tabs));
+  } catch (error) {
+    console.error('Error saving campaign tabs to localStorage:', error);
+  }
+  window.dispatchEvent(new Event('campaignTabs'));
+};
+
+const fetchCampaignName = async (campaignId) => {
+  try {
+    const campaign = await preload(endpoints.campaign.getCampaignById(campaignId), fetcher);
+    const name = campaign?.name;
+    if (name) {
+      saveCampaignTabs(readTabs().map((tab) => (tab.id === campaignId ? { ...tab, name } : tab)));
+    }
+  } catch (error) {
+    console.error(`Error fetching campaign data for ID ${campaignId}:`, error);
+  }
+};
+
+const TAB_MOTION = {
+  initial: { opacity: 0, transform: 'translateX(-8px)' },
+  animate: { opacity: 1, transform: 'translateX(0px)' },
+  exit: { opacity: 0, transform: 'translateX(-8px)' },
+  transition: { duration: 0.2, ease: EASE_OUT },
+};
 
 // ----------------------------------------------------------------------
 
 export default function CampaignTabs({ filter = 'active' }) {
-  const [tabs, setTabs] = useState([]);
+  const [tabs, setTabs] = useState(() => [...readTabs()]);
   const [activeTabId, setActiveTabId] = useState(null);
   const [filteredTabs, setFilteredTabs] = useState([]);
   const router = useRouter();
   const location = useLocation();
 
-  const fetchCampaignData = async (campaignId) => {
-    try {
-      const response = await axios.get(`/api/admin/campaign/${campaignId}`);
-      if (response.data && response.data.name) {
-        // Update the tab with the actual campaign name
-        const updatedTabs = window.campaignTabs.map((tab) => {
-          if (tab.id === campaignId) {
-            return { ...tab, name: response.data.name };
-          }
-          return tab;
-        });
-
-        window.campaignTabs = updatedTabs;
-
-        // Save to localStorage
-        try {
-          localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
-        } catch (error) {
-          console.error('Error saving campaign tabs to localStorage:', error);
-        }
-
-        return response.data.name;
-      }
-    } catch (error) {
-      console.error(`Error fetching campaign data for ID ${campaignId}:`, error);
-    }
-    return null;
-  };
-
-  // Load tabs from window.campaignTabs
   useEffect(() => {
-    const handleTabsUpdate = () => {
-      if (window.campaignTabs) {
-        setTabs([...window.campaignTabs]);
-
-        // Check for any tabs with "Campaign Details" and try to update them
-        window.campaignTabs.forEach((tab) => {
-          if (tab.name === 'Campaign Details' || !tab.name) {
-            // For tabs with default names, try to fetch actual campaign name
-            fetchCampaignData(tab.id);
-          }
-        });
-      }
-    };
-
-    // Initial load
-    handleTabsUpdate();
-
-    // Set up an interval to check for updates
-    const intervalId = setInterval(handleTabsUpdate, 500);
-
-    return () => clearInterval(intervalId);
+    const sync = () => setTabs([...readTabs()]);
+    window.addEventListener('campaignTabs', sync);
+    return () => window.removeEventListener('campaignTabs', sync);
   }, []);
+
+  // Tabs saved with a default name get their real name, once per id.
+  useEffect(() => {
+    tabs.forEach((tab) => {
+      if ((tab.name === 'Campaign Details' || !tab.name) && !fetchedIds.has(tab.id)) {
+        fetchedIds.add(tab.id);
+        fetchCampaignName(tab.id);
+      }
+    });
+  }, [tabs]);
 
   // Filter tabs based on current filter and campaign status
   useEffect(() => {
@@ -128,17 +137,8 @@ export default function CampaignTabs({ filter = 'active' }) {
     // Check if we're closing the active tab
     const isClosingActiveTab = tabId === activeTabId;
 
-    // Update tabs list
     const updatedTabs = tabs.filter((tab) => tab.id !== tabId);
-    window.campaignTabs = window.campaignTabs.filter((tab) => tab.id !== tabId);
-    setTabs(updatedTabs);
-
-    // Save to localStorage
-    try {
-      localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
-    } catch (error) {
-      console.error('Error saving campaign tabs to localStorage:', error);
-    }
+    saveCampaignTabs(readTabs().filter((tab) => tab.id !== tabId));
 
     // only if closing the currently active tab
     if (isClosingActiveTab) {
@@ -171,10 +171,10 @@ export default function CampaignTabs({ filter = 'active' }) {
         {filteredTabs.length > 0 && (
           <m.div
             key={filter || 'all'}
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            initial={{ opacity: 0, transform: 'translateY(-6px)' }}
+            animate={{ opacity: 1, transform: 'translateY(0px)' }}
+            exit={{ opacity: 0, transform: 'translateY(-6px)' }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
           >
             <Box sx={{ mb: 2, width: '100%', overflow: 'hidden' }}>
               <Stack
@@ -210,14 +210,7 @@ export default function CampaignTabs({ filter = 'active' }) {
               >
                 <AnimatePresence mode="popLayout">
                   {filteredTabs.length > 0 && (
-                    <m.div
-                      key="campaign-label"
-                      initial={{ opacity: 0, scale: 0.8, x: -20 }}
-                      animate={{ opacity: 1, scale: 1, x: 0 }}
-                      exit={{ opacity: 0, scale: 0.8, x: -20 }}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
-                      style={{ display: 'inline-flex' }}
-                    >
+                    <m.div key="campaign-label" {...TAB_MOTION} style={{ display: 'inline-flex' }}>
                       <Typography
                         variant="caption"
                         onClick={() => router.push(paths.dashboard.campaign.root)}
@@ -245,14 +238,7 @@ export default function CampaignTabs({ filter = 'active' }) {
                   {filteredTabs.map((tab) => {
                     const isActive = activeTabId === tab.id;
                     return (
-                      <m.div
-                        key={tab.id}
-                        initial={{ opacity: 0, scale: 0.8, x: -20 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, x: -20 }}
-                        transition={{ duration: 0.2, ease: 'easeOut' }}
-                        style={{ display: 'inline-flex' }}
-                      >
+                      <m.div key={tab.id} {...TAB_MOTION} style={{ display: 'inline-flex' }}>
                         <Button
                           variant="text"
                           onClick={() => handleTabClick(tab.id)}
@@ -281,18 +267,21 @@ export default function CampaignTabs({ filter = 'active' }) {
                             '& .MuiButton-endIcon': {
                               flexShrink: 0,
                             },
-                            '&:hover': {
-                              color: 'rgba(19, 64, 255, 0.7)',
-                              border: 'none',
-                              borderRight: '1px solid',
-                              borderBottom: '2px solid',
-                              borderColor: 'rgba(19, 64, 255, 0.7)',
-                              backgroundColor: 'rgba(19, 64, 255, 0.04)',
+                            '@media (hover: hover) and (pointer: fine)': {
+                              '&:hover': {
+                                color: 'rgba(19, 64, 255, 0.7)',
+                                border: 'none',
+                                borderRight: '1px solid',
+                                borderBottom: '2px solid',
+                                borderColor: 'rgba(19, 64, 255, 0.7)',
+                                backgroundColor: 'rgba(19, 64, 255, 0.04)',
+                              },
                             },
                           }}
                           endIcon={
                             <IconButton
                               size="small"
+                              aria-label={`Close ${tab.name || 'campaign'} tab`}
                               onClick={(e) => handleCloseTab(e, tab.id)}
                               onMouseOver={(e) => e.stopPropagation()}
                               sx={{
@@ -323,7 +312,7 @@ export default function CampaignTabs({ filter = 'active' }) {
                               maxWidth: '100%',
                             }}
                           >
-                            {tab.name}asdas
+                            {tab.name}
                           </Box>
                         </Button>
                       </m.div>

@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { enqueueSnackbar } from 'notistack';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { lazy, useMemo, useState, Suspense, useEffect } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -43,8 +43,10 @@ import { useSettingsContext } from 'src/components/settings';
 import EmptyContent from 'src/components/empty-content/empty-content';
 
 import CompanyCreationForm from './company-creation-form';
-import ClientCampaignCreateForm from './campaign-create/campaign-create-form';
 import ClientProfileCompletionModal from '../auth/client-profile-completion-modal';
+
+// The create form (and its PDF code) loads when the dialog opens, not with every dashboard page.
+const ClientCampaignCreateForm = lazy(() => import('./campaign-create/campaign-create-form'));
 
 const ClientDashboard = () => {
   const { user } = useAuthContext();
@@ -2154,7 +2156,9 @@ const ClientDashboard = () => {
         scroll="paper"
         open={create.value}
       >
-        <ClientCampaignCreateForm onClose={create.onFalse} mutate={mutate} />
+        <Suspense fallback={null}>
+          <ClientCampaignCreateForm onClose={create.onFalse} mutate={mutate} />
+        </Suspense>
       </Dialog>
 
       {!hasCompany ? (

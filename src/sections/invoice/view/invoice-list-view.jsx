@@ -60,8 +60,16 @@ import {
 
 import { COLORS } from 'src/sections/campaign/reimbursement/reimbursement-styles';
 import ReceiptReviewDrawer from 'src/sections/campaign/reimbursement/receipt-review-drawer';
+import { CONTENT_FADE_IN } from 'src/sections/campaign/discover/admin/components/content-fade';
+import { InlineBone } from 'src/sections/campaign/discover/admin/components/static-list-toolbar';
+import {
+  getSkeletonCount,
+  readCampaignCache,
+  writeCampaignCache,
+} from 'src/sections/campaign/discover/admin/components/campaign-cache';
 
 import NewInvoiceModal from '../new-invoice-modal';
+import InvoiceRowsSkeleton from '../components/invoice-row-skeleton';
 import InvoiceTableFiltersResult from '../invoice-table-filters-result';
 
 // ----------------------------------------------------------------------
@@ -134,7 +142,8 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
   const { reimbursementRounds } = useGetReimbursements(campId);
   const [reviewAgreementId, setReviewAgreementId] = useState(null);
   // Read from the live list so the drawer updates after each approve/reject
-  const reviewRound = reimbursementRounds.find((round) => round.agreementId === reviewAgreementId) || null;
+  const reviewRound =
+    reimbursementRounds.find((round) => round.agreementId === reviewAgreementId) || null;
 
   // Every round with receipts, keyed by its invoice(s) — the fee invoice and, for late receipts,
   // the receipts-only child — so each of those rows can open the drawer (read-only once billed)
@@ -159,7 +168,8 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
     [reimbursementRounds]
   );
 
-  const hasPending = (round) => round?.receipts.some((receipt) => receipt.status === 'PENDING_REVIEW');
+  const hasPending = (round) =>
+    round?.receipts.some((receipt) => receipt.status === 'PENDING_REVIEW');
 
   const { socket } = useSocketContext();
   useEffect(() => {
@@ -280,6 +290,10 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
   );
 
   // OPTIMIZED: Memoize TABS calculation
+  // While loading, the tab counts and page total show the last known numbers for this campaign.
+  const cachedTabCounts = useMemo(() => readCampaignCache(campId).invoiceTabCounts, [campId]);
+  const rowsLoading = Boolean(invoicesLoading || invoices?.isLoading);
+
   const TABS = useMemo(() => {
     const totalCount = invoiceStats?.counts?.total || tableData.length;
     return [
@@ -316,6 +330,18 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
       },
     ];
   }, [invoiceStats, tableData.length, getInvoiceLength]);
+
+  useEffect(() => {
+    if (!campId || statsLoading) return;
+    writeCampaignCache(campId, {
+      invoiceTabCounts: Object.fromEntries(TABS.map((tab) => [tab.value, tab.count])),
+    });
+  }, [campId, statsLoading, TABS]);
+
+  const renderTabCount = (tab) => {
+    if (!statsLoading) return tab.count;
+    return cachedTabCounts?.[tab.value] ?? <InlineBone sx={{ mx: 0.25 }} />;
+  };
 
   const handleFilters = useCallback(
     (name, value) => {
@@ -674,7 +700,7 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                   },
                 }}
               >
-                {`${tab.label} (${tab.count})`}
+                {tab.label} ({renderTabCount(tab)})
               </Button>
             ))}
             <Button
@@ -983,269 +1009,94 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                 </TableHead>
 
                 <TableBody>
-                  {/* "On hold" rows: invoice not generated yet, waiting on this creator's receipts.
-                      Shown on the first page of "All" (or the receipts filter). */}
-                  {showHeldRows &&
-                    table.page === 0 &&
-                    heldRounds.map((round) => {
-                        const claimed = sumReceipts(
-                          round.receipts.filter((receipt) => receipt.status !== 'REJECTED')
-                        );
-                        return (
-                          <TableRow
-                            key={`held-${round.agreementId}`}
-                            sx={{
-                              bgcolor: hasPending(round) ? '#FFFBF2' : 'transparent',
-                              borderBottom: '1px solid',
-                              borderColor: 'divider',
-                              '& td': { py: 2 },
-                            }}
-                          >
-                            <TableCell sx={{ width: 300, display: 'flex', alignItems: 'center' }}>
-                              <Avatar src={round.user?.photoURL} alt={round.user?.name} sx={{ mr: 2 }}>
-                                {round.user?.name?.charAt(0).toUpperCase()}
-                              </Avatar>
-                              <ListItemText
-                                disableTypography
-                                primary={
-                                  <Typography variant="body2" noWrap sx={{ mt: 1 }}>
-                                    {round.user?.name}
-                                  </Typography>
-                                }
-                                secondary={
-                                  <Typography variant="body2" sx={{ color: 'text.disabled', mt: 0.5 }}>
-                                    Invoice not generated yet
-                                  </Typography>
-                                }
-                              />
-                            </TableCell>
-                            <TableCell sx={{ width: 120, color: 'text.disabled' }}>—</TableCell>
-                            <TableCell sx={{ width: 120, color: 'text.disabled' }}>—</TableCell>
-                            <TableCell sx={{ width: 100 }}>
-                              <Typography variant="body2">
-                                {formatReceiptAmount(claimed, round.currency)}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                Reimbursement
-                              </Typography>
-                            </TableCell>
-                            <TableCell sx={{ width: 100 }}>
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  textTransform: 'uppercase',
-                                  fontWeight: 700,
-                                  display: 'inline-block',
-                                  px: 1.5,
-                                  py: 0.5,
-                                  fontSize: '0.75rem',
-                                  border: '1px solid',
-                                  borderBottom: '3px solid',
-                                  borderRadius: 0.8,
-                                  bgcolor: 'white',
-                                  color: '#B7791F',
-                                  borderColor: '#B7791F',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                On hold
-                              </Typography>
-                            </TableCell>
-                            <TableCell sx={{ width: 240, py: 2, px: 2 }}>
-                              <Button
-                                onClick={() => setReviewAgreementId(round.agreementId)}
-                                sx={{
-                                  textTransform: 'none',
-                                  fontWeight: 700,
-                                  px: 1.5,
-                                  fontSize: '0.85rem',
-                                  height: '32px',
-                                  minWidth: '65px',
-                                  borderRadius: 0.8,
-                                  ...(hasPending(round)
-                                    ? {
-                                        bgcolor: COLORS.brand,
-                                        color: COLORS.white,
-                                        border: `1px solid ${COLORS.brand}`,
-                                        borderBottom: `3px solid ${COLORS.brandDark}`,
-                                        '&:hover': { bgcolor: COLORS.brandDark },
-                                      }
-                                    : {
-                                        bgcolor: 'white',
-                                        color: '#221f20',
-                                        border: '1px solid #e0e0e0',
-                                        borderBottom: '3px solid #e0e0e0',
-                                      }),
-                                }}
-                              >
-                                {hasPending(round) ? 'Review' : 'Receipts'}
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        );
+                  {rowsLoading ? (
+                    <InvoiceRowsSkeleton
+                      count={getSkeletonCount(campId, 'invoiceCount', {
+                        fallback: table.rowsPerPage,
+                        max: table.rowsPerPage,
                       })}
-
-                  {dataFiltered
-                    ?.slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
-                    .map((row) => {
-                      const selected = table.selected.includes(row.id);
-                      // This invoice's round receipts; needsReview = some still waiting (late receipts)
-                      const receiptRound = roundByInvoiceId.get(row.id);
-                      const needsReview = !receiptRound?.billed && hasPending(receiptRound);
-
-                      const reimbursementLines = Array.isArray(row.reimbursements) ? row.reimbursements : [];
-                      const reimbursementAmount = sumReceipts(reimbursementLines);
-
-                      return (
-                        <TableRow
-                          key={row.id}
-                          hover
-                          selected={selected}
-                          sx={{
-                            bgcolor: needsReview ? '#FFFBF2' : 'transparent',
-                            borderBottom: '1px solid',
-                            borderColor: 'divider',
-                            '& td': {
-                              py: 2,
-                            },
-                            '&:last-child': {
-                              borderBottom: 'none',
-                            },
-                            '&:hover': {
-                              bgcolor: 'action.hover',
-                            },
-                          }}
-                        >
-                          <TableCell sx={{ width: 300, display: 'flex', alignItems: 'center' }}>
-                            <Avatar alt={row.invoiceFrom?.name} sx={{ mr: 2 }}>
-                              {row.invoiceFrom?.name?.charAt(0).toUpperCase()}
-                            </Avatar>
-
-                            <ListItemText
-                              disableTypography
-                              primary={
-                                <Typography variant="body2" noWrap sx={{ mt: 1 }}>
-                                  {row.invoiceFrom?.name}
-                                </Typography>
-                              }
-                              secondary={
-                                <Link
-                                  noWrap
-                                  variant="body2"
-                                  onClick={() => handleViewRow(row.id)}
-                                  sx={{ color: 'text.disabled', cursor: 'pointer', mt: 0.5 }}
-                                >
-                                  {row.invoiceNumber}
-                                </Link>
-                              }
-                            />
-                          </TableCell>
-
-                          <TableCell sx={{ width: 120 }}>
-                            <ListItemText
-                              primary={fDate(row.createdAt)}
-                              secondary={fTime(row.createdAt)}
-                              primaryTypographyProps={{ typography: 'body2', noWrap: true }}
-                              secondaryTypographyProps={{
-                                mt: 0.5,
-                                component: 'span',
-                                typography: 'caption',
-                              }}
-                            />
-                          </TableCell>
-
-                          <TableCell sx={{ width: 120 }}>
-                            <ListItemText
-                              primary={fDate(row.dueDate)}
-                              secondary={fTime(row.dueDate)}
-                              primaryTypographyProps={{ typography: 'body2', noWrap: true }}
-                              secondaryTypographyProps={{
-                                mt: 0.5,
-                                component: 'span',
-                                typography: 'caption',
-                              }}
-                            />
-                          </TableCell>
-
-                          <TableCell sx={{ width: 100 }}>
-                            {formatCurrencyAmount(
-                              row.amount,
-                              row.currency,
-                              row.task?.currencySymbol || row.currencySymbol
-                            )}
-                            {/* Breakdown when the invoice carries reimbursement lines */}
-                            {reimbursementLines.length > 0 && (
-                              <Typography
-                                variant="caption"
-                                display="block"
-                                sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}
-                              >
-                                {row.invoiceType === 'REIMBURSEMENT'
-                                  ? 'Receipts only'
-                                  : `Incl. reimb. ${formatReceiptAmount(reimbursementAmount, row.currency || 'MYR')}`}
-                              </Typography>
-                            )}
-                          </TableCell>
-
-                          <TableCell sx={{ width: 100 }}>
-                            <Typography
-                              variant="body2"
+                    />
+                  ) : (
+                    <>
+                      {/* "On hold" rows: invoice not generated yet, waiting on this creator's receipts.
+                      Shown on the first page of "All" (or the receipts filter). */}
+                      {showHeldRows &&
+                        table.page === 0 &&
+                        heldRounds.map((round) => {
+                          const claimed = sumReceipts(
+                            round.receipts.filter((receipt) => receipt.status !== 'REJECTED')
+                          );
+                          return (
+                            <TableRow
+                              key={`held-${round.agreementId}`}
                               sx={{
-                                textTransform: 'uppercase',
-                                fontWeight: 700,
-                                display: 'inline-block',
-                                px: 1.5,
-                                py: 0.5,
-                                fontSize: '0.75rem',
-                                border: '1px solid',
-                                borderBottom: '3px solid',
-                                borderRadius: 0.8,
-                                bgcolor: 'white',
-                                ...(row.status === 'paid' && {
-                                  color: '#1340FF',
-                                  borderColor: '#1340FF',
-                                }),
-                                ...(row.status === 'approved' && {
-                                  color: '#1ABF66',
-                                  borderColor: '#1ABF66',
-                                }),
-                                ...(row.status === 'pending' && {
-                                  color: '#f19f39',
-                                  borderColor: '#f19f39',
-                                }),
-                                ...(row.status === 'overdue' && {
-                                  color: '#ff4842',
-                                  borderColor: '#ff4842',
-                                }),
-                                ...(row.status === 'draft' && {
-                                  color: '#637381',
-                                  borderColor: '#637381',
-                                }),
+                                ...CONTENT_FADE_IN,
+                                bgcolor: hasPending(round) ? '#FFFBF2' : 'transparent',
+                                borderBottom: '1px solid',
+                                borderColor: 'divider',
+                                '& td': { py: 2 },
                               }}
                             >
-                              {row.status || 'pending'}
-                            </Typography>
-                          </TableCell>
-
-                          <TableCell
-                            sx={{
-                              width: 240,
-                              py: 2,
-                              px: 2,
-                              borderBottom: '1px solid',
-                              borderColor: 'divider',
-                              verticalAlign: 'middle',
-                              height: '100%',
-                            }}
-                          >
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              {/* Review (blue) when receipts are waiting, otherwise Receipts to look back */}
-                              {receiptRound && (
+                              <TableCell sx={{ width: 300, display: 'flex', alignItems: 'center' }}>
+                                <Avatar
+                                  src={round.user?.photoURL}
+                                  alt={round.user?.name}
+                                  sx={{ mr: 2 }}
+                                >
+                                  {round.user?.name?.charAt(0).toUpperCase()}
+                                </Avatar>
+                                <ListItemText
+                                  disableTypography
+                                  primary={
+                                    <Typography variant="body2" noWrap sx={{ mt: 1 }}>
+                                      {round.user?.name}
+                                    </Typography>
+                                  }
+                                  secondary={
+                                    <Typography
+                                      variant="body2"
+                                      sx={{ color: 'text.disabled', mt: 0.5 }}
+                                    >
+                                      Invoice not generated yet
+                                    </Typography>
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell sx={{ width: 120, color: 'text.disabled' }}>—</TableCell>
+                              <TableCell sx={{ width: 120, color: 'text.disabled' }}>—</TableCell>
+                              <TableCell sx={{ width: 100 }}>
+                                <Typography variant="body2">
+                                  {formatReceiptAmount(claimed, round.currency)}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  Reimbursement
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ width: 100 }}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    textTransform: 'uppercase',
+                                    fontWeight: 700,
+                                    display: 'inline-block',
+                                    px: 1.5,
+                                    py: 0.5,
+                                    fontSize: '0.75rem',
+                                    border: '1px solid',
+                                    borderBottom: '3px solid',
+                                    borderRadius: 0.8,
+                                    bgcolor: 'white',
+                                    color: '#B7791F',
+                                    borderColor: '#B7791F',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  On hold
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ width: 240, py: 2, px: 2 }}>
                                 <Button
-                                  onClick={() => setReviewAgreementId(receiptRound.agreementId)}
+                                  onClick={() => setReviewAgreementId(round.agreementId)}
                                   sx={{
                                     textTransform: 'none',
                                     fontWeight: 700,
@@ -1254,7 +1105,7 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                                     height: '32px',
                                     minWidth: '65px',
                                     borderRadius: 0.8,
-                                    ...(needsReview
+                                    ...(hasPending(round)
                                       ? {
                                           bgcolor: COLORS.brand,
                                           color: COLORS.white,
@@ -1270,106 +1121,303 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
                                         }),
                                   }}
                                 >
-                                  {needsReview ? 'Review' : 'Receipts'}
+                                  {hasPending(round) ? 'Review' : 'Receipts'}
                                 </Button>
-                              )}
-                              {/* View Button */}
-                              <Button
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+
+                      {dataFiltered
+                        ?.slice(
+                          table.page * table.rowsPerPage,
+                          table.page * table.rowsPerPage + table.rowsPerPage
+                        )
+                        .map((row) => {
+                          const selected = table.selected.includes(row.id);
+                          // This invoice's round receipts; needsReview = some still waiting (late receipts)
+                          const receiptRound = roundByInvoiceId.get(row.id);
+                          const needsReview = !receiptRound?.billed && hasPending(receiptRound);
+
+                          const reimbursementLines = Array.isArray(row.reimbursements)
+                            ? row.reimbursements
+                            : [];
+                          const reimbursementAmount = sumReceipts(reimbursementLines);
+
+                          return (
+                            <TableRow
+                              key={row.id}
+                              hover
+                              selected={selected}
+                              sx={{
+                                ...CONTENT_FADE_IN,
+                                bgcolor: needsReview ? '#FFFBF2' : 'transparent',
+                                borderBottom: '1px solid',
+                                borderColor: 'divider',
+                                '& td': {
+                                  py: 2,
+                                },
+                                '&:last-child': {
+                                  borderBottom: 'none',
+                                },
+                                '&:hover': {
+                                  bgcolor: 'action.hover',
+                                },
+                              }}
+                            >
+                              <TableCell sx={{ width: 300, display: 'flex', alignItems: 'center' }}>
+                                <Avatar alt={row.invoiceFrom?.name} sx={{ mr: 2 }}>
+                                  {row.invoiceFrom?.name?.charAt(0).toUpperCase()}
+                                </Avatar>
+
+                                <ListItemText
+                                  disableTypography
+                                  primary={
+                                    <Typography variant="body2" noWrap sx={{ mt: 1 }}>
+                                      {row.invoiceFrom?.name}
+                                    </Typography>
+                                  }
+                                  secondary={
+                                    <Link
+                                      noWrap
+                                      variant="body2"
+                                      onClick={() => handleViewRow(row.id)}
+                                      sx={{ color: 'text.disabled', cursor: 'pointer', mt: 0.5 }}
+                                    >
+                                      {row.invoiceNumber}
+                                    </Link>
+                                  }
+                                />
+                              </TableCell>
+
+                              <TableCell sx={{ width: 120 }}>
+                                <ListItemText
+                                  primary={fDate(row.createdAt)}
+                                  secondary={fTime(row.createdAt)}
+                                  primaryTypographyProps={{ typography: 'body2', noWrap: true }}
+                                  secondaryTypographyProps={{
+                                    mt: 0.5,
+                                    component: 'span',
+                                    typography: 'caption',
+                                  }}
+                                />
+                              </TableCell>
+
+                              <TableCell sx={{ width: 120 }}>
+                                <ListItemText
+                                  primary={fDate(row.dueDate)}
+                                  secondary={fTime(row.dueDate)}
+                                  primaryTypographyProps={{ typography: 'body2', noWrap: true }}
+                                  secondaryTypographyProps={{
+                                    mt: 0.5,
+                                    component: 'span',
+                                    typography: 'caption',
+                                  }}
+                                />
+                              </TableCell>
+
+                              <TableCell sx={{ width: 100 }}>
+                                {formatCurrencyAmount(
+                                  row.amount,
+                                  row.currency,
+                                  row.task?.currencySymbol || row.currencySymbol
+                                )}
+                                {/* Breakdown when the invoice carries reimbursement lines */}
+                                {reimbursementLines.length > 0 && (
+                                  <Typography
+                                    variant="caption"
+                                    display="block"
+                                    sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}
+                                  >
+                                    {row.invoiceType === 'REIMBURSEMENT'
+                                      ? 'Receipts only'
+                                      : `Incl. reimb. ${formatReceiptAmount(reimbursementAmount, row.currency || 'MYR')}`}
+                                  </Typography>
+                                )}
+                              </TableCell>
+
+                              <TableCell sx={{ width: 100 }}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    textTransform: 'uppercase',
+                                    fontWeight: 700,
+                                    display: 'inline-block',
+                                    px: 1.5,
+                                    py: 0.5,
+                                    fontSize: '0.75rem',
+                                    border: '1px solid',
+                                    borderBottom: '3px solid',
+                                    borderRadius: 0.8,
+                                    bgcolor: 'white',
+                                    ...(row.status === 'paid' && {
+                                      color: '#1340FF',
+                                      borderColor: '#1340FF',
+                                    }),
+                                    ...(row.status === 'approved' && {
+                                      color: '#1ABF66',
+                                      borderColor: '#1ABF66',
+                                    }),
+                                    ...(row.status === 'pending' && {
+                                      color: '#f19f39',
+                                      borderColor: '#f19f39',
+                                    }),
+                                    ...(row.status === 'overdue' && {
+                                      color: '#ff4842',
+                                      borderColor: '#ff4842',
+                                    }),
+                                    ...(row.status === 'draft' && {
+                                      color: '#637381',
+                                      borderColor: '#637381',
+                                    }),
+                                  }}
+                                >
+                                  {row.status || 'pending'}
+                                </Typography>
+                              </TableCell>
+
+                              <TableCell
                                 sx={{
-                                  textTransform: 'none',
-                                  fontWeight: 700,
-                                  px: 1.5,
-                                  py: 0.5,
-                                  fontSize: '0.85rem',
-                                  border: '1px solid #e0e0e0',
-                                  borderBottom: '3px solid #e0e0e0',
-                                  borderRadius: 0.8,
-                                  bgcolor: 'white',
-                                  color: '#221f20',
-                                  minWidth: '65px',
-                                  height: '32px',
-                                }}
-                                onClick={() => handleViewRow(row.id)}
-                              >
-                                View
-                              </Button>
-
-                              {/* Edit Button */}
-                              <Button
-                                startIcon={<Iconify icon="solar:pen-bold" width={16} />}
-                                disabled={isDisabled}
-                                sx={{
-                                  textTransform: 'none',
-                                  fontWeight: 700,
-                                  px: 1.5,
-                                  py: 0.5,
-                                  fontSize: '0.85rem',
-                                  border: '1px solid #e0e0e0',
-                                  borderBottom: '3px solid #e0e0e0',
-                                  borderRadius: 0.8,
-                                  bgcolor: 'white',
-                                  color: '#221f20',
-                                  minWidth: '65px',
-                                  height: '32px',
-                                  '&.Mui-disabled': {
-                                    cursor: 'not-allowed',
-                                    pointerEvents: 'auto',
-                                  },
-                                }}
-                                onClick={() => handleEditRow(row.id)}
-                              >
-                                Edit
-                              </Button>
-
-                              {/* Delete Button */}
-                              <Button
-                                disabled={isDisabled}
-                                sx={{
-                                  textTransform: 'none',
-                                  fontWeight: 700,
-                                  px: 1.5,
-                                  py: 0.5,
-                                  fontSize: '0.85rem',
-                                  border: '1px solid #e0e0e0',
-                                  borderBottom: '3px solid #e0e0e0',
-                                  borderRadius: 0.8,
-                                  bgcolor: 'white',
-                                  color: '#ff4842',
-                                  minWidth: '65px',
-                                  height: '32px',
-                                  '&.Mui-disabled': {
-                                    cursor: 'not-allowed',
-                                    pointerEvents: 'auto',
-                                  },
-                                }}
-                                onClick={() => {
-                                  confirm.onTrue();
-                                  table.onSelectRow(row.id);
+                                  width: 240,
+                                  py: 2,
+                                  px: 2,
+                                  borderBottom: '1px solid',
+                                  borderColor: 'divider',
+                                  verticalAlign: 'middle',
+                                  height: '100%',
                                 }}
                               >
-                                Delete
-                              </Button>
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                                <Stack direction="row" spacing={1} alignItems="center">
+                                  {/* Review (blue) when receipts are waiting, otherwise Receipts to look back */}
+                                  {receiptRound && (
+                                    <Button
+                                      onClick={() => setReviewAgreementId(receiptRound.agreementId)}
+                                      sx={{
+                                        textTransform: 'none',
+                                        fontWeight: 700,
+                                        px: 1.5,
+                                        fontSize: '0.85rem',
+                                        height: '32px',
+                                        minWidth: '65px',
+                                        borderRadius: 0.8,
+                                        ...(needsReview
+                                          ? {
+                                              bgcolor: COLORS.brand,
+                                              color: COLORS.white,
+                                              border: `1px solid ${COLORS.brand}`,
+                                              borderBottom: `3px solid ${COLORS.brandDark}`,
+                                              '&:hover': { bgcolor: COLORS.brandDark },
+                                            }
+                                          : {
+                                              bgcolor: 'white',
+                                              color: '#221f20',
+                                              border: '1px solid #e0e0e0',
+                                              borderBottom: '3px solid #e0e0e0',
+                                            }),
+                                      }}
+                                    >
+                                      {needsReview ? 'Review' : 'Receipts'}
+                                    </Button>
+                                  )}
+                                  {/* View Button */}
+                                  <Button
+                                    sx={{
+                                      textTransform: 'none',
+                                      fontWeight: 700,
+                                      px: 1.5,
+                                      py: 0.5,
+                                      fontSize: '0.85rem',
+                                      border: '1px solid #e0e0e0',
+                                      borderBottom: '3px solid #e0e0e0',
+                                      borderRadius: 0.8,
+                                      bgcolor: 'white',
+                                      color: '#221f20',
+                                      minWidth: '65px',
+                                      height: '32px',
+                                    }}
+                                    onClick={() => handleViewRow(row.id)}
+                                  >
+                                    View
+                                  </Button>
 
-                  <TableEmptyRows
-                    height={denseHeight}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
-                  />
+                                  {/* Edit Button */}
+                                  <Button
+                                    startIcon={<Iconify icon="solar:pen-bold" width={16} />}
+                                    disabled={isDisabled}
+                                    sx={{
+                                      textTransform: 'none',
+                                      fontWeight: 700,
+                                      px: 1.5,
+                                      py: 0.5,
+                                      fontSize: '0.85rem',
+                                      border: '1px solid #e0e0e0',
+                                      borderBottom: '3px solid #e0e0e0',
+                                      borderRadius: 0.8,
+                                      bgcolor: 'white',
+                                      color: '#221f20',
+                                      minWidth: '65px',
+                                      height: '32px',
+                                      '&.Mui-disabled': {
+                                        cursor: 'not-allowed',
+                                        pointerEvents: 'auto',
+                                      },
+                                    }}
+                                    onClick={() => handleEditRow(row.id)}
+                                  >
+                                    Edit
+                                  </Button>
 
-                  <TableNoData
-                    notFound={notFound}
-                    sx={{
-                      ml: { xs: 0, md: -4 },
-                      '& .MuiTableCell-root': {
-                        p: 0,
-                        height: 300,
-                      },
-                    }}
-                  />
+                                  {/* Delete Button */}
+                                  <Button
+                                    disabled={isDisabled}
+                                    sx={{
+                                      textTransform: 'none',
+                                      fontWeight: 700,
+                                      px: 1.5,
+                                      py: 0.5,
+                                      fontSize: '0.85rem',
+                                      border: '1px solid #e0e0e0',
+                                      borderBottom: '3px solid #e0e0e0',
+                                      borderRadius: 0.8,
+                                      bgcolor: 'white',
+                                      color: '#ff4842',
+                                      minWidth: '65px',
+                                      height: '32px',
+                                      '&.Mui-disabled': {
+                                        cursor: 'not-allowed',
+                                        pointerEvents: 'auto',
+                                      },
+                                    }}
+                                    onClick={() => {
+                                      confirm.onTrue();
+                                      table.onSelectRow(row.id);
+                                    }}
+                                  >
+                                    Delete
+                                  </Button>
+                                </Stack>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+
+                      <TableEmptyRows
+                        height={denseHeight}
+                        emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
+                      />
+
+                      <TableNoData
+                        notFound={notFound}
+                        sx={{
+                          ml: { xs: 0, md: -4 },
+                          '& .MuiTableCell-root': {
+                            p: 0,
+                            height: 300,
+                          },
+                        }}
+                      />
+                    </>
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -1377,7 +1425,9 @@ export default function InvoiceListView({ campId, invoices, isDisabled: propIsDi
         </Box>
 
         <TablePaginationCustom
-          count={pagination?.total || dataFiltered.length}
+          count={
+            pagination?.total || (rowsLoading ? (cachedTabCounts?.all ?? 0) : dataFiltered.length)
+          }
           page={table.page}
           rowsPerPage={table.rowsPerPage}
           onPageChange={table.onChangePage}

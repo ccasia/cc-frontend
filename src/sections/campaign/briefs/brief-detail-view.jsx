@@ -9,7 +9,6 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
-import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Container from '@mui/material/Container';
@@ -24,6 +23,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
 import { useSettingsContext } from 'src/components/settings';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import BriefForm from './brief-form';
 import BriefFormLayout from './brief-form-layout';
@@ -267,9 +267,9 @@ export default function CampaignBriefDetailView({ briefId, onClose }) {
                 alignItems={{ sm: 'center' }}
               >
                 <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1 }}>
-                  <Avatar src={linkedCompany.logo} sx={{ width: 40, height: 40 }}>
+                  <BrandLogoAvatar src={linkedCompany.logo} sx={{ width: 40, height: 40 }}>
                     {linkedCompany.name?.slice(0, 1)}
-                  </Avatar>
+                  </BrandLogoAvatar>
                   <Box>
                     <Typography variant="subtitle1" sx={{ lineHeight: 1.2 }}>
                       {linkedCompany.name}

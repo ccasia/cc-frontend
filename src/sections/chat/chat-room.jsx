@@ -19,6 +19,7 @@ import Iconify from 'src/components/iconify';
 import { useCollapseNav } from './hooks';
 import ChatRoomGroup from './chat-room-group';
 import ChatRoomSingle from './chat-room-single';
+import { ChatRoomSkeleton } from './chat-skeleton';
 //  import ChatRoomAttachments from './chat-room-attachments';
 
 // ----------------------------------------------------------------------
@@ -65,7 +66,7 @@ export default function ChatRoom({ participants, conversation, threadId }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lgUp]);
 
-  if (!thread) {
+  if (!thread && !loading) {
     return null;
   }
 
@@ -75,11 +76,15 @@ export default function ChatRoom({ participants, conversation, threadId }) {
 
   // Update this soon
 
-  const renderContent = thread.isGroup ? (
-    <ChatRoomGroup thread={thread} />
-  ) : (
-    <ChatRoomSingle thread={thread} />
-  );
+  let renderContent = <ChatRoomSkeleton />;
+
+  if (thread) {
+    renderContent = thread.isGroup ? (
+      <ChatRoomGroup thread={thread} />
+    ) : (
+      <ChatRoomSingle thread={thread} />
+    );
+  }
 
   <Box
     sx={{
@@ -96,12 +101,7 @@ export default function ChatRoom({ participants, conversation, threadId }) {
     </Typography>
   </Box>;
 
-  if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
-
-  if (!thread) {
-    return <div>No thread found</div>;
-  }
 
   const renderToggleBtn = (
     <IconButton

@@ -3,11 +3,13 @@ import { useMemo } from 'react';
 
 import axiosInstance, { fetcher, endpoints } from 'src/utils/axios';
 
-export const useGetAllCreators = () => {
-  const { data, isLoading } = useSWR(endpoints.creators.getCreators, fetcher, {
-    revalidateOnFocus: true,
-    revalidateOnReconnect: true,
-    revalidateOnMount: true,
+// The full platform creator list is large: no refetch on focus, and pass
+// enabled = false until the picker that needs it opens.
+export const useGetAllCreators = (enabled = true) => {
+  const { data, isLoading } = useSWR(enabled ? endpoints.creators.getCreators : null, fetcher, {
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+    dedupingInterval: 60000,
   });
 
   const memoizedValue = useMemo(() => ({ data, isLoading }), [data, isLoading]);

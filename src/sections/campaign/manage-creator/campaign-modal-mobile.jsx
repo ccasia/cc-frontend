@@ -6,7 +6,6 @@ import {
   Chip,
   Link,
   Stack,
-  Avatar,
   Divider,
   Accordion,
   Typography,
@@ -17,6 +16,7 @@ import {
 import { fDate } from 'src/utils/format-time';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 const ChipStyle = {
   bgcolor: '#EFEFEF',
@@ -466,7 +466,9 @@ const CampaignModalMobile = ({ campaign }) => {
               <Typography variant="body2" sx={{ ...SubSectionTitleStyles }}>
                 Campaign Info
               </Typography>
-              <Typography variant="body2">{campaign?.description}</Typography>
+              <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
+                {campaign?.description}
+              </Typography>
             </Box>
           </AccordionDetails>
         </Accordion>
@@ -679,7 +681,7 @@ const CampaignModalMobile = ({ campaign }) => {
                 Client
               </Typography>
               <Stack direction="row" spacing={1} alignItems="center">
-                <Avatar
+                <BrandLogoAvatar
                   src={campaign?.company?.logo ?? campaign?.brand?.logo}
                   alt={campaign?.company?.name ?? campaign?.brand?.name}
                   sx={{

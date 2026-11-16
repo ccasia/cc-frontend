@@ -1,22 +1,68 @@
-import dayjs from 'dayjs';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useFormContext } from 'react-hook-form';
 
-import {
-  Box,
-  Stack,
-  Button,
-  Dialog,
-  Typography,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from '@mui/material';
+import { Box, Stack, Button, Typography } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
+import ConfirmPublishDialog from 'src/sections/campaign/create/confirm-publish-dialog';
+import { EASE_OUT, EASE_IN_OUT } from 'src/sections/campaign/create/components/motion';
+
 // ----------------------------------------------------------------------
+
+// Same look as before; only the feel changes. Hover lifts the emoji and shades the
+// card a little, a press sinks it quickly and the release eases back.
+const choiceInteractionSx = {
+  transition: `transform 160ms ${EASE_OUT}, background-color 150ms ease`,
+  '& .choice-emoji': { transition: `transform 200ms ${EASE_OUT}` },
+  '@media (hover: hover) and (pointer: fine)': {
+    '&:hover': { bgcolor: '#EFEFEF' },
+    '&:hover .choice-emoji': { transform: 'translateY(-4px)' },
+  },
+  '&:active': { transform: 'scale(0.98)', transitionDuration: '80ms' },
+  '&:focus-visible': { outline: '2px solid #1340FF', outlineOffset: 3 },
+  '@media (prefers-reduced-motion: reduce)': {
+    '&:active': { transform: 'none' },
+    '& .choice-emoji': { transform: 'none !important' },
+  },
+};
+
+// Blue with a raised edge, so it reads first on the card. A light streak sweeps
+// across now and then to draw the eye, then rests; no sweep with reduced motion.
+const recommendedBadgeSx = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 0.5,
+  position: 'absolute',
+  top: 15,
+  left: 15,
+  px: 1.2,
+  py: 0.5,
+  overflow: 'hidden',
+  borderRadius: 0.8,
+  bgcolor: '#1340FF',
+  color: '#FFFFFF',
+  boxShadow: 'inset 0px -2px 0px rgba(0, 0, 0, 0.25)',
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: '0.04em',
+  '@keyframes recommendedShimmer': {
+    '0%': { transform: 'translateX(-100%)' },
+    '35%, 100%': { transform: 'translateX(100%)' },
+  },
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    background:
+      'linear-gradient(105deg, transparent 25%, rgba(255, 255, 255, 0.55) 50%, transparent 75%)',
+    transform: 'translateX(-100%)',
+    animation: `recommendedShimmer 3.2s ${EASE_IN_OUT} 600ms infinite`,
+    pointerEvents: 'none',
+  },
+  '@media (prefers-reduced-motion: reduce)': { '&::after': { animation: 'none' } },
+};
 
 NextSteps.propTypes = {
   onPublish: PropTypes.func,
@@ -39,11 +85,6 @@ export default function NextSteps({
 
   const isActivate = mode === 'activate';
   const publishCardLabel = isActivate ? 'Activate Campaign For Now' : 'Publish Campaign For Now';
-  const confirmBody = isActivate
-    ? 'Are you sure you want to activate this campaign?'
-    : 'Are you sure you want to publish this campaign?';
-  const activeActionLabel = isActivate ? 'Activate Now' : 'Publish Now';
-  const activeActionLoadingLabel = isActivate ? 'Activating...' : 'Publishing...';
 
   const handleOpenConfirm = () => setConfirmOpen(true);
   const handleCloseConfirm = () => setConfirmOpen(false);
@@ -65,7 +106,12 @@ export default function NextSteps({
           textAlign: 'center',
         }}
       >
-        <Typography variant="body2" color="text.secondary" mb={{ xs: 2, sm: 4 }} sx={{ maxWidth: 500 }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          mb={{ xs: 2, sm: 4 }}
+          sx={{ maxWidth: 500 }}
+        >
           You may publish your campaign at this point, but completing the additional details
           encourages higher amounts of creator participation.
         </Typography>
@@ -74,7 +120,9 @@ export default function NextSteps({
           <Button
             variant="contained"
             size="large"
+            disableRipple
             onClick={handleOpenConfirm}
+            disabled={isLoading}
             sx={{
               display: 'flex',
               flexDirection: 'column',
@@ -86,9 +134,12 @@ export default function NextSteps({
               ':hover': {
                 bgcolor: '#F5F5F5',
               },
+              ...choiceInteractionSx,
             }}
           >
-            <Typography fontSize={100}>📕</Typography>
+            <Typography className="choice-emoji" fontSize={100}>
+              📕
+            </Typography>
             <Typography
               variant="h3"
               color="#231F20"
@@ -103,7 +154,9 @@ export default function NextSteps({
           <Button
             variant="contained"
             size="large"
+            disableRipple
             onClick={onContinueAdditionalDetails}
+            disabled={isLoading}
             sx={{
               display: 'flex',
               flexDirection: 'column',
@@ -115,27 +168,16 @@ export default function NextSteps({
               ':hover': {
                 bgcolor: '#F5F5F5',
               },
+              ...choiceInteractionSx,
             }}
           >
-            <Box
-              sx={{
-                display: 'flex',
-                fontSize: 10,
-                position: 'absolute',
-                top: 15,
-                left: 15,
-                px: 1.2,
-                py: 0.5,
-                border: '1px solid #EBEBEB',
-                borderRadius: 0.8,
-                boxShadow: '0px 2px 0px #E7E7E7',
-                bgcolor: '#fff',
-                color: '#636366',
-              }}
-            >
+            <Box sx={recommendedBadgeSx}>
+              <Iconify icon="solar:star-bold" width={12} />
               RECOMMENDED
             </Box>
-            <Typography fontSize={100}>📝</Typography>
+            <Typography className="choice-emoji" fontSize={100}>
+              📝
+            </Typography>
             <Typography
               variant="h3"
               color="#231F20"
@@ -150,73 +192,14 @@ export default function NextSteps({
       </Box>
 
       {/* Confirmation Dialog */}
-      <Dialog
+      <ConfirmPublishDialog
         open={confirmOpen}
         onClose={handleCloseConfirm}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-          },
-        }}
-      >
-        <DialogTitle sx={{ textAlign: 'center', pb: 0 }}>
-          <Iconify icon="mdi:rocket-launch" width={32} sx={{ color: '#1340FF' }} />
-          <Typography variant="h6" mt={1}>
-            Confirm Campaign
-          </Typography>
-        </DialogTitle>
-        <DialogContent sx={{ textAlign: 'center', pt: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            {confirmBody}
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
-          <Button variant="contained" onClick={handleCloseConfirm} sx={{ px: 2, py: 1.2 }}>
-            Cancel
-          </Button>
-          {dayjs(campaignStartDate).isSame(dayjs(), 'date') ? (
-            <Button
-              variant="contained"
-              onClick={handlePublish}
-              startIcon={<Iconify icon="material-symbols:publish" />}
-              disabled={isLoading}
-              sx={{
-                bgcolor: '#1340FF',
-                px: 4,
-                py: 1.2,
-                fontWeight: 600,
-                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                '&:hover': {
-                  bgcolor: '#0030e0',
-                },
-              }}
-            >
-              {isLoading ? activeActionLoadingLabel : activeActionLabel}
-            </Button>
-          ) : (
-            <Button
-              variant="contained"
-              onClick={handlePublish}
-              disabled={isLoading}
-              startIcon={<Iconify icon="mdi:calendar-clock" />}
-              sx={{
-                bgcolor: '#1340FF',
-                px: 4,
-                py: 1.2,
-                fontWeight: 600,
-                boxShadow: '0px -3px 0px 0px rgba(0, 0, 0, 0.15) inset',
-                '&:hover': {
-                  bgcolor: '#0030e0',
-                },
-              }}
-            >
-              {isLoading ? 'Scheduling...' : `Schedule on ${dayjs(campaignStartDate).format('ddd LL')}`}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+        onConfirm={handlePublish}
+        loading={isLoading}
+        activate={isActivate}
+        startDate={campaignStartDate}
+      />
     </Box>
   );
 }

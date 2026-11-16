@@ -21,6 +21,7 @@ import { formatCurrencyAmount } from 'src/utils/currency';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 const SWR_OPTS = { revalidateOnFocus: false, revalidateOnReconnect: false, dedupingInterval: 60000 };
 
@@ -277,13 +278,13 @@ function ClientCard({ client }) {
       <Box sx={{ p: 2.5 }}>
         <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb: 2 }}>
           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-            <Avatar
+            <BrandLogoAvatar
               src={client.logo || undefined}
               variant="rounded"
               sx={{ width: 40, height: 40, borderRadius: '10px', bgcolor: '#F3F4F6', flexShrink: 0 }}
             >
               <Iconify icon="hugeicons:building-06" width={20} sx={{ color: '#6b7280' }} />
-            </Avatar>
+            </BrandLogoAvatar>
             <Box sx={{ minWidth: 0 }}>
               <Typography noWrap sx={{ fontWeight: 700, color: '#111827', fontSize: '0.92rem' }} title={client.name}>
                 {client.name}

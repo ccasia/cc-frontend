@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import {
-  Avatar,
   Button,
   Tooltip,
   Checkbox,
@@ -17,6 +16,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import Iconify from 'src/components/iconify';
 import { usePopover } from 'src/components/custom-popover';
 import { ConfirmDialog } from 'src/components/custom-dialog';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 const BrandEditRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) => {
   const { logo, name, email, phone, website, tiktok, instagram } = row;
@@ -33,7 +33,7 @@ const BrandEditRow = ({ row, selected, onEditRow, onSelectRow, onDeleteRow }) =>
         </TableCell>
 
         <TableCell sx={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar src={logo} alt={name} sx={{ mr: 2 }} />
+          <BrandLogoAvatar src={logo} alt={name} sx={{ mr: 2 }} />
 
           <ListItemText
             primary={name || 'null'}

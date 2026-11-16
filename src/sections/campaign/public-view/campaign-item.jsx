@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { Box, Card, Chip, Avatar, Typography } from '@mui/material';
+import { Box, Card, Chip, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -12,6 +12,7 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import Image from 'src/components/image';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import CampaignModal from './dialog/campaign-dialog';
 
@@ -73,7 +74,7 @@ export default function CampaignItem({ campaign, mutate }) {
 
   const renderCampaignInfo = (
     <Box sx={{ position: 'relative', pt: 2, px: 3, pb: 2.5 }}>
-      <Avatar
+      <BrandLogoAvatar
         src={campaign?.brand?.logo || campaign?.company?.logo}
         alt={campaign?.brand?.name || campaign?.company?.name}
         sx={{

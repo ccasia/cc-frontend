@@ -23,9 +23,9 @@ import axiosInstance, { fetcher } from 'src/utils/axios';
 import Iconify from 'src/components/iconify';
 import { useSnackbar } from 'src/components/snackbar';
 import EmptyContent from 'src/components/empty-content';
-import { LoadingScreen } from 'src/components/loading-screen';
 
 import LogisticsTableRow from './logistics-table-row';
+import LogisticsTableSkeleton from './components/logistics-table-skeleton';
 import ConfirmStatusChangeDialog from './dialogs/confirm-status-change-dialog';
 
 const getTableHead = (isReservation) => [
@@ -160,7 +160,9 @@ export default function LogisticsList({
     setPage(0);
   };
 
-  if (isLoading) return <LoadingScreen />;
+  if (isLoading) {
+    return <LogisticsTableSkeleton tableHead={TABLE_HEAD} isReservation={isReservation} />;
+  }
 
   const notFound = !logistics || logistics.length === 0;
 
