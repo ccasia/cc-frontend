@@ -126,17 +126,6 @@ const CampaignView = () => {
 
   const isSuperAdmin = useMemo(() => user?.admin?.mode === 'god', [user]);
 
-  // Only the header count is needed here -- the drafts page owns the list. The
-  // endpoint is superadmin-only, so skip the fetch for everyone else instead of
-  // letting SWR sit on a 403.
-  const { drafts, mutate: mutateDrafts } = useGetCampaignDrafts(isSuperAdmin, user?.id);
-
-  // The count goes stale after autosave, create, or discard.
-  const handleCloseCreate = () => {
-    create.onFalse();
-    mutateDrafts();
-  };
-
   // Check if user is a CSM-style admin (not advanced mode). CSL shares this view.
   const isCSM = useMemo(
     () =>
@@ -146,6 +135,17 @@ const CampaignView = () => {
       user?.admin?.mode !== 'advanced',
     [user]
   );
+
+  const canSeeDrafts = isSuperAdmin || isCSM;
+
+  // Only the header count is needed here -- the drafts page owns the list.
+  const { drafts, mutate: mutateDrafts } = useGetCampaignDrafts(canSeeDrafts, user?.id);
+
+  // The count goes stale after autosave, create, or discard.
+  const handleCloseCreate = () => {
+    create.onFalse();
+    mutateDrafts();
+  };
 
   const getKey = (pageIndex, previousPageData) => {
     // When showAllCampaigns is true, we're viewing other admins' campaigns
@@ -787,7 +787,7 @@ const CampaignView = () => {
               </Box>
             </Button>
 
-            {isSuperAdmin && (
+            {canSeeDrafts && (
               <Button
                 onClick={() => router.push(paths.dashboard.campaign.drafts)}
                 startIcon={<NotepadIcon size={20} />}
@@ -852,7 +852,7 @@ const CampaignView = () => {
               top: -3,
             }}
           >
-            {isSuperAdmin && (
+            {canSeeDrafts && (
               <Button
                 onClick={() => router.push(paths.dashboard.campaign.drafts)}
                 startIcon={<NotepadIcon size={24} />}
