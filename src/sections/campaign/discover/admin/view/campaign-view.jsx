@@ -298,25 +298,6 @@ const CampaignView = () => {
 
   const isSuperAdmin = useMemo(() => user?.admin?.mode === 'god', [user]);
 
-  // Only the header count is needed here -- the drafts page owns the list. The
-  // endpoint is superadmin-only, so skip the fetch for everyone else instead of
-  // letting SWR sit on a 403.
-  const {
-    drafts,
-    isLoading: draftsLoading,
-    mutate: mutateDrafts,
-  } = useGetCampaignDrafts(isSuperAdmin, user?.id);
-
-  // When the create dialog closed, so a just-published card waits for it to fade first
-  const createClosedAtRef = useRef(0);
-
-  // The count goes stale after autosave, create, or discard.
-  const handleCloseCreate = () => {
-    createClosedAtRef.current = performance.now();
-    create.onFalse();
-    mutateDrafts();
-  };
-
   // Check if user is a CSM-style admin (not advanced mode). CSL shares this view.
   const isCSM = useMemo(
     () =>
@@ -326,6 +307,17 @@ const CampaignView = () => {
       user?.admin?.mode !== 'advanced',
     [user]
   );
+
+  const canSeeDrafts = isSuperAdmin || isCSM;
+
+  // Only the header count is needed here -- the drafts page owns the list.
+  const { drafts, mutate: mutateDrafts } = useGetCampaignDrafts(canSeeDrafts, user?.id);
+
+  // The count goes stale after autosave, create, or discard.
+  const handleCloseCreate = () => {
+    create.onFalse();
+    mutateDrafts();
+  };
 
   const getKey = (pageIndex, previousPageData) => {
     // When showAllCampaigns is true, we're viewing other admins' campaigns
@@ -1036,23 +1028,23 @@ const CampaignView = () => {
                 </Box>
               </Button>
 
-              {isSuperAdmin && (
-                <Button
-                  onClick={() => router.push(paths.dashboard.campaign.drafts)}
-                  startIcon={<NotepadIcon size={20} />}
-                  sx={{
-                    ...SECONDARY_ACTION_SX,
-                    flexShrink: 0,
-                    px: 1.5,
-                    gap: '4px',
-                    fontSize: 14,
-                    whiteSpace: 'nowrap',
-                    '& .MuiButton-startIcon': { m: 0 },
-                  }}
-                >
-                  {withCount('Drafts', draftsCount)}
-                </Button>
-              )}
+            {canSeeDrafts && (
+              <Button
+                onClick={() => router.push(paths.dashboard.campaign.drafts)}
+                startIcon={<NotepadIcon size={20} />}
+                sx={{
+                  ...SECONDARY_ACTION_SX,
+                  flexShrink: 0,
+                  px: 1.5,
+                  gap: '4px',
+                  fontSize: 14,
+                  whiteSpace: 'nowrap',
+                  '& .MuiButton-startIcon': { m: 0 },
+                }}
+              >
+                Drafts ({drafts.length})
+              </Button>
+            )}
 
               <Menu
                 anchorEl={filterMenuAnchor}
@@ -1091,58 +1083,58 @@ const CampaignView = () => {
 
             {/* Positioned as one cluster so Drafts sits flush to the left of
               New Campaign instead of each button anchoring itself. */}
-            <Box
-              sx={{
-                display: { xs: 'none', sm: 'flex' },
-                alignItems: 'center',
-                gap: 1.25,
-                position: 'absolute',
-                right: 0,
-                top: -3,
-              }}
-            >
-              {isSuperAdmin && (
-                <Button
-                  onClick={() => router.push(paths.dashboard.campaign.drafts)}
-                  startIcon={<NotepadIcon size={24} />}
-                  sx={{
-                    boxSizing: 'border-box',
-                    minWidth: 126,
-                    height: 44,
-                    padding: '10px 12px 13px',
-                    gap: '6px',
-                    bgcolor: '#FFFFFF',
-                    border: '1px solid #E8E8E8',
-                    borderRadius: '8px',
-                    boxShadow: 'inset 0px -3px 0px #E7E7E7',
-                    color: '#231F20',
-                    fontFamily: 'InterDisplay',
-                    fontWeight: 600,
-                    fontSize: 16,
-                    lineHeight: '20px',
-                    textTransform: 'none',
-                    whiteSpace: 'nowrap',
-                    transition:
-                      'transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 140ms ease-out, border-color 140ms ease-out, box-shadow 140ms ease-out',
-                    '& .MuiButton-startIcon': { m: 0 },
-                    // The inset bottom edge reads as a raised key, so hover deepens
-                    // it and press sinks the button onto it.
-                    '&:hover': {
-                      bgcolor: '#F8F8F8',
-                      border: '1px solid #D6D6D6',
-                      boxShadow: 'inset 0px -3px 0px #DEDEDE',
-                    },
-                    '&:active': {
-                      bgcolor: '#F0F0F0',
-                      border: '1px solid #D6D6D6',
-                      boxShadow: 'inset 0px -1px 0px #DEDEDE',
-                      transform: 'translateY(2px)',
-                    },
-                  }}
-                >
-                  {withCount('Drafts', draftsCount)}
-                </Button>
-              )}
+          <Box
+            sx={{
+              display: { xs: 'none', sm: 'flex' },
+              alignItems: 'center',
+              gap: 1.25,
+              position: 'absolute',
+              right: 0,
+              top: -3,
+            }}
+          >
+            {canSeeDrafts && (
+              <Button
+                onClick={() => router.push(paths.dashboard.campaign.drafts)}
+                startIcon={<NotepadIcon size={24} />}
+                sx={{
+                  boxSizing: 'border-box',
+                  minWidth: 126,
+                  height: 44,
+                  padding: '10px 12px 13px',
+                  gap: '6px',
+                  bgcolor: '#FFFFFF',
+                  border: '1px solid #E8E8E8',
+                  borderRadius: '8px',
+                  boxShadow: 'inset 0px -3px 0px #E7E7E7',
+                  color: '#231F20',
+                  fontFamily: 'InterDisplay',
+                  fontWeight: 600,
+                  fontSize: 16,
+                  lineHeight: '20px',
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                  transition:
+                    'transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 140ms ease-out, border-color 140ms ease-out, box-shadow 140ms ease-out',
+                  '& .MuiButton-startIcon': { m: 0 },
+                  // The inset bottom edge reads as a raised key, so hover deepens
+                  // it and press sinks the button onto it.
+                  '&:hover': {
+                    bgcolor: '#F8F8F8',
+                    border: '1px solid #D6D6D6',
+                    boxShadow: 'inset 0px -3px 0px #DEDEDE',
+                  },
+                  '&:active': {
+                    bgcolor: '#F0F0F0',
+                    border: '1px solid #D6D6D6',
+                    boxShadow: 'inset 0px -1px 0px #DEDEDE',
+                    transform: 'translateY(2px)',
+                  },
+                }}
+              >
+                Drafts ({drafts.length})
+              </Button>
+            )}
 
               <Button
                 onClick={create.onTrue}
