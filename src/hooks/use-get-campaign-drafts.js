@@ -9,8 +9,9 @@ import { clearCampaignDraftSnapshots } from 'src/sections/campaign/create/utils/
  * Saved campaign-creation drafts, fetched outside the create dialog so the
  * discover header can show a count and open the picker on its own.
  *
- * The endpoint is guarded by isSuperAdmin on the backend, so pass `enabled`
- * false for anyone else rather than letting SWR retry a 403.
+ * The backend only lets admins through (any admin mode) and scopes drafts to
+ * the caller, so pass `enabled` false for users who don't get the Drafts
+ * button rather than letting SWR retry a rejected request.
  */
 const useGetCampaignDrafts = (enabled = true, userId) => {
   const { data, isLoading, error, mutate } = useSWR(
