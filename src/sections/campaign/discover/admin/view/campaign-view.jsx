@@ -298,21 +298,14 @@ const CampaignView = () => {
 
   const isSuperAdmin = useMemo(() => user?.admin?.mode === 'god', [user]);
 
-  // Drafts are for superadmins and every CSM / CSL, whatever their admin mode.
-  const canUseDrafts = useMemo(
-    () =>
-      isSuperAdmin ||
-      ['CSM', 'Customer Success Manager', 'CSL'].includes(user?.admin?.role?.name),
-    [isSuperAdmin, user]
-  );
-
-  // Only the header count is needed here -- the drafts page owns the list. Skip
-  // the fetch for anyone who doesn't get the Drafts button.
+  // Only the header count is needed here -- the drafts page owns the list. The
+  // endpoint is superadmin-only, so skip the fetch for everyone else instead of
+  // letting SWR sit on a 403.
   const {
     drafts,
     isLoading: draftsLoading,
     mutate: mutateDrafts,
-  } = useGetCampaignDrafts(canUseDrafts, user?.id);
+  } = useGetCampaignDrafts(isSuperAdmin, user?.id);
 
   // When the create dialog closed, so a just-published card waits for it to fade first
   const createClosedAtRef = useRef(0);
@@ -679,8 +672,8 @@ const CampaignView = () => {
   const draftsCount = draftsLoading ? countCache.drafts : drafts.length;
 
   useEffect(() => {
-    if (!draftsLoading && canUseDrafts) writeCountCache(user?.id, { drafts: drafts.length });
-  }, [draftsLoading, drafts.length, canUseDrafts, user?.id]);
+    if (!draftsLoading && isSuperAdmin) writeCountCache(user?.id, { drafts: drafts.length });
+  }, [draftsLoading, drafts.length, isSuperAdmin, user?.id]);
 
   // Restore smDown and menu handlers
   const smDown = useResponsive('down', 'sm');
@@ -1043,7 +1036,7 @@ const CampaignView = () => {
                 </Box>
               </Button>
 
-              {canUseDrafts && (
+              {isSuperAdmin && (
                 <Button
                   onClick={() => router.push(paths.dashboard.campaign.drafts)}
                   startIcon={<NotepadIcon size={20} />}
@@ -1108,7 +1101,7 @@ const CampaignView = () => {
                 top: -3,
               }}
             >
-              {canUseDrafts && (
+              {isSuperAdmin && (
                 <Button
                   onClick={() => router.push(paths.dashboard.campaign.drafts)}
                   startIcon={<NotepadIcon size={24} />}
