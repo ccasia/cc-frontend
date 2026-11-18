@@ -228,6 +228,12 @@ export function useNavData() {
             path: paths.dashboard.reportAi.root,
             icon: <Iconify icon="mingcute:ai-line" width={25} />,
           },
+          {
+            roles: ['superadmin', 'god'],
+            title: 'Insight OCR Test',
+            path: paths.dashboard.insightOcr.root,
+            icon: <Iconify icon="mdi:text-recognition" width={25} />,
+          },
           // {
           //   roles: ['superadmin', 'god'],
           //   title: 'Whatsapp Business Account',
