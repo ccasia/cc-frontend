@@ -1,5 +1,7 @@
 import { useRef, useMemo, useEffect, useReducer, useCallback } from 'react';
 
+import { storedProfileLink } from 'src/utils/platform-metric';
+
 import { validateProfileLink } from './profile-link-validation';
 import {
   getExtraction,
@@ -82,12 +84,7 @@ const recoveryIdentityOf = (mapping) =>
       ])
   );
 
-const getStoredProfileLink = (creator, platform) =>
-  (
-    (platform === 'tiktok'
-      ? creator?.creator?.tiktokProfileLink
-      : creator?.creator?.instagramProfileLink) || ''
-  ).trim();
+const getStoredProfileLink = (creator, platform) => storedProfileLink(creator?.creator, platform);
 
 const restoreDraftRows = (kind, rows, keepId) =>
   kind === DRAFT_KIND.PLATFORM || rows.some((row) => row.extractionId && isRowActive(row))

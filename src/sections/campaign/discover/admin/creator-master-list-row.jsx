@@ -18,6 +18,7 @@ import useGetActiveCreditTiers from 'src/hooks/use-get-active-credit-tiers';
 
 import { fDate } from 'src/utils/format-time';
 import { getUserDisplay } from 'src/utils/user-display';
+import { metricLabel, formatPrimaryMetric, isRecentViewsPlatform } from 'src/utils/platform-metric';
 import {
   formatNumber,
   createSocialProfileUrl,
@@ -45,9 +46,9 @@ import {
   VALUE_PLAIN_SX,
   VIEW_BUTTON_SX,
   CHIP_ROW_HEIGHT,
+  FullValueTooltip,
   CONTROL_ICON_SIZE,
   MissingMetricValue,
-  formatEngagementRate,
 } from '../master-list-row-kit';
 
 // Proportional column widths, so the fields sit in the same place on every row
@@ -89,6 +90,7 @@ const CreatorMasterListRow = ({
   const profileLink = pitch.user?.creator?.profileLink || pitch.user?.profileLink;
   const instagramProfileLink = pitch.user?.creator?.instagramProfileLink;
   const tiktokProfileLink = pitch.user?.creator?.tiktokProfileLink;
+  const threadsProfileLink = pitch.user?.creator?.threadsProfileLink;
   const profileUsername = extractUsernameFromProfileLink(profileLink);
 
   const displayProducts = useMemo(() => {
@@ -110,10 +112,15 @@ const CreatorMasterListRow = ({
     instagramStats?.username || extractUsernameFromProfileLink(instagramProfileLink);
 
   const tiktokUsername = tiktokStats?.username || extractUsernameFromProfileLink(tiktokProfileLink);
+  const threadsUsername = extractUsernameFromProfileLink(threadsProfileLink);
 
   // Check if we have platform-specific links
   const hasPlatformLinks =
-    instagramProfileLink || tiktokProfileLink || instagramUsername || tiktokUsername;
+    instagramProfileLink ||
+    tiktokProfileLink ||
+    threadsProfileLink ||
+    instagramUsername ||
+    tiktokUsername;
 
   // One platform per row: both metrics and the tier icon come from it, so a
   // row never shows Instagram followers beside a TikTok engagement rate.
@@ -133,7 +140,12 @@ const CreatorMasterListRow = ({
       otherPlatformHasData={metrics.otherPlatformHasData}
     />
   );
-  const engagementRateText = formatEngagementRate(displayData.engagementRate);
+  const engagementRateText = formatPrimaryMetric(displayData.platform, displayData.engagementRate, {
+    compact: true,
+  });
+  const engagementRateFull = isRecentViewsPlatform(displayData.platform)
+    ? formatPrimaryMetric(displayData.platform, displayData.engagementRate)
+    : null;
 
   // The tier saved on approval, else the live tier on the platform chosen at shortlisting.
   const tierData = resolveRowTier(pitch, campaign, activeTiers);
@@ -256,6 +268,21 @@ const CreatorMasterListRow = ({
                     </Link>
                   </Stack>
                 )}
+                {threadsProfileLink && (
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="ri:threads-line" width={ICON_SIZE} sx={{ color: '#636366' }} />
+                    <Link
+                      href={createSocialProfileUrl(threadsUsername, 'threads') || threadsProfileLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      underline="hover"
+                      sx={socialLinkSx}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {threadsUsername || '-'}
+                    </Link>
+                  </Stack>
+                )}
               </Stack>
             ) : (
               profileLink && (
@@ -269,6 +296,9 @@ const CreatorMasterListRow = ({
                       width={ICON_SIZE}
                       sx={{ color: '#636366' }}
                     />
+                  )}
+                  {/threads\.(com|net)/i.test(profileLink) && (
+                    <Iconify icon="ri:threads-line" width={ICON_SIZE} sx={{ color: '#636366' }} />
                   )}
                   <Link
                     href={profileLink?.startsWith('http') ? profileLink : `https://${profileLink}`}
@@ -314,12 +344,17 @@ const CreatorMasterListRow = ({
       {/* Engagement Rate + Tier */}
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.engagement }}>
         <Stack spacing={0.5}>
-          <FieldBlock label="Engagement rate" minHeight={CHIP_ROW_HEIGHT}>
+          <FieldBlock
+            label={metricLabel(displayData.platform, { short: true })}
+            minHeight={CHIP_ROW_HEIGHT}
+          >
             {engagementRateText ? (
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <PlatformIcon platform={displayData.platform} />
-                <Typography sx={VALUE_PLAIN_SX}>{engagementRateText}</Typography>
-              </Stack>
+              <FullValueTooltip title={engagementRateFull}>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <PlatformIcon platform={displayData.platform} />
+                  <Typography sx={VALUE_PLAIN_SX}>{engagementRateText}</Typography>
+                </Stack>
+              </FullValueTooltip>
             ) : (
               missingMetric
             )}

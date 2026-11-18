@@ -12,6 +12,8 @@ import Tooltip from '@mui/material/Tooltip';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
+import { normalizePrimaryMetric } from 'src/utils/platform-metric';
+
 import Iconify from 'src/components/iconify';
 
 import CreatorScrapeRow from './creator-scrape-row';
@@ -42,7 +44,7 @@ export function buildGuestPayload(rows) {
         (row.canonicalProfileKey ? row.canonicalProfileKey.split(':')[1] : '') ||
         '',
       followerCount: row.followerCount || undefined,
-      engagementRate: row.engagementRate || undefined,
+      engagementRate: normalizePrimaryMetric(row.platform, row.engagementRate) || undefined,
       adminComments: row.adminComments?.trim() || undefined,
       ...(!manual
         ? {

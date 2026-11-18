@@ -29,6 +29,15 @@ import { useGetCampaignById } from 'src/hooks/use-get-campaign-by-id';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { campaignHasClient } from 'src/utils/campaign-flow';
+import {
+  PLATFORMS,
+  metricLabel,
+  isKnownPlatform,
+  manualEditLabel,
+  RECENT_VIEWS_HINT,
+  formatPrimaryMetric,
+  isRecentViewsPlatform,
+} from 'src/utils/platform-metric';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -222,7 +231,7 @@ const PitchModalMobile = ({
     return map[status] || status.split('_').map((w) => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
   };
 
-  const activePlatform = selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram';
+  const activePlatform = isKnownPlatform(selectedPlatform) ? selectedPlatform : 'instagram';
   const resolvedStats = resolvePitchPlatformStats({
     pitch: currentPitch,
     creatorProfileFull,
@@ -242,17 +251,27 @@ const PitchModalMobile = ({
     return Math.round(numeric).toLocaleString();
   };
 
-  const formatEngagement = (value) => (value == null ? 'N/A' : `${Math.round(value)}%`);
+  const formatEngagement = (value) => {
+    if (value == null) return 'N/A';
+    if (isRecentViewsPlatform(activePlatform)) {
+      return formatPrimaryMetric(activePlatform, value, { compact: true }) ?? 'N/A';
+    }
+    return `${Math.round(value)}%`;
+  };
 
   // Same rule as the desktop modal: an admin may type Followers and ER when
   // the fetch for this platform creator failed. Read the pitch platform, not
   // the header toggle, so the warning does not follow the toggle.
   const isAdminUser = user?.role === 'admin' || user?.role === 'superadmin';
   const [manualMetricsOpen, setManualMetricsOpen] = useState(false);
+  const pitchPlatform = isKnownPlatform(currentPitch?.selectedPlatform)
+    ? currentPitch.selectedPlatform
+    : 'instagram';
+  const pitchMetricName = metricLabel(pitchPlatform, { short: true });
   const pitchPlatformStats = resolvePitchPlatformStats({
     pitch: currentPitch,
     creatorProfileFull,
-    platform: currentPitch?.selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram',
+    platform: pitchPlatform,
   });
 
   const formatLikes = (value) => formatCount(value, 'N/A');
@@ -598,7 +617,7 @@ const PitchModalMobile = ({
                         }}
                       >
                         <Iconify
-                          icon={platform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
+                          icon={platform === 'instagram' ? 'mdi:instagram' : PLATFORMS[platform].icon}
                           width={22}
                           sx={{ color: selectedPlatform === platform ? ONYX : '#C9C9C9' }}
                         />
@@ -655,7 +674,7 @@ const PitchModalMobile = ({
                   compact
                   stat="engagement"
                   value={formatEngagement(activeStats.engagementRate)}
-                  caption="Engagement Rate"
+                  caption={metricLabel(activePlatform)}
                 />
                 <VDivider height={64} compact />
                 <StatTile
@@ -669,11 +688,15 @@ const PitchModalMobile = ({
               {canEnterMetrics &&
                 (pitchPlatformStats.engagementRate == null ? (
                   <WarningMessage
-                    title="Engagement rate unavailable"
-                    description={failureReasonShort(
-                      currentPitch.metricsFailureCode,
-                      currentPitch.selectedPlatform
-                    )}
+                    title={`${pitchMetricName} unavailable`}
+                    description={
+                      isRecentViewsPlatform(pitchPlatform) && !currentPitch.metricsFailureCode
+                        ? `${RECENT_VIEWS_HINT}.`
+                        : failureReasonShort(
+                            currentPitch.metricsFailureCode,
+                            currentPitch.selectedPlatform
+                          )
+                    }
                     action={{
                       label: 'Enter numbers manually',
                       onClick: () => setManualMetricsOpen(true),
@@ -693,7 +716,9 @@ const PitchModalMobile = ({
                       '&:hover': { bgcolor: 'rgba(19, 64, 255, 0.08)' },
                     }}
                   >
-                    Edit follower count and engagement rate
+                    {manualEditLabel(pitchPlatform, {
+                      fetchFailed: Boolean(currentPitch.metricsFailureCode),
+                    })}
                   </Button>
                 ))}
             </Stack>
