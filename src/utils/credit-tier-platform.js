@@ -1,17 +1,17 @@
+import { isKnownPlatform } from './platform-metric';
+
 /** The platform saved for this row, or null when none was ever recorded. */
 export function resolveRecordedPlatform(row, campaign) {
   const direct =
     row?.selectedPlatform ??
     row?.shortlistedCreator?.selectedPlatform ??
     row?.user?.shortlisted?.[0]?.selectedPlatform;
-  if (direct === 'tiktok') return 'tiktok';
-  if (direct === 'instagram') return 'instagram';
+  if (isKnownPlatform(direct)) return direct;
 
   const userId = row?.userId ?? row?.user?.id;
   if (userId && Array.isArray(campaign?.shortlisted)) {
     const sc = campaign.shortlisted.find((s) => s.userId === userId);
-    if (sc?.selectedPlatform === 'tiktok') return 'tiktok';
-    if (sc?.selectedPlatform === 'instagram') return 'instagram';
+    if (isKnownPlatform(sc?.selectedPlatform)) return sc.selectedPlatform;
   }
 
   return null;

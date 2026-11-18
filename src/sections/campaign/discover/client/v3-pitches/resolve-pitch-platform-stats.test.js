@@ -1,11 +1,15 @@
-import { it, expect, describe } from 'vitest';
+import { it, vi, expect, describe } from 'vitest';
 
 import {
   scrapePlatformOf,
+  resolveRowMetrics,
   seedPitchPlatform,
   availablePitchPlatforms,
   resolvePitchPlatformStats,
 } from './resolve-pitch-platform-stats';
+
+// c-agreement pulls in an OTP input whose ESM build cannot load under vitest.
+vi.mock('../../admin/c-agreement', () => ({ resolveTierForFollowerCount: () => null }));
 
 const scrapedPitch = {
   selectedPlatform: 'instagram',
@@ -64,5 +68,75 @@ describe('availablePitchPlatforms', () => {
     expect(availablePitchPlatforms(scrapedPitch)).toEqual(['instagram']);
     expect(scrapePlatformOf(scrapedPitch)).toBe('instagram');
     expect(seedPitchPlatform(scrapedPitch)).toBe('instagram');
+  });
+});
+
+describe('a Threads pitch', () => {
+  const threadsPitch = {
+    selectedPlatform: 'threads',
+    followerCount: 36,
+    engagementRate: '1300000',
+    user: {
+      creator: {
+        threadsProfileLink: 'https://www.threads.com/@pandapandiy_',
+        manualInstagramFollowerCount: 9000,
+        manualInstagramEngagementRate: '3.1',
+      },
+    },
+  };
+
+  it('reads followers and Recent Views from the pitch snapshot only', () => {
+    expect(resolvePitchPlatformStats({ pitch: threadsPitch, platform: 'threads' })).toEqual({
+      followers: 36,
+      engagementRate: 1300000,
+      averageLikes: null,
+    });
+  });
+
+  it('never puts Threads numbers on the Instagram toggle', () => {
+    expect(
+      resolvePitchPlatformStats({ pitch: threadsPitch, platform: 'instagram' }).engagementRate
+    ).toBe(3.1);
+    expect(
+      resolvePitchPlatformStats({
+        pitch: { ...threadsPitch, selectedPlatform: 'instagram' },
+        platform: 'threads',
+      })
+    ).toEqual({ followers: null, engagementRate: null, averageLikes: null });
+  });
+
+  it('is detected from the link and listed as a platform', () => {
+    const unsaved = { ...threadsPitch, selectedPlatform: null };
+    expect(scrapePlatformOf(unsaved)).toBe('threads');
+    expect(scrapePlatformOf({ user: { creator: { profileLink: 'https://threads.net/@x' } } })).toBe(
+      'threads'
+    );
+    expect(availablePitchPlatforms(threadsPitch)).toEqual(['threads']);
+    expect(seedPitchPlatform(threadsPitch)).toBe('threads');
+  });
+
+  it('points the row at whichever other platform has data', () => {
+    const metrics = resolveRowMetrics(threadsPitch, null);
+    expect(metrics).toMatchObject({
+      platform: 'threads',
+      followerCount: 36,
+      engagementRate: 1300000,
+      otherPlatform: 'instagram',
+      otherPlatformHasData: true,
+    });
+
+    const bare = { ...threadsPitch, user: { creator: { threadsProfileLink: 'x' } } };
+    expect(resolveRowMetrics(bare, null)).toMatchObject({
+      otherPlatform: null,
+      otherPlatformHasData: false,
+    });
+  });
+
+  it('keeps the Instagram row paired with TikTok', () => {
+    expect(resolveRowMetrics(scrapedPitch, null)).toMatchObject({
+      platform: 'instagram',
+      otherPlatform: 'tiktok',
+      otherPlatformHasData: false,
+    });
   });
 });
