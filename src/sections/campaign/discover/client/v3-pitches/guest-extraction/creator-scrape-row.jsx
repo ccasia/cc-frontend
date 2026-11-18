@@ -13,6 +13,17 @@ import Typography from '@mui/material/Typography';
 import InputAdornment from '@mui/material/InputAdornment';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
+import {
+  PLATFORMS,
+  metricLabel,
+  metricError,
+  RECENT_VIEWS_HINT,
+  hasSafePrimaryMetric,
+  isRecentViewsPlatform,
+  formatPrimaryMetricInput,
+  sanitizePrimaryMetricInput,
+} from 'src/utils/platform-metric';
+
 import Iconify from 'src/components/iconify';
 
 import useJustFinished from '../use-just-finished';
@@ -31,7 +42,6 @@ import {
   fieldProvenanceOf,
   FIELD_UPDATE_SOURCE,
   hasSafeFollowerCount,
-  hasSafeEngagementRate,
 } from './creator-row-machine';
 
 /**
@@ -43,16 +53,6 @@ import {
  * the platform comes from the link, and the icon inside the link field
  * reports what was recognised.
  */
-
-/**
- * Outline, not fill, and each platform in its own brand colour. This is the
- * same field in the same position as the one in Add Platform Creators, so the
- * two modals share these values rather than each picking their own.
- */
-const PLATFORM_ICON = {
-  instagram: { icon: 'ri:instagram-line', color: '#C13584' },
-  tiktok: { icon: 'ic:baseline-tiktok', color: '#000000' },
-};
 
 /**
  * Grouped digits, same as Add Platform Creators. State still stores a plain
@@ -71,6 +71,8 @@ const formatFollowerCountDisplay = (value) => {
  * red, because the admin can recover by typing the values in. The copy uses
  * the theme's darker warning shade so 12px text stays readable on the tint.
  */
+const viewsInputSx = { ...inputSx, '& .MuiFormHelperText-root': { ml: 0, mt: '4px' } };
+
 const WARNING = {
   icon: '#FFAB00',
   text: '#7A4100',
@@ -150,9 +152,11 @@ export default function CreatorScrapeRow({
     `${row.error?.code ?? ''} ${row.error?.message ?? ''}`
   );
   const revealScrapedFields = justFinished && row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE;
-  const platformIcon = PLATFORM_ICON[row.platform];
+  const platformIcon = PLATFORMS[row.platform];
+  const isViews = isRecentViewsPlatform(row.platform);
+  const rateLabel = metricLabel(row.platform);
 
-  const hasBreakdown = row.status === ROW_STATUS.READY;
+  const hasBreakdown = row.status === ROW_STATUS.READY && !isViews;
 
   const label = (text, hint, provenance) => (
     <Stack direction="row" alignItems="center" spacing={0.25} sx={{ mb: '4px', height: '16px' }}>
@@ -173,20 +177,31 @@ export default function CreatorScrapeRow({
     const isFollowers = field === 'followerCount';
     const isRate = field === 'engagementRate';
     const hasValue = String(row[field] ?? '').length > 0;
+    const invalidRate = isRate && hasValue && !hasSafePrimaryMetric(row.platform, row[field]);
     const invalidManualValue =
-      isManualEntry &&
-      hasValue &&
-      ((field === 'name' && !row.name.trim()) ||
-        (isFollowers && !hasSafeFollowerCount(row[field])) ||
-        (isRate && !hasSafeEngagementRate(row[field])));
+      invalidRate ||
+      (isManualEntry &&
+        hasValue &&
+        ((field === 'name' && !row.name.trim()) ||
+          (isFollowers && !hasSafeFollowerCount(row[field])) ||
+          invalidRate));
     let manualHelperText = 'Enter a creator name.';
     if (isFollowers) manualHelperText = 'Enter a whole number from 1 to 2,000,000,000.';
-    if (isRate) manualHelperText = 'Enter a percentage from 0 to 1,000.';
+    if (isRate) manualHelperText = metricError(row.platform);
+    const viewsHint = isRate && isViews ? RECENT_VIEWS_HINT : undefined;
+    const hasPercent = isRate && !isViews;
+    const rateInputMode = isViews ? 'text' : 'decimal';
+    // Recent Views is never fetched, so the admin can type it while the profile loads.
+    const typedByAdmin = isRate && isViews;
+    let displayValue = row[field];
+    if (isFollowers) displayValue = formatFollowerCountDisplay(row[field]);
+    if (isRate) displayValue = formatPrimaryMetricInput(row.platform, row[field]);
 
     return (
       <>
-        {label(text, hint, fieldProvenanceOf(row, field))}
-        {loading ? (
+        {/* Recent Views is always typed, so it never reads as edited. */}
+        {label(text, hint, typedByAdmin ? null : fieldProvenanceOf(row, field))}
+        {loading && !typedByAdmin ? (
           <CreatorFieldLoading
             label={`Fetching ${text.toLowerCase()}`}
             showSpinner
@@ -198,35 +213,34 @@ export default function CreatorScrapeRow({
           />
         ) : (
           <ScrapeTextFieldReveal
-            reveal={revealScrapedFields}
-            text={isFollowers ? formatFollowerCountDisplay(row[field]) : row[field]}
+            reveal={revealScrapedFields && !typedByAdmin}
+            text={displayValue}
             height={FIELD_HEIGHT}
-            overlayPaddingRight={isRate ? 36 : 12}
+            overlayPaddingRight={hasPercent ? 36 : 12}
           >
             <TextField
               fullWidth
               placeholder={text}
-              value={isFollowers ? formatFollowerCountDisplay(row[field]) : row[field]}
+              value={displayValue}
               onChange={(event) => {
                 let { value } = event.target;
                 if (isFollowers) value = value.replace(/[^0-9]/g, '');
-                // A percentage, so digits and one dot only.
-                if (isRate) value = value.replace(/[^0-9.]/g, '');
+                if (isRate) value = sanitizePrimaryMetricInput(row.platform, value);
                 dispatch({ type: ACTIONS.EDIT_FIELD, rowId: row.id, field, value });
               }}
-              disabled={disabled || active}
+              disabled={disabled || (active && !typedByAdmin)}
               required={isManualEntry}
               error={invalidManualValue}
-              helperText={invalidManualValue ? manualHelperText : undefined}
-              sx={inputSx}
+              helperText={invalidManualValue ? manualHelperText : viewsHint}
+              sx={viewsHint ? viewsInputSx : inputSx}
               InputProps={
-                isRate
+                hasPercent
                   ? { endAdornment: <InputAdornment position="end">%</InputAdornment> }
                   : undefined
               }
               inputProps={
                 isFollowers || isRate
-                  ? { inputMode: isFollowers ? 'numeric' : 'decimal' }
+                  ? { inputMode: isFollowers ? 'numeric' : rateInputMode }
                   : undefined
               }
             />
@@ -328,7 +342,7 @@ export default function CreatorScrapeRow({
           sx={{ flexShrink: 0 }}
         >
           <Box sx={{ width: { xs: '100%', sm: 175 } }}>
-            {metricField('engagementRate', 'Engagement Rate', rateHint)}
+            {metricField('engagementRate', rateLabel, rateHint)}
           </Box>
           <Box sx={{ width: { xs: '100%', sm: 175 } }}>
             {metricField('followerCount', 'Follower Count')}
@@ -360,7 +374,7 @@ export default function CreatorScrapeRow({
             )
           }
         >
-          Enter a valid name, engagement rate, and follower count to continue.
+          {`Enter a valid name, ${metricLabel(row.platform, { short: true }).toLowerCase()}, and follower count to continue.`}
         </InlineWarning>
       )}
 
@@ -386,13 +400,15 @@ export default function CreatorScrapeRow({
             }
             label={
               <Typography sx={{ fontSize: '13px' }}>
-                Enter the name and follower count by hand. Engagement rate may stay blank.
+                {`Enter the name and follower count by hand. ${metricLabel(row.platform, { short: true })} may stay blank.`}
               </Typography>
             }
           />
           {row.fallbackConfirmed && row.engagementRate && (
             <Typography sx={{ fontSize: '12px', color: CC.blue500 }}>
-              This engagement rate is recorded as entered by hand, not measured.
+              {isViews
+                ? 'Recent views are always entered by hand.'
+                : 'This engagement rate is recorded as entered by hand, not measured.'}
             </Typography>
           )}
         </Alert>

@@ -32,6 +32,7 @@ import useGetV3Pitches from 'src/hooks/use-get-v3-pitches';
 
 import { getUserDisplay } from 'src/utils/user-display';
 import { extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
+import { formatPrimaryMetric, isRecentViewsPlatform } from 'src/utils/platform-metric';
 
 import { useAuthContext } from 'src/auth/hooks';
 import useSocketContext from 'src/socket/hooks/useSocketContext';
@@ -1495,8 +1496,9 @@ const MobileCreatorCard = ({ pitch, onViewPitch, formatFollowerCount, logistics 
           <Stack direction="row" alignItems="center" spacing={0.5}>
             <Iconify icon="mage:chart-up-b" width={16} sx={{ color: '#637381' }} />
             <Typography variant="caption" sx={{ color: '#637381', fontSize: 12, pt: 0.2 }}>
-              {typeof engagementRate === 'number' ? `${(engagementRate * 100).toFixed(2)}%` : 'N/A'}{' '}
-              Engagement
+              {isRecentViewsPlatform(pitch?.selectedPlatform)
+                ? `${formatPrimaryMetric('threads', pitch?.engagementRate, { compact: true }) ?? 'N/A'} Recent views`
+                : `${typeof engagementRate === 'number' ? `${(engagementRate * 100).toFixed(2)}%` : 'N/A'} Engagement`}
             </Typography>
           </Stack>
         </Stack>
@@ -1596,7 +1598,8 @@ const pitchPropType = PropTypes.shape({
     creator: PropTypes.object,
   }),
   followerCount: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  engagementRate: PropTypes.number,
+  engagementRate: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  selectedPlatform: PropTypes.string,
 });
 
 MobileCreatorCard.propTypes = {

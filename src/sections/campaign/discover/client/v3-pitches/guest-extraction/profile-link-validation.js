@@ -10,11 +10,17 @@
  * message that is friendlier or stricter than it needs to be.
  */
 
+import { PLATFORMS } from 'src/utils/platform-metric';
+
 const HOSTS = {
   'instagram.com': 'instagram',
   'www.instagram.com': 'instagram',
   'tiktok.com': 'tiktok',
   'www.tiktok.com': 'tiktok',
+  'threads.com': 'threads',
+  'www.threads.com': 'threads',
+  'threads.net': 'threads',
+  'www.threads.net': 'threads',
 };
 
 const RESERVED = {
@@ -66,11 +72,29 @@ const RESERVED = {
     'passport',
     'login',
   ]),
+  threads: new Set([
+    'search',
+    'activity',
+    'login',
+    'settings',
+    'about',
+    'legal',
+    'privacy',
+    'terms',
+    't',
+    'post',
+    'intent',
+    'api',
+  ]),
 };
+
+/** Platforms whose profile path is `@name`. */
+const AT_PREFIXED = new Set(['tiktok', 'threads']);
 
 const USERNAME = {
   instagram: /^[a-z0-9._]{1,30}$/,
   tiktok: /^[a-z0-9._]{1,24}$/,
+  threads: /^[a-z0-9._]{1,30}$/,
 };
 
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
@@ -105,7 +129,8 @@ export function validateProfileLink(input, expectedPlatform) {
   if (url.port) return reject('PORT_NOT_ALLOWED', 'Remove the port from the link.');
 
   const platform = HOSTS[url.hostname.toLowerCase()];
-  if (!platform) return reject('UNSUPPORTED_HOST', 'Use an Instagram or TikTok profile link.');
+  if (!platform)
+    return reject('UNSUPPORTED_HOST', 'Use an Instagram, TikTok, or Threads profile link.');
 
   const segments = url.pathname.split('/').filter(Boolean);
   if (segments.length !== 1) {
@@ -120,9 +145,12 @@ export function validateProfileLink(input, expectedPlatform) {
   const [segment] = segments;
   let username;
   try {
-    if (platform === 'tiktok') {
+    if (AT_PREFIXED.has(platform)) {
       if (!segment.startsWith('@')) {
-        return reject('NOT_A_PROFILE_URL', 'A TikTok profile link contains @ before the name.');
+        return reject(
+          'NOT_A_PROFILE_URL',
+          `A ${PLATFORMS[platform].label} profile link contains @ before the name.`
+        );
       }
       username = decodeURIComponent(segment.slice(1)).toLowerCase();
     } else {
@@ -140,11 +168,11 @@ export function validateProfileLink(input, expectedPlatform) {
   }
 
   if (expectedPlatform && platform !== expectedPlatform) {
-    const expectedLabel = expectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram';
+    const expectedLabel = PLATFORMS[expectedPlatform]?.label ?? 'Instagram';
     return reject('PLATFORM_MISMATCH', `Use a ${expectedLabel} profile link.`);
   }
 
-  const path = platform === 'tiktok' ? `@${username}` : username;
+  const path = AT_PREFIXED.has(platform) ? `@${username}` : username;
   return {
     ok: true,
     profile: {
@@ -156,7 +184,5 @@ export function validateProfileLink(input, expectedPlatform) {
   };
 }
 
-const PLATFORM_LABELS = { instagram: 'Instagram', tiktok: 'TikTok' };
-
 /** Read-only label for the derived platform chip. */
-export const platformLabel = (platform) => PLATFORM_LABELS[platform] ?? '—';
+export const platformLabel = (platform) => PLATFORMS[platform]?.label ?? '—';

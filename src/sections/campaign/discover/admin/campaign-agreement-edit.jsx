@@ -33,6 +33,7 @@ import useGetCreditTiers from 'src/hooks/use-get-credit-tiers';
 import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { PLATFORMS, platformMeta } from 'src/utils/platform-metric';
 
 import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
@@ -72,6 +73,7 @@ const CURRENCY_PREFIXES = {
 const PLATFORM_OPTIONS = [
   { value: 'instagram', label: 'Insta', icon: 'mdi:instagram' },
   { value: 'tiktok', label: 'TikTok', icon: 'ic:baseline-tiktok' },
+  { value: 'threads', label: 'Threads', icon: 'ri:threads-line' },
 ];
 
 const formatAmount = (value) => {
@@ -255,7 +257,8 @@ const CampaignAgreementEdit = ({
       if (agreedFollowerCount > 0) return agreedFollowerCount;
 
       const creatorData = agreement?.user?.creator;
-      if (!creatorData) return 0;
+      // Threads has no connected account or manual column: only the snapshot counts.
+      if (!creatorData || platform === 'threads') return 0;
 
       if (platform === 'tiktok') {
         return creatorData.tiktokUser?.follower_count || creatorData.manualTiktokFollowerCount || 0;
@@ -271,6 +274,7 @@ const CampaignAgreementEdit = ({
   const getMediaKitFollowerCount = (platform) => {
     const creatorData = agreement?.user?.creator;
 
+    if (platform === 'threads') return 0;
     if (platform === 'tiktok') return creatorData?.tiktokUser?.follower_count || 0;
 
     return creatorData?.instagramUser?.followers_count || 0;
@@ -364,7 +368,7 @@ const CampaignAgreementEdit = ({
 
   const canEditFollowerCount = isSuperAdmin || selectedPlatformFollower <= 0;
 
-  const platformLabel = selectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram';
+  const platformLabel = PLATFORMS[selectedPlatform]?.label ?? 'Instagram';
 
   const effectiveFollowerCountForTier = canEditFollowerCount
     ? Number(platformFollowerValue || 0) || Number(selectedPlatformFollower || 0)
@@ -685,6 +689,7 @@ const CampaignAgreementEdit = ({
       maxWidth="sm"
       PaperProps={{
         sx: {
+          maxWidth: 680,
           bgcolor: 'rgba(244, 244, 244, 1)',
         },
       }}
@@ -762,9 +767,10 @@ const CampaignAgreementEdit = ({
                     <Stack
                       sx={{
                         flex: 1,
-                        justifyContent: 'flex-start',
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        alignItems: 'center',
+                        minWidth: 0,
+                        flexDirection: 'column',
+                        alignItems: { xs: 'stretch', sm: 'flex-end' },
+                        gap: 0.5,
                       }}
                     >
                       <Tabs
@@ -777,7 +783,6 @@ const CampaignAgreementEdit = ({
                             { shouldValidate: true }
                           );
                         }}
-                        variant="fullWidth"
                         TabIndicatorProps={{
                           children: <span />,
                           sx: {
@@ -807,8 +812,7 @@ const CampaignAgreementEdit = ({
                             minHeight: 'auto',
                             flexShrink: 0,
                             bgcolor: 'rgba(231, 231, 231, 1)',
-                            flex: 1,
-                            width: { xs: 1, sm: 200 },
+                            width: { xs: 1, sm: 'auto' },
                           },
                           '& .MuiTabs-scroller': {
                             p: '0px',
@@ -821,8 +825,12 @@ const CampaignAgreementEdit = ({
                             label={platform.label}
                             value={platform.value}
                             iconPosition="start"
-                            icon={<Iconify icon={platform.icon} width={16} />}
+                            icon={
+                              <Iconify icon={platform.icon} width={16} sx={{ flexShrink: 0 }} />
+                            }
                             sx={{
+                              minWidth: 0,
+                              px: 2,
                               '&.Mui-selected': {
                                 borderRadius: 2,
                                 fontWeight: 600,
@@ -839,7 +847,7 @@ const CampaignAgreementEdit = ({
                       </Tabs>
 
                       {campaign?.isCreditTier && displayTierData && (
-                        <Stack direction="column" ml={2}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mr: 1 }}>
                           <Box
                             sx={{
                               py: 0.5,
@@ -853,13 +861,16 @@ const CampaignAgreementEdit = ({
                           >
                             <Iconify
                               icon={
-                                selectedPlatform === 'tiktok'
-                                  ? 'ic:baseline-tiktok'
-                                  : 'mdi:instagram'
+                                selectedPlatform === 'instagram'
+                                  ? 'mdi:instagram'
+                                  : platformMeta(selectedPlatform).icon
                               }
                               width={14}
                               sx={{
-                                color: selectedPlatform === 'tiktok' ? '#000000' : '#E4405F',
+                                color:
+                                  selectedPlatform === 'instagram'
+                                    ? '#E4405F'
+                                    : platformMeta(selectedPlatform).color,
                                 flexShrink: 0,
                               }}
                             />
@@ -1085,6 +1096,8 @@ const CampaignAgreementEdit = ({
                         {...field}
                         customInput={RHFTextField}
                         allowNegative={false}
+                        thousandSeparator
+                        decimalScale={0}
                         onValueChange={(value) => {
                           setValue('platformFollowerCount', value.floatValue, {
                             shouldValidate: true,
