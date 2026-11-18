@@ -974,6 +974,8 @@ function CreateCampaignFormV2({
     // Build campaign data object
     const campaignData = {
       ...data,
+      // The resolver at submit is the Next Steps schema, so step 0's .trim() never applies here
+      campaignName: data.campaignName?.trim(),
       creationDraftId: isActivateMode ? undefined : draftSource?.id,
       creationDraftRevision: isActivateMode ? undefined : draftSource?.revision,
       rawFootage: data.deliverables.includes('RAW_FOOTAGES'),
