@@ -39,6 +39,8 @@ import { useAuthContext } from 'src/auth/hooks';
 import Iconify from 'src/components/iconify';
 import Markdown from 'src/components/markdown';
 
+import PitchSnapshotStats from './components/pitch-snapshot-stats';
+
 const PitchModal = ({
   pitch,
   open,
@@ -933,6 +935,14 @@ const PitchModal = ({
                         }
                         return null;
                       })()}
+
+                      {!hasSocialMediaConnection && (
+                        <PitchSnapshotStats
+                          platform={currentPitch?.selectedPlatform}
+                          followerCount={currentPitch?.followerCount}
+                          metric={currentPitch?.engagementRate}
+                        />
+                      )}
 
                       {hasSocialMediaConnection && (
                         <Stack direction="row" mt={3} spacing={1}>

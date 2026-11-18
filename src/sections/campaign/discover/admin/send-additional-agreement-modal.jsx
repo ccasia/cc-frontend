@@ -174,7 +174,9 @@ export default function SendAdditionalAgreementModal({
         onClose={handleClose}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: '20px', bgcolor: '#F5F5F5', position: 'relative' } }}
+        PaperProps={{
+          sx: { borderRadius: '20px', bgcolor: '#F5F5F5', position: 'relative', maxWidth: 680 },
+        }}
       >
         <FormProvider methods={methods} onSubmit={handleSend}>
           <Stack

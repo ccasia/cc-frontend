@@ -3,7 +3,8 @@
  *
  * Mirrors the backend rule in `updatePlatformCreatorMetrics`: the pitch
  * carries a `metricsFailureCode`, no fetch is still running, the creator is
- * not a guest, and no account is connected on the pitch platform.
+ * not a guest, and no account is connected on the pitch platform. A Threads
+ * pitch needs no failure: Recent Views is never fetched, so it is always typed.
  */
 
 const isGuestPitch = (pitch) => {
@@ -21,12 +22,14 @@ const isConnectedOn = (creator, platform) => {
   const tiktok = creator?.tiktokUser?.follower_count != null;
   if (platform === 'instagram') return instagram;
   if (platform === 'tiktok') return tiktok;
+  if (platform === 'threads') return false;
   return instagram || tiktok;
 };
 
 export function canEditFailedMetrics(pitch) {
   if (!pitch || pitch._isShortlistedOnly) return false;
-  if (pitch.pendingExtractionId || !pitch.metricsFailureCode) return false;
+  if (pitch.pendingExtractionId) return false;
+  if (!pitch.metricsFailureCode && pitch.selectedPlatform !== 'threads') return false;
   if (isGuestPitch(pitch)) return false;
   return !isConnectedOn(pitch.user?.creator, pitch.selectedPlatform);
 }

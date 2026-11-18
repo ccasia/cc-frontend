@@ -53,6 +53,9 @@ export function toDraftCreator(creator) {
           ...(account.tiktokProfileLink !== undefined
             ? { tiktokProfileLink: account.tiktokProfileLink ?? null }
             : {}),
+          ...(account.threadsProfileLink !== undefined
+            ? { threadsProfileLink: account.threadsProfileLink ?? null }
+            : {}),
           ...(account.manualInstagramFollowerCount !== undefined
             ? { manualInstagramFollowerCount: account.manualInstagramFollowerCount ?? null }
             : {}),

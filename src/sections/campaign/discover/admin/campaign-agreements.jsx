@@ -42,6 +42,7 @@ import useSyncCampaignCredits from 'src/hooks/use-sync-campaign-credits';
 import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import { fDate } from 'src/utils/format-time';
+import { PLATFORMS } from 'src/utils/platform-metric';
 import { getCurrencyPrefix } from 'src/utils/currency';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { getCampaignBudget } from 'src/utils/campaign-budget';
@@ -471,10 +472,13 @@ function AgreementRowContent({
               <Stack alignItems="start">
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Iconify
-                    icon={tierPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
+                    icon={
+                      tierPlatform === 'instagram' ? 'mdi:instagram' : PLATFORMS[tierPlatform].icon
+                    }
                     width={15}
                     sx={{
-                      color: tierPlatform === 'tiktok' ? '#000000' : '#E4405F',
+                      color:
+                        tierPlatform === 'instagram' ? '#E4405F' : PLATFORMS[tierPlatform].color,
                       flexShrink: 0,
                     }}
                   />

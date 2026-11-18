@@ -1,5 +1,6 @@
-import React from 'react';
 import PropTypes from 'prop-types';
+import { useQueryClient } from '@tanstack/react-query';
+import React, { useRef, useEffect, useCallback } from 'react';
 
 import { Box, Alert, CircularProgress } from '@mui/material';
 
@@ -9,12 +10,32 @@ import CampaignV3Pitches from './campaign-v3-pitches';
 
 const CampaignV3PitchesWrapper = ({ campaign, campaignMutate, isDisabled = false }) => {
   const { pitches, isLoading, isError, mutate } = useGetV3Pitches(campaign?.id);
+  const queryClient = useQueryClient();
+
+  // The Agreements tab reads the campaign's pitch and shortlist snapshots and
+  // its own agreements query. Neither refetches on a tab switch, so refresh
+  // them whenever a creator's numbers change here.
+  const refreshCreatorSnapshots = useCallback(() => {
+    campaignMutate?.();
+    queryClient.invalidateQueries({ queryKey: ['agreements', campaign?.id] });
+  }, [campaignMutate, queryClient, campaign?.id]);
+
+  // A fetch finishes on the server, and the 2s poll only refreshes this list.
+  const pendingIdsRef = useRef(new Set());
+  useEffect(() => {
+    const pendingNow = new Set(
+      pitches.filter((pitch) => pitch?.pendingExtractionId).map((pitch) => pitch.id)
+    );
+    const settled = [...pendingIdsRef.current].some((id) => !pendingNow.has(id));
+    pendingIdsRef.current = pendingNow;
+    if (settled) refreshCreatorSnapshots();
+  }, [pitches, refreshCreatorSnapshots]);
 
   const handlePitchUpdate = (updatedPitch) => {
     // If no payload provided, revalidate from server (e.g., guest shortlist added a new pitch)
     if (!updatedPitch) {
       mutate();
-      campaignMutate?.();
+      refreshCreatorSnapshots();
       return;
     }
 
@@ -27,17 +48,9 @@ const CampaignV3PitchesWrapper = ({ campaign, campaignMutate, isDisabled = false
       return updatedPitches;
     });
 
-    // Trigger campaign data revalidation for:
-    // - APPROVED status (client approved for v4, or admin approved for non-v4)
-    // - SENT_TO_CLIENT status (admin approved for v4)
-    // This ensures credits and shortlisted data are refreshed
-    if (
-      updatedPitch.status === 'APPROVED' ||
-      updatedPitch.status === 'SENT_TO_CLIENT' ||
-      updatedPitch.status === 'AGREEMENT_PENDING'
-    ) {
-      campaignMutate?.();
-    }
+    // Any saved pitch may carry new numbers, platform, or status, and the
+    // Agreements tab and credits read those from the campaign snapshots.
+    refreshCreatorSnapshots();
   };
 
   if (isLoading) {

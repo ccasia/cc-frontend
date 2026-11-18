@@ -2,6 +2,8 @@ import PropTypes from 'prop-types';
 
 import { Box, Stack, Tooltip, Typography } from '@mui/material';
 
+import { PLATFORMS, platformMeta } from 'src/utils/platform-metric';
+
 import Iconify from 'src/components/iconify';
 import { CHIP_HEIGHT } from 'src/components/status-chip';
 
@@ -99,17 +101,7 @@ export const CELL_SX = {
   verticalAlign: 'middle',
 };
 
-const PLATFORM_ICONS = {
-  instagram: { icon: 'ri:instagram-line', color: '#C13584' },
-  tiktok: { icon: 'ic:baseline-tiktok', color: '#000000' },
-};
-
-export const getPlatformIcon = (platform) =>
-  platform === 'tiktok' ? PLATFORM_ICONS.tiktok : PLATFORM_ICONS.instagram;
-
-// "5.40" reads as false precision next to the handoff's "5.4".
-export const formatEngagementRate = (rate) =>
-  rate == null || rate === '' ? null : `${Number(Number(rate).toFixed(2))}%`;
+export const getPlatformIcon = (platform) => platformMeta(platform);
 
 export const FieldLabel = ({ children }) => <Typography sx={LABEL_SX}>{children}</Typography>;
 
@@ -129,7 +121,11 @@ export const CHIP_ROW_HEIGHT = CHIP_HEIGHT;
 // middle` centres it the way the design does.
 export const FieldBlock = ({ label, minHeight, children }) => (
   <Stack spacing={0.25} sx={{ alignItems: 'flex-start', width: '100%' }}>
-    {label ? <FieldLabel>{label}</FieldLabel> : <Box sx={{ height: LABEL_HEIGHT, flexShrink: 0 }} />}
+    {label ? (
+      <FieldLabel>{label}</FieldLabel>
+    ) : (
+      <Box sx={{ height: LABEL_HEIGHT, flexShrink: 0 }} />
+    )}
     <Box sx={{ display: 'flex', alignItems: 'flex-start', minHeight }}>{children}</Box>
   </Stack>
 );
@@ -142,14 +138,12 @@ FieldBlock.propTypes = {
 
 export const EmptyValue = () => <Typography sx={VALUE_PLAIN_SX}>—</Typography>;
 
-const PLATFORM_LABELS = { instagram: 'Instagram', tiktok: 'TikTok' };
-
 // A dash for a metric the row's platform has no value for. The tooltip says
 // why, so the admin does not read it as a fetch that never ran.
 export const MissingMetricValue = ({ platform, otherPlatform, otherPlatformHasData }) => {
-  const label = PLATFORM_LABELS[platform] ?? 'platform';
+  const label = PLATFORMS[platform]?.label ?? 'platform';
   const title = otherPlatformHasData
-    ? `No ${label} data for this creator. Only ${PLATFORM_LABELS[otherPlatform]} data is available.`
+    ? `No ${label} data for this creator. Only ${PLATFORMS[otherPlatform]?.label} data is available.`
     : `No ${label} data for this creator yet.`;
 
   return (
@@ -171,6 +165,26 @@ export const PlatformIcon = ({ platform, size = PLATFORM_ICON_SIZE }) => {
 };
 
 PlatformIcon.propTypes = { platform: PropTypes.string, size: PropTypes.number };
+
+const FULL_VALUE_TOOLTIP_SX = {
+  tooltip: {
+    sx: { bgcolor: '#221f20', fontSize: '0.75rem', '& .MuiTooltip-arrow': { color: '#221f20' } },
+  },
+};
+
+/** Shows the exact number behind a compact value such as 1.2M. No title, no tooltip. */
+export const FullValueTooltip = ({ title, children }) =>
+  title ? (
+    <Tooltip title={title} arrow placement="top" componentsProps={FULL_VALUE_TOOLTIP_SX}>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ cursor: 'help' }}>
+        {children}
+      </Stack>
+    </Tooltip>
+  ) : (
+    children
+  );
+
+FullValueTooltip.propTypes = { title: PropTypes.string, children: PropTypes.node };
 
 // Shared shape for the row's action buttons: 8px radius with an inset bottom edge.
 export const ACTION_BUTTON_SX = {

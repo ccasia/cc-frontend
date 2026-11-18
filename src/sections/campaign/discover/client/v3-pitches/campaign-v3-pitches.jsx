@@ -38,6 +38,19 @@ import useGetActiveCreditTiers from 'src/hooks/use-get-active-credit-tiers';
 
 import axiosInstance from 'src/utils/axios';
 import { campaignHasClient } from 'src/utils/campaign-flow';
+import {
+  metricLabel,
+  metricError,
+  PLATFORM_LIST,
+  isKnownPlatform,
+  RECENT_VIEWS_HINT,
+  storedProfileLink,
+  hasSafePrimaryMetric,
+  isRecentViewsPlatform,
+  normalizePrimaryMetric,
+  formatPrimaryMetricInput,
+  sanitizePrimaryMetricInput,
+} from 'src/utils/platform-metric';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators } from 'src/api/creator';
@@ -50,12 +63,14 @@ import EmptyContent from 'src/components/empty-content/empty-content';
 import PitchRow from './v3-pitch-row';
 import V3PitchModal from './v3-pitch-modal';
 import usePitchSocket from './use-pitch-socket';
+import PlatformFilter from './components/platform-filter';
 import useCreatorNotes from './creator-notes/use-creator-notes';
 import useNoClientGuard from './no-client-guard/use-no-client-guard';
 import CreatorNotesDrawer from './creator-notes/creator-notes-drawer';
 import useGuestExtraction from './guest-extraction/use-guest-extraction';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 import NoClientConfirmDialog from './no-client-guard/NoClientConfirmDialog';
+import { getFilterPillSx, FilterPillEndIcons } from './components/filter-pill';
 import { extractionErrorCopy } from './guest-extraction/extraction-error-copy';
 import { validateProfileLink } from './guest-extraction/profile-link-validation';
 import { resolveRowTier, resolveRowMetrics } from './resolve-pitch-platform-stats';
@@ -71,7 +86,6 @@ import {
   fieldProvenanceOf,
   FIELD_UPDATE_SOURCE,
   hasSafeFollowerCount,
-  hasSafeEngagementRate,
 } from './guest-extraction/creator-row-machine';
 
 /**
@@ -156,102 +170,6 @@ const ACTION_BUTTON_SX = {
   textTransform: 'none',
 };
 
-const FILTER_PILL_SX = {
-  height: 34,
-  minHeight: 34,
-  padding: '8px 16px',
-  gap: '4px',
-  border: 'none',
-  borderBottom: 'none',
-  borderRadius: '100px',
-  fontFamily: 'Inter Display, Inter, sans-serif',
-  fontWeight: 500,
-  fontSize: 14,
-  lineHeight: '18px',
-  textTransform: 'none',
-  whiteSpace: 'nowrap',
-  minWidth: 'unset',
-  flexShrink: 0,
-  boxShadow: 'none',
-  '& .MuiButton-endIcon': {
-    ml: 0,
-    mr: 0,
-  },
-};
-
-const getFilterPillSx = (isActive) => ({
-  ...FILTER_PILL_SX,
-  bgcolor: isActive ? 'rgba(19, 64, 255, 0.10)' : '#F5F5F5',
-  color: isActive ? '#1340FF' : '#231F20',
-  fontWeight: isActive ? 600 : 500,
-  '&:hover': {
-    bgcolor: isActive ? 'rgba(19, 64, 255, 0.16)' : '#EBEBEB',
-    border: 'none',
-    borderBottom: 'none',
-    boxShadow: 'none',
-  },
-});
-
-function FilterPillEndIcons({ isActive, isOpen, onClear, clearLabel }) {
-  const handleClear = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onClear();
-  };
-
-  return (
-    <Stack direction="row" alignItems="center" spacing={0.25} component="span">
-      {isActive && (
-        <Box
-          component="span"
-          role="button"
-          tabIndex={0}
-          aria-label={clearLabel}
-          onClick={handleClear}
-          onMouseDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              handleClear(event);
-            }
-          }}
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 18,
-            height: 18,
-            borderRadius: '50%',
-            cursor: 'pointer',
-            '&:hover': {
-              bgcolor: 'rgba(19, 64, 255, 0.16)',
-            },
-          }}
-        >
-          <Iconify icon="eva:close-fill" width={14} />
-        </Box>
-      )}
-      <Iconify
-        icon="eva:chevron-down-fill"
-        width={20}
-        sx={{
-          transform: isOpen ? 'rotate(180deg)' : 'none',
-          transition: 'transform 0.2s',
-        }}
-      />
-    </Stack>
-  );
-}
-
-FilterPillEndIcons.propTypes = {
-  isActive: PropTypes.bool,
-  isOpen: PropTypes.bool,
-  onClear: PropTypes.func.isRequired,
-  clearLabel: PropTypes.string.isRequired,
-};
-
 /**
  * The selected-creator chip, sized off the field it sits in.
  *
@@ -328,24 +246,9 @@ const getPlatformSaveResult = (rows, body) => {
   };
 };
 
-const PLATFORM_OPTIONS = [
-  // Outline, not fill, and Instagram's own brand magenta from the handoff.
-  { value: 'instagram', label: 'Instagram', icon: 'ri:instagram-line', color: '#C13584' },
-  { value: 'tiktok', label: 'TikTok', icon: 'ic:baseline-tiktok', color: '#000000' },
-];
-
-/**
- * A connected account counts as a media kit only once its stats are saved.
- * A token-only row (stats sync failed) falls back to manual entry.
- */
-const hasMediaKitForPlatform = (creator, selectedPlatform) => {
-  if (!creator) return false;
-  if (selectedPlatform === 'tiktok') return creator?.creator?.tiktokUser?.follower_count != null;
-  return creator?.creator?.instagramUser?.followers_count != null;
-};
-
+// Threads has no connected account and no manual columns. Its numbers live only on the pitch.
 const getPlatformFollowerCount = (creator, selectedPlatform) => {
-  if (!creator) return 0;
+  if (!creator || isRecentViewsPlatform(selectedPlatform)) return 0;
 
   const igFollowers = creator?.creator?.instagramUser?.followers_count || 0;
   const tkFollowers = creator?.creator?.tiktokUser?.follower_count || 0;
@@ -373,7 +276,7 @@ const getPlatformFollowerCount = (creator, selectedPlatform) => {
  * saved from a manual entry. Null means never measured, not a measured zero.
  */
 const getPlatformEngagementRate = (creator, selectedPlatform) => {
-  if (!creator) return null;
+  if (!creator || isRecentViewsPlatform(selectedPlatform)) return null;
   const isTiktok = selectedPlatform === 'tiktok';
   const rate = hasMediaKitForPlatform(creator, selectedPlatform)
     ? (isTiktok ? creator.creator.tiktokUser : creator.creator.instagramUser).engagement_rate
@@ -385,13 +288,23 @@ const getPlatformEngagementRate = (creator, selectedPlatform) => {
   return String(Number(Number(rate).toFixed(2)));
 };
 
-const getStoredProfileLink = (creator, platform) => {
-  if (!creator) return '';
-  return (
-    (platform === 'tiktok'
-      ? creator?.creator?.tiktokProfileLink
-      : creator?.creator?.instagramProfileLink) || ''
-  ).trim();
+const hasMediaKitForPlatform = (creator, selectedPlatform) => {
+  if (!creator) return false;
+  if (selectedPlatform === 'tiktok') return !!creator?.creator?.tiktokUser;
+  if (selectedPlatform === 'threads') return false;
+  return !!creator?.creator?.instagramUser;
+};
+
+const getStoredProfileLink = (creator, platform) => storedProfileLink(creator?.creator, platform);
+
+/** Threads only: a hint under the field, or the parse error once the typed value is wrong. */
+const metricFieldProps = (row) => {
+  const isViews = isRecentViewsPlatform(row.selectedPlatform);
+  const value = String(row.engagementRate ?? '').trim();
+  const invalid =
+    !row.hasMediaKit && value.length > 0 && !hasSafePrimaryMetric(row.selectedPlatform, value);
+  if (invalid) return { error: true, helperText: metricError(row.selectedPlatform) };
+  return isViews ? { helperText: RECENT_VIEWS_HINT } : {};
 };
 
 const renderProfileSourceOption = (creator, option) => {
@@ -458,10 +371,6 @@ const getConnectedPlatformValues = (creator) =>
 
 const getDefaultPlatformFromMediaKit = (creator) => getConnectedPlatformValues(creator)[0] ?? '';
 
-// Admins may choose IG or TikTok for credits even when only one platform has a media kit
-// (other platform uses manual follower entry).
-const getPlatformSelectOptions = () => PLATFORM_OPTIONS;
-
 const formatFollowerCountDisplay = (value) => {
   if (value === '' || value === undefined) return '';
   const n = Number(value);
@@ -470,10 +379,9 @@ const formatFollowerCountDisplay = (value) => {
 };
 
 const resolveInitialPlatformForCreator = (creator, previousPlatform) => {
-  const options = getPlatformSelectOptions();
   if (!creator) return '';
 
-  if (previousPlatform && options.some((o) => o.value === previousPlatform)) {
+  if (isKnownPlatform(previousPlatform)) {
     return previousPlatform;
   }
 
@@ -519,6 +427,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   const [platformCreatorOpen, setPlatformCreatorOpen] = useState(false);
   const queryClient = useQueryClient();
   const [outreachStatusFilter, setOutreachStatusFilter] = useState([]);
+  const [platformFilter, setPlatformFilter] = useState([]);
   const [outreachFilterAnchorEl, setOutreachFilterAnchorEl] = useState(null);
   const [creatorFilterAnchorEl, setCreatorFilterAnchorEl] = useState(null);
   // Merge prop-based isDisabled with existing Finance role check
@@ -859,12 +768,14 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
           pitch.user?.profileLink ||
           ''
         ).toLowerCase();
+        const threadsLink = (pitch.user?.creator?.threadsProfileLink || '').toLowerCase();
 
         return (
           creatorName.includes(query) ||
           instagramUsername.includes(query) ||
           tiktokUsername.includes(query) ||
-          profileLink.includes(query)
+          profileLink.includes(query) ||
+          threadsLink.includes(query)
         );
       });
     }
@@ -885,6 +796,13 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
         // Check if pitch's outreach status matches any selected filter
         return outreachStatusFilter.includes(pitch.outreachStatus);
       });
+    }
+
+    // The platform the row shows, so the filter matches the screen.
+    if (platformFilter.length > 0) {
+      filtered = filtered?.filter((pitch) =>
+        platformFilter.includes(resolveRowMetrics(pitch, campaign).platform)
+      );
     }
 
     return [...(filtered || [])].sort((a, b) => {
@@ -946,6 +864,7 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
     activeTiers,
     searchQuery,
     outreachStatusFilter,
+    platformFilter,
     unreadNotesOnly,
     creatorNotes.byCreator,
   ]);
@@ -1134,205 +1053,168 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
   return (
     <Box sx={{ width: '100%', overflowX: 'auto' }}>
       <Stack direction="column" spacing={2}>
-        <Stack
-          direction="row"
-          spacing={1.5}
-          alignItems="center"
-          flexWrap="wrap"
-          useFlexGap
-          sx={{ width: '100%' }}
-        >
-          <TextField
-            placeholder="Search creators..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{
-              width: { xs: '100%', sm: 300 },
-              flexShrink: 0,
-              '& .MuiOutlinedInput-root': {
-                bgcolor: '#FFFFFF',
-                border: '1.5px solid #e7e7e7',
-                borderBottom: '3px solid #e7e7e7',
-                borderRadius: 1.15,
-                height: 44,
-                fontSize: '0.85rem',
-                '& fieldset': {
-                  border: 'none',
-                },
-                '&.Mui-focused': {
+        {/* Search and filters wrap on the left; Add New Creators keeps its place on the first line. */}
+        <Stack direction="row" spacing={1.5} alignItems="flex-start" sx={{ width: '100%' }}>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            alignItems="center"
+            flexWrap="wrap"
+            useFlexGap
+            sx={{ flex: 1, minWidth: 0 }}
+          >
+            <TextField
+              placeholder="Search creators..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{
+                width: { xs: '100%', sm: 300 },
+                flexShrink: 0,
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#FFFFFF',
                   border: '1.5px solid #e7e7e7',
                   borderBottom: '3px solid #e7e7e7',
-                },
-              },
-              '& .MuiOutlinedInput-input': {
-                py: 1.25,
-                px: 0,
-                color: '#637381',
-                fontWeight: 600,
-                '&::placeholder': {
-                  color: '#637381',
-                  opacity: 1,
-                  fontWeight: 400,
-                },
-              },
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-          {/* Alphabetical Sort Button */}
-          <Button
-            onClick={handleToggleSort}
-            endIcon={
-              <Stack direction="row" alignItems="center" spacing={0.5}>
-                {sortDirection === 'asc' ? (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                  </Stack>
-                ) : (
-                  <Stack direction="column" alignItems="center" spacing={0}>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
-                    >
-                      Z
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
-                    >
-                      A
-                    </Typography>
-                  </Stack>
-                )}
-                <Iconify
-                  icon={
-                    sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
-                  }
-                  width={12}
-                />
-              </Stack>
-            }
-            sx={{
-              px: 1.5,
-              py: 0.75,
-              height: '42px',
-              color: '#637381',
-              fontWeight: 600,
-              fontSize: '0.875rem',
-              backgroundColor: 'transparent',
-              border: 'none',
-              borderRadius: 1,
-              textTransform: 'none',
-              whiteSpace: 'nowrap',
-              boxShadow: 'none',
-              alignSelf: { xs: 'flex-start', sm: 'center' },
-              '&:hover': {
-                backgroundColor: 'transparent',
-                color: '#221f20',
-              },
-            }}
-          >
-            Alphabetical
-          </Button>
-          {/* Outreach Status Filter */}
-          <Button
-            variant="text"
-            disableElevation
-            onClick={handleOutreachFilterClick}
-            endIcon={
-              <FilterPillEndIcons
-                isActive={isOutreachFilterActive}
-                isOpen={Boolean(outreachFilterAnchorEl)}
-                onClear={handleOutreachFilterClear}
-                clearLabel="Clear outreach status filters"
-              />
-            }
-            sx={getFilterPillSx(isOutreachFilterActive)}
-          >
-            {outreachFilterLabel}
-          </Button>
-          <Menu
-            anchorEl={outreachFilterAnchorEl}
-            open={Boolean(outreachFilterAnchorEl)}
-            onClose={handleOutreachFilterClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            slotProps={{
-              paper: {
-                sx: {
-                  mt: 0.5,
-                  p: 1.25,
-                  bgcolor: 'white',
-                  boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
-                  borderRadius: 1.5,
-                  '& .MuiList-root': {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                    p: 0,
+                  borderRadius: 1.15,
+                  height: 44,
+                  fontSize: '0.85rem',
+                  '& fieldset': {
+                    border: 'none',
+                  },
+                  '&.Mui-focused': {
+                    border: '1.5px solid #e7e7e7',
+                    borderBottom: '3px solid #e7e7e7',
                   },
                 },
-              },
-            }}
-          >
-            {/* Not Set option */}
-            <Box
-              onClick={() => handleOutreachFilterToggle('NOT_SET')}
+                '& .MuiOutlinedInput-input': {
+                  py: 1.25,
+                  px: 0,
+                  color: '#637381',
+                  fontWeight: 600,
+                  '&::placeholder': {
+                    color: '#637381',
+                    opacity: 1,
+                    fontWeight: 400,
+                  },
+                },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Iconify icon="eva:search-fill" width={18} sx={{ color: '#637381' }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {/* Alphabetical Sort Button */}
+            <Button
+              onClick={handleToggleSort}
+              endIcon={
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  {sortDirection === 'asc' ? (
+                    <Stack direction="column" alignItems="center" spacing={0}>
+                      <Typography
+                        variant="caption"
+                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                      >
+                        A
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                      >
+                        Z
+                      </Typography>
+                    </Stack>
+                  ) : (
+                    <Stack direction="column" alignItems="center" spacing={0}>
+                      <Typography
+                        variant="caption"
+                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 400 }}
+                      >
+                        Z
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{ lineHeight: 1, fontSize: '10px', fontWeight: 700 }}
+                      >
+                        A
+                      </Typography>
+                    </Stack>
+                  )}
+                  <Iconify
+                    icon={
+                      sortDirection === 'asc' ? 'eva:arrow-downward-fill' : 'eva:arrow-upward-fill'
+                    }
+                    width={12}
+                  />
+                </Stack>
+              }
               sx={{
-                textTransform: 'uppercase',
-                fontWeight: 700,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                py: 0.75,
                 px: 1.5,
-                fontSize: 13,
-                border: '1px dashed',
-                borderBottom: '3px dashed',
-                borderRadius: 0.8,
-                bgcolor: 'white',
+                py: 0.75,
+                height: '42px',
+                color: '#637381',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                backgroundColor: 'transparent',
+                border: 'none',
+                borderRadius: 1,
+                textTransform: 'none',
                 whiteSpace: 'nowrap',
-                color: '#8E8E93',
-                borderColor: '#D0D0D0',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
-                ...(outreachStatusFilter.includes('NOT_SET') && {
-                  boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 2px rgba(142, 142, 147, 0.2)',
-                }),
+                boxShadow: 'none',
+                alignSelf: { xs: 'flex-start', sm: 'center' },
                 '&:hover': {
-                  bgcolor: '#F5F5F5',
+                  backgroundColor: 'transparent',
+                  color: '#221f20',
                 },
               }}
             >
-              <Box component="span" sx={{ flex: 1, textAlign: 'center' }}>
-                Not Set
-              </Box>
-              {outreachStatusFilter.includes('NOT_SET') && (
-                <Iconify icon="eva:checkmark-fill" width={16} sx={{ ml: 1, flexShrink: 0 }} />
-              )}
-            </Box>
-            {/* Status options */}
-            {OUTREACH_STATUS_OPTIONS.map((option) => (
+              Alphabetical
+            </Button>
+            {/* Outreach Status Filter */}
+            <Button
+              variant="text"
+              disableElevation
+              onClick={handleOutreachFilterClick}
+              endIcon={
+                <FilterPillEndIcons
+                  isActive={isOutreachFilterActive}
+                  isOpen={Boolean(outreachFilterAnchorEl)}
+                  onClear={handleOutreachFilterClear}
+                  clearLabel="Clear outreach status filters"
+                />
+              }
+              sx={getFilterPillSx(isOutreachFilterActive)}
+            >
+              {outreachFilterLabel}
+            </Button>
+            <Menu
+              anchorEl={outreachFilterAnchorEl}
+              open={Boolean(outreachFilterAnchorEl)}
+              onClose={handleOutreachFilterClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    mt: 0.5,
+                    p: 1.25,
+                    bgcolor: 'white',
+                    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
+                    borderRadius: 1.5,
+                    '& .MuiList-root': {
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1,
+                      p: 0,
+                    },
+                  },
+                },
+              }}
+            >
+              {/* Not Set option */}
               <Box
-                key={option.value}
-                onClick={() => handleOutreachFilterToggle(option.value)}
+                onClick={() => handleOutreachFilterToggle('NOT_SET')}
                 sx={{
                   textTransform: 'uppercase',
                   fontWeight: 700,
@@ -1342,18 +1224,19 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                   py: 0.75,
                   px: 1.5,
                   fontSize: 13,
-                  border: '1px solid',
-                  borderBottom: '3px solid',
+                  border: '1px dashed',
+                  borderBottom: '3px dashed',
                   borderRadius: 0.8,
                   bgcolor: 'white',
                   whiteSpace: 'nowrap',
-                  color: option.color,
-                  borderColor: option.color,
+                  color: '#8E8E93',
+                  borderColor: '#D0D0D0',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                   boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
-                  ...(outreachStatusFilter.includes(option.value) && {
-                    boxShadow: `0px 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 2px ${option.color}20`,
+                  ...(outreachStatusFilter.includes('NOT_SET') && {
+                    boxShadow:
+                      '0px 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 2px rgba(142, 142, 147, 0.2)',
                   }),
                   '&:hover': {
                     bgcolor: '#F5F5F5',
@@ -1361,113 +1244,153 @@ const CampaignV3Pitches = ({ pitches, campaign, onUpdate, isDisabled: propIsDisa
                 }}
               >
                 <Box component="span" sx={{ flex: 1, textAlign: 'center' }}>
-                  {option.label}
+                  Not Set
                 </Box>
-                {outreachStatusFilter.includes(option.value) && (
+                {outreachStatusFilter.includes('NOT_SET') && (
                   <Iconify icon="eva:checkmark-fill" width={16} sx={{ ml: 1, flexShrink: 0 }} />
                 )}
               </Box>
-            ))}
-            {/* Clear button */}
-            {outreachStatusFilter.length > 0 && (
-              <Typography
-                onClick={handleOutreachFilterClear}
-                sx={{
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: '#637381',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  mt: 0.5,
-                  '&:hover': {
-                    color: '#212B36',
-                    textDecoration: 'underline',
-                  },
-                }}
-              >
-                Clear all
-              </Typography>
-            )}
-          </Menu>
-          {/* Creator Status Filter */}
-          <Button
-            variant="text"
-            disableElevation
-            onClick={handleCreatorFilterClick}
-            endIcon={
-              <FilterPillEndIcons
-                isActive={isCreatorFilterActive}
-                isOpen={Boolean(creatorFilterAnchorEl)}
-                onClear={handleCreatorFilterClear}
-                clearLabel="Clear creator status filters"
-              />
-            }
-            sx={getFilterPillSx(isCreatorFilterActive)}
-          >
-            {creatorFilterLabel}
-          </Button>
-          <Menu
-            anchorEl={creatorFilterAnchorEl}
-            open={Boolean(creatorFilterAnchorEl)}
-            onClose={handleCreatorFilterClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-            slotProps={{
-              paper: {
-                sx: {
-                  mt: 0.5,
-                  minWidth: 200,
-                  p: 0.5,
-                  bgcolor: 'white',
-                  boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
-                  borderRadius: 1.5,
-                },
-              },
-            }}
-          >
-            {creatorStatusOptions.map((option) => (
-              <MenuItem
-                key={option.value}
-                selected={selectedFilter === option.value}
-                onClick={() => handleCreatorFilterSelect(option.value)}
-                sx={{
-                  fontFamily: 'Inter Display, Inter, sans-serif',
-                  fontSize: 14,
-                  fontWeight: selectedFilter === option.value ? 600 : 500,
-                  color: '#231F20',
-                  borderRadius: 1,
-                  py: 0.75,
-                }}
-              >
-                {option.label}
-                {selectedFilter === option.value && (
-                  <Iconify
-                    icon="eva:checkmark-fill"
-                    width={16}
-                    sx={{ ml: 'auto', flexShrink: 0 }}
-                  />
-                )}
-              </MenuItem>
-            ))}
-          </Menu>
-
-          {creatorNotes.enabled && (
+              {/* Status options */}
+              {OUTREACH_STATUS_OPTIONS.map((option) => (
+                <Box
+                  key={option.value}
+                  onClick={() => handleOutreachFilterToggle(option.value)}
+                  sx={{
+                    textTransform: 'uppercase',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    py: 0.75,
+                    px: 1.5,
+                    fontSize: 13,
+                    border: '1px solid',
+                    borderBottom: '3px solid',
+                    borderRadius: 0.8,
+                    bgcolor: 'white',
+                    whiteSpace: 'nowrap',
+                    color: option.color,
+                    borderColor: option.color,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.08)',
+                    ...(outreachStatusFilter.includes(option.value) && {
+                      boxShadow: `0px 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 2px ${option.color}20`,
+                    }),
+                    '&:hover': {
+                      bgcolor: '#F5F5F5',
+                    },
+                  }}
+                >
+                  <Box component="span" sx={{ flex: 1, textAlign: 'center' }}>
+                    {option.label}
+                  </Box>
+                  {outreachStatusFilter.includes(option.value) && (
+                    <Iconify icon="eva:checkmark-fill" width={16} sx={{ ml: 1, flexShrink: 0 }} />
+                  )}
+                </Box>
+              ))}
+              {/* Clear button */}
+              {outreachStatusFilter.length > 0 && (
+                <Typography
+                  onClick={handleOutreachFilterClear}
+                  sx={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: '#637381',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    mt: 0.5,
+                    '&:hover': {
+                      color: '#212B36',
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  Clear all
+                </Typography>
+              )}
+            </Menu>
+            <PlatformFilter selected={platformFilter} onChange={setPlatformFilter} />
+            {/* Creator Status Filter */}
             <Button
               variant="text"
               disableElevation
-              aria-pressed={unreadNotesOnly}
-              onClick={() => setUnreadNotesOnly((v) => !v)}
-              sx={getFilterPillSx(unreadNotesOnly)}
+              onClick={handleCreatorFilterClick}
+              endIcon={
+                <FilterPillEndIcons
+                  isActive={isCreatorFilterActive}
+                  isOpen={Boolean(creatorFilterAnchorEl)}
+                  onClear={handleCreatorFilterClear}
+                  clearLabel="Clear creator status filters"
+                />
+              }
+              sx={getFilterPillSx(isCreatorFilterActive)}
             >
-              Unread notes · {creatorNotes.unreadTotal}
+              {creatorFilterLabel}
             </Button>
-          )}
+            <Menu
+              anchorEl={creatorFilterAnchorEl}
+              open={Boolean(creatorFilterAnchorEl)}
+              onClose={handleCreatorFilterClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    mt: 0.5,
+                    minWidth: 200,
+                    p: 0.5,
+                    bgcolor: 'white',
+                    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.12)',
+                    borderRadius: 1.5,
+                  },
+                },
+              }}
+            >
+              {creatorStatusOptions.map((option) => (
+                <MenuItem
+                  key={option.value}
+                  selected={selectedFilter === option.value}
+                  onClick={() => handleCreatorFilterSelect(option.value)}
+                  sx={{
+                    fontFamily: 'Inter Display, Inter, sans-serif',
+                    fontSize: 14,
+                    fontWeight: selectedFilter === option.value ? 600 : 500,
+                    color: '#231F20',
+                    borderRadius: 1,
+                    py: 0.75,
+                  }}
+                >
+                  {option.label}
+                  {selectedFilter === option.value && (
+                    <Iconify
+                      icon="eva:checkmark-fill"
+                      width={16}
+                      sx={{ ml: 'auto', flexShrink: 0 }}
+                    />
+                  )}
+                </MenuItem>
+              ))}
+            </Menu>
+
+            {creatorNotes.enabled && (
+              <Button
+                variant="text"
+                disableElevation
+                aria-pressed={unreadNotesOnly}
+                onClick={() => setUnreadNotesOnly((v) => !v)}
+                sx={getFilterPillSx(unreadNotesOnly)}
+              >
+                Unread notes · {creatorNotes.unreadTotal}
+              </Button>
+            )}
+          </Stack>
 
           <Box
             sx={{
               display: 'flex',
-              justifyContent: { xs: 'flex-start', md: 'flex-end' },
-              ml: { xs: 0, sm: 'auto' },
+              justifyContent: 'flex-end',
               flexShrink: 0,
             }}
           >
@@ -2235,18 +2158,23 @@ export function PlatformCreatorModal({
 
     const invalidEngagementRow = validRows.find((row) => {
       const rate = String(row.engagementRate ?? '').trim();
-      return rate.length > 0 && !hasSafeEngagementRate(rate);
+      return rate.length > 0 && !hasSafePrimaryMetric(row.selectedPlatform, rate);
     });
     if (invalidEngagementRow) {
-      enqueueSnackbar('Engagement rate must be between 0 and 1000.', {
-        variant: 'error',
-      });
+      enqueueSnackbar(
+        isRecentViewsPlatform(invalidEngagementRow.selectedPlatform)
+          ? metricError('threads')
+          : 'Engagement rate must be between 0 and 1000.',
+        { variant: 'error' }
+      );
       return;
     }
 
     const missingPlatformRow = validRows.find((row) => !row.selectedPlatform);
     if (missingPlatformRow) {
-      enqueueSnackbar('Please select Instagram or TikTok for each creator.', { variant: 'error' });
+      enqueueSnackbar('Please select Instagram, TikTok, or Threads for each creator.', {
+        variant: 'error',
+      });
       return;
     }
 
@@ -2289,7 +2217,10 @@ export function PlatformCreatorModal({
             ? parseInt(row.followerCount, 10)
             : undefined;
           const isManualEntry = isManualPlatformMetricsRow(row);
-          const engagementRate = String(row.engagementRate ?? '').trim();
+          const engagementRate = normalizePrimaryMetric(
+            row.selectedPlatform,
+            String(row.engagementRate ?? '').trim()
+          );
           return {
             id: row.creator.id,
             followerCount: !Number.isNaN(parsedFollowerCount) ? parsedFollowerCount : undefined,
@@ -2307,7 +2238,7 @@ export function PlatformCreatorModal({
             ...(!isManualEntry && row.profileLink?.trim()
               ? {
                   profileLink: row.profileLink.trim(),
-                  engagementRate: row.engagementRate || undefined,
+                  engagementRate: engagementRate || undefined,
                   completionReceipt: row.completionReceipt || undefined,
                   extractionId: row.extractionId || undefined,
                   fallbackReason: row.fallbackReason || undefined,
@@ -2679,9 +2610,9 @@ export function PlatformCreatorModal({
                                   freeSolo
                                   disableClearable
                                   forcePopupIcon
-                                  options={PLATFORM_OPTIONS}
+                                  options={PLATFORM_LIST}
                                   value={
-                                    PLATFORM_OPTIONS.find(
+                                    PLATFORM_LIST.find(
                                       (option) => option.value === row.selectedPlatform
                                     ) || null
                                   }
@@ -2721,7 +2652,7 @@ export function PlatformCreatorModal({
                                     );
                                   }}
                                   renderInput={(params) => {
-                                    const selected = PLATFORM_OPTIONS.find(
+                                    const selected = PLATFORM_LIST.find(
                                       (option) => option.value === row.selectedPlatform
                                     );
                                     return (
@@ -2802,7 +2733,7 @@ export function PlatformCreatorModal({
                                       'aria-invalid': Boolean(row.error),
                                     },
                                     renderValue: (value) => {
-                                      const selected = PLATFORM_OPTIONS.find(
+                                      const selected = PLATFORM_LIST.find(
                                         (option) => option.value === value
                                       );
                                       if (!selected) return 'Select Profile Link';
@@ -2855,7 +2786,7 @@ export function PlatformCreatorModal({
                                     '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
                                   }}
                                 >
-                                  {PLATFORM_OPTIONS.map((option) => {
+                                  {PLATFORM_LIST.map((option) => {
                                     const storedLink = getStoredProfileLink(
                                       row.creator,
                                       option.value
@@ -2912,7 +2843,7 @@ export function PlatformCreatorModal({
                                 <MenuItem value="" disabled>
                                   Select
                                 </MenuItem>
-                                {getPlatformSelectOptions().map((platform) => (
+                                {PLATFORM_LIST.map((platform) => (
                                   <MenuItem key={platform.value} value={platform.value}>
                                     <Stack direction="row" spacing={1} alignItems="center">
                                       <Iconify
@@ -2936,14 +2867,16 @@ export function PlatformCreatorModal({
                               }}
                             >
                               <FieldLabel
-                                text="Engagement Rate"
+                                text={metricLabel(row.selectedPlatform)}
                                 provenance={
                                   row.hasMediaKit
                                     ? 'media kit'
                                     : fieldProvenanceOf(row, 'engagementRate')
                                 }
                                 hint={
-                                  !row.hasMediaKit && row.status === ROW_STATUS.READY ? (
+                                  !row.hasMediaKit &&
+                                  !isRecentViewsPlatform(row.selectedPlatform) &&
+                                  row.status === ROW_STATUS.READY ? (
                                     <Tooltip
                                       title="How this rate was worked out"
                                       arrow
@@ -2965,7 +2898,8 @@ export function PlatformCreatorModal({
                                   ) : null
                                 }
                               />
-                              {SCRAPE_FETCHING.includes(row.status) ? (
+                              {SCRAPE_FETCHING.includes(row.status) &&
+                              !isRecentViewsPlatform(row.selectedPlatform) ? (
                                 <CreatorFieldLoading
                                   label="Fetching engagement rate"
                                   showSpinner
@@ -2979,7 +2913,9 @@ export function PlatformCreatorModal({
                               ) : (
                                 <ScrapeTextFieldReveal
                                   reveal={
-                                    reveal && row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE
+                                    reveal &&
+                                    row.fieldUpdateSource === FIELD_UPDATE_SOURCE.SCRAPE &&
+                                    !isRecentViewsPlatform(row.selectedPlatform)
                                   }
                                   text={
                                     row.hasMediaKit
@@ -2990,7 +2926,9 @@ export function PlatformCreatorModal({
                                       : (row.engagementRate ?? '')
                                   }
                                   height={FIELD_HEIGHT}
-                                  overlayPaddingRight={36}
+                                  overlayPaddingRight={
+                                    isRecentViewsPlatform(row.selectedPlatform) ? 12 : 36
+                                  }
                                 >
                                   <TextField
                                     value={
@@ -2999,7 +2937,10 @@ export function PlatformCreatorModal({
                                             row.creator,
                                             row.selectedPlatform
                                           ) ?? '')
-                                        : (row.engagementRate ?? '')
+                                        : formatPrimaryMetricInput(
+                                            row.selectedPlatform,
+                                            row.engagementRate
+                                          )
                                     }
                                     onChange={(e) => {
                                       // A connected account owns its own rate.
@@ -3008,22 +2949,36 @@ export function PlatformCreatorModal({
                                         type: ACTIONS.EDIT_FIELD,
                                         rowId: row.id,
                                         field: 'engagementRate',
-                                        // A percentage, so digits and one dot only.
-                                        value: e.target.value.replace(/[^0-9.]/g, ''),
+                                        value: sanitizePrimaryMetricInput(
+                                          row.selectedPlatform,
+                                          e.target.value
+                                        ),
                                       });
                                     }}
-                                    placeholder={row.hasMediaKit ? '—' : 'Engagement Rate'}
+                                    placeholder={
+                                      row.hasMediaKit ? '—' : metricLabel(row.selectedPlatform)
+                                    }
                                     disabled={row.hasMediaKit}
                                     fullWidth
                                     size="small"
+                                    {...metricFieldProps(row)}
                                     InputProps={{
                                       readOnly: row.hasMediaKit,
-                                      endAdornment: (
+                                      endAdornment: isRecentViewsPlatform(
+                                        row.selectedPlatform
+                                      ) ? null : (
                                         <InputAdornment position="end">%</InputAdornment>
                                       ),
                                     }}
-                                    inputProps={{ inputMode: 'decimal' }}
-                                    sx={FIELD_SX}
+                                    inputProps={{
+                                      inputMode: isRecentViewsPlatform(row.selectedPlatform)
+                                        ? 'text'
+                                        : 'decimal',
+                                    }}
+                                    sx={{
+                                      ...FIELD_SX,
+                                      '& .MuiFormHelperText-root': { ml: 0, mt: '4px' },
+                                    }}
                                   />
                                 </ScrapeTextFieldReveal>
                               )}
@@ -3301,6 +3256,7 @@ export function PlatformCreatorModal({
           breakdownRow?.profileLink,
           getStoredProfileLink(breakdownRow?.creator, 'instagram'),
           getStoredProfileLink(breakdownRow?.creator, 'tiktok'),
+          getStoredProfileLink(breakdownRow?.creator, 'threads'),
         ]}
       />
 
@@ -3577,7 +3533,7 @@ export function NonPlatformCreatorFormDialog({ open, onClose, onUpdated, campaig
                       },
                     }}
                   >
-                    {getPlatformSelectOptions().map((platform) => (
+                    {PLATFORM_LIST.map((platform) => (
                       <MenuItem key={platform.value} value={platform.value}>
                         <Stack direction="row" spacing={1} alignItems="center">
                           <Iconify icon={platform.icon} width={16} sx={{ color: platform.color }} />

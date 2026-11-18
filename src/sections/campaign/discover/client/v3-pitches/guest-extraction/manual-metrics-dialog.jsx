@@ -13,13 +13,23 @@ import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import {
+  metricLabel,
+  metricError,
+  hasSafePrimaryMetric,
+  isRecentViewsPlatform,
+  normalizePrimaryMetric,
+  withThousandsSeparators,
+  formatPrimaryMetricInput,
+  sanitizePrimaryMetricInput,
+} from 'src/utils/platform-metric';
 
 import Iconify from 'src/components/iconify';
 
 import WarningMessage from './warning-message';
 import { failureDetails } from './extraction-error-copy';
+import { hasSafeFollowerCount } from './creator-row-machine';
 import { CC, labelSx, inputSx } from './creator-field-tokens';
-import { hasSafeFollowerCount, hasSafeEngagementRate } from './creator-row-machine';
 
 /**
  * Followers and ER typed by hand for a platform creator whose fetch failed.
@@ -72,19 +82,28 @@ export default function ManualMetricsDialog({ open, onClose, pitch, initialValue
     setEngagementRate(toText(initialRate));
   }, [open, initialFollowers, initialRate]);
 
-  const details = failureDetails(pitch?.metricsFailureCode, pitch?.selectedPlatform);
-  const followersInvalid = followerCount !== '' && !hasSafeFollowerCount(followerCount);
-  const rateInvalid = engagementRate !== '' && !hasSafeEngagementRate(engagementRate);
-  const canSave =
-    (followerCount !== '' || engagementRate !== '') && !followersInvalid && !rateInvalid;
+  const platform = pitch?.selectedPlatform;
+  const isViews = isRecentViewsPlatform(platform);
+  const rateLabel = metricLabel(platform);
+  const details = failureDetails(pitch?.metricsFailureCode, platform);
+  const showWarning = !isViews || Boolean(pitch?.metricsFailureCode);
+  // A Threads fetch that worked owns the follower count. Only Recent Views is typed.
+  const followersLocked = isViews && !pitch?.metricsFailureCode;
+  const followersInvalid =
+    !followersLocked && followerCount !== '' && !hasSafeFollowerCount(followerCount);
+  const rateInvalid = engagementRate !== '' && !hasSafePrimaryMetric(platform, engagementRate);
+  const hasInput = followersLocked
+    ? engagementRate !== ''
+    : followerCount !== '' || engagementRate !== '';
+  const canSave = hasInput && !followersInvalid && !rateInvalid;
 
   const handleSave = async () => {
     if (!canSave || !pitch?.id) return;
     try {
       setSaving(true);
       const { data } = await axiosInstance.patch(endpoints.campaign.pitch.v3.metrics(pitch.id), {
-        followerCount,
-        engagementRate,
+        ...(!followersLocked && { followerCount }),
+        engagementRate: normalizePrimaryMetric(platform, engagementRate),
       });
       enqueueSnackbar(data?.message || 'Creator numbers updated.', { variant: 'success' });
       onSaved?.(data?.pitch);
@@ -136,49 +155,71 @@ export default function ManualMetricsDialog({ open, onClose, pitch, initialValue
           </IconButton>
         </Stack>
 
-        <Box sx={{ mt: 1.5 }}>
-          <WarningMessage
-            title={details.title}
-            description={details.intro}
-            reasons={details.reasons}
-          />
-        </Box>
+        {showWarning && (
+          <Box sx={{ mt: 1.5 }}>
+            <WarningMessage
+              title={details.title}
+              description={details.intro}
+              reasons={details.reasons}
+            />
+          </Box>
+        )}
 
         <Typography sx={{ mt: 1.5, fontSize: 12, lineHeight: '16px', color: CC.grey50 }}>
-          Use numbers from the creator&apos;s media kit or an Insights screenshot.
+          {isViews
+            ? 'Copy recent views from the Threads app.'
+            : "Use numbers from the creator's media kit or an Insights screenshot."}
         </Typography>
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 2 }}>
           <Box sx={{ flex: 1 }}>
-            <Typography component="label" htmlFor="manual-followers" sx={{ ...labelSx, display: 'block', mb: '4px' }}>
+            <Typography
+              component="label"
+              htmlFor="manual-followers"
+              sx={{ ...labelSx, display: 'block', mb: '4px' }}
+            >
               Follower Count
             </Typography>
             <TextField
               id="manual-followers"
               fullWidth
               placeholder="Follower Count"
-              value={followerCount}
+              value={withThousandsSeparators(followerCount)}
               onChange={(event) => setFollowerCount(event.target.value.replace(/[^0-9]/g, ''))}
               error={followersInvalid}
-              helperText={followersInvalid ? 'Enter a whole number from 1 to 2,000,000,000.' : undefined}
-              disabled={saving}
+              helperText={
+                (followersInvalid && 'Enter a whole number from 1 to 2,000,000,000.') ||
+                (followersLocked && 'Fetched from the Threads profile.') ||
+                undefined
+              }
+              disabled={saving || followersLocked}
               sx={inputSx}
             />
           </Box>
           <Box sx={{ flex: 1 }}>
-            <Typography component="label" htmlFor="manual-rate" sx={{ ...labelSx, display: 'block', mb: '4px' }}>
-              Engagement Rate
+            <Typography
+              component="label"
+              htmlFor="manual-rate"
+              sx={{ ...labelSx, display: 'block', mb: '4px' }}
+            >
+              {rateLabel}
             </Typography>
             <TextField
               id="manual-rate"
               fullWidth
-              placeholder="Engagement Rate"
-              value={engagementRate}
-              onChange={(event) => setEngagementRate(event.target.value.replace(/[^0-9.]/g, ''))}
+              placeholder={rateLabel}
+              value={formatPrimaryMetricInput(platform, engagementRate)}
+              onChange={(event) =>
+                setEngagementRate(sanitizePrimaryMetricInput(platform, event.target.value))
+              }
               error={rateInvalid}
-              helperText={rateInvalid ? 'Enter a percentage from 0 to 1,000.' : undefined}
+              helperText={rateInvalid ? metricError(platform) : undefined}
               disabled={saving}
-              InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+              InputProps={
+                isViews
+                  ? undefined
+                  : { endAdornment: <InputAdornment position="end">%</InputAdornment> }
+              }
               sx={inputSx}
             />
           </Box>

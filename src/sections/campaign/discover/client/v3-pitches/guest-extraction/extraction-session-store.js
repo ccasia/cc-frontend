@@ -7,6 +7,8 @@
  * storage because recovery re-issues them for the current requester.
  */
 
+import { isKnownPlatform } from 'src/utils/platform-metric';
+
 const KEY = (kind, campaignId) => `cc.extractionSession.${kind}.${campaignId}`;
 const LEGACY_GUEST_KEY = (campaignId) => `cc.guestExtraction.${campaignId}`;
 
@@ -40,7 +42,7 @@ const parseMapping = (raw, kind) => {
         if (
           entry.v !== 2 ||
           typeof entry.creatorId !== 'string' ||
-          !['instagram', 'tiktok'].includes(entry.selectedPlatform) ||
+          !isKnownPlatform(entry.selectedPlatform) ||
           !['stored', 'manual'].includes(entry.sourceMode)
         ) {
           return [];

@@ -118,12 +118,15 @@ const FinaliseCampaign = ({
   onPackageLinkSuccess,
 }) => {
   const { data: admins } = useGetAdmins('active');
+
   const {
     data: companyData,
     isLoading: companyLoading,
     mutate: mutateCompanyList,
   } = useGetCompany();
+
   const { user } = useAuthContext();
+
   const {
     watch,
     trigger,
@@ -479,8 +482,8 @@ const FinaliseCampaign = ({
         {!isClientCampaign && companyClientManagers.length > 0 && (
           <Typography variant="subtitle2" fontWeight={400} sx={{ color: 'warning.dark', mt: 0.5 }}>
             {client?.name} has {companyClientManagers.length} client account
-            {companyClientManagers.length === 1 ? '' : 's'}. With this off, creators you
-            shortlist are approved without client review.
+            {companyClientManagers.length === 1 ? '' : 's'}. With this off, creators you shortlist
+            are approved without client review.
           </Typography>
         )}
       </Stack>

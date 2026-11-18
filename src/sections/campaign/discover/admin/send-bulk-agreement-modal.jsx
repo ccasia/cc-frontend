@@ -145,7 +145,10 @@ export default function SendBulkAgreementModal({
         // Form fields are ugcCredits / platformFollowerCount (see the rows built below)
         const videoCount = Number(row.ugcCredits) || 0;
         if (!campaign?.isCreditTier) return videoCount;
-        const tier = resolveTierForFollowerCount(creditTierList, Number(row.platformFollowerCount) || 0);
+        const tier = resolveTierForFollowerCount(
+          creditTierList,
+          Number(row.platformFollowerCount) || 0
+        );
         return (tier?.creditsPerVideo || 0) * videoCount;
       }),
     [rows, creatorsById, campaign?.isCreditTier, creditTierList]
@@ -294,7 +297,9 @@ export default function SendBulkAgreementModal({
         maxWidth="sm"
         fullWidth
         fullScreen={!smUp}
-        PaperProps={{ sx: { borderRadius: '20px', bgcolor: '#F5F5F5', position: 'relative' } }}
+        PaperProps={{
+          sx: { borderRadius: '20px', bgcolor: '#F5F5F5', position: 'relative', maxWidth: 680 },
+        }}
       >
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <Box>

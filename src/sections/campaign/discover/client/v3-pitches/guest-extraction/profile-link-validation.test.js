@@ -37,17 +37,45 @@ describe('canonical variants converge', () => {
     expect(result.ok).toBe(true);
     expect(result.profile.canonicalKey).toBe('tiktok:example');
   });
+
+  it.each([
+    'https://www.threads.com/@example',
+    'https://threads.com/@example/',
+    'https://www.threads.net/@Example',
+    'threads.net/@example?xmt=abc',
+    'www.threads.com/@example#top',
+  ])('%s becomes one Threads identity', (input) => {
+    const result = validateProfileLink(input);
+    expect(result.ok).toBe(true);
+    expect(result.profile.platform).toBe('threads');
+    expect(result.profile.canonicalKey).toBe('threads:example');
+    expect(result.profile.canonicalUrl).toBe('https://www.threads.com/@example');
+  });
 });
 
 describe('the platform is derived, never picked', () => {
   it('reads it from the link', () => {
     expect(validateProfileLink('https://www.instagram.com/x').profile.platform).toBe('instagram');
     expect(validateProfileLink('https://www.tiktok.com/@x').profile.platform).toBe('tiktok');
+    expect(validateProfileLink('https://www.threads.com/@x').profile.platform).toBe('threads');
+  });
+
+  it('names the expected platform on a mismatch', () => {
+    const result = validateProfileLink('https://www.instagram.com/example', 'threads');
+    expect(result.code).toBe('PLATFORM_MISMATCH');
+    expect(result.message).toBe('Use a Threads profile link.');
+  });
+
+  it('names all three platforms for an unsupported host', () => {
+    expect(validateProfileLink('https://www.youtube.com/@example').message).toBe(
+      'Use an Instagram, TikTok, or Threads profile link.'
+    );
   });
 
   it('labels it for a read-only field', () => {
     expect(platformLabel('instagram')).toBe('Instagram');
     expect(platformLabel('tiktok')).toBe('TikTok');
+    expect(platformLabel('threads')).toBe('Threads');
     expect(platformLabel(null)).toBe('—');
   });
 });
@@ -70,6 +98,14 @@ describe('rejected links', () => {
     ['https://www.instagram.com/.example', 'INVALID_USERNAME'],
     ['https://www.instagram.com/exa..mple', 'INVALID_USERNAME'],
     ['https://www.instagram.com/ex-ample', 'INVALID_USERNAME'],
+    ['https://www.threads.com/example', 'NOT_A_PROFILE_URL'],
+    ['https://www.threads.com/@example/post/C9aBcDeFgHi', 'NOT_A_PROFILE_URL'],
+    ['https://www.threads.com/@search', 'NOT_A_PROFILE_URL'],
+    ['https://www.threads.com/@t', 'NOT_A_PROFILE_URL'],
+    ['https://www.threads.com/', 'NOT_A_PROFILE_URL'],
+    ['https://m.threads.com/@example', 'UNSUPPORTED_HOST'],
+    ['https://www.threads.com/@.example', 'INVALID_USERNAME'],
+    ['https://www.threads.com/@exa..mple', 'INVALID_USERNAME'],
   ])('rejects %s', (input, code) => {
     const result = validateProfileLink(input);
     expect(result.ok).toBe(false);
