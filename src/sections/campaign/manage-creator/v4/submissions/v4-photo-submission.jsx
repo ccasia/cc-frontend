@@ -407,6 +407,9 @@ const V4PhotoSubmission = ({ submission, onUpdate, campaign }) => {
                 onAddPostingLink={handleAddPostingLink}
                 onRemovePostingLink={handleRemovePostingLink}
                 isPostingLinkEditable={isPostingLinkEditable}
+                showPostInsights={isPosted}
+                campaignId={campaign?.id}
+                submissionId={submission.id}
                 feedback={relevantFeedback}
                 hasChangesRequired={hasChangesRequired}
                 uploading={uploading}

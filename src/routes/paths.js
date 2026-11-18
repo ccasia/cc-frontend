@@ -170,6 +170,9 @@ export const paths = {
     reportAi: {
       root: `${ROOTS.DASHBOARD}/report-ai`,
     },
+    insightOcr: {
+      root: `${ROOTS.DASHBOARD}/insight-ocr`,
+    },
     bd: {
       root: `${ROOTS.DASHBOARD}/bd`,
       inviteLink: `${ROOTS.DASHBOARD}/bd/invite-link`,

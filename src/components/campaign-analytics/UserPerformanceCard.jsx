@@ -11,6 +11,7 @@ import {
   Avatar,
   Tooltip,
   Divider,
+  Collapse,
   Skeleton,
   Typography,
   IconButton,
@@ -23,6 +24,7 @@ import { formatNumber, getMetricValue } from 'src/utils/socialMetricsCalculator'
 import { createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
+import { PostInsightsPanel, PostInsightsToggle, PostInsightsButton } from 'src/components/post-insights';
 
 import DiaTextReveal from 'src/sections/campaign/discover/client/v3-pitches/dia-text-reveal';
 
@@ -337,6 +339,8 @@ export default function UserPerformanceCard({
   campaignId,
   canEnterMetrics = false,
   onScrapeCompleted,
+  postInsights,
+  canEditPostInsights = false,
 }) {
   // A post whose Bright Data scrape is still running loads like any other.
   const isScraping = Boolean(scrapeProgress) && !insightData;
@@ -360,6 +364,11 @@ export default function UserPerformanceCard({
   const postLink = insightData?.postUrl || scrapeFailure?.postUrl;
 
   const [brokenThumbnail, setBrokenThumbnail] = useState(null);
+  const [showInsights, setShowInsights] = useState(false);
+
+  // Values the row already shows. The dropdown shows everything else from the screenshots.
+  const rowKeys = ['views', 'likes', 'comments'];
+  if (!hidePrivateMetrics) rowKeys.push('shares', ...(isInstagram ? ['saves'] : []));
 
   const thumbnailSrc = postThumbnail && postThumbnail !== brokenThumbnail ? postThumbnail : null;
 
@@ -889,18 +898,32 @@ export default function UserPerformanceCard({
                 )}
               </AnimatePresence>
 
-              {/* Same column as the manual rows' edit button */}
-              {showScrapeFailure && canEnterMetrics ? (
-                <ScrapeFixButton
-                  scrapeFailure={scrapeFailure}
-                  isInstagram={isInstagram}
+              {/* Same column as the manual rows' edit and delete buttons */}
+              <Stack spacing={1} sx={{ width: 36, flexShrink: 0 }}>
+                {showScrapeFailure && canEnterMetrics && (
+                  <ScrapeFixButton
+                    scrapeFailure={scrapeFailure}
+                    isInstagram={isInstagram}
+                    campaignId={campaignId}
+                    creatorName={creator?.user?.name}
+                    onSaved={onScrapeCompleted}
+                  />
+                )}
+                <PostInsightsButton
                   campaignId={campaignId}
-                  creatorName={creator?.user?.name}
-                  onSaved={onScrapeCompleted}
+                  submissionId={submission?.id}
+                  postUrl={submission?.postUrl}
+                  insights={postInsights}
+                  canEdit={canEditPostInsights}
+                  canManage={canEditPostInsights}
                 />
-              ) : (
-                <Box sx={{ width: 36 }} />
-              )}
+                {postInsights && (
+                  <PostInsightsToggle
+                    open={showInsights}
+                    onClick={() => setShowInsights((open) => !open)}
+                  />
+                )}
+              </Stack>
             </Stack>
 
             <FeatureVideoButton
@@ -909,6 +932,14 @@ export default function UserPerformanceCard({
               postUrl={submission?.postUrl}
             />
           </Box>
+
+          {postInsights && (
+            <Collapse in={showInsights} unmountOnExit sx={{ display: { xs: 'none', md: 'block' } }}>
+              <Box sx={{ mx: 2, mt: 0.5, mb: 1.5 }}>
+                <PostInsightsPanel insights={postInsights} excludeKeys={rowKeys} />
+              </Box>
+            </Collapse>
+          )}
 
           {/* ── Mobile Layout (xs) ── */}
           <Box
@@ -1344,4 +1375,6 @@ UserPerformanceCard.propTypes = {
   campaignId: PropTypes.string,
   canEnterMetrics: PropTypes.bool,
   onScrapeCompleted: PropTypes.func,
+  postInsights: PropTypes.object,
+  canEditPostInsights: PropTypes.bool,
 };

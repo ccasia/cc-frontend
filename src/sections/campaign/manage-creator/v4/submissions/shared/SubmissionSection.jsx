@@ -5,6 +5,7 @@ import { Box } from '@mui/material';
 
 import SubmissionFeedback from './SubmissionFeedback';
 import SubmissionCaptionField from './SubmissionCaptionField';
+import SubmissionPostInsights from './SubmissionPostInsights';
 import SubmissionPostingLinkField from './SubmissionPostingLinkField';
 
 /**
@@ -27,6 +28,11 @@ const SubmissionSection = ({
   onAddPostingLink,
   onRemovePostingLink,
   isPostingLinkEditable = false,
+
+  // Optional insight screenshots, once the posting link is approved
+  showPostInsights = false,
+  campaignId,
+  submissionId,
 
   // Feedback props
   feedback = [],
@@ -59,6 +65,14 @@ const SubmissionSection = ({
       />
     )}
 
+    {hasPostingLink && showPostInsights && campaignId && submissionId && (
+      <SubmissionPostInsights
+        campaignId={campaignId}
+        submissionId={submissionId}
+        postingLinks={postingLinks}
+      />
+    )}
+
     {/* Feedback Section */}
     <SubmissionFeedback
       feedback={feedback}
@@ -81,6 +95,10 @@ SubmissionSection.propTypes = {
   onAddPostingLink: PropTypes.func,
   onRemovePostingLink: PropTypes.func,
   isPostingLinkEditable: PropTypes.bool,
+
+  showPostInsights: PropTypes.bool,
+  campaignId: PropTypes.string,
+  submissionId: PropTypes.string,
 
   // Feedback props
   feedback: PropTypes.array,
