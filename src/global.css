@@ -9,6 +9,13 @@
   src: url('/fonts/inter/InterDisplay-Regular.woff2') format('woff2');
 }
 
+/* Real medium weight under its own name, so existing 500/600 text keeps rendering as before */
+@font-face {
+  font-family: 'InterDisplay Medium';
+  src: url('/fonts/inter/InterDisplay-Medium.woff2') format('woff2');
+  font-display: swap;
+}
+
 @media print {
   @page {
     size: A4;
