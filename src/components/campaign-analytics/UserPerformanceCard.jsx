@@ -28,6 +28,7 @@ import DiaTextReveal from 'src/sections/campaign/discover/client/v3-pitches/dia-
 
 import ScrapeFixButton from './ScrapeFixButton';
 import FeatureVideoButton from './FeatureVideoButton';
+import { zeroFields } from './EnterScrapeMetricsDialog';
 import ScrapeFailedMetrics from './ScrapeFailedMetrics';
 import ScrapeMetricsLoading from './ScrapeMetricsLoading';
 
@@ -353,6 +354,31 @@ export default function UserPerformanceCard({
   const isScraped = insightData?.source === 'brightdata';
   // Instagram keeps shares and saves private, so a scraped post has neither.
   const hidePrivateMetrics = isScraped && isInstagram;
+  const counts = Object.fromEntries(
+    (insightData?.insight || []).map(({ name, value }) => [name, value])
+  );
+  // ...until an admin enters them by hand.
+  const isPrivateBlank = (field) => hidePrivateMetrics && !counts[field];
+
+  // What the edit button fixes: a failed scrape, or the counts a scrape read as 0.
+  let fixTarget = null;
+  if (showScrapeFailure && canEnterMetrics) {
+    fixTarget = { scrapeFailure };
+  } else if (
+    canEnterMetrics &&
+    isScraped &&
+    insightData?.postingUrlId &&
+    zeroFields(counts, isInstagram).length > 0
+  ) {
+    fixTarget = {
+      scrapeFailure: {
+        postingUrlId: insightData.postingUrlId,
+        postUrl: insightData.postUrl,
+        failure: null,
+      },
+      counts,
+    };
+  }
   // A failed scrape still saved the post's thumbnail, so its row shows the post too.
   const postThumbnail =
     insightData?.thumbnail || insightData?.video?.media_url || scrapeFailure?.thumbnailUrl;
@@ -615,7 +641,7 @@ export default function UserPerformanceCard({
                       color="#1340FF"
                       lineHeight={1.1}
                     >
-                      {hidePrivateMetrics ? (
+                      {isPrivateBlank('shares') ? (
                         '–'
                       ) : (
                         <MetricValue
@@ -657,7 +683,7 @@ export default function UserPerformanceCard({
                           color="#1340FF"
                           lineHeight={1.1}
                         >
-                          {hidePrivateMetrics ? (
+                          {isPrivateBlank('saved') ? (
                             '–'
                           ) : (
                             <MetricValue
@@ -890,9 +916,9 @@ export default function UserPerformanceCard({
               </AnimatePresence>
 
               {/* Same column as the manual rows' edit button */}
-              {showScrapeFailure && canEnterMetrics ? (
+              {fixTarget ? (
                 <ScrapeFixButton
-                  scrapeFailure={scrapeFailure}
+                  {...fixTarget}
                   isInstagram={isInstagram}
                   campaignId={campaignId}
                   creatorName={creator?.user?.name}
@@ -1076,7 +1102,7 @@ export default function UserPerformanceCard({
                       fontWeight={400}
                       color="#1340FF"
                     >
-                      {hidePrivateMetrics ? (
+                      {isPrivateBlank('shares') ? (
                         '–'
                       ) : (
                         <MetricValue
@@ -1108,7 +1134,7 @@ export default function UserPerformanceCard({
                           fontWeight={400}
                           color="#1340FF"
                         >
-                          {hidePrivateMetrics ? (
+                          {isPrivateBlank('saved') ? (
                             '–'
                           ) : (
                             <MetricValue

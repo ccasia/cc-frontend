@@ -5,11 +5,12 @@ import { Box, Badge, Tooltip } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
-import EnterScrapeMetricsDialog, { missingFields } from './EnterScrapeMetricsDialog';
+import EnterScrapeMetricsDialog, { zeroFields, missingFields } from './EnterScrapeMetricsDialog';
 
 /**
- * The edit button of a failed scrape row. Same chrome as ManualCreatorCard's
- * edit button; the amber badge counts the numbers the admin still has to enter.
+ * The edit button of a failed scrape row, or of a scraped row with a count of 0
+ * (`counts`). Same chrome as ManualCreatorCard's edit button; the amber badge
+ * counts the numbers the admin still has to enter.
  */
 
 const buttonSx = (disabled) => ({
@@ -53,10 +54,13 @@ export default function ScrapeFixButton({
   onSaved,
   disabled,
   creatorName,
+  counts,
 }) {
   const [open, setOpen] = useState(false);
   const { failure, postingUrlId } = scrapeFailure;
-  const missing = missingFields(failure?.partial || null, isInstagram).length;
+  const missing = (
+    failure ? missingFields(failure.partial || null, isInstagram) : zeroFields(counts, isInstagram)
+  ).length;
 
   return (
     <>
@@ -84,6 +88,7 @@ export default function ScrapeFixButton({
           onSaved={onSaved}
           postUrl={scrapeFailure.postUrl}
           creatorName={creatorName}
+          counts={counts}
         />
       )}
     </>
@@ -91,11 +96,13 @@ export default function ScrapeFixButton({
 }
 
 ScrapeFixButton.propTypes = {
-  /** `{ postingUrlId, failure }` from /post-scrapes/failed. */
+  /** `{ postingUrlId, failure, postUrl }`; `failure` is null for a scraped post. */
   scrapeFailure: PropTypes.object.isRequired,
   isInstagram: PropTypes.bool,
   campaignId: PropTypes.string,
   onSaved: PropTypes.func,
   disabled: PropTypes.bool,
   creatorName: PropTypes.string,
+  /** The scraped post's counts, when there is no failure. */
+  counts: PropTypes.object,
 };
