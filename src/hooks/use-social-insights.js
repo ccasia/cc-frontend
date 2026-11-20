@@ -41,6 +41,7 @@ const toInsightData = (submission, snapshot) => ({
   capturedAt: snapshot.capturedAt,
   snapshotDate: snapshot.snapshotDate,
   source: snapshot.source,
+  postingUrlId: snapshot.postingUrlId,
 });
 
 export const useSocialInsights = (postingSubmissions, campaignId) => {
