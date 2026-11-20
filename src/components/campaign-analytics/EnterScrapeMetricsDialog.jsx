@@ -29,12 +29,19 @@ import {
 import { scrapeFailureMessage, scrapeFailureHeadline } from './scrape-failure-copy';
 
 /**
- * Counters typed by hand for a post whose Bright Data scrape failed. Chrome
- * matches ManualMetricsDialog: grey paper, 20px radius, serif title. The
- * admin opens the post, reads the missing numbers, and sees the rate they give.
+ * Counters typed by hand for a post whose Bright Data scrape failed, or read
+ * some counts as 0 (Instagram never shows shares and saves). Chrome matches
+ * ManualMetricsDialog: grey paper, 20px radius, serif title. The admin opens
+ * the post, reads the missing numbers, and sees the rate they give.
  */
 
-const LABELS = { views: 'Views', likes: 'Likes', comments: 'Comments', shares: 'Shares' };
+const LABELS = {
+  views: 'Views',
+  likes: 'Likes',
+  comments: 'Comments',
+  shares: 'Shares',
+  saved: 'Saves',
+};
 
 const MAX_COUNT = 2_000_000_000;
 
@@ -51,6 +58,27 @@ const SECONDARY_BUTTON_SX = {
 export const missingFields = (partial, isInstagram) => {
   if (partial) return ['views'];
   return isInstagram ? ['views', 'likes', 'comments'] : ['views', 'likes', 'comments', 'shares'];
+};
+
+/** Counters a scraped post shows as 0 or not at all. Saves are shown for Instagram only. */
+export const zeroFields = (counts, isInstagram) =>
+  ['views', 'likes', 'comments', 'shares', ...(isInstagram ? ['saved'] : [])].filter(
+    (field) => !counts?.[field]
+  );
+
+const COPY = {
+  editing: {
+    title: 'Add missing numbers',
+    hint: 'Instagram keeps shares and saves private: use the creator’s Insights screenshot. Leave blank what you don’t know.',
+  },
+  partial: {
+    title: 'Add view count',
+    hint: 'Use the view count shown under the Reel on Instagram.',
+  },
+  failed: {
+    title: 'Enter post numbers',
+    hint: 'Use the numbers shown on the post, or from an Insights screenshot.',
+  },
 };
 
 const emptyValues = (fields) => Object.fromEntries(fields.map((field) => [field, '']));
@@ -102,10 +130,15 @@ export default function EnterScrapeMetricsDialog({
   onSaved,
   postUrl,
   creatorName,
+  counts,
 }) {
   const { enqueueSnackbar } = useSnackbar();
   const partial = failure?.partial || null;
-  const fields = missingFields(partial, isInstagram);
+  // A scraped post: the admin fills only the counts it read as 0, and may leave any blank.
+  const editing = !failure && Boolean(counts);
+  const fields = editing ? zeroFields(counts, isInstagram) : missingFields(partial, isInstagram);
+  const base = editing ? counts : partial;
+  const mode = (editing && 'editing') || (partial && 'partial') || 'failed';
   const fieldsKey = fields.join(',');
 
   const [values, setValues] = useState(() => emptyValues(fields));
@@ -116,15 +149,17 @@ export default function EnterScrapeMetricsDialog({
   }, [open, fieldsKey]);
 
   const tooLarge = (field) => values[field] !== '' && Number(values[field]) > MAX_COUNT;
-  const canSave = fields.every((field) => values[field] !== '' && !tooLarge(field));
+  const filled = fields.filter((field) => values[field] !== '');
+  const canSave =
+    (editing ? filled.length > 0 : filled.length === fields.length) && !fields.some(tooLarge);
 
-  // The same rule the backend stores: (likes + comments + shares) / views.
+  // The same rule the backend stores: (likes + comments + shares + saves) / views.
   // A typed number wins; a field the form does not ask for comes from the scrape.
-  const numberFor = (field) => (values[field] ? Number(values[field]) : (partial?.[field] ?? 0));
+  const numberFor = (field) => (values[field] ? Number(values[field]) : (base?.[field] ?? 0));
   const views = numberFor('views');
   const engagementRate =
     canSave && views > 0
-      ? ((numberFor('likes') + numberFor('comments') + (isInstagram ? 0 : numberFor('shares'))) /
+      ? ((numberFor('likes') + numberFor('comments') + numberFor('shares') + numberFor('saved')) /
           views) *
         100
       : null;
@@ -135,7 +170,7 @@ export default function EnterScrapeMetricsDialog({
       setSaving(true);
       await axiosInstance.post(
         `/api/campaign/${campaignId}/post-scrapes/${postingUrlId}/metrics`,
-        Object.fromEntries(fields.map((field) => [field, Number(values[field])]))
+        Object.fromEntries(filled.map((field) => [field, Number(values[field])]))
       );
       enqueueSnackbar('Post metrics saved.', { variant: 'success' });
       onClose();
@@ -150,14 +185,19 @@ export default function EnterScrapeMetricsDialog({
     }
   };
 
-  const scrapedTiles = partial
-    ? [
-        ['Likes', partial.likes],
-        ['Comments', partial.comments],
-        ['Shares', isInstagram ? 'Private' : partial.shares],
-        ...(isInstagram ? [['Saves', 'Private']] : []),
-      ]
-    : [];
+  const scrapedTiles = {
+    editing: () =>
+      Object.keys(LABELS)
+        .filter((field) => !fields.includes(field) && (isInstagram || field !== 'saved'))
+        .map((field) => [LABELS[field], counts[field]]),
+    partial: () => [
+      ['Likes', partial.likes],
+      ['Comments', partial.comments],
+      ['Shares', isInstagram ? 'Private' : partial.shares],
+      ...(isInstagram ? [['Saves', 'Private']] : []),
+    ],
+    failed: () => [],
+  }[mode]();
 
   return (
     <Dialog
@@ -191,7 +231,7 @@ export default function EnterScrapeMetricsDialog({
                 color: CC.onyx,
               }}
             >
-              {partial ? 'Add view count' : 'Enter post numbers'}
+              {COPY[mode].title}
             </Typography>
             <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5, minWidth: 0 }}>
               {creatorName && (
@@ -230,12 +270,14 @@ export default function EnterScrapeMetricsDialog({
           </IconButton>
         </Stack>
 
-        <Box sx={{ mt: 2 }}>
-          <WarningMessage
-            title={scrapeFailureHeadline(failure)}
-            description={scrapeFailureMessage(failure)}
-          />
-        </Box>
+        {failure && (
+          <Box sx={{ mt: 2 }}>
+            <WarningMessage
+              title={scrapeFailureHeadline(failure)}
+              description={scrapeFailureMessage(failure)}
+            />
+          </Box>
+        )}
 
         {/* What the scrape did get */}
         {scrapedTiles.length > 0 && (
@@ -287,9 +329,7 @@ export default function EnterScrapeMetricsDialog({
           </Stack>
 
           <Typography sx={{ mt: 1, fontSize: 12, lineHeight: '16px', color: CC.grey50 }}>
-            {partial
-              ? 'Use the view count shown under the Reel on Instagram.'
-              : 'Use the numbers shown on the post, or from an Insights screenshot.'}
+            {COPY[mode].hint}
           </Typography>
         </Box>
 
@@ -342,4 +382,6 @@ EnterScrapeMetricsDialog.propTypes = {
   onSaved: PropTypes.func,
   postUrl: PropTypes.string,
   creatorName: PropTypes.string,
+  /** `{ views, likes, comments, shares, saved }` of a scraped post, when there is no failure. */
+  counts: PropTypes.object,
 };
