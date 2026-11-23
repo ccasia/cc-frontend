@@ -27,16 +27,13 @@ import {
 } from 'src/sections/campaign/discover/client/v3-pitches/guest-extraction/creator-field-tokens';
 
 import { scrapeFailureMessage, scrapeFailureHeadline } from './scrape-failure-copy';
+import { MAX_COUNT, missingFields, METRIC_LABELS, scrapeEngagementRate } from './scrape-metrics';
 
 /**
  * Counters typed by hand for a post whose Bright Data scrape failed. Chrome
  * matches ManualMetricsDialog: grey paper, 20px radius, serif title. The
  * admin opens the post, reads the missing numbers, and sees the rate they give.
  */
-
-const LABELS = { views: 'Views', likes: 'Likes', comments: 'Comments', shares: 'Shares' };
-
-const MAX_COUNT = 2_000_000_000;
 
 const SECONDARY_BUTTON_SX = {
   ...PRIMARY_BUTTON_SX,
@@ -47,13 +44,9 @@ const SECONDARY_BUTTON_SX = {
   '&:hover': { bgcolor: '#F5F5F5', borderColor: '#221f20', borderBottomColor: '#221f20' },
 };
 
-/** Counters the admin must enter: views always, the rest only when the scrape did not get them. */
-export const missingFields = (partial, isInstagram) => {
-  if (partial) return ['views'];
-  return isInstagram ? ['views', 'likes', 'comments'] : ['views', 'likes', 'comments', 'shares'];
-};
-
-const emptyValues = (fields) => Object.fromEntries(fields.map((field) => [field, '']));
+// Numbers already entered inline start filled in.
+const startValues = (fields, entered) =>
+  Object.fromEntries(fields.map((field) => [field, entered?.[field]?.toString() ?? '']));
 
 const withCommas = (digits) => (digits === '' ? '' : Number(digits).toLocaleString('en-US'));
 
@@ -98,6 +91,7 @@ export default function EnterScrapeMetricsDialog({
   campaignId,
   postingUrlId,
   failure,
+  entered,
   isInstagram,
   onSaved,
   postUrl,
@@ -108,26 +102,26 @@ export default function EnterScrapeMetricsDialog({
   const fields = missingFields(partial, isInstagram);
   const fieldsKey = fields.join(',');
 
-  const [values, setValues] = useState(() => emptyValues(fields));
+  const [values, setValues] = useState(() => startValues(fields, entered));
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) setValues(emptyValues(fieldsKey.split(',')));
+    if (open) setValues(startValues(fieldsKey.split(','), entered));
+    // Only on open: a draft saved while the dialog is open must not wipe what the admin typed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, fieldsKey]);
 
   const tooLarge = (field) => values[field] !== '' && Number(values[field]) > MAX_COUNT;
   const canSave = fields.every((field) => values[field] !== '' && !tooLarge(field));
 
-  // The same rule the backend stores: (likes + comments + shares) / views.
-  // A typed number wins; a field the form does not ask for comes from the scrape.
-  const numberFor = (field) => (values[field] ? Number(values[field]) : (partial?.[field] ?? 0));
-  const views = numberFor('views');
-  const engagementRate =
-    canSave && views > 0
-      ? ((numberFor('likes') + numberFor('comments') + (isInstagram ? 0 : numberFor('shares'))) /
-          views) *
-        100
-      : null;
+  // A typed number wins. A field the form does not ask for comes from the draft, then the scrape.
+  const numberFor = (field) =>
+    values[field] ? Number(values[field]) : (entered?.[field] ?? partial?.[field] ?? 0);
+  const engagementRate = canSave
+    ? scrapeEngagementRate(
+        Object.fromEntries(Object.keys(METRIC_LABELS).map((field) => [field, numberFor(field)]))
+      )
+    : null;
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -259,7 +253,7 @@ export default function EnterScrapeMetricsDialog({
                   htmlFor={`scrape-${field}`}
                   sx={{ ...labelSx, display: 'block', mb: '4px' }}
                 >
-                  {LABELS[field]}
+                  {METRIC_LABELS[field]}
                 </Typography>
                 <TextField
                   id={`scrape-${field}`}
@@ -338,6 +332,8 @@ EnterScrapeMetricsDialog.propTypes = {
   postingUrlId: PropTypes.string.isRequired,
   /** `{ code, message, partial }` from /post-scrapes/failed. */
   failure: PropTypes.object,
+  /** Numbers already entered inline. */
+  entered: PropTypes.object,
   isInstagram: PropTypes.bool,
   onSaved: PropTypes.func,
   postUrl: PropTypes.string,

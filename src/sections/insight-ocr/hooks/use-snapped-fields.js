@@ -20,7 +20,7 @@ const readPixels = (url) =>
     img.src = url;
   });
 
-// Snaps each Gemini box to the real text pixels. Cached per fields array.
+// Snaps each OCR box to the real text pixels. Cached per fields array.
 export const snapFields = (url, fields) => {
   if (done.has(fields)) return Promise.resolve(done.get(fields));
   if (!running.has(fields)) {

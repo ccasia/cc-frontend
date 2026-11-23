@@ -8,9 +8,16 @@ import Typography from '@mui/material/Typography';
 
 import Iconify from 'src/components/iconify';
 
-import { groupFields, METRIC_ICONS } from 'src/sections/insight-ocr/constants';
+import { METRIC_ICONS } from 'src/sections/insight-ocr/constants';
 
-import { groupIcon, fieldLabel, groupTitle, formatDuration, HIGHLIGHT_KEYS } from './utils';
+import {
+  groupIcon,
+  fieldLabel,
+  groupTitle,
+  formatDuration,
+  HIGHLIGHT_KEYS,
+  groupPlatformFields,
+} from './utils';
 
 const numberSx = { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' };
 // Views is not in METRIC_ICONS, because that list also decides the Interactions group.
@@ -117,7 +124,7 @@ function ScrollList({ children }) {
 
 ScrollList.propTypes = { children: PropTypes.node };
 
-export default function InsightsValues({ fields }) {
+export default function InsightsValues({ fields, platform }) {
   const rest = fields.filter((f) => !HIGHLIGHT_KEYS.includes(f.key));
 
   return (
@@ -126,7 +133,7 @@ export default function InsightsValues({ fields }) {
 
       {!!rest.length && (
         <ScrollList>
-          {groupFields(rest).map((group) => (
+          {groupPlatformFields(rest, platform).map((group) => (
             <Box key={group.label} sx={{ py: 1.25, '& + &': { borderTop: '1px solid #EBEBEB' } }}>
               <Stack
                 direction="row"
@@ -136,7 +143,7 @@ export default function InsightsValues({ fields }) {
               >
                 <Iconify icon={groupIcon(group.label)} width={16} />
                 <Typography sx={{ fontSize: 14, fontWeight: 600, color: '#231F20' }}>
-                  {groupTitle(group.label)}
+                  {groupTitle(group.label, platform)}
                 </Typography>
               </Stack>
               {group.fields.map((field) => (
@@ -163,4 +170,4 @@ export default function InsightsValues({ fields }) {
   );
 }
 
-InsightsValues.propTypes = { fields: PropTypes.array.isRequired };
+InsightsValues.propTypes = { fields: PropTypes.array.isRequired, platform: PropTypes.object };

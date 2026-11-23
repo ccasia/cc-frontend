@@ -1,4 +1,4 @@
-// Gemini boxes are close but often too narrow or loose. Snap each box to the real text pixels around it.
+// OCR boxes are close but often too narrow or loose. Snap each box to the real text pixels around it.
 
 const INK_THRESHOLD = 70;
 

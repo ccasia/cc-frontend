@@ -8,6 +8,14 @@ import useSocketContext from 'src/socket/hooks/useSocketContext';
 
 const baseKey = (campaignId) => ['post-insights', campaignId];
 
+// Screenshots can change the post's analytics numbers, so the analytics rows reload too.
+const reloadPostData = (queryClient, campaignId) =>
+  Promise.all(
+    [baseKey(campaignId), ['socialInsightSnapshots', campaignId], ['postScrapes', campaignId]].map(
+      (queryKey) => queryClient.invalidateQueries({ queryKey })
+    )
+  );
+
 export const postInsightsKey = (submissionId, postUrl) => `${submissionId}::${postUrl}`;
 
 /**
@@ -27,7 +35,7 @@ function usePostInsightsLiveUpdates(campaignId, { submissionId, enabled }) {
       if (submissionId && data.submissionId !== submissionId) return;
       // The person who made the change already reloads after their own request.
       if (data.actorId && data.actorId === user?.id) return;
-      queryClient.invalidateQueries({ queryKey: baseKey(campaignId) });
+      reloadPostData(queryClient, campaignId);
     };
 
     socket.on('post-insights:updated', handleUpdated);
@@ -69,7 +77,7 @@ export function useAddPostInsightScreenshots(campaignId) {
       const res = await axiosInstance.put(`/api/campaign/${campaignId}/post-insights`, formData);
       return res.data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: baseKey(campaignId) }),
+    onSuccess: () => reloadPostData(queryClient, campaignId),
   });
 }
 
@@ -81,6 +89,22 @@ export function useRemovePostInsightScreenshot(campaignId) {
       axiosInstance.delete(`/api/campaign/${campaignId}/post-insights/${id}/screenshots`, {
         data: { url },
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: baseKey(campaignId) }),
+    onSuccess: () => reloadPostData(queryClient, campaignId),
+  });
+}
+
+// An admin uses the lower screenshot numbers (approve: true) or keeps the current ones.
+export function useReviewPostInsightMetrics(campaignId) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, approve }) => {
+      const res = await axiosInstance.post(
+        `/api/campaign/${campaignId}/post-insights/${id}/metrics-review`,
+        { approve }
+      );
+      return res.data;
+    },
+    onSuccess: () => reloadPostData(queryClient, campaignId),
   });
 }

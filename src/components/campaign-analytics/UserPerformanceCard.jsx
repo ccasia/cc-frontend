@@ -24,7 +24,13 @@ import { formatNumber, getMetricValue } from 'src/utils/socialMetricsCalculator'
 import { createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
-import { PostInsightsPanel, PostInsightsToggle, PostInsightsButton } from 'src/components/post-insights';
+import {
+  PostInsightsPanel,
+  PostInsightsToggle,
+  PostInsightsButton,
+  MetricsReviewNotice,
+  postPlatform as insightsPlatform,
+} from 'src/components/post-insights';
 
 import DiaTextReveal from 'src/sections/campaign/discover/client/v3-pitches/dia-text-reveal';
 
@@ -355,8 +361,12 @@ export default function UserPerformanceCard({
 
   const isInstagram = submission?.platform === 'Instagram';
   const isScraped = insightData?.source === 'brightdata';
-  // Instagram keeps shares and saves private, so a scraped post has neither.
-  const hidePrivateMetrics = isScraped && isInstagram;
+  // Instagram keeps shares and saves private, so a scrape reads them as 0.
+  // Numbers from insight screenshots still show.
+  const isPrivate = (name) =>
+    isScraped && isInstagram && !getMetricValue(insightData?.insight, name);
+  const hideShares = isPrivate('shares');
+  const hideSaves = isPrivate('saved');
   // A failed scrape still saved the post's thumbnail, so its row shows the post too.
   const postThumbnail =
     insightData?.thumbnail || insightData?.video?.media_url || scrapeFailure?.thumbnailUrl;
@@ -368,7 +378,8 @@ export default function UserPerformanceCard({
 
   // Values the row already shows. The dropdown shows everything else from the screenshots.
   const rowKeys = ['views', 'likes', 'comments'];
-  if (!hidePrivateMetrics) rowKeys.push('shares', ...(isInstagram ? ['saves'] : []));
+  if (!hideShares) rowKeys.push('shares');
+  if (isInstagram && !hideSaves) rowKeys.push('saves');
 
   const thumbnailSrc = postThumbnail && postThumbnail !== brokenThumbnail ? postThumbnail : null;
 
@@ -404,7 +415,8 @@ export default function UserPerformanceCard({
             display={{ xs: 'none', md: 'flex' }}
             alignItems="center"
             gap={{ md: 1, lg: 1.5 }}
-            sx={{ minWidth: 0, overflow: 'hidden' }}
+            // Clip sideways only, so the fix button's badge can show above the button.
+            sx={{ minWidth: 0, overflowX: 'clip', overflowY: 'visible' }}
           >
             {/* Left: Creator Info */}
             <Stack
@@ -624,7 +636,7 @@ export default function UserPerformanceCard({
                       color="#1340FF"
                       lineHeight={1.1}
                     >
-                      {hidePrivateMetrics ? (
+                      {hideShares ? (
                         '–'
                       ) : (
                         <MetricValue
@@ -666,7 +678,7 @@ export default function UserPerformanceCard({
                           color="#1340FF"
                           lineHeight={1.1}
                         >
-                          {hidePrivateMetrics ? (
+                          {hideSaves ? (
                             '–'
                           ) : (
                             <MetricValue
@@ -738,7 +750,13 @@ export default function UserPerformanceCard({
                   flex={1}
                   minWidth={0}
                 >
-                  <ScrapeFailedMetrics scrapeFailure={scrapeFailure} isInstagram={isInstagram} />
+                  <ScrapeFailedMetrics
+                    scrapeFailure={scrapeFailure}
+                    isInstagram={isInstagram}
+                    campaignId={campaignId}
+                    canEnterMetrics={canEnterMetrics}
+                    onSaved={onScrapeCompleted}
+                  />
                 </Box>
               )}
 
@@ -936,7 +954,11 @@ export default function UserPerformanceCard({
           {postInsights && (
             <Collapse in={showInsights} unmountOnExit sx={{ display: { xs: 'none', md: 'block' } }}>
               <Box sx={{ mx: 2, mt: 0.5, mb: 1.5 }}>
-                <PostInsightsPanel insights={postInsights} excludeKeys={rowKeys} />
+                <PostInsightsPanel
+                  insights={postInsights}
+                  platform={insightsPlatform(submission?.postUrl)}
+                  excludeKeys={rowKeys}
+                />
               </Box>
             </Collapse>
           )}
@@ -1107,7 +1129,7 @@ export default function UserPerformanceCard({
                       fontWeight={400}
                       color="#1340FF"
                     >
-                      {hidePrivateMetrics ? (
+                      {hideShares ? (
                         '–'
                       ) : (
                         <MetricValue
@@ -1139,7 +1161,7 @@ export default function UserPerformanceCard({
                           fontWeight={400}
                           color="#1340FF"
                         >
-                          {hidePrivateMetrics ? (
+                          {hideSaves ? (
                             '–'
                           ) : (
                             <MetricValue
@@ -1351,6 +1373,15 @@ export default function UserPerformanceCard({
               )}
             </AnimatePresence>
           </Box>
+
+          {/* Lower screenshot numbers wait here for an admin. */}
+          {canEditPostInsights && (
+            <MetricsReviewNotice
+              campaignId={campaignId}
+              insights={postInsights}
+              sx={{ mx: 2, mt: 0.5, mb: 1.5 }}
+            />
+          )}
         </Box>
       </Box>
     </Grid>

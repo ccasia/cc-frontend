@@ -15,7 +15,7 @@ import { formatNumber } from 'src/utils/socialMetricsCalculator';
 import Iconify from 'src/components/iconify';
 import Lightbox, { useLightBox } from 'src/components/lightbox';
 
-import { groupFields, METRIC_ICONS } from 'src/sections/insight-ocr/constants';
+import { METRIC_ICONS } from 'src/sections/insight-ocr/constants';
 
 import {
   groupIcon,
@@ -26,6 +26,7 @@ import {
   lastAddedAt,
   uploaderNames,
   toDisplayFields,
+  groupPlatformFields,
 } from './utils';
 
 const BLUE = '#1340FF';
@@ -84,7 +85,7 @@ function BarRow({ field }) {
 
 BarRow.propTypes = { field: PropTypes.object.isRequired };
 
-function GroupCard({ group }) {
+function GroupCard({ group, platform }) {
   const isBar = group.variant === 'bar';
   const fields = isBar
     ? [...group.fields].sort((a, b) => (b.number ?? 0) - (a.number ?? 0))
@@ -107,7 +108,7 @@ function GroupCard({ group }) {
       <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1.5, color: BLUE }}>
         <Iconify icon={groupIcon(group.label)} width={18} sx={{ flexShrink: 0 }} />
         <Typography sx={{ fontSize: 15, fontWeight: 600, lineHeight: '20px', color: '#231F20' }}>
-          {groupTitle(group.label)}
+          {groupTitle(group.label, platform)}
         </Typography>
       </Stack>
 
@@ -147,7 +148,7 @@ function GroupCard({ group }) {
   );
 }
 
-GroupCard.propTypes = { group: PropTypes.object.isRequired };
+GroupCard.propTypes = { group: PropTypes.object.isRequired, platform: PropTypes.object };
 
 function SourceFooter({ insights }) {
   const screenshots = useMemo(() => insights.screenshots ?? [], [insights.screenshots]);
@@ -225,9 +226,9 @@ function SourceFooter({ insights }) {
 
 SourceFooter.propTypes = { insights: PropTypes.object.isRequired };
 
-export function PostInsightsPanel({ insights, excludeKeys = [] }) {
+export function PostInsightsPanel({ insights, platform, excludeKeys = [] }) {
   const fields = toDisplayFields(insights).filter((field) => !excludeKeys.includes(field.key));
-  const groups = groupFields(fields);
+  const groups = groupPlatformFields(fields, platform);
   const numberGroups = groups.filter((group) => group.variant !== 'bar');
   const barGroups = groups.filter((group) => group.variant === 'bar');
 
@@ -239,7 +240,7 @@ export function PostInsightsPanel({ insights, excludeKeys = [] }) {
           {!!numberGroups.length && (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
               {numberGroups.map((group) => (
-                <GroupCard key={group.label} group={group} />
+                <GroupCard key={group.label} group={group} platform={platform} />
               ))}
             </Box>
           )}
@@ -247,7 +248,7 @@ export function PostInsightsPanel({ insights, excludeKeys = [] }) {
           {!!barGroups.length && (
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
               {barGroups.map((group) => (
-                <GroupCard key={group.label} group={group} />
+                <GroupCard key={group.label} group={group} platform={platform} />
               ))}
             </Box>
           )}
@@ -265,6 +266,7 @@ export function PostInsightsPanel({ insights, excludeKeys = [] }) {
 
 PostInsightsPanel.propTypes = {
   insights: PropTypes.object.isRequired,
+  platform: PropTypes.object,
   excludeKeys: PropTypes.arrayOf(PropTypes.string),
 };
 

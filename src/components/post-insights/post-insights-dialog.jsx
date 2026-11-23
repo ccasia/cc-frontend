@@ -27,6 +27,7 @@ import { PRIMARY_BUTTON_SX } from 'src/sections/campaign/discover/client/v3-pitc
 
 import InsightsValues from './insights-values';
 import InsightsDropzone from './insights-dropzone';
+import LowerMetricsDialog from './lower-metrics-dialog';
 import RemoveScreenshotDialog from './remove-screenshot-dialog';
 import {
   PLATFORMS,
@@ -214,6 +215,7 @@ export default function PostInsightsDialog({
   const [files, setFiles] = useState([]);
   const [adding, setAdding] = useState(false);
   const [toRemove, setToRemove] = useState(null);
+  const [review, setReview] = useState(null);
 
   const save = useAddPostInsightScreenshots(campaignId);
   const remove = useRemovePostInsightScreenshot(campaignId);
@@ -232,6 +234,10 @@ export default function PostInsightsDialog({
   const fields = toDisplayFields(insights);
   const unread = countUnread(insights);
   const names = uploaderNames(insights);
+  const saveVerb = count ? 'Add' : 'Save';
+  const saveLabel = files.length
+    ? `${saveVerb} ${files.length} Screenshot${files.length === 1 ? '' : 's'}`
+    : saveVerb;
 
   // Managers can remove any screenshot. Others only the ones they added.
   const canRemove = (uploader) =>
@@ -245,6 +251,9 @@ export default function PostInsightsDialog({
           setFiles([]);
           setAdding(false);
           enqueueSnackbar(count ? 'Screenshots added' : 'Insight screenshots saved');
+          if (canManage && data?.metricsReview?.pending) {
+            setReview({ id: data.id, pending: data.metricsReview.pending });
+          }
 
           const skipped = data?.skipped ?? [];
           if (skipped.length) {
@@ -393,7 +402,7 @@ export default function PostInsightsDialog({
                   </Alert>
                 )}
                 {fields.length ? (
-                  <InsightsValues fields={fields} />
+                  <InsightsValues fields={fields} platform={platform} />
                 ) : (
                   <Typography sx={{ fontSize: 14, color: '#636366' }}>
                     No values found on these screenshots.
@@ -431,8 +440,7 @@ export default function PostInsightsDialog({
                   disabled={!files.length}
                   sx={PRIMARY_BUTTON_SX}
                 >
-                  {count ? 'Add' : 'Save'}
-                  {files.length ? ` ${files.length}` : ''}
+                  {saveLabel}
                 </LoadingButton>
               </>
             ) : (
@@ -461,6 +469,14 @@ export default function PostInsightsDialog({
         isRemoving={remove.isPending}
         onClose={() => setToRemove(null)}
         onConfirm={handleRemove}
+      />
+
+      <LowerMetricsDialog
+        open={!!review}
+        campaignId={campaignId}
+        insightId={review?.id}
+        pending={review?.pending}
+        onClose={() => setReview(null)}
       />
     </>
   );
