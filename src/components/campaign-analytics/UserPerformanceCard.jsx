@@ -34,6 +34,7 @@ import {
 
 import DiaTextReveal from 'src/sections/campaign/discover/client/v3-pitches/dia-text-reveal';
 
+import { zeroFields } from './scrape-metrics';
 import ScrapeFixButton from './ScrapeFixButton';
 import FeatureVideoButton from './FeatureVideoButton';
 import ScrapeFailedMetrics from './ScrapeFailedMetrics';
@@ -362,11 +363,33 @@ export default function UserPerformanceCard({
   const isInstagram = submission?.platform === 'Instagram';
   const isScraped = insightData?.source === 'brightdata';
   // Instagram keeps shares and saves private, so a scrape reads them as 0.
-  // Numbers from insight screenshots still show.
-  const isPrivate = (name) =>
-    isScraped && isInstagram && !getMetricValue(insightData?.insight, name);
-  const hideShares = isPrivate('shares');
-  const hideSaves = isPrivate('saved');
+  // Numbers from insight screenshots or entered by hand still show.
+  const hidePrivateMetrics = isScraped && isInstagram;
+  const counts = Object.fromEntries(
+    (insightData?.insight || []).map(({ name, value }) => [name, value])
+  );
+  const hideShares = hidePrivateMetrics && !counts.shares;
+  const hideSaves = hidePrivateMetrics && !counts.saved;
+
+  // What the edit button fixes: a failed scrape, or the counts a scrape read as 0.
+  let fixTarget = null;
+  if (showScrapeFailure && canEnterMetrics) {
+    fixTarget = { scrapeFailure };
+  } else if (
+    canEnterMetrics &&
+    isScraped &&
+    insightData?.postingUrlId &&
+    zeroFields(counts, isInstagram).length > 0
+  ) {
+    fixTarget = {
+      scrapeFailure: {
+        postingUrlId: insightData.postingUrlId,
+        postUrl: insightData.postUrl,
+        failure: null,
+      },
+      counts,
+    };
+  }
   // A failed scrape still saved the post's thumbnail, so its row shows the post too.
   const postThumbnail =
     insightData?.thumbnail || insightData?.video?.media_url || scrapeFailure?.thumbnailUrl;
@@ -918,9 +941,9 @@ export default function UserPerformanceCard({
 
               {/* Same column as the manual rows' edit and delete buttons */}
               <Stack spacing={1} sx={{ width: 36, flexShrink: 0 }}>
-                {showScrapeFailure && canEnterMetrics && (
+                {fixTarget && (
                   <ScrapeFixButton
-                    scrapeFailure={scrapeFailure}
+                    {...fixTarget}
                     isInstagram={isInstagram}
                     campaignId={campaignId}
                     creatorName={creator?.user?.name}

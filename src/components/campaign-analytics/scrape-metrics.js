@@ -14,6 +14,12 @@ export const missingFields = (partial, isInstagram) => {
   return isInstagram ? ['views', 'likes', 'comments'] : ['views', 'likes', 'comments', 'shares'];
 };
 
+/** Counters a scraped post shows as 0 or not at all. Saves are shown for Instagram only. */
+export const zeroFields = (counts, isInstagram) =>
+  ['views', 'likes', 'comments', 'shares', ...(isInstagram ? ['saved'] : [])].filter(
+    (field) => !counts?.[field]
+  );
+
 /** The same rule the backend stores: (likes + comments + shares + saves) / views. */
 export const scrapeEngagementRate = ({ views, likes, comments, shares, saved }) => {
   if (!views) return null;
