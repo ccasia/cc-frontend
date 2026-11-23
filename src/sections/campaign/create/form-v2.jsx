@@ -161,6 +161,7 @@ function CreateCampaignFormV2({
   // General Campaign Information schema (Step 0)
   const campaignInformationSchema = Yup.object().shape({
     campaignName: Yup.string()
+      .trim()
       .required('Campaign title is required')
       .max(40, 'Campaign title must be 40 characters or less'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
