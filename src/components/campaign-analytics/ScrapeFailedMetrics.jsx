@@ -1,31 +1,23 @@
 import PropTypes from 'prop-types';
 
-import { Box, Stack, Divider, Tooltip, Typography } from '@mui/material';
-
-import { formatNumber } from 'src/utils/socialMetricsCalculator';
-
-import Iconify from 'src/components/iconify';
-
-import { CC } from 'src/sections/campaign/discover/client/v3-pitches/guest-extraction/creator-field-tokens';
-import { barTipProps } from 'src/sections/campaign/discover/client/v3-pitches/guest-extraction/engagement-breakdown';
+import { Box, Divider, Typography } from '@mui/material';
 
 import ScrapeFixButton from './ScrapeFixButton';
-import { missingFields } from './EnterScrapeMetricsDialog';
-import { scrapeFailureMessage, scrapeFailureHeadline } from './scrape-failure-copy';
+import { METRIC_LABELS } from './scrape-metrics';
+import useScrapeMetricsDraft from './use-scrape-metrics-draft';
+import MissingMetricField, { NUMBER_HEIGHT, MissingMetricIcon } from './MissingMetricField';
 
 /**
  * Metric slots for a post whose Bright Data scrape failed. Shows the counters
- * the scrape did get; each number the admin must enter shows a warning icon
- * whose tooltip gives the reason. The desktop layout copies the loaded metrics
- * row in UserPerformanceCard, so columns line up with the rows around it. The
- * edit button sits in the card's action column (ScrapeFixButton).
+ * the scrape did get. Each missing number has a warning icon beside its label
+ * and, for an admin, an open input that saves when it loses focus. Once every
+ * number is in, the engagement rate shows. The desktop layout copies
+ * the loaded metrics row in UserPerformanceCard, so columns line up with the rows
+ * around it. The edit button sits in the card's action column (ScrapeFixButton).
  */
 
 const labelSx = { whiteSpace: 'nowrap' };
-const WARNING = '#FFAB00';
 const dividerSx = { width: '1px', height: '55px', backgroundColor: '#1340FF', flexShrink: 0 };
-
-const FIELD_BY_LABEL = { Views: 'views', Likes: 'likes', Comments: 'comments', Shares: 'shares' };
 
 function MetricLabel({ children }) {
   return (
@@ -43,102 +35,23 @@ function MetricLabel({ children }) {
 
 MetricLabel.propTypes = { children: PropTypes.node };
 
-function FailureTooltipTitle({ failure }) {
+function EngagementRateValue({ rate }) {
   return (
-    <Box>
-      <Stack direction="row" alignItems="center" spacing={0.75}>
-        <Iconify icon="eva:alert-triangle-fill" width={16} sx={{ color: WARNING, flexShrink: 0 }} />
-        <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: '18px', color: CC.onyx }}>
-          {scrapeFailureHeadline(failure)}
-        </Typography>
-      </Stack>
-      <Typography sx={{ mt: 0.5, fontSize: 13, lineHeight: '18px', color: CC.grey50 }}>
-        {scrapeFailureMessage(failure)}
+    <Box sx={{ display: 'flex', alignItems: 'center', height: NUMBER_HEIGHT }}>
+      <Typography
+        fontFamily="Instrument Serif"
+        fontSize={{ xs: 24, md: 28, lg: 36, xl: 40 }}
+        fontWeight={400}
+        lineHeight={1.1}
+        color={rate === null ? '#B0B0B0' : '#1340FF'}
+      >
+        {rate === null ? '–' : `${rate.toFixed(2)}%`}
       </Typography>
     </Box>
   );
 }
 
-FailureTooltipTitle.propTypes = { failure: PropTypes.object };
-
-/** Same height as a metric number, so a warning slot lines up with the numbers beside it. */
-const NUMBER_HEIGHT = { md: 31, lg: 40, xl: 44 };
-
-function MetricNumber({ value, missing, failure }) {
-  if (missing) {
-    return (
-      <Tooltip
-        title={<FailureTooltipTitle failure={failure} />}
-        arrow
-        placement="top"
-        componentsProps={barTipProps}
-      >
-        <Box
-          tabIndex={0}
-          aria-label={`${scrapeFailureHeadline(failure)}. ${scrapeFailureMessage(failure)}`}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            height: NUMBER_HEIGHT,
-            width: 'fit-content',
-            cursor: 'help',
-            outline: 'none',
-          }}
-        >
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={0.5}
-            sx={{
-              px: 1.25,
-              py: 0.5,
-              borderRadius: '999px',
-              bgcolor: '#FFF8E6',
-              border: '1px solid #FFE2A8',
-              transition: 'border-color 0.2s ease',
-              '&:hover': { borderColor: WARNING },
-            }}
-          >
-            <Iconify
-              icon="eva:alert-triangle-fill"
-              width={14}
-              sx={{ color: WARNING, flexShrink: 0 }}
-            />
-            <Typography
-              sx={{
-                fontSize: { md: 12, lg: 13 },
-                fontWeight: 600,
-                lineHeight: '18px',
-                color: '#7A4100',
-              }}
-            >
-              Missing
-            </Typography>
-          </Stack>
-        </Box>
-      </Tooltip>
-    );
-  }
-
-  const known = typeof value === 'number';
-  return (
-    <Typography
-      fontFamily="Instrument Serif"
-      fontSize={{ md: 28, lg: 36, xl: 40 }}
-      fontWeight={400}
-      color={known ? '#1340FF' : '#B0B0B0'}
-      lineHeight={1.1}
-    >
-      {known ? formatNumber(value) : '–'}
-    </Typography>
-  );
-}
-
-MetricNumber.propTypes = {
-  value: PropTypes.number,
-  missing: PropTypes.bool,
-  failure: PropTypes.object,
-};
+EngagementRateValue.propTypes = { rate: PropTypes.number };
 
 export default function ScrapeFailedMetrics({
   scrapeFailure,
@@ -150,31 +63,52 @@ export default function ScrapeFailedMetrics({
   creatorName,
 }) {
   const { failure } = scrapeFailure;
-  const partial = failure?.partial || null;
-  const missing = new Set(missingFields(partial, isInstagram));
+  const { fields, pending, entered, numbers, engagementRate, saveField, savingField } =
+    useScrapeMetricsDraft({ scrapeFailure, isInstagram, campaignId, onSaved });
 
-  const values = {
-    Views: undefined,
-    Likes: partial?.likes,
-    Comments: partial?.comments,
-    Shares: !isInstagram ? partial?.shares : undefined,
-    ...(isInstagram ? { Saves: undefined } : {}),
-  };
+  // TikTok rows have no Saves column. Instagram scrapes cannot see shares or saves,
+  // so those show only a number entered by hand or read from a screenshot.
+  const keys = isInstagram
+    ? ['views', 'likes', 'comments', 'shares', 'saved']
+    : ['views', 'likes', 'comments', 'shares'];
+  const labelOf = (key) => METRIC_LABELS[key];
+  const valueOf = (key) =>
+    isInstagram && ['shares', 'saved'].includes(key) ? entered[key] : numbers[key];
 
-  const numberFor = (label, value) => (
-    <MetricNumber value={value} missing={missing.has(FIELD_BY_LABEL[label])} failure={failure} />
+  const labelFor = (key) => (
+    <>
+      {labelOf(key)}
+      {pending.includes(key) && <MissingMetricIcon label={labelOf(key)} failure={failure} />}
+    </>
+  );
+
+  // Fields stay open until every number is in. Then the row completes.
+  const fieldFor = (key) => (
+    <MissingMetricField
+      label={labelOf(key)}
+      value={valueOf(key)}
+      editable={canEnterMetrics && pending.length > 0 && fields.includes(key)}
+      saving={savingField === key}
+      onSave={(number) => saveField(key, number)}
+    />
   );
 
   if (isMobile) {
     return (
       <Box width="100%" mb={1.5} px={1}>
         <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={1.5}>
-          {Object.entries({ 'Engagement Rate': undefined, ...values }).map(([label, value]) => (
-            <Box key={label} sx={{ minWidth: 0 }}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography fontSize={12} color="text.secondary" sx={labelSx}>
+              Engagement Rate
+            </Typography>
+            <EngagementRateValue rate={engagementRate} />
+          </Box>
+          {keys.map((key) => (
+            <Box key={key} sx={{ minWidth: 0 }}>
               <Typography fontSize={12} color="text.secondary" sx={labelSx}>
-                {label}
+                {labelFor(key)}
               </Typography>
-              {numberFor(label, value)}
+              {fieldFor(key)}
             </Box>
           ))}
         </Box>
@@ -210,15 +144,15 @@ export default function ScrapeFailedMetrics({
             Eng. Rate
           </Box>
         </MetricLabel>
-        <MetricNumber />
+        <EngagementRateValue rate={engagementRate} />
       </Box>
 
-      {Object.entries(values).map(([label, value]) => (
-        <Box key={label} display="flex" alignItems="center" flex={1} minWidth={0}>
+      {keys.map((key) => (
+        <Box key={key} display="flex" alignItems="center" flex={1} minWidth={0}>
           <Divider sx={dividerSx} />
           <Box sx={{ textAlign: 'left', flex: 1, minWidth: 0, overflow: 'hidden', px: 1 }}>
-            <MetricLabel>{label}</MetricLabel>
-            {numberFor(label, value)}
+            <MetricLabel>{labelFor(key)}</MetricLabel>
+            {fieldFor(key)}
           </Box>
         </Box>
       ))}
@@ -235,12 +169,12 @@ export default function ScrapeFailedMetrics({
 }
 
 ScrapeFailedMetrics.propTypes = {
-  /** `{ postingUrlId, failure: { code, message, jobIds, partial } }` from /post-scrapes/failed. */
+  /** `{ postingUrlId, failure: { code, message, jobIds, partial, entered } }` from /post-scrapes/failed. */
   scrapeFailure: PropTypes.object.isRequired,
   isInstagram: PropTypes.bool,
   isMobile: PropTypes.bool,
-  /** Mobile only: the edit button sits under the numbers. Desktop puts it in the card's action column. */
   campaignId: PropTypes.string,
+  /** Lets the admin type missing numbers. Mobile also shows the edit button under the numbers. */
   canEnterMetrics: PropTypes.bool,
   onSaved: PropTypes.func,
   creatorName: PropTypes.string,

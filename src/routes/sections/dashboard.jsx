@@ -154,6 +154,7 @@ const FaqPage = lazy(() => import('src/pages/faq'));
 
 // Report AI Configuration Page
 const ReportAiConfiguration = lazy(() => import('src/pages/dashboard/report-ai-configuration'));
+const InsightOcr = lazy(() => import('src/pages/dashboard/insight-ocr'));
 
 // ----------------------------------------------------------------------
 
@@ -818,6 +819,14 @@ export const dashboardRoutes = [
       {
         path: 'report-ai',
         element: <ReportAiConfiguration />,
+      },
+      {
+        path: 'insight-ocr',
+        element: (
+          <RoleBasedGuard roles={['superadmin', 'god']} hasContent>
+            <InsightOcr />
+          </RoleBasedGuard>
+        ),
       },
     ],
   },

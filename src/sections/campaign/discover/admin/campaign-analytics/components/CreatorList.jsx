@@ -7,7 +7,10 @@ import { Box, Grid, Stack, Alert, Button, Typography, CircularProgress } from '@
 
 import { canonicalizePostUrl } from 'src/utils/extractPostingLinks';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 import Iconify from 'src/components/iconify';
+import { postInsightsKey, usePostInsights } from 'src/components/post-insights';
 import {
   ManualCreatorCard,
   UserPerformanceCard,
@@ -30,6 +33,9 @@ const CreatorList = ({
   onScrapeCompleted,
 }) => {
   const formRef = useRef();
+  const { user } = useAuthContext();
+  const isAdmin = ['admin', 'superadmin'].includes(user?.role);
+  const { byPost: insightsByPost } = usePostInsights(campaignId, { enabled: isAdmin });
 
   const showAddCreatorForm = useAnalyticsStore((state) => state.showAddCreatorForm);
   const formState = useAnalyticsStore((state) => state.formState);
@@ -212,6 +218,10 @@ const CreatorList = ({
               campaignId={campaignId}
               canEnterMetrics={!isDisabled}
               onScrapeCompleted={onScrapeCompleted}
+              postInsights={insightsByPost.get(
+                postInsightsKey(row.submission?.id, row.submission?.postUrl)
+              )}
+              canEditPostInsights={isAdmin && !isDisabled}
             />
           );
         })}

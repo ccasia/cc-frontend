@@ -11,6 +11,7 @@ import {
   Avatar,
   Tooltip,
   Divider,
+  Collapse,
   Skeleton,
   Typography,
   IconButton,
@@ -23,12 +24,19 @@ import { formatNumber, getMetricValue } from 'src/utils/socialMetricsCalculator'
 import { createSocialProfileUrl, extractUsernameFromProfileLink } from 'src/utils/media-kit-utils';
 
 import Iconify from 'src/components/iconify';
+import {
+  PostInsightsPanel,
+  PostInsightsToggle,
+  PostInsightsButton,
+  MetricsReviewNotice,
+  postPlatform as insightsPlatform,
+} from 'src/components/post-insights';
 
 import DiaTextReveal from 'src/sections/campaign/discover/client/v3-pitches/dia-text-reveal';
 
+import { zeroFields } from './scrape-metrics';
 import ScrapeFixButton from './ScrapeFixButton';
 import FeatureVideoButton from './FeatureVideoButton';
-import { zeroFields } from './EnterScrapeMetricsDialog';
 import ScrapeFailedMetrics from './ScrapeFailedMetrics';
 import ScrapeMetricsLoading from './ScrapeMetricsLoading';
 
@@ -338,6 +346,8 @@ export default function UserPerformanceCard({
   campaignId,
   canEnterMetrics = false,
   onScrapeCompleted,
+  postInsights,
+  canEditPostInsights = false,
 }) {
   // A post whose Bright Data scrape is still running loads like any other.
   const isScraping = Boolean(scrapeProgress) && !insightData;
@@ -352,13 +362,14 @@ export default function UserPerformanceCard({
 
   const isInstagram = submission?.platform === 'Instagram';
   const isScraped = insightData?.source === 'brightdata';
-  // Instagram keeps shares and saves private, so a scraped post has neither.
+  // Instagram keeps shares and saves private, so a scrape reads them as 0.
+  // Numbers from insight screenshots or entered by hand still show.
   const hidePrivateMetrics = isScraped && isInstagram;
   const counts = Object.fromEntries(
     (insightData?.insight || []).map(({ name, value }) => [name, value])
   );
-  // ...until an admin enters them by hand.
-  const isPrivateBlank = (field) => hidePrivateMetrics && !counts[field];
+  const hideShares = hidePrivateMetrics && !counts.shares;
+  const hideSaves = hidePrivateMetrics && !counts.saved;
 
   // What the edit button fixes: a failed scrape, or the counts a scrape read as 0.
   let fixTarget = null;
@@ -386,6 +397,12 @@ export default function UserPerformanceCard({
   const postLink = insightData?.postUrl || scrapeFailure?.postUrl;
 
   const [brokenThumbnail, setBrokenThumbnail] = useState(null);
+  const [showInsights, setShowInsights] = useState(false);
+
+  // Values the row already shows. The dropdown shows everything else from the screenshots.
+  const rowKeys = ['views', 'likes', 'comments'];
+  if (!hideShares) rowKeys.push('shares');
+  if (isInstagram && !hideSaves) rowKeys.push('saves');
 
   const thumbnailSrc = postThumbnail && postThumbnail !== brokenThumbnail ? postThumbnail : null;
 
@@ -421,7 +438,8 @@ export default function UserPerformanceCard({
             display={{ xs: 'none', md: 'flex' }}
             alignItems="center"
             gap={{ md: 1, lg: 1.5 }}
-            sx={{ minWidth: 0, overflow: 'hidden' }}
+            // Clip sideways only, so the fix button's badge can show above the button.
+            sx={{ minWidth: 0, overflowX: 'clip', overflowY: 'visible' }}
           >
             {/* Left: Creator Info */}
             <Stack
@@ -641,7 +659,7 @@ export default function UserPerformanceCard({
                       color="#1340FF"
                       lineHeight={1.1}
                     >
-                      {isPrivateBlank('shares') ? (
+                      {hideShares ? (
                         '–'
                       ) : (
                         <MetricValue
@@ -683,7 +701,7 @@ export default function UserPerformanceCard({
                           color="#1340FF"
                           lineHeight={1.1}
                         >
-                          {isPrivateBlank('saved') ? (
+                          {hideSaves ? (
                             '–'
                           ) : (
                             <MetricValue
@@ -755,7 +773,13 @@ export default function UserPerformanceCard({
                   flex={1}
                   minWidth={0}
                 >
-                  <ScrapeFailedMetrics scrapeFailure={scrapeFailure} isInstagram={isInstagram} />
+                  <ScrapeFailedMetrics
+                    scrapeFailure={scrapeFailure}
+                    isInstagram={isInstagram}
+                    campaignId={campaignId}
+                    canEnterMetrics={canEnterMetrics}
+                    onSaved={onScrapeCompleted}
+                  />
                 </Box>
               )}
 
@@ -915,18 +939,32 @@ export default function UserPerformanceCard({
                 )}
               </AnimatePresence>
 
-              {/* Same column as the manual rows' edit button */}
-              {fixTarget ? (
-                <ScrapeFixButton
-                  {...fixTarget}
-                  isInstagram={isInstagram}
+              {/* Same column as the manual rows' edit and delete buttons */}
+              <Stack spacing={1} sx={{ width: 36, flexShrink: 0 }}>
+                {fixTarget && (
+                  <ScrapeFixButton
+                    {...fixTarget}
+                    isInstagram={isInstagram}
+                    campaignId={campaignId}
+                    creatorName={creator?.user?.name}
+                    onSaved={onScrapeCompleted}
+                  />
+                )}
+                <PostInsightsButton
                   campaignId={campaignId}
-                  creatorName={creator?.user?.name}
-                  onSaved={onScrapeCompleted}
+                  submissionId={submission?.id}
+                  postUrl={submission?.postUrl}
+                  insights={postInsights}
+                  canEdit={canEditPostInsights}
+                  canManage={canEditPostInsights}
                 />
-              ) : (
-                <Box sx={{ width: 36 }} />
-              )}
+                {postInsights && (
+                  <PostInsightsToggle
+                    open={showInsights}
+                    onClick={() => setShowInsights((open) => !open)}
+                  />
+                )}
+              </Stack>
             </Stack>
 
             <FeatureVideoButton
@@ -935,6 +973,18 @@ export default function UserPerformanceCard({
               postUrl={submission?.postUrl}
             />
           </Box>
+
+          {postInsights && (
+            <Collapse in={showInsights} unmountOnExit sx={{ display: { xs: 'none', md: 'block' } }}>
+              <Box sx={{ mx: 2, mt: 0.5, mb: 1.5 }}>
+                <PostInsightsPanel
+                  insights={postInsights}
+                  platform={insightsPlatform(submission?.postUrl)}
+                  excludeKeys={rowKeys}
+                />
+              </Box>
+            </Collapse>
+          )}
 
           {/* ── Mobile Layout (xs) ── */}
           <Box
@@ -1102,7 +1152,7 @@ export default function UserPerformanceCard({
                       fontWeight={400}
                       color="#1340FF"
                     >
-                      {isPrivateBlank('shares') ? (
+                      {hideShares ? (
                         '–'
                       ) : (
                         <MetricValue
@@ -1134,7 +1184,7 @@ export default function UserPerformanceCard({
                           fontWeight={400}
                           color="#1340FF"
                         >
-                          {isPrivateBlank('saved') ? (
+                          {hideSaves ? (
                             '–'
                           ) : (
                             <MetricValue
@@ -1346,6 +1396,15 @@ export default function UserPerformanceCard({
               )}
             </AnimatePresence>
           </Box>
+
+          {/* Lower screenshot numbers wait here for an admin. */}
+          {canEditPostInsights && (
+            <MetricsReviewNotice
+              campaignId={campaignId}
+              insights={postInsights}
+              sx={{ mx: 2, mt: 0.5, mb: 1.5 }}
+            />
+          )}
         </Box>
       </Box>
     </Grid>
@@ -1370,4 +1429,6 @@ UserPerformanceCard.propTypes = {
   campaignId: PropTypes.string,
   canEnterMetrics: PropTypes.bool,
   onScrapeCompleted: PropTypes.func,
+  postInsights: PropTypes.object,
+  canEditPostInsights: PropTypes.bool,
 };

@@ -5,7 +5,9 @@ import { Box, Badge, Tooltip } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
-import EnterScrapeMetricsDialog, { zeroFields, missingFields } from './EnterScrapeMetricsDialog';
+import { zeroFields } from './scrape-metrics';
+import useScrapeMetricsDraft from './use-scrape-metrics-draft';
+import EnterScrapeMetricsDialog from './EnterScrapeMetricsDialog';
 
 /**
  * The edit button of a failed scrape row, or of a scraped row with a count of 0
@@ -45,6 +47,8 @@ const badgeSx = {
     height: 18,
     px: 0.5,
   },
+  // Less overhang than the default 50%, so the badge stays inside the row's border.
+  '& .MuiBadge-badge:not(.MuiBadge-invisible)': { transform: 'scale(1) translate(35%, -35%)' },
 };
 
 export default function ScrapeFixButton({
@@ -58,13 +62,22 @@ export default function ScrapeFixButton({
 }) {
   const [open, setOpen] = useState(false);
   const { failure, postingUrlId } = scrapeFailure;
-  const missing = (
-    failure ? missingFields(failure.partial || null, isInstagram) : zeroFields(counts, isInstagram)
-  ).length;
+  const { pending, entered } = useScrapeMetricsDraft({
+    scrapeFailure,
+    isInstagram,
+    campaignId,
+    onSaved,
+  });
+  const missing = failure ? pending.length : zeroFields(counts, isInstagram).length;
 
   return (
     <>
-      <Tooltip title={`Enter ${missing} missing number${missing === 1 ? '' : 's'}`} arrow>
+      <Tooltip
+        title={
+          missing ? `Enter ${missing} missing number${missing === 1 ? '' : 's'}` : 'Edit numbers'
+        }
+        arrow
+      >
         <Badge badgeContent={missing} overlap="rectangular" sx={badgeSx}>
           <Box
             role="button"
@@ -84,6 +97,7 @@ export default function ScrapeFixButton({
           campaignId={campaignId}
           postingUrlId={postingUrlId}
           failure={failure}
+          entered={failure ? entered : undefined}
           isInstagram={isInstagram}
           onSaved={onSaved}
           postUrl={scrapeFailure.postUrl}
