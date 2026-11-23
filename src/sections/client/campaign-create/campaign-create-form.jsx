@@ -227,6 +227,7 @@ function ClientCampaignCreateForm({ onClose, mutate, isDemo = false }) {
 
   const campaignInformationSchema = Yup.object().shape({
     campaignTitle: Yup.string()
+      .trim()
       .required('Campaign title is required.')
       .max(40, 'Campaign title must be 40 characters or less'),
     campaignDescription: Yup.string().required('Campaign Description is required.'),
@@ -655,7 +656,7 @@ function ClientCampaignCreateForm({ onClose, mutate, isDemo = false }) {
       // Create client campaign data object with all necessary fields
       const clientCampaignData = {
         // General info
-        campaignTitle: data.campaignTitle || '',
+        campaignTitle: data.campaignTitle?.trim() || '',
         campaignDescription: data.campaignDescription || '',
         brandAbout: data.brandAbout || '',
         campaignStartDate: data.campaignStartDate || null,
