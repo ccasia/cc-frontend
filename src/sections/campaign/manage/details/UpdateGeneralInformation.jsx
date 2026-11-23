@@ -65,7 +65,7 @@ const datePickerSlotProps = (placeholder, error) => ({
 
 // Validation schema - only required fields are validated
 const UpdateGeneralInfoSchema = Yup.object().shape({
-  campaignName: Yup.string().required('Campaign name is required').max(40, 'Max 40 characters'),
+  campaignName: Yup.string().trim().required('Campaign name is required').max(40, 'Max 40 characters'),
   campaignDescription: Yup.string().required('Campaign info is required'),
   brandAbout: Yup.string().nullable(),
   campaignStartDate: Yup.mixed().required('Start date is required'),
@@ -158,7 +158,7 @@ const UpdateGeneralInformation = ({ campaign, campaignMutate, formId, onFormStat
       try {
         const formData = new FormData();
         formData.append('id', campaign?.id);
-        formData.append('name', data.campaignName);
+        formData.append('name', data.campaignName.trim());
         formData.append('description', data.campaignDescription);
         formData.append(
           'campaignIndustries',
