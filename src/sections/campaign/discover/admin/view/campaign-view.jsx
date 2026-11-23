@@ -298,14 +298,24 @@ const CampaignView = () => {
 
   const isSuperAdmin = useMemo(() => user?.admin?.mode === 'god', [user]);
 
-  // Only the header count is needed here -- the drafts page owns the list. The
-  // endpoint is superadmin-only, so skip the fetch for everyone else instead of
-  // letting SWR sit on a 403.
+  // Check if user is a CSM-style admin (not advanced mode). CSL shares this view.
+  const isCSM = useMemo(
+    () =>
+      (user?.admin?.role?.name === 'CSM' ||
+        user?.admin?.role?.name === 'Customer Success Manager' ||
+        user?.admin?.role?.name === 'CSL') &&
+      user?.admin?.mode !== 'advanced',
+    [user]
+  );
+
+  const canSeeDrafts = isSuperAdmin || isCSM;
+
+  // Only the header count is needed here -- the drafts page owns the list.
   const {
     drafts,
     isLoading: draftsLoading,
     mutate: mutateDrafts,
-  } = useGetCampaignDrafts(isSuperAdmin, user?.id);
+  } = useGetCampaignDrafts(canSeeDrafts, user?.id);
 
   // When the create dialog closed, so a just-published card waits for it to fade first
   const createClosedAtRef = useRef(0);
@@ -316,16 +326,6 @@ const CampaignView = () => {
     create.onFalse();
     mutateDrafts();
   };
-
-  // Check if user is a CSM-style admin (not advanced mode). CSL shares this view.
-  const isCSM = useMemo(
-    () =>
-      (user?.admin?.role?.name === 'CSM' ||
-        user?.admin?.role?.name === 'Customer Success Manager' ||
-        user?.admin?.role?.name === 'CSL') &&
-      user?.admin?.mode !== 'advanced',
-    [user]
-  );
 
   const getKey = (pageIndex, previousPageData) => {
     // When showAllCampaigns is true, we're viewing other admins' campaigns
@@ -672,8 +672,8 @@ const CampaignView = () => {
   const draftsCount = draftsLoading ? countCache.drafts : drafts.length;
 
   useEffect(() => {
-    if (!draftsLoading && isSuperAdmin) writeCountCache(user?.id, { drafts: drafts.length });
-  }, [draftsLoading, drafts.length, isSuperAdmin, user?.id]);
+    if (!draftsLoading && canSeeDrafts) writeCountCache(user?.id, { drafts: drafts.length });
+  }, [draftsLoading, drafts.length, canSeeDrafts, user?.id]);
 
   // Restore smDown and menu handlers
   const smDown = useResponsive('down', 'sm');
@@ -1036,7 +1036,7 @@ const CampaignView = () => {
                 </Box>
               </Button>
 
-              {isSuperAdmin && (
+              {canSeeDrafts && (
                 <Button
                   onClick={() => router.push(paths.dashboard.campaign.drafts)}
                   startIcon={<NotepadIcon size={20} />}
@@ -1101,7 +1101,7 @@ const CampaignView = () => {
                 top: -3,
               }}
             >
-              {isSuperAdmin && (
+              {canSeeDrafts && (
                 <Button
                   onClick={() => router.push(paths.dashboard.campaign.drafts)}
                   startIcon={<NotepadIcon size={24} />}
