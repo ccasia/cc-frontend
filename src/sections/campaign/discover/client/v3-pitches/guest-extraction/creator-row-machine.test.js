@@ -698,9 +698,10 @@ describe('refresh recovery', () => {
 });
 
 describe('a Threads row', () => {
-  const threadsReady = (typed) => {
+  const threadsValidated = (...edits) => {
     const { state, rowId } = start();
-    const steps = [
+    return run(
+      state,
       { type: ACTIONS.SET_LINK, rowId, value: 'https://www.threads.com/@example' },
       {
         type: ACTIONS.VALIDATION_RESULT,
@@ -710,151 +711,56 @@ describe('a Threads row', () => {
         canonicalProfileKey: 'threads:example',
         platform: 'threads',
       },
-      { type: ACTIONS.FETCH_REQUESTED, rowId, extractionId: 'ext-th' },
-      {
-        type: ACTIONS.EXTRACTION_READY,
-        rowId,
-        name: 'Example',
-        followerCount: '36',
-        engagementRate: '',
-        completionReceipt: 'receipt-th',
-        sampleSize: 0,
-        formulaVersion: 'threads_profile_v1',
-      },
-    ];
-    if (typed != null) {
-      steps.push({ type: ACTIONS.EDIT_FIELD, rowId, field: 'engagementRate', value: typed });
-    }
-    return { rowId, state: run(state, ...steps) };
+      ...edits.map(([field, value]) => ({ type: ACTIONS.EDIT_FIELD, rowId, field, value }))
+    );
   };
 
-  it('is ready with blank Recent Views and can be submitted', () => {
-    const row = only(threadsReady().state);
-    expect(row.status).toBe(ROW_STATUS.READY);
-    expect(row.engagementRate).toBe('');
-    expect(canSubmitRow(row)).toBe(true);
+  it('opens for manual entry and never fetches', () => {
+    const row = only(threadsValidated());
+    expect(row.status).toBe(ROW_STATUS.IDLE);
+    expect(row.entryMode).toBe('manual');
+    expect(canFetchRow(row)).toBe(false);
   });
 
-  it('treats typed Recent Views as entered, not as an override', () => {
-    const row = only(threadsReady('1.3M').state);
-    expect(row.engagementRate).toBe('1.3M');
-    expect(metricSourceOf(row)).toBe(METRIC_SOURCE.AUTOMATIC);
-    expect(isOverridden(row)).toBe(false);
-    expect(canSubmitRow(row)).toBe(true);
-  });
-
-  const threadsFetching = () => {
-    const { state, rowId } = start();
-    return {
-      rowId,
-      state: run(
-        state,
-        { type: ACTIONS.SET_LINK, rowId, value: 'https://www.threads.com/@example' },
-        {
-          type: ACTIONS.VALIDATION_RESULT,
-          rowId,
-          ok: true,
-          canonicalProfileUrl: 'https://www.threads.com/@example',
-          canonicalProfileKey: 'threads:example',
-          platform: 'threads',
-        },
-        { type: ACTIONS.FETCH_REQUESTED, rowId, extractionId: 'ext-th' },
-        { type: ACTIONS.EDIT_FIELD, rowId, field: 'engagementRate', value: '1.3M' }
-      ),
-    };
-  };
-
-  it('keeps Recent Views typed during the fetch when it finishes', () => {
-    const { state, rowId } = threadsFetching();
-    const row = only(
-      run(state, {
-        type: ACTIONS.EXTRACTION_READY,
-        rowId,
-        name: 'Example',
-        followerCount: '36',
-        engagementRate: '',
-        completionReceipt: 'receipt-th',
-      })
-    );
-    expect(row.status).toBe(ROW_STATUS.READY);
-    expect(row.engagementRate).toBe('1.3M');
-    expect(row.followerCount).toBe('36');
-  });
-
-  it('keeps Recent Views typed during the fetch when it fails or is retried', () => {
-    const { state, rowId } = threadsFetching();
-    const failed = run(state, {
-      type: ACTIONS.EXTRACTION_FAILED,
-      rowId,
-      error: { code: 'POLL_TIMEOUT', message: 'Timed out.', retryable: true },
-    });
-    expect(only(failed).engagementRate).toBe('1.3M');
-    const retried = run(failed, { type: ACTIONS.FETCH_REQUESTED, rowId, extractionId: 'ext-2' });
-    expect(only(retried).engagementRate).toBe('1.3M');
-  });
-
-  it('blocks submit when typed Recent Views does not parse', () => {
-    expect(canSubmitRow(only(threadsReady('1.3%').state))).toBe(false);
-    expect(canSubmitRow(only(threadsReady('lots').state))).toBe(false);
-  });
-
-  it('still records a follower edit as an override', () => {
-    const { state, rowId } = threadsReady('1300000');
-    const row = only(
-      run(state, { type: ACTIONS.EDIT_FIELD, rowId, field: 'followerCount', value: '40' })
-    );
-    expect(metricSourceOf(row)).toBe(METRIC_SOURCE.MANUAL_OVERRIDE);
-  });
-
-  it('keeps saved Recent Views when the fetch returns none', () => {
+  it('still fetches an Instagram row', () => {
     const { state, rowId } = start();
     const row = only(
       run(
         state,
-        {
-          type: ACTIONS.SET_SOURCE,
-          rowId,
-          profileLink: 'https://www.threads.com/@example',
-          platform: 'threads',
-          selectedPlatform: 'threads',
-          sourceMode: 'stored',
-          engagementRate: '850000',
-        },
+        { type: ACTIONS.SET_LINK, rowId, value: 'https://www.instagram.com/example' },
         {
           type: ACTIONS.VALIDATION_RESULT,
           rowId,
           ok: true,
-          canonicalProfileUrl: 'https://www.threads.com/@example',
-          canonicalProfileKey: 'threads:example',
-          platform: 'threads',
-        },
-        { type: ACTIONS.FETCH_REQUESTED, rowId, extractionId: 'ext-th' },
-        {
-          type: ACTIONS.EXTRACTION_READY,
-          rowId,
-          name: 'Example',
-          followerCount: '36',
-          engagementRate: '',
-          completionReceipt: 'receipt-th',
+          canonicalProfileUrl: 'https://www.instagram.com/example/',
+          canonicalProfileKey: 'instagram:example',
+          platform: 'instagram',
         }
       )
     );
-    expect(row.engagementRate).toBe('850000');
-    expect(row.fetched.engagementRate).toBe('');
+    expect(row.entryMode).toBe('automatic');
+    expect(canFetchRow(row)).toBe(true);
   });
 
-  it('needs valid Recent Views on a manual entry', () => {
-    const base = createRow({
-      entryMode: 'manual',
-      platform: 'threads',
-      canonicalProfileKey: 'threads:example',
-      name: 'Example',
-      followerCount: '36',
-    });
-    expect(canSubmitRow({ ...base, engagementRate: '1300000' })).toBe(true);
-    expect(canSubmitRow({ ...base, engagementRate: '850k' })).toBe(true);
-    expect(canSubmitRow({ ...base, engagementRate: '4.5' })).toBe(false);
-    expect(canSubmitRow({ ...base, engagementRate: '' })).toBe(false);
+  it('needs a name and follower count, with Recent Views optional', () => {
+    expect(canSubmitRow(only(threadsValidated(['name', 'Example'])))).toBe(false);
+    expect(canSubmitRow(only(threadsValidated(['followerCount', '36'])))).toBe(false);
+    const typed = only(threadsValidated(['name', 'Example'], ['followerCount', '36']));
+    expect(canSubmitRow(typed)).toBe(true);
+    expect(metricSourceOf(typed)).toBe(METRIC_SOURCE.UNAVAILABLE);
+  });
+
+  it('accepts valid Recent Views and blocks one that does not parse', () => {
+    const base = [
+      ['name', 'Example'],
+      ['followerCount', '36'],
+    ];
+    const withViews = (value) => only(threadsValidated(...base, ['engagementRate', value]));
+    expect(canSubmitRow(withViews('1300000'))).toBe(true);
+    expect(canSubmitRow(withViews('850k'))).toBe(true);
+    expect(metricSourceOf(withViews('850k'))).toBe(METRIC_SOURCE.MANUAL_OVERRIDE);
+    expect(canSubmitRow(withViews('4.5'))).toBe(false);
+    expect(canSubmitRow(withViews('lots'))).toBe(false);
   });
 
   it('leaves an Instagram rate edit as an override', () => {

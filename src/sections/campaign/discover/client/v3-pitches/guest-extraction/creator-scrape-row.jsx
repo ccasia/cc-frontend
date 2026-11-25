@@ -191,15 +191,15 @@ export default function CreatorScrapeRow({
     const viewsHint = isRate && isViews ? RECENT_VIEWS_HINT : undefined;
     const hasPercent = isRate && !isViews;
     const rateInputMode = isViews ? 'text' : 'decimal';
-    // Recent Views is never fetched, so the admin can type it while the profile loads.
-    const typedByAdmin = isRate && isViews;
+    // Threads is never fetched, so every field is typed by the admin.
+    const typedByAdmin = isViews;
     let displayValue = row[field];
     if (isFollowers) displayValue = formatFollowerCountDisplay(row[field]);
     if (isRate) displayValue = formatPrimaryMetricInput(row.platform, row[field]);
 
     return (
       <>
-        {/* Recent Views is always typed, so it never reads as edited. */}
+        {/* A Threads field is always typed, so it never reads as edited. */}
         {label(text, hint, typedByAdmin ? null : fieldProvenanceOf(row, field))}
         {loading && !typedByAdmin ? (
           <CreatorFieldLoading

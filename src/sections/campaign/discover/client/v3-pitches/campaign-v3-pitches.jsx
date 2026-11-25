@@ -2286,7 +2286,10 @@ export function PlatformCreatorModal({
   };
 
   const showProfileLinkHint =
-    scrapeEnabled && creatorRows.some((row) => row.creator && !row.hasMediaKit);
+    scrapeEnabled &&
+    creatorRows.some(
+      (row) => row.creator && !row.hasMediaKit && !isRecentViewsPlatform(row.selectedPlatform)
+    );
 
   return (
     <>

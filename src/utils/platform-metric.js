@@ -44,6 +44,9 @@ export const storedProfileLink = (creatorAccount, platform) =>
 
 export const isRecentViewsPlatform = (platform) => platform === 'threads';
 
+/** Platforms the backend scrapes. Threads is never scraped: CS types its numbers. */
+export const isScrapedPlatform = (platform) => platform === 'instagram' || platform === 'tiktok';
+
 export const RECENT_VIEWS_HINT = 'Copy from the Threads app';
 export const RECENT_VIEWS_ERROR =
   'Enter recent views as a whole number, for example 1,300,000 or 1.3M.';
@@ -54,13 +57,9 @@ export const metricLabel = (platform, { short = false } = {}) => {
   return short ? 'Engagement rate' : 'Engagement Rate';
 };
 
-/** Name of the manual-numbers edit action. Threads followers come from the fetch unless it failed. */
-export function manualEditLabel(platform, { fetchFailed = false } = {}) {
-  const metric = metricLabel(platform, { short: true }).toLowerCase();
-  return isRecentViewsPlatform(platform) && !fetchFailed
-    ? `Edit ${metric}`
-    : `Edit follower count and ${metric}`;
-}
+/** Name of the manual-numbers edit action. */
+export const manualEditLabel = (platform) =>
+  `Edit follower count and ${metricLabel(platform, { short: true }).toLowerCase()}`;
 
 export const metricError = (platform) =>
   isRecentViewsPlatform(platform) ? RECENT_VIEWS_ERROR : ENGAGEMENT_RATE_ERROR;
