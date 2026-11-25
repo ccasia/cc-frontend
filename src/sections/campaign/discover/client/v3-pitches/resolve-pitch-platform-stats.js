@@ -3,6 +3,7 @@
  * that platform (pitch + manual creator columns).
  */
 
+import { isKnownPlatform } from 'src/utils/platform-metric';
 import { resolveRecordedPlatform, resolveTierPlatformForDisplay } from 'src/utils/credit-tier-platform';
 
 import { resolveTierForFollowerCount } from '../../admin/c-agreement';
@@ -26,19 +27,22 @@ function firstRate(...values) {
 function linkLooksLike(link, platform) {
   if (!link || typeof link !== 'string') return false;
   if (platform === 'tiktok') return /tiktok\.com/i.test(link);
+  if (platform === 'threads') return /threads\.(com|net)/i.test(link);
   return /instagram\.com/i.test(link);
 }
 
 /** Platform this pitch's scrape / shortlist snapshot belongs to. */
 export function scrapePlatformOf(pitch) {
   const direct = pitch?.selectedPlatform;
-  if (direct === 'tiktok' || direct === 'instagram') return direct;
+  if (isKnownPlatform(direct)) return direct;
 
   const creator = pitch?.user?.creator;
   if (linkLooksLike(creator?.tiktokProfileLink, 'tiktok')) return 'tiktok';
   if (linkLooksLike(creator?.instagramProfileLink, 'instagram')) return 'instagram';
+  if (linkLooksLike(creator?.threadsProfileLink, 'threads')) return 'threads';
   if (linkLooksLike(creator?.profileLink, 'tiktok')) return 'tiktok';
   if (linkLooksLike(creator?.profileLink, 'instagram')) return 'instagram';
+  if (linkLooksLike(creator?.profileLink, 'threads')) return 'threads';
   return null;
 }
 
@@ -52,6 +56,7 @@ export function availablePitchPlatforms(pitch) {
   if (creator?.tiktokUser || creator?.tiktokProfileLink || scrape === 'tiktok') {
     list.push('tiktok');
   }
+  if (creator?.threadsProfileLink || scrape === 'threads') list.push('threads');
   if (!list.length && scrape) list.push(scrape);
   return list;
 }
@@ -71,9 +76,29 @@ export function seedPitchPlatform(pitch) {
   return platforms[0] || 'instagram';
 }
 
+/**
+ * Threads has no connected account and no per-platform manual columns. Its
+ * numbers live only on the pitch snapshot, and the rate slot holds Recent Views.
+ */
+function resolveThreadsStats(pitch, fromProfile, fromPitch) {
+  if (scrapePlatformOf(pitch) !== 'threads') {
+    return { followers: null, engagementRate: null, averageLikes: null };
+  }
+  return {
+    followers: firstPositive(
+      pitch?.followerCount,
+      fromProfile.manualFollowerCount,
+      fromPitch.manualFollowerCount
+    ),
+    engagementRate: firstRate(pitch?.engagementRate),
+    averageLikes: firstPositive(pitch?.scrapedAverageLikes),
+  };
+}
+
 export function resolvePitchPlatformStats({ pitch, creatorProfileFull, platform }) {
   const fromPitch = pitch?.user?.creator || {};
   const fromProfile = creatorProfileFull?.creator || {};
+  if (platform === 'threads') return resolveThreadsStats(pitch, fromProfile, fromPitch);
   const connected =
     platform === 'tiktok'
       ? fromProfile.tiktokUser || fromPitch.tiktokUser
@@ -106,7 +131,11 @@ export function resolvePitchPlatformStats({ pitch, creatorProfileFull, platform 
   return { followers, engagementRate, averageLikes };
 }
 
-const otherPlatformOf = (platform) => (platform === 'tiktok' ? 'instagram' : 'tiktok');
+/** Platforms a row may point to when its own platform has no numbers. */
+const otherPlatformsOf = (platform) => {
+  if (platform === 'threads') return ['instagram', 'tiktok'];
+  return [platform === 'tiktok' ? 'instagram' : 'tiktok'];
+};
 
 /**
  * Master list row metrics. The row shows one platform: the one saved on the
@@ -116,20 +145,23 @@ const otherPlatformOf = (platform) => (platform === 'tiktok' ? 'instagram' : 'ti
 export function resolveRowMetrics(pitch, campaign) {
   const recorded = resolveRecordedPlatform(pitch, campaign);
   const platform = recorded ?? seedPitchPlatform(pitch);
-  const other = otherPlatformOf(platform);
 
   // A pitch with no saved platform has scrape numbers of unknown origin. They
   // belong to the platform the row shows, the way they did before.
   const rowPitch = { ...pitch, selectedPlatform: platform };
   const stats = resolvePitchPlatformStats({ pitch: rowPitch, platform });
-  const otherStats = resolvePitchPlatformStats({ pitch: rowPitch, platform: other });
+  const others = otherPlatformsOf(platform);
+  const otherWithData = others.find((other) => {
+    const otherStats = resolvePitchPlatformStats({ pitch: rowPitch, platform: other });
+    return otherStats.followers != null || otherStats.engagementRate != null;
+  });
 
   return {
     platform,
     followerCount: stats.followers,
     engagementRate: stats.engagementRate,
-    otherPlatform: other,
-    otherPlatformHasData: otherStats.followers != null || otherStats.engagementRate != null,
+    otherPlatform: otherWithData ?? (others.length === 1 ? others[0] : null),
+    otherPlatformHasData: Boolean(otherWithData),
   };
 }
 

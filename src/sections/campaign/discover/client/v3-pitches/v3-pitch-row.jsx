@@ -31,6 +31,12 @@ import {
   createSocialProfileUrl,
   extractUsernameFromProfileLink,
 } from 'src/utils/media-kit-utils';
+import {
+  metricLabel,
+  manualEditLabel,
+  formatPrimaryMetric,
+  isRecentViewsPlatform,
+} from 'src/utils/platform-metric';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { OUTREACH_STATUS_OPTIONS } from 'src/contants/outreach';
@@ -42,10 +48,10 @@ import DiaTextReveal from './dia-text-reveal';
 import V3PitchActions from './v3-pitch-actions';
 import useJustFinished from './use-just-finished';
 import RowNotesPreview from './creator-notes/row-notes-preview';
-import { resolveRowTier, resolveRowMetrics } from './resolve-pitch-platform-stats';
 import { canEditFailedMetrics } from './guest-extraction/manual-metrics';
 import CreatorFieldLoading from './guest-extraction/creator-field-loading';
 import ManualMetricsDialog from './guest-extraction/manual-metrics-dialog';
+import { resolveRowTier, resolveRowMetrics } from './resolve-pitch-platform-stats';
 import { failureDetails, failureLabelShort } from './guest-extraction/extraction-error-copy';
 import {
   CELL_SX,
@@ -69,9 +75,9 @@ import {
   VALUE_MUTED_SX,
   VALUE_PLAIN_SX,
   CHIP_ROW_HEIGHT,
+  FullValueTooltip,
   CONTROL_ICON_SIZE,
   MissingMetricValue,
-  formatEngagementRate,
 } from '../../master-list-row-kit';
 
 const TYPE_LABELS = {
@@ -140,13 +146,13 @@ ScrapeMetricValue.propTypes = {
  */
 const MANUAL_EDIT_CLASS = 'manual-metrics-edit';
 
-function ManualEditButton({ onClick }) {
+function ManualEditButton({ onClick, label }) {
   return (
     <Tooltip title="Edit" arrow placement="top">
       <ButtonBase
         className={MANUAL_EDIT_CLASS}
         onClick={onClick}
-        aria-label="Edit follower count and engagement rate"
+        aria-label={label}
         sx={{
           width: 20,
           height: 20,
@@ -172,6 +178,38 @@ function ManualEditButton({ onClick }) {
 
 ManualEditButton.propTypes = {
   onClick: PropTypes.func.isRequired,
+  label: PropTypes.string.isRequired,
+};
+
+/** Threads Recent Views is never fetched, so an empty value offers an Add. */
+function AddMetricButton({ onClick, metricName }) {
+  return (
+    <ButtonBase
+      onClick={onClick}
+      aria-label={`Add ${metricName}`}
+      sx={{
+        height: CHIP_ROW_HEIGHT,
+        gap: 0.25,
+        px: 0.75,
+        borderRadius: '6px',
+        border: '1px solid #E7E7E7',
+        fontSize: SMALL_SIZE,
+        fontWeight: 600,
+        lineHeight: `${SMALL_HEIGHT}px`,
+        color: '#1340FF',
+        '&:hover': { bgcolor: 'rgba(19, 64, 255, 0.06)' },
+        '&.Mui-focusVisible': { boxShadow: 'inset 0 0 0 2px #1340FF' },
+      }}
+    >
+      <Iconify icon="eva:plus-fill" width={12} />
+      Add
+    </ButtonBase>
+  );
+}
+
+AddMetricButton.propTypes = {
+  onClick: PropTypes.func.isRequired,
+  metricName: PropTypes.string.isRequired,
 };
 
 /**
@@ -462,13 +500,15 @@ const PitchRow = ({
   const profileLink = pitch.user?.creator?.profileLink || pitch.user?.profileLink;
   const instagramProfileLink = pitch.user?.creator?.instagramProfileLink;
   const tiktokProfileLink = pitch.user?.creator?.tiktokProfileLink;
+  const threadsProfileLink = pitch.user?.creator?.threadsProfileLink;
 
   const instagramUsername = getUsername(instagramStats, instagramProfileLink);
   const tiktokUsername = getUsername(tiktokStats, tiktokProfileLink);
+  const threadsUsername = getUsername(null, threadsProfileLink);
   const profileUsername = profileLink ? extractUsernameFromProfileLink(profileLink) : undefined;
 
   // Check if we have any social usernames to display
-  const hasSocialUsernames = instagramUsername || tiktokUsername;
+  const hasSocialUsernames = instagramUsername || tiktokUsername || threadsUsername;
 
   // One platform per row: both metrics and the tier icon come from it, so a
   // row never shows Instagram followers beside a TikTok engagement rate.
@@ -481,7 +521,24 @@ const PitchRow = ({
     />
   );
 
-  const engagementRateText = formatEngagementRate(displayData.engagementRate);
+  const metricName = metricLabel(displayData.platform, { short: true });
+  const isViews = isRecentViewsPlatform(displayData.platform);
+  const engagementRateText = formatPrimaryMetric(displayData.platform, displayData.engagementRate, {
+    compact: true,
+  });
+  const engagementRateFull = isViews
+    ? formatPrimaryMetric(displayData.platform, displayData.engagementRate)
+    : null;
+  // Threads followers come from the profile fetch, so only a failed fetch lets the admin type them.
+  const followersLocked = isViews && !pitch.metricsFailureCode;
+  const manualEditText = manualEditLabel(displayData.platform, {
+    fetchFailed: Boolean(pitch.metricsFailureCode),
+  });
+  // Recent Views is always typed. A guest's is typed in its own modal.
+  const canAddRecentViews =
+    isViews &&
+    !metricsPending &&
+    (metricsEditable || (isAdminUser && isGuestCreator && !isDisabled));
   // The tier saved on approval, else the live tier on the platform chosen at shortlisting.
   const tierData = resolveRowTier(pitch, campaign, activeTiers);
   const credits = tierData?.creditsPerVideo;
@@ -627,6 +684,23 @@ const PitchRow = ({
                     </Link>
                   </Stack>
                 )}
+                {threadsUsername && (
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    <Iconify icon="ri:threads-line" width={ICON_SIZE} sx={{ color: '#636366' }} />
+                    <Link
+                      href={
+                        createSocialProfileUrl(threadsUsername, 'threads') || threadsProfileLink
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      underline="hover"
+                      sx={socialLinkSx}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {threadsUsername}
+                    </Link>
+                  </Stack>
+                )}
               </Stack>
             ) : (
               profileUsername && (
@@ -640,6 +714,9 @@ const PitchRow = ({
                       width={ICON_SIZE}
                       sx={{ color: '#636366' }}
                     />
+                  )}
+                  {/threads\.(com|net)/i.test(profileLink) && (
+                    <Iconify icon="ri:threads-line" width={ICON_SIZE} sx={{ color: '#636366' }} />
                   )}
                   <Link
                     href={profileLink?.startsWith('http') ? profileLink : `https://${profileLink}`}
@@ -691,9 +768,10 @@ const PitchRow = ({
       {/* Engagement Rate + Tier */}
       <TableCell sx={{ ...CELL_SX, width: COLUMN_WIDTHS.engagement }}>
         <Stack spacing={0.5}>
-          <FieldBlock label="Engagement rate" minHeight={CHIP_ROW_HEIGHT}>
+          <FieldBlock label={metricName} minHeight={CHIP_ROW_HEIGHT}>
             {(() => {
-              if (metricsPending)
+              // Recent Views is typed, never fetched, so it shows while the profile loads.
+              if (metricsPending && !isViews)
                 return (
                   <Box sx={{ width: 120 }}>
                     <CreatorFieldLoading
@@ -707,9 +785,26 @@ const PitchRow = ({
               if (engagementRateText)
                 return (
                   <Stack direction="row" alignItems="center" spacing={1}>
+                    <FullValueTooltip title={engagementRateFull}>
+                      <PlatformIcon platform={displayData.platform} />
+                      <ScrapeMetricValue
+                        text={engagementRateText}
+                        reveal={revealScrapeMetrics && !isViews}
+                      />
+                    </FullValueTooltip>
+                    {metricsEditable && (
+                      <ManualEditButton onClick={openManualMetrics} label={manualEditText} />
+                    )}
+                  </Stack>
+                );
+              if (canAddRecentViews && !metricsFailed)
+                return (
+                  <Stack direction="row" alignItems="center" spacing={1}>
                     <PlatformIcon platform={displayData.platform} />
-                    <ScrapeMetricValue text={engagementRateText} reveal={revealScrapeMetrics} />
-                    {metricsEditable && <ManualEditButton onClick={openManualMetrics} />}
+                    <AddMetricButton
+                      onClick={enterFailedMetrics}
+                      metricName={metricName.toLowerCase()}
+                    />
                   </Stack>
                 );
               if (showFetchFailed)
@@ -802,8 +897,8 @@ const PitchRow = ({
                         />
                       </Stack>
                     </Tooltip>
-                    {metricsEditable && engagementRateText && (
-                      <ManualEditButton onClick={openManualMetrics} />
+                    {metricsEditable && engagementRateText && !followersLocked && (
+                      <ManualEditButton onClick={openManualMetrics} label={manualEditText} />
                     )}
                   </Stack>
                 );

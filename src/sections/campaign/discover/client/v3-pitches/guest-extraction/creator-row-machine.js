@@ -8,6 +8,14 @@
  * two never mix.
  */
 
+import {
+  hasSafePrimaryMetric,
+  hasSafeEngagementRate,
+  isRecentViewsPlatform,
+} from 'src/utils/platform-metric';
+
+export { hasSafeEngagementRate };
+
 export const ROW_STATUS = {
   IDLE: 'IDLE',
   VALIDATING: 'VALIDATING',
@@ -170,13 +178,24 @@ export function hasSafeFollowerCount(value) {
   return Number.isSafeInteger(parsed) && parsed > 0 && parsed <= MAX_FOLLOWER_COUNT;
 }
 
-/** Matches the backend's typed-rate guard. Zero is a valid measured percentage. */
-export function hasSafeEngagementRate(value) {
-  const raw = typeof value === 'number' ? String(value) : value?.trim();
-  if (typeof raw !== 'string' || !/^\d+(\.\d+)?$/.test(raw)) return false;
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 1000;
-}
+export const rowPlatformOf = (row) => row.platform ?? row.selectedPlatform ?? null;
+
+/** Threads Recent Views the admin typed, which no fetch result may erase. Null on other platforms. */
+const typedViewsOf = (row) =>
+  isRecentViewsPlatform(rowPlatformOf(row))
+    ? row.engagementRate || row.prefetchMetrics?.engagementRate || ''
+    : null;
+
+/** Threads Recent Views is never fetched, so a typed value is not an override. */
+const metricEdited = (row) =>
+  row.followerCount !== row.fetched.followerCount ||
+  (!isRecentViewsPlatform(rowPlatformOf(row)) && row.engagementRate !== row.fetched.engagementRate);
+
+/** A typed Threads Recent Views must parse. A blank one is allowed. */
+const hasInvalidRecentViews = (row) =>
+  isRecentViewsPlatform(rowPlatformOf(row)) &&
+  hasText(row.engagementRate) &&
+  !hasSafePrimaryMetric('threads', row.engagementRate);
 
 export const isAllowedFallbackReason = (reason) => ALLOWED_FALLBACK_REASONS.includes(reason);
 
@@ -227,10 +246,7 @@ export function metricSourceOf(row) {
     return hasText(row.engagementRate) ? METRIC_SOURCE.MANUAL_OVERRIDE : METRIC_SOURCE.UNAVAILABLE;
   }
   if (row.status === ROW_STATUS.READY && hasValidReceipt(row)) {
-    const edited =
-      !row.fetched ||
-      row.followerCount !== row.fetched.followerCount ||
-      row.engagementRate !== row.fetched.engagementRate;
+    const edited = !row.fetched || metricEdited(row);
     return edited ? METRIC_SOURCE.MANUAL_OVERRIDE : METRIC_SOURCE.AUTOMATIC;
   }
   if (isAllowedFallbackReason(row.fallbackReason) && row.fallbackConfirmed) {
@@ -242,11 +258,7 @@ export function metricSourceOf(row) {
 /** True when the admin changed a value the receipt attests to. */
 export function isOverridden(row) {
   if (!row.fetched) return false;
-  return (
-    row.name !== row.fetched.name ||
-    row.followerCount !== row.fetched.followerCount ||
-    row.engagementRate !== row.fetched.engagementRate
-  );
+  return row.name !== row.fetched.name || metricEdited(row);
 }
 
 const hasFieldValue = (value) => {
@@ -294,13 +306,14 @@ export function canSubmitRow(row, { duplicateIds = [] } = {}) {
   if (row.linkError) return false;
   if (row.saveError) return false;
   if (row.creator && (!row.selectedPlatform || row.platform !== row.selectedPlatform)) return false;
+  if (hasInvalidRecentViews(row)) return false;
 
   if (row.entryMode === ENTRY_MODE.MANUAL) {
     return (
       Boolean(row.canonicalProfileKey) &&
       hasText(row.name) &&
       hasSafeFollowerCount(row.followerCount) &&
-      hasSafeEngagementRate(row.engagementRate)
+      hasSafePrimaryMetric(rowPlatformOf(row), row.engagementRate)
     );
   }
 
@@ -436,6 +449,7 @@ export function creatorRowReducer(state, action) {
           ? row
           : {
               ...clearResult(row),
+              ...(typedViewsOf(row) !== null && { engagementRate: typedViewsOf(row) }),
               status: ROW_STATUS.QUEUED,
               extractionId: action.extractionId ?? null,
               extractionStartedAt: null,
@@ -484,10 +498,13 @@ export function creatorRowReducer(state, action) {
           followerCount: action.followerCount ?? '',
           engagementRate: action.engagementRate ?? '',
         };
+        // Threads never fetches Recent Views. Keep what the admin typed or had saved.
+        const typedViews = hasText(fetched.engagementRate) ? null : typedViewsOf(row);
         return {
           ...row,
           status: ROW_STATUS.READY,
           ...fetched,
+          ...(typedViews !== null && { engagementRate: typedViews }),
           fetched,
           entryMode: ENTRY_MODE.AUTOMATIC,
           fieldUpdateSource: FIELD_UPDATE_SOURCE.SCRAPE,
@@ -540,7 +557,7 @@ export function creatorRowReducer(state, action) {
           : {
               ...clearResult(row),
               followerCount: row.prefetchMetrics?.followerCount ?? '',
-              engagementRate: row.prefetchMetrics?.engagementRate ?? '',
+              engagementRate: typedViewsOf(row) ?? row.prefetchMetrics?.engagementRate ?? '',
               status: ROW_STATUS.FAILED,
               extractionId: row.extractionId,
               error: action.error ?? {

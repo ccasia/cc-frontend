@@ -293,12 +293,15 @@ const FinaliseCampaign = ({
   onPackageLinkSuccess,
 }) => {
   const { data: admins } = useGetAdmins('active');
+
   const {
     data: companyData,
     isLoading: companyLoading,
     mutate: mutateCompanyList,
   } = useGetCompany();
+
   const { user } = useAuthContext();
+
   const {
     watch,
     trigger,

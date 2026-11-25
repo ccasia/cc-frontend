@@ -26,6 +26,7 @@ import useGetCreditTiers from 'src/hooks/use-get-credit-tiers';
 import { useGetAgreements } from 'src/hooks/agreement/use-get-agreements';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
+import { PLATFORMS, platformMeta } from 'src/utils/platform-metric';
 
 import { useAuthContext } from 'src/auth/hooks';
 import AgreementTemplate from 'src/template/agreement';
@@ -68,6 +69,7 @@ const CURRENCY_PREFIXES = {
 const PLATFORM_OPTIONS = [
   { value: 'instagram', label: 'Insta', icon: 'mdi:instagram' },
   { value: 'tiktok', label: 'TikTok', icon: 'ic:baseline-tiktok' },
+  { value: 'threads', label: 'Threads', icon: 'ri:threads-line' },
 ];
 
 const CREDIT_STATUS_STYLES = {
@@ -121,7 +123,8 @@ export const getFollowerCountByPlatform = (campaign, agreement, platform) => {
   if (agreedFollowerCount > 0) return agreedFollowerCount;
 
   const creatorData = agreement?.user?.creator;
-  if (!creatorData) return 0;
+  // Threads has no connected account or manual column: only the snapshot counts.
+  if (!creatorData || platform === 'threads') return 0;
 
   if (platform === 'tiktok') {
     return creatorData.tiktokUser?.follower_count || creatorData.manualTiktokFollowerCount || 0;
@@ -149,6 +152,7 @@ export const resolveTierForFollowerCount = (creditTierList, followerCount) => {
 const getMediaKitFollowerCount = (agreement, platform) => {
   const creatorData = agreement?.user?.creator;
 
+  if (platform === 'threads') return 0;
   if (platform === 'tiktok') return creatorData?.tiktokUser?.follower_count || 0;
 
   return creatorData?.instagramUser?.followers_count || 0;
@@ -479,7 +483,7 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
 
   const canEditFollowerCount = isSuperAdmin || selectedPlatformFollower <= 0;
 
-  const platformLabel = selectedPlatform === 'tiktok' ? 'TikTok' : 'Instagram';
+  const platformLabel = PLATFORMS[selectedPlatform]?.label ?? 'Instagram';
 
   const effectiveFollowerCountForTier = canEditFollowerCount
     ? Number(platformFollowerValue || 0) || Number(selectedPlatformFollower || 0)
@@ -492,7 +496,8 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
 
   // Matches the backend (resolveCampaignTierOrNull): the tier saved at approval stands, unless the
   // platform changes or a superadmin types a follower count. Without a saved tier, preview the live one.
-  const isTierCorrection = hasPlatformChanged || (isSuperAdmin && Number(platformFollowerValue || 0) > 0);
+  const isTierCorrection =
+    hasPlatformChanged || (isSuperAdmin && Number(platformFollowerValue || 0) > 0);
   const previewTierSource = tierData && !isTierCorrection ? tierData : liveTierData;
 
   const displayTierData = useMemo(
@@ -669,9 +674,10 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
                 <Stack
                   sx={{
                     flex: 1,
-                    justifyContent: 'flex-start',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    alignItems: 'center',
+                    minWidth: 0,
+                    flexDirection: 'column',
+                    alignItems: { xs: 'stretch', sm: 'flex-end' },
+                    gap: 0.5,
                   }}
                 >
                   <Tabs
@@ -684,7 +690,6 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
                         { shouldValidate: true }
                       );
                     }}
-                    variant="fullWidth"
                     TabIndicatorProps={{
                       children: <span />,
                       sx: {
@@ -714,8 +719,7 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
                         minHeight: 'auto',
                         flexShrink: 0,
                         bgcolor: 'rgba(231, 231, 231, 1)',
-                        flex: 1,
-                        width: { xs: 1, sm: 200 },
+                        width: { xs: 1, sm: 'auto' },
                       },
                       '& .MuiTabs-scroller': {
                         p: '0px',
@@ -728,8 +732,10 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
                         label={platform.label}
                         value={platform.value}
                         iconPosition="start"
-                        icon={<Iconify icon={platform.icon} width={16} />}
+                        icon={<Iconify icon={platform.icon} width={16} sx={{ flexShrink: 0 }} />}
                         sx={{
+                          minWidth: 0,
+                          px: 2,
                           '&.Mui-selected': {
                             borderRadius: 2,
                             fontWeight: 600,
@@ -746,7 +752,7 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
                   </Tabs>
 
                   {campaign?.isCreditTier && displayTierData && (
-                    <Stack direction="column" ml={2}>
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mr: 1 }}>
                       <Box
                         sx={{
                           py: 0.5,
@@ -760,11 +766,16 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
                       >
                         <Iconify
                           icon={
-                            selectedPlatform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'
+                            selectedPlatform === 'instagram'
+                              ? 'mdi:instagram'
+                              : platformMeta(selectedPlatform).icon
                           }
                           width={14}
                           sx={{
-                            color: selectedPlatform === 'tiktok' ? '#000000' : '#E4405F',
+                            color:
+                              selectedPlatform === 'instagram'
+                                ? '#E4405F'
+                                : platformMeta(selectedPlatform).color,
                             flexShrink: 0,
                           }}
                         />
@@ -1008,6 +1019,8 @@ const CAgreement = ({ agreement, campaign, index, exclude, availableCredits, err
                     {...field}
                     customInput={TextField}
                     allowNegative={false}
+                    thousandSeparator
+                    decimalScale={0}
                     onValueChange={(value) => {
                       setValue(fieldName('platformFollowerCount'), value.floatValue, {
                         shouldValidate: true,

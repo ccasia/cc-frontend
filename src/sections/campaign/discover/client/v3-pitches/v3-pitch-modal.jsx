@@ -36,6 +36,21 @@ import useGetActiveCreditTiers from 'src/hooks/use-get-active-credit-tiers';
 import { formatNumber } from 'src/utils/media-kit-utils';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 import { campaignHasClient } from 'src/utils/campaign-flow';
+import {
+  PLATFORMS,
+  metricLabel,
+  metricError,
+  platformMeta,
+  manualEditLabel,
+  isKnownPlatform,
+  RECENT_VIEWS_HINT,
+  formatPrimaryMetric,
+  hasSafePrimaryMetric,
+  isRecentViewsPlatform,
+  normalizePrimaryMetric,
+  formatPrimaryMetricInput,
+  sanitizePrimaryMetricInput,
+} from 'src/utils/platform-metric';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { useGetAllCreators } from 'src/api/creator';
@@ -53,12 +68,6 @@ import NoClientConfirmDialog from './no-client-guard/NoClientConfirmDialog';
 import { failureReasonShort } from './guest-extraction/extraction-error-copy';
 import EngagementBreakdownDialog from './guest-extraction/engagement-breakdown-dialog';
 import {
-  resolveRowTier,
-  seedPitchPlatform,
-  availablePitchPlatforms,
-  resolvePitchPlatformStats,
-} from './resolve-pitch-platform-stats';
-import {
   LINE,
   ONYX,
   MUTED,
@@ -69,19 +78,24 @@ import {
   VDivider,
   FieldGroup,
 } from './v3-pitch-modal-parts';
+import {
+  resolveRowTier,
+  scrapePlatformOf,
+  seedPitchPlatform,
+  availablePitchPlatforms,
+  resolvePitchPlatformStats,
+} from './resolve-pitch-platform-stats';
 
 const DASH = '\u2014';
 const MAX_LANGUAGES = 3;
 const MAX_INTERESTS = 5;
 
 /** Small tinted action: "+ Add numbers" in the warning, "Edit" beside a saved value. */
-function MetricActionButton({ label, onClick }) {
+function MetricActionButton({ label, onClick, editLabel }) {
   return (
     <ButtonBase
       onClick={onClick}
-      aria-label={
-        label === 'Add' ? 'Add numbers by hand' : 'Edit follower count and engagement rate'
-      }
+      aria-label={label === 'Add' ? 'Add numbers by hand' : editLabel}
       sx={{
         gap: 0.25,
         height: 24,
@@ -106,7 +120,10 @@ function MetricActionButton({ label, onClick }) {
 MetricActionButton.propTypes = {
   label: PropTypes.oneOf(['Add', 'Edit']).isRequired,
   onClick: PropTypes.func.isRequired,
+  editLabel: PropTypes.string,
 };
+
+const knownPlatformOr = (platform) => (isKnownPlatform(platform) ? platform : 'instagram');
 
 const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = false }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -257,7 +274,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
   } = resolvePitchPlatformStats({
     pitch: currentPitch,
     creatorProfileFull,
-    platform: selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram',
+    platform: knownPlatformOr(selectedPlatform),
   });
 
   // A platform creator whose fetch failed after being added. The admin types the numbers.
@@ -266,23 +283,45 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
   // The failed fetch belongs to the pitch platform, not to the header toggle.
   // Read that platform's numbers, so the warning does not come and go when the
   // admin switches to the other platform.
-  const pitchPlatform = currentPitch?.selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram';
+  const pitchPlatform = knownPlatformOr(currentPitch?.selectedPlatform);
   const pitchPlatformStats = resolvePitchPlatformStats({
     pitch: currentPitch,
     creatorProfileFull,
     platform: pitchPlatform,
   });
-  const showingPitchPlatform =
-    (selectedPlatform === 'tiktok' ? 'tiktok' : 'instagram') === pitchPlatform;
+  const showingPitchPlatform = knownPlatformOr(selectedPlatform) === pitchPlatform;
+  const shownPlatform = knownPlatformOr(selectedPlatform);
+  const pitchMetricName = metricLabel(pitchPlatform, { short: true });
 
   const followersText = followerCount == null ? DASH : formatNumber(followerCount);
-  const engagementText = engagementRate == null ? DASH : `${Number(engagementRate).toFixed(2)}%`;
+  let engagementText = DASH;
+  if (engagementRate != null) {
+    engagementText = isRecentViewsPlatform(shownPlatform)
+      ? (formatPrimaryMetric(shownPlatform, engagementRate, { compact: true }) ?? DASH)
+      : `${Number(engagementRate).toFixed(2)}%`;
+  }
   const averageLikesText = averageLikes == null ? DASH : formatNumber(averageLikes);
 
   const ageText = derivedBirthDate ? String(dayjs().diff(dayjs(derivedBirthDate), 'year')) : DASH;
   const pronounsText = derivedPronouns || DASH;
-  // Same tier as the row: saved on approval, else live on the shortlisted platform (not the header toggle).
-  const tierName = resolveRowTier(currentPitch, campaign, activeTiers)?.name || DASH;
+  // Same tier as the row: saved on approval, else live on the shortlisted platform (not the header
+  // toggle). Its platform icon says which follower count set it.
+  const rowTier = resolveRowTier(currentPitch, campaign, activeTiers);
+  const tierPlatform = rowTier ? platformMeta(rowTier.platform) : null;
+  const tierValue = rowTier ? (
+    <Tooltip title={`Tier from ${tierPlatform.label} followers`} arrow placement="top">
+      <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+        <Iconify
+          icon={tierPlatform.icon}
+          width={14}
+          sx={{ color: tierPlatform.color, flexShrink: 0 }}
+        />
+        {rowTier.name}
+      </Box>
+    </Tooltip>
+  ) : (
+    DASH
+  );
 
   const matchPercentage = Math.min(currentPitch?.matchingPercentage || 100, 100);
 
@@ -658,7 +697,9 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
                         }}
                       >
                         <Iconify
-                          icon={platform === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:instagram'}
+                          icon={
+                            platform === 'instagram' ? 'mdi:instagram' : PLATFORMS[platform].icon
+                          }
                           width={24}
                           sx={{ color: selectedPlatform === platform ? ONYX : '#C9C9C9' }}
                         />
@@ -707,7 +748,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
                     <VDivider height={40} compact={mdDown} />
                     <MetaItem compact={mdDown} label="Pronouns" value={pronounsText} />
                     <VDivider height={40} compact={mdDown} />
-                    <MetaItem compact={mdDown} label="Tier" value={tierName} />
+                    <MetaItem compact={mdDown} label="Tier" value={tierValue} />
                   </Stack>
 
                   <Stack direction="row" alignItems="center" sx={{ width: 1, height: 64 }}>
@@ -730,6 +771,9 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
                             {engagementText}
                             <MetricActionButton
                               label="Edit"
+                              editLabel={manualEditLabel(pitchPlatform, {
+                                fetchFailed: Boolean(currentPitch.metricsFailureCode),
+                              })}
                               onClick={() => setManualMetricsOpen(true)}
                             />
                           </Box>
@@ -737,24 +781,33 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
                           engagementText
                         )
                       }
-                      caption="Engagement Rate"
+                      caption={metricLabel(shownPlatform)}
                     />
-                    <VDivider height={64} compact={mdDown} />
-                    <StatTile
-                      compact={mdDown}
-                      stat="likes"
-                      value={averageLikesText}
-                      caption="Average Likes"
-                    />
+                    {/* Threads has no likes data, so the tile would always read as a dash. */}
+                    {!isRecentViewsPlatform(shownPlatform) && (
+                      <>
+                        <VDivider height={64} compact={mdDown} />
+                        <StatTile
+                          compact={mdDown}
+                          stat="likes"
+                          value={averageLikesText}
+                          caption="Average Likes"
+                        />
+                      </>
+                    )}
                   </Stack>
 
                   {canEnterMetrics && pitchPlatformStats.engagementRate == null && (
                     <WarningMessage
-                      title="Engagement rate unavailable"
-                      description={failureReasonShort(
-                        currentPitch.metricsFailureCode,
-                        currentPitch.selectedPlatform
-                      )}
+                      title={`${pitchMetricName} unavailable`}
+                      description={
+                        isRecentViewsPlatform(pitchPlatform) && !currentPitch.metricsFailureCode
+                          ? `${RECENT_VIEWS_HINT}.`
+                          : failureReasonShort(
+                              currentPitch.metricsFailureCode,
+                              currentPitch.selectedPlatform
+                            )
+                      }
                       action={{
                         label: 'Enter numbers manually',
                         onClick: () => setManualMetricsOpen(true),
@@ -1329,7 +1382,10 @@ export function ViewGuestCreatorModal({
   const [submitting, setSubmitting] = React.useState(false);
   const [showCreatorSelection, setShowCreatorSelection] = React.useState(false);
   const [breakdownOpen, setBreakdownOpen] = React.useState(false);
-  const hasBreakdown = Array.isArray(pitch?.selectedPosts) && pitch.selectedPosts.length > 0;
+  const guestPlatform = scrapePlatformOf(pitch);
+  const isViews = isRecentViewsPlatform(guestPlatform);
+  const hasBreakdown =
+    !isViews && Array.isArray(pitch?.selectedPosts) && pitch.selectedPosts.length > 0;
   // A scrape is still running. The list polls every 2s, and this pitch is the
   // live row, so the fields fill in on their own when it lands.
   const metricsPending = Boolean(pitch?.pendingExtractionId);
@@ -1371,6 +1427,12 @@ export function ViewGuestCreatorModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pitch?.pendingExtractionId, pitch?.followerCount, pitch?.engagementRate]);
 
+  const guestRateLabel = isViews ? metricLabel(guestPlatform) : 'Engagement Rate (%)';
+  const guestViewsInvalid =
+    isViews &&
+    String(formValues.engagementRate ?? '').trim() !== '' &&
+    !hasSafePrimaryMetric(guestPlatform, formValues.engagementRate);
+
   const handleFieldChange = (field) => (event) => {
     setFormValues((prev) => ({
       ...prev,
@@ -1399,6 +1461,14 @@ export function ViewGuestCreatorModal({
       enqueueSnackbar('Please fill in Creator Name and Profile Link', { variant: 'error' });
       return;
     }
+    if (
+      isViews &&
+      String(formValues.engagementRate ?? '').trim() &&
+      !hasSafePrimaryMetric(guestPlatform, formValues.engagementRate)
+    ) {
+      enqueueSnackbar(metricError(guestPlatform), { variant: 'error' });
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -1406,12 +1476,15 @@ export function ViewGuestCreatorModal({
       // Update guest creator information
       const response = await axiosInstance.patch(`/api/pitch/v3/${pitch.id}/updateGuest`, {
         name: formValues.name,
-        // While the scrape runs the metrics are its to write; send none.
+        // While the scrape runs the metrics are its to write. Threads Recent
+        // Views is never fetched, so it is sent either way.
         ...(metricsPending
-          ? {}
+          ? isViews && {
+              engagementRate: normalizePrimaryMetric(guestPlatform, formValues.engagementRate),
+            }
           : {
               followerCount: formValues.followerCount,
-              engagementRate: formValues.engagementRate,
+              engagementRate: normalizePrimaryMetric(guestPlatform, formValues.engagementRate),
             }),
         profileLink: formValues.profileLink,
         adminComments: formValues.adminComments,
@@ -1610,7 +1683,7 @@ export function ViewGuestCreatorModal({
               !formValues.engagementRate && (
                 <Box sx={{ mb: 2 }}>
                   <WarningMessage
-                    title="Engagement rate unavailable"
+                    title={`${metricLabel(guestPlatform, { short: true })} unavailable`}
                     description={`${failureReasonShort(
                       pitch.metricsFailureCode,
                       pitch.selectedPlatform
@@ -1689,7 +1762,7 @@ export function ViewGuestCreatorModal({
                         '&:focus-visible': { outline: '2px solid #1340FF', outlineOffset: 2 },
                       }}
                     >
-                      <span className="er-label">Engagement Rate (%)</span>
+                      <span className="er-label">{guestRateLabel}</span>
                       {/* The glyph fills ~83% of its box, so 16px reads as the 14px text's height. */}
                       <Iconify className="er-icon" icon="eva:info-outline" width={16} />
                     </ButtonBase>
@@ -1705,10 +1778,10 @@ export function ViewGuestCreatorModal({
                       fontWeight: 600,
                     }}
                   >
-                    Engagement Rate (%)
+                    {guestRateLabel}
                   </Typography>
                 )}
-                {isAdmin && metricsPending ? (
+                {isAdmin && metricsPending && !isViews ? (
                   <CreatorFieldLoading
                     label="Fetching engagement rate"
                     showSpinner
@@ -1718,21 +1791,41 @@ export function ViewGuestCreatorModal({
                 ) : isAdmin ? (
                   <TextField
                     fullWidth
-                    placeholder="Engagement Rate"
-                    value={formValues.engagementRate}
-                    onChange={handleFieldChange('engagementRate')}
+                    placeholder={metricLabel(guestPlatform)}
+                    value={formatPrimaryMetricInput(guestPlatform, formValues.engagementRate)}
+                    onChange={
+                      isViews
+                        ? (event) =>
+                            setFormValues((prev) => ({
+                              ...prev,
+                              engagementRate: sanitizePrimaryMetricInput(
+                                guestPlatform,
+                                event.target.value
+                              ),
+                            }))
+                        : handleFieldChange('engagementRate')
+                    }
                     disabled={submitting}
+                    {...(isViews && {
+                      error: guestViewsInvalid,
+                      helperText: guestViewsInvalid
+                        ? metricError(guestPlatform)
+                        : RECENT_VIEWS_HINT,
+                    })}
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         bgcolor: '#fff',
                         minHeight: 48,
                         borderRadius: 1,
                       },
+                      '& .MuiFormHelperText-root': { ml: 0 },
                     }}
                   />
                 ) : (
                   <Typography variant="body2" sx={{ color: 'text.primary' }}>
-                    {formValues.engagementRate || '—'}
+                    {(isViews
+                      ? formatPrimaryMetric(guestPlatform, formValues.engagementRate)
+                      : formValues.engagementRate) || '—'}
                   </Typography>
                 )}
               </Box>
@@ -2086,6 +2179,7 @@ export function ViewGuestCreatorModal({
           formValues.profileLink,
           pitch?.user?.creator?.instagramProfileLink,
           pitch?.user?.creator?.tiktokProfileLink,
+          pitch?.user?.creator?.threadsProfileLink,
         ]}
       />
     </>

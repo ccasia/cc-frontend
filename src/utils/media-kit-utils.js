@@ -83,6 +83,11 @@ export const extractUsernameFromProfileLink = (link) => {
       const handle = sanitizeHandle(candidate);
       if (handle) return handle;
     }
+
+    if (/^threads\.(com|net)$/.test(hostname)) {
+      const handle = sanitizeHandle(pathSegments.find((segment) => segment.startsWith('@')));
+      if (handle) return handle;
+    }
   }
 
   const instagramMatch = normalizedLink.match(/instagram\.com\/(?:@)?([^/?#]+)/i);
@@ -97,13 +102,19 @@ export const extractUsernameFromProfileLink = (link) => {
     if (handle) return handle;
   }
 
+  const threadsMatch = normalizedLink.match(/threads\.(?:com|net)\/@([^/?#]+)/i);
+  if (threadsMatch?.[1]) {
+    const handle = sanitizeHandle(threadsMatch[1]);
+    if (handle) return handle;
+  }
+
   return null;
 };
 
 /**
  * Creates a social media profile URL from a username.
  * @param {string} username - The social media username (with or without @)
- * @param {'instagram' | 'tiktok'} platform - The social media platform
+ * @param {'instagram' | 'tiktok' | 'threads'} platform - The social media platform
  * @returns {string | null} The full profile URL or null if invalid
  */
 export const createSocialProfileUrl = (username, platform) => {
@@ -118,6 +129,8 @@ export const createSocialProfileUrl = (username, platform) => {
       return `https://www.instagram.com/${cleanUsername}/`;
     case 'tiktok':
       return `https://www.tiktok.com/@${cleanUsername}`;
+    case 'threads':
+      return `https://www.threads.com/@${cleanUsername}`;
     default:
       return null;
   }
