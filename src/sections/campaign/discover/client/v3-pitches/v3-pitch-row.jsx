@@ -527,11 +527,7 @@ const PitchRow = ({
   const engagementRateFull = isViews
     ? formatPrimaryMetric(displayData.platform, displayData.engagementRate)
     : null;
-  // Threads followers come from the profile fetch, so only a failed fetch lets the admin type them.
-  const followersLocked = isViews && !pitch.metricsFailureCode;
-  const manualEditText = manualEditLabel(displayData.platform, {
-    fetchFailed: Boolean(pitch.metricsFailureCode),
-  });
+  const manualEditText = manualEditLabel(displayData.platform);
   // Recent Views is always typed. A guest's is typed in its own modal.
   const canAddRecentViews =
     isViews &&
@@ -895,7 +891,7 @@ const PitchRow = ({
                         />
                       </Stack>
                     </Tooltip>
-                    {metricsEditable && engagementRateText && !followersLocked && (
+                    {metricsEditable && engagementRateText && (
                       <ManualEditButton onClick={openManualMetrics} label={manualEditText} />
                     )}
                   </Stack>

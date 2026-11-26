@@ -771,9 +771,7 @@ const V3PitchModal = ({ open, onClose, pitch, campaign, onUpdate, isDisabled = f
                             {engagementText}
                             <MetricActionButton
                               label="Edit"
-                              editLabel={manualEditLabel(pitchPlatform, {
-                                fetchFailed: Boolean(currentPitch.metricsFailureCode),
-                              })}
+                              editLabel={manualEditLabel(pitchPlatform)}
                               onClick={() => setManualMetricsOpen(true)}
                             />
                           </Box>

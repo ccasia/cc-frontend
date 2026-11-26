@@ -4,7 +4,7 @@
  * Mirrors the backend rule in `updatePlatformCreatorMetrics`: the pitch
  * carries a `metricsFailureCode`, no fetch is still running, the creator is
  * not a guest, and no account is connected on the pitch platform. A Threads
- * pitch needs no failure: Recent Views is never fetched, so it is always typed.
+ * pitch needs no failure: Threads is never fetched, so its numbers are always typed.
  */
 
 const isGuestPitch = (pitch) => {

@@ -87,14 +87,9 @@ export default function ManualMetricsDialog({ open, onClose, pitch, initialValue
   const rateLabel = metricLabel(platform);
   const details = failureDetails(pitch?.metricsFailureCode, platform);
   const showWarning = !isViews || Boolean(pitch?.metricsFailureCode);
-  // A Threads fetch that worked owns the follower count. Only Recent Views is typed.
-  const followersLocked = isViews && !pitch?.metricsFailureCode;
-  const followersInvalid =
-    !followersLocked && followerCount !== '' && !hasSafeFollowerCount(followerCount);
+  const followersInvalid = followerCount !== '' && !hasSafeFollowerCount(followerCount);
   const rateInvalid = engagementRate !== '' && !hasSafePrimaryMetric(platform, engagementRate);
-  const hasInput = followersLocked
-    ? engagementRate !== ''
-    : followerCount !== '' || engagementRate !== '';
+  const hasInput = followerCount !== '' || engagementRate !== '';
   const canSave = hasInput && !followersInvalid && !rateInvalid;
 
   const handleSave = async () => {
@@ -102,7 +97,7 @@ export default function ManualMetricsDialog({ open, onClose, pitch, initialValue
     try {
       setSaving(true);
       const { data } = await axiosInstance.patch(endpoints.campaign.pitch.v3.metrics(pitch.id), {
-        ...(!followersLocked && { followerCount }),
+        followerCount,
         engagementRate: normalizePrimaryMetric(platform, engagementRate),
       });
       enqueueSnackbar(data?.message || 'Creator numbers updated.', { variant: 'success' });
@@ -167,7 +162,7 @@ export default function ManualMetricsDialog({ open, onClose, pitch, initialValue
 
         <Typography sx={{ mt: 1.5, fontSize: 12, lineHeight: '16px', color: CC.grey50 }}>
           {isViews
-            ? 'Copy recent views from the Threads app.'
+            ? 'Copy the follower count and recent views from the Threads app.'
             : "Use numbers from the creator's media kit or an Insights screenshot."}
         </Typography>
 
@@ -187,12 +182,8 @@ export default function ManualMetricsDialog({ open, onClose, pitch, initialValue
               value={withThousandsSeparators(followerCount)}
               onChange={(event) => setFollowerCount(event.target.value.replace(/[^0-9]/g, ''))}
               error={followersInvalid}
-              helperText={
-                (followersInvalid && 'Enter a whole number from 1 to 2,000,000,000.') ||
-                (followersLocked && 'Fetched from the Threads profile.') ||
-                undefined
-              }
-              disabled={saving || followersLocked}
+              helperText={followersInvalid ? 'Enter a whole number from 1 to 2,000,000,000.' : undefined}
+              disabled={saving}
               sx={inputSx}
             />
           </Box>

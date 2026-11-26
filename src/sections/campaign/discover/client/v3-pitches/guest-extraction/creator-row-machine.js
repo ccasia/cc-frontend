@@ -9,6 +9,7 @@
  */
 
 import {
+  isScrapedPlatform,
   hasSafePrimaryMetric,
   hasSafeEngagementRate,
   isRecentViewsPlatform,
@@ -309,11 +310,13 @@ export function canSubmitRow(row, { duplicateIds = [] } = {}) {
   if (hasInvalidRecentViews(row)) return false;
 
   if (row.entryMode === ENTRY_MODE.MANUAL) {
+    // Threads Recent Views may stay blank. hasInvalidRecentViews already rejected a bad one.
+    const platform = rowPlatformOf(row);
     return (
       Boolean(row.canonicalProfileKey) &&
       hasText(row.name) &&
       hasSafeFollowerCount(row.followerCount) &&
-      hasSafePrimaryMetric(rowPlatformOf(row), row.engagementRate)
+      (isRecentViewsPlatform(platform) || hasSafePrimaryMetric(platform, row.engagementRate))
     );
   }
 
@@ -341,10 +344,11 @@ export function submittableRows(state) {
   return state.rows.filter((row) => canSubmitRow(row, { duplicateIds }));
 }
 
-/** True when the row may start paid work. */
+/** True when the row may start paid work. Threads is never scraped. */
 export function canFetchRow(row, { duplicateIds = [] } = {}) {
   if (isRowActive(row)) return false;
   if (row.linkError || !row.canonicalProfileKey) return false;
+  if (!isScrapedPlatform(row.platform)) return false;
   if (
     row.creator &&
     (row.sourceMode === 'connected' ||
@@ -427,6 +431,8 @@ export function creatorRowReducer(state, action) {
               canonicalProfileUrl: action.canonicalProfileUrl,
               canonicalProfileKey: action.canonicalProfileKey,
               platform: action.platform,
+              // Threads is never scraped, so its row opens for typing right away.
+              entryMode: isScrapedPlatform(action.platform) ? row.entryMode : ENTRY_MODE.MANUAL,
               linkError: null,
             }
           : {

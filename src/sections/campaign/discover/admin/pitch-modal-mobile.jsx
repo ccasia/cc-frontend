@@ -716,9 +716,7 @@ const PitchModalMobile = ({
                       '&:hover': { bgcolor: 'rgba(19, 64, 255, 0.08)' },
                     }}
                   >
-                    {manualEditLabel(pitchPlatform, {
-                      fetchFailed: Boolean(currentPitch.metricsFailureCode),
-                    })}
+                    {manualEditLabel(pitchPlatform)}
                   </Button>
                 ))}
             </Stack>
