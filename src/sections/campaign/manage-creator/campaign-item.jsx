@@ -7,7 +7,6 @@ import {
   Box,
   Card,
   Chip,
-  Avatar,
   Typography,
   useMediaQuery,
   CircularProgress,
@@ -19,6 +18,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import CampaignModal from './campaign-modal';
 
@@ -90,7 +90,7 @@ export default function CampaignItem({ campaign, user, autoOpen = false }) {
 
   const renderCampaignInfo = (
     <Box sx={{ position: 'relative', pt: 2, px: 3, pb: 2.5 }}>
-      <Avatar
+      <BrandLogoAvatar
         src={campaign?.brand?.logo || campaign?.company?.logo}
         alt={campaign?.brand?.name || campaign?.company?.name}
         sx={{

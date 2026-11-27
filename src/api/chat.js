@@ -153,6 +153,7 @@ export const useTotalUnreadCount = () => {
     revalidateOnReconnect: true,
     revalidateOnMount: true,
     revalidateOnFocus: true,
+    focusThrottleInterval: 30000,
     revalidateIfStale: true,
   });
 

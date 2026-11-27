@@ -11,6 +11,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import CampaignInfoMobile from './campaign-info-mobile';
 
@@ -229,7 +230,7 @@ const CampaignInfo = ({ campaign }) => {
 
               <Box>
                 <Typography sx={SectionTitleStyle}>Campaign Info</Typography>
-                <Typography sx={SectionBodyStyle}>
+                <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
                   {campaign?.description || 'No campaign description available.'}
                 </Typography>
               </Box>
@@ -1129,7 +1130,7 @@ const CampaignInfo = ({ campaign }) => {
                   Client
                 </Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Avatar
+                  <BrandLogoAvatar
                     src={campaign?.company?.logo ?? campaign?.brand?.logo}
                     alt={campaign?.company?.name ?? campaign?.brand?.name}
                     sx={{

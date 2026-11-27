@@ -3,8 +3,11 @@ import PropTypes from 'prop-types';
 import { useMemo, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import Dialog from '@mui/material/Dialog';
+import Skeleton from '@mui/material/Skeleton';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
@@ -46,7 +49,27 @@ const TABS = [
 
 // ---------------------------------------------------------------------------
 
-export const CampaignLog = ({ open, campaign, onClose }) => {
+export const CampaignLog = ({ open, campaign: campaignProp, onClose }) => {
+  // Keep the fetched logs after the first open so the dialog does not empty out while it closes.
+  const [hasOpened, setHasOpened] = useState(open);
+  if (open && !hasOpened) setHasOpened(true);
+
+  const needsLogContext = hasOpened && !!campaignProp?.id && !campaignProp?.campaignLogs;
+  const {
+    data: logContext,
+    error: logContextError,
+    isLoading: logContextLoading,
+    mutate: retryLogContext,
+  } = useSWR(
+    needsLogContext ? `/api/campaign/${campaignProp.id}/logContext` : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+  const campaign = useMemo(
+    () => (logContext ? { ...campaignProp, ...logContext } : campaignProp),
+    [campaignProp, logContext]
+  );
+
   const [currentTab, setCurrentTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [creatorFilter, setCreatorFilter] = useState('');
@@ -483,14 +506,38 @@ export const CampaignLog = ({ open, campaign, onClose }) => {
       <DialogContent sx={{ p: 0, height: '70vh', display: 'flex' }}>
         {/* Left panel — 70% */}
         <Box sx={{ width: '70%', height: '100%', borderRight: '1px solid #E7E7E7' }}>
-          {filteredLogs.length > 0 ? (
+          {logContextLoading && (
+            <Box sx={{ p: 3 }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  variant="rounded"
+                  animation="wave"
+                  height={56}
+                  sx={{ mb: 1.5, borderRadius: 1.5 }}
+                />
+              ))}
+            </Box>
+          )}
+          {!logContextLoading && logContextError && (
+            <Stack alignItems="center" justifyContent="center" spacing={1.5} sx={{ height: '100%' }}>
+              <Typography variant="body2" sx={{ color: '#636366' }}>
+                Could not load the campaign log.
+              </Typography>
+              <Button size="small" variant="outlined" color="inherit" onClick={() => retryLogContext()}>
+                Try again
+              </Button>
+            </Stack>
+          )}
+          {!logContextLoading && !logContextError && filteredLogs.length > 0 && (
             <CampaignLogTimeline
               logs={filteredLogs}
               photoMap={photoMap}
               selectedLogId={selectedLogId}
               onSelectLog={setSelectedLogId}
             />
-          ) : (
+          )}
+          {!logContextLoading && !logContextError && filteredLogs.length === 0 && (
             <CampaignLogEmptyState tab={currentTab} query={searchQuery || creatorFilter || actionFilter} />
           )}
         </Box>

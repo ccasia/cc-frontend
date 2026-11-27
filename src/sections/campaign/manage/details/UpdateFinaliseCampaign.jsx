@@ -2,8 +2,8 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'notistack';
 import { useForm } from 'react-hook-form';
-import { useMemo, useState, useEffect } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useRef, useMemo, useState, useEffect } from 'react';
 
 import {
   Box,
@@ -13,8 +13,6 @@ import {
   Dialog,
   Button,
   Switch,
-  MenuItem,
-  FormLabel,
   Typography,
   DialogContent,
 } from '@mui/material';
@@ -31,56 +29,134 @@ import {
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import Iconify from 'src/components/iconify';
 import FormProvider from 'src/components/hook-form/form-provider';
-import {
-  RHFSwitch,
-  RHFSelectV2,
-  RHFMultiSelect,
-  RHFAutocomplete,
-} from 'src/components/hook-form';
+import { RHFSwitch, RHFAutocomplete } from 'src/components/hook-form';
 
+import FormField from './components/form-field';
 import { useGetAdmins } from '../../create/hooks/get-am';
 import NdaAgreementField from '../../create/nda-agreement-field';
+import useChipMotion from '../../create/components/use-chip-motion';
+import { BLUE, SettingNote } from '../../create/components/option-card';
+import { FIELD_HEIGHT, helperTextSx } from '../../create/components/field-styles';
+import ChipSelect, { tagSx, CloseGlyph, menuPaperSx } from '../../create/components/chip-select';
 
-// Campaign type options (matching activate-campaign-dialog.jsx)
-const campaignTypeOptions = [
-  { value: 'normal', label: 'UGC (With Posting)' },
-  { value: 'ugc', label: 'UGC (No Posting)' },
-  { value: 'seedingCampaign', label: 'Seeding Campaign' },
-];
+const sectionBreakSx = {
+  height: '1px',
+  flexShrink: 0,
+  bgcolor: '#E0E0E0',
+  my: '-8px',
+};
 
-// Deliverable options (matching activate-campaign-dialog.jsx)
-const deliverableOptions = [
-  { value: 'UGC_VIDEOS', label: 'UGC Videos' },
-  { value: 'PHOTOS', label: 'Photos' },
-  { value: 'RAW_FOOTAGES', label: 'Raw Footage' },
-];
+// Campaign types and deliverables (matching activate-campaign-dialog.jsx)
+const CAMPAIGN_TYPES = {
+  normal: 'UGC (With Posting)',
+  ugc: 'UGC (No Posting)',
+  seedingCampaign: 'Seeding Campaign',
+};
+const CAMPAIGN_TYPE_OPTIONS = Object.keys(CAMPAIGN_TYPES);
+const campaignTypeTitle = (value) => CAMPAIGN_TYPES[value] ?? value;
 
-// Form field component with consistent styling
-const FormField = ({ label, children, required = true }) => (
-  <Stack spacing={0.5}>
-    <FormLabel
-      required={required}
-      sx={{
-        fontWeight: 700,
-        color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-        fontSize: '0.875rem',
-        mb: 0.5,
-        '& .MuiFormLabel-asterisk': {
-          color: '#FF3500',
-        },
-      }}
-    >
-      {label}
-    </FormLabel>
-    {children}
-  </Stack>
+const DELIVERABLES = {
+  UGC_VIDEOS: 'UGC Videos',
+  PHOTOS: 'Photos',
+  RAW_FOOTAGES: 'Raw Footage',
+};
+const DELIVERABLE_OPTIONS = Object.keys(DELIVERABLES);
+const deliverableTitle = (value) =>
+  DELIVERABLES[value] ?? { ADS: 'Ads', CROSS_POSTING: 'Cross Posting' }[value] ?? value;
+
+const optionLeadSx = {
+  width: 24,
+  height: 24,
+  mr: 1.25,
+  flexShrink: 0,
+  borderRadius: '50%',
+  fontSize: 12,
+  fontWeight: 600,
+  bgcolor: '#EBEBEB',
+  color: '#636366',
+};
+
+const optionNameSx = {
+  flex: 1,
+  minWidth: 0,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+};
+
+const chipAvatarSx = {
+  width: '20px !important',
+  height: '20px !important',
+  ml: '5px !important',
+  fontSize: '11px !important',
+  '&.MuiAvatar-colorDefault': { bgcolor: '#EBEBEB', color: '#636366 !important' },
+};
+
+const clientBadgeSx = {
+  flexShrink: 0,
+  px: 0.75,
+  borderRadius: '4px',
+  bgcolor: '#EEF2FF',
+  color: BLUE,
+  fontSize: 11,
+  fontWeight: 600,
+  lineHeight: '18px',
+};
+
+const managerLabelSx = {
+  '& .MuiChip-label': { display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 },
+};
+
+const managersPaperSx = {
+  ...menuPaperSx,
+  '& .MuiAutocomplete-groupLabel': {
+    px: 1,
+    lineHeight: '28px',
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#8E8E93',
+    bgcolor: '#FFFFFF',
+  },
+  '& .MuiAutocomplete-groupUl .MuiAutocomplete-option': { pl: 1 },
+  '& .MuiAutocomplete-listbox > li + li': { mt: 0.5 },
+};
+
+// The create step's ToggleRow look, with room for a locked switch
+const SettingRow = ({ title, description, control, disabled = false, children }) => (
+  <Box>
+    <Stack direction="row" alignItems="center" spacing={1.5}>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography
+          sx={{
+            fontWeight: 700,
+            fontSize: '0.875rem',
+            lineHeight: '22px',
+            color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
+            ...(disabled && { opacity: 0.6 }),
+          }}
+        >
+          {title}
+        </Typography>
+        {description && (
+          <Typography sx={{ fontSize: 13, lineHeight: '18px', color: '#8E8E93' }}>
+            {description}
+          </Typography>
+        )}
+      </Box>
+      <Box sx={{ my: -0.75, mr: -1, flexShrink: 0 }}>{control}</Box>
+    </Stack>
+    {children && <Box sx={{ pt: 1 }}>{children}</Box>}
+  </Box>
 );
 
-FormField.propTypes = {
-  label: PropTypes.string.isRequired,
-  children: PropTypes.node.isRequired,
-  required: PropTypes.bool,
+SettingRow.propTypes = {
+  title: PropTypes.string.isRequired,
+  description: PropTypes.node,
+  control: PropTypes.node.isRequired,
+  disabled: PropTypes.bool,
+  children: PropTypes.node,
 };
 
 // Validation schema
@@ -180,6 +256,9 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
   const isV4Submission = watch('isV4Submission');
   const currentManagers = watch('campaignManager');
 
+  const managersRef = useRef(null);
+  const withManagerGhosts = useChipMotion(managersRef, currentManagers || [], (m) => m?.id ?? m);
+
   // Client users of this campaign's company first on a client campaign, then CSM/CSL staff —
   // each group A–Z
   const managerOptions = useMemo(() => {
@@ -195,6 +274,13 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
     isV4Submission && !clientsLoading && !campaignClients.length
       ? 'This client has no user accounts yet. Invite a client user before enabling client campaign.'
       : undefined;
+
+  let clientCampaignDescription = 'Legacy campaign — client involvement cannot be changed here.';
+  if (campaign?.submissionVersion === 'v4') {
+    clientCampaignDescription = isV4Submission
+      ? 'Client users are attached as campaign managers and review approvals. Disabling removes them.'
+      : "Enabling this attaches the campaign's client users as managers — approvals will route through them.";
+  }
 
   // Handle v4 toggle change with warning dialog
   const handleV4ToggleChange = (event) => {
@@ -267,171 +353,197 @@ const UpdateFinaliseCampaign = ({ campaign, campaignMutate, formId, onFormStateC
 
   return (
     <FormProvider id={formId} methods={methods} onSubmit={onSubmit}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 3,
-          maxWidth: 800,
-        }}
-      >
-        {/* Submission Version Toggle */}
-        <Stack>
-          <Stack direction="row" alignItems="center" mb={-0.8}>
-            <Typography
-              sx={{
-                fontWeight: 700,
-                color: '#231F20',
-                opacity: 0.6,
-                fontSize: '0.875rem',
-                mr: -0.5,
-              }}
-            >
-              Enable this as a Client Campaign?
-            </Typography>
-            <Switch
-              checked={isV4Submission || false}
-              onChange={handleV4ToggleChange}
-              color="primary"
-              disabled={campaign?.submissionVersion !== 'v4'}
-            />
-          </Stack>
-          <Typography variant="caption" fontWeight={400} color="text.secondary">
-            {campaign?.submissionVersion !== 'v4' &&
-              'Legacy campaign — client involvement cannot be changed here.'}
+      <Stack spacing={3} sx={{ maxWidth: 800, ...helperTextSx }}>
+        <Stack spacing={2}>
+          <SettingRow
+            title="Client campaign"
+            disabled={campaign?.submissionVersion !== 'v4'}
+            description={clientCampaignDescription}
+            control={
+              <Switch
+                checked={isV4Submission || false}
+                onChange={handleV4ToggleChange}
+                color="primary"
+                disabled={campaign?.submissionVersion !== 'v4'}
+              />
+            }
+          >
             {campaign?.submissionVersion === 'v4' &&
-              (isV4Submission
-                ? 'Client users are attached as campaign managers and review approvals. Disabling removes them.'
-                : "Enabling this attaches the campaign's client users as managers — approvals will route through them.")}
-          </Typography>
-          {campaign?.submissionVersion === 'v4' && !isV4Submission && campaignClients.length > 0 && (
-            <Typography variant="caption" fontWeight={400} sx={{ color: 'warning.dark', mt: 0.5 }}>
-              {companyName} has {campaignClients.length} client account
-              {campaignClients.length === 1 ? '' : 's'}. With this off, creators you shortlist are
-              approved without client review.
-            </Typography>
-          )}
+              !isV4Submission &&
+              campaignClients.length > 0 && (
+                <SettingNote
+                  title={`${companyName} has ${campaignClients.length} client account${
+                    campaignClients.length === 1 ? '' : 's'
+                  }.`}
+                >
+                  With this off, creators you shortlist are approved without client review.
+                </SettingNote>
+              )}
+          </SettingRow>
+
+          <SettingRow
+            title="Credit tier pricing"
+            disabled={!!campaign?.isCreditTier}
+            description={
+              campaign?.isCreditTier
+                ? 'Credit tier pricing is enabled for this campaign and cannot be disabled.'
+                : 'When enabled, creator costs are based on their follower count tier instead of flat 1 credit per video.'
+            }
+            control={
+              <RHFSwitch
+                name="isCreditTier"
+                label=""
+                color="primary"
+                disabled={!!campaign?.isCreditTier}
+                sx={{
+                  m: 0,
+                  ...(campaign?.isCreditTier && {
+                    cursor: 'not-allowed',
+                    '& .MuiSwitch-switchBase.Mui-disabled': {
+                      cursor: 'not-allowed',
+                      pointerEvents: 'auto',
+                    },
+                    '& .MuiSwitch-track': {
+                      cursor: 'not-allowed',
+                    },
+                  }),
+                }}
+              />
+            }
+          />
         </Stack>
 
-        {/* Credit Tier Toggle */}
-        <Stack>
-          <Stack direction="row" alignItems="center" mb={-0.8}>
-            <Typography
-              sx={{
-                fontWeight: 700,
-                color: campaign?.isCreditTier
-                  ? '#231F20'
-                  : (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                opacity: campaign?.isCreditTier ? 0.6 : 1,
-                fontSize: '0.875rem',
-                mr: 1,
-              }}
-            >
-              Enable Credit Tier pricing?
-            </Typography>
-            <RHFSwitch
-              name="isCreditTier"
-              color="primary"
-              disabled={!!campaign?.isCreditTier}
-              sx={
-                campaign?.isCreditTier
-                  ? {
-                      cursor: 'not-allowed',
-                      '& .MuiSwitch-switchBase.Mui-disabled': {
-                        cursor: 'not-allowed',
-                        pointerEvents: 'auto',
-                      },
-                      '& .MuiSwitch-track': {
-                        cursor: 'not-allowed',
-                      },
-                    }
+        <Box aria-hidden sx={sectionBreakSx} />
+
+        <FormField
+          required
+          label="Campaign Managers"
+          hint="Who runs this campaign. Include at least one CSM or CSL."
+        >
+          <Box ref={managersRef}>
+            <RHFAutocomplete
+              name="campaignManager"
+              multiple
+              placeholder={currentManagers?.length ? '' : 'Add managers'}
+              options={managerOptions}
+              freeSolo
+              disableCloseOnSelect
+              helperText={managerHelperText}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              getOptionLabel={(option) =>
+                isClientManager(option) ? `${option.name || ''} (Client)` : option.name || ''
+              }
+              groupBy={
+                isV4Submission
+                  ? (option) => (isClientManager(option) ? 'Client users' : 'Cult Creative team')
                   : undefined
               }
-            />
-          </Stack>
-          <Typography variant="caption" fontWeight={400} color="text.secondary">
-            {campaign?.isCreditTier
-              ? 'Credit tier pricing is enabled for this campaign and cannot be disabled.'
-              : 'When enabled, creator costs are based on their follower count tier instead of flat 1 credit per video.'}
-          </Typography>
-        </Stack>
-
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          {/* Left column */}
-          <Stack flex={1} spacing={2}>
-            <FormField label="Campaign Managers">
-              <RHFAutocomplete
-                name="campaignManager"
-                multiple
-                placeholder="Campaign Manager"
-                options={managerOptions}
-                freeSolo
-                helperText={managerHelperText}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
-                getOptionLabel={(option) =>
-                  isClientManager(option) ? `${option.name || ''} (Client)` : option.name || ''
-                }
-                renderTags={(selected, getTagProps) =>
+              slotProps={{
+                paper: { sx: managersPaperSx },
+                popper: { placement: 'bottom-start', sx: { minWidth: 300 } },
+              }}
+              renderOption={({ key, ...props }, option, { selected }) => (
+                <li key={option?.id ?? key} {...props}>
+                  <Avatar src={option?.photoURL} alt={option?.name} sx={optionLeadSx}>
+                    {option?.name?.charAt(0)}
+                  </Avatar>
+                  <Box component="span" sx={optionNameSx}>
+                    {option?.name}
+                    {option?.id === user?.id && (
+                      <Box component="span" sx={{ color: '#8E8E93', fontWeight: 400 }}>
+                        {' '}
+                        (you)
+                      </Box>
+                    )}
+                  </Box>
+                  {selected && (
+                    <Iconify
+                      icon="eva:checkmark-fill"
+                      width={16}
+                      sx={{ ml: 1, color: BLUE, flexShrink: 0 }}
+                    />
+                  )}
+                </li>
+              )}
+              renderTags={(selected, getTagProps) => {
+                const renderChip = (option, key, chipProps) => (
+                  <Chip
+                    key={key}
+                    {...chipProps}
+                    avatar={
+                      <Avatar src={option?.photoURL} alt={option?.name} sx={chipAvatarSx}>
+                        {option?.name?.charAt(0)}
+                      </Avatar>
+                    }
+                    label={
+                      <>
+                        <Box component="span" sx={optionNameSx}>
+                          {option?.name}
+                          {option?.id === user?.id && (
+                            <Box component="span" sx={{ color: '#8E8E93' }}>
+                              {' '}
+                              (you)
+                            </Box>
+                          )}
+                        </Box>
+                        {isClientManager(option) && (
+                          <Box component="span" sx={clientBadgeSx}>
+                            Client
+                          </Box>
+                        )}
+                      </>
+                    }
+                    deleteIcon={<CloseGlyph aria-label={`Remove ${option?.name}`} />}
+                    sx={{ ...tagSx, ...managerLabelSx, borderRadius: '8px', maxWidth: 1 }}
+                  />
+                );
+                return withManagerGhosts(
                   selected.map((option, index) => {
-                    const isClient = isClientManager(option);
-                    return (
-                      <Chip
-                        {...getTagProps({ index })}
-                        avatar={<Avatar src={option?.photoURL}>{option?.name?.slice(0, 1)}</Avatar>}
-                        key={option?.id}
-                        label={
-                          option?.id === user?.id
-                            ? 'Me'
-                            : `${option?.name}${isClient ? ' (Client)' : ''}`
-                        }
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          border: 1,
-                          borderColor: isClient ? '#1340FF' : '#EBEBEB',
-                          boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                          py: 2,
-                          px: 1,
-                          ...(isClient && {
-                            bgcolor: 'rgba(19, 64, 255, 0.08)',
-                          }),
-                        }}
-                      />
-                    );
-                  })
-                }
-              />
-            </FormField>
-          </Stack>
-
-          {/* Right column */}
-          <Stack flex={1} spacing={1}>
-            <FormField label="Campaign Type">
-              <RHFSelectV2 name="campaignType" placeholder="Select campaign type">
-                {campaignTypeOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </RHFSelectV2>
-            </FormField>
-          </Stack>
-        </Stack>
-
-        <Stack>
-          <FormField label="Additional Deliverables">
-            <RHFMultiSelect
-              name="deliverables"
-              placeholder="Select deliverable(s)"
-              chip
-              checkbox
-              options={deliverableOptions}
+                    const { key, ...tagProps } = getTagProps({ index });
+                    return renderChip(option, option?.id ?? key, {
+                      ...tagProps,
+                      'data-chip': option?.id ?? option,
+                    });
+                  }),
+                  (option) =>
+                    renderChip(option, `ghost-${option?.id ?? option}`, {
+                      'aria-hidden': true,
+                      tabIndex: -1,
+                      'data-chip-ghost': true,
+                      onDelete: () => {},
+                      style: { pointerEvents: 'none' },
+                    })
+                );
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': { minHeight: FIELD_HEIGHT, py: '6px', gap: 0.75 },
+                '& .MuiAutocomplete-tag': { m: 0 },
+              }}
             />
-          </FormField>
-        </Stack>
+          </Box>
+        </FormField>
 
-        <NdaAgreementField isForSurfShark={!!campaign?.isForSurfShark} />
-      </Box>
+        <FormField required label="Campaign Type">
+          <ChipSelect
+            single
+            name="campaignType"
+            options={CAMPAIGN_TYPE_OPTIONS}
+            getTitle={campaignTypeTitle}
+            placeholder="Select campaign type"
+          />
+        </FormField>
+
+        <FormField required label="Additional Deliverables">
+          <ChipSelect
+            name="deliverables"
+            options={DELIVERABLE_OPTIONS}
+            getTitle={deliverableTitle}
+            placeholder="Select deliverables"
+          />
+        </FormField>
+
+        <NdaAgreementField row isForSurfShark={!!campaign?.isForSurfShark} />
+      </Stack>
 
       {/* V4 Submission Warning Dialog */}
       <Dialog

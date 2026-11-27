@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import Card from '@mui/material/Card';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
@@ -15,6 +14,7 @@ import { fDate } from 'src/utils/format-time';
 import { formatText } from 'src/utils/format-test';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 // import Markdown from 'src/components/markdown';
 
 // ----------------------------------------------------------------------
@@ -127,7 +127,7 @@ export default function ClientDetailsContent({ company }) {
       direction="row"
       sx={{ p: 3, borderRadius: 2, mt: 3 }}
     >
-      <Avatar alt={name} src={logo} variant="rounded" sx={{ width: 64, height: 64 }} />
+      <BrandLogoAvatar alt={name} src={logo} variant="rounded" sx={{ width: 64, height: 64 }} />
 
       <Stack spacing={1}>
         <Typography variant="subtitle1">{name}</Typography>

@@ -18,13 +18,13 @@ import {
   endOfMonth,
   startOfDay,
   addMinutes,
+  isSameMonth,
   startOfWeek,
   startOfMonth,
   isWithinInterval,
   eachDayOfInterval,
 } from 'date-fns';
 
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DesktopTimePicker } from '@mui/x-date-pickers/DesktopTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -32,55 +32,321 @@ import {
   Box,
   Grid,
   Stack,
-  Radio,
   Switch,
   Button,
   Divider,
+  Collapse,
   Checkbox,
   MenuItem,
   FormLabel,
+  TextField,
   Typography,
+  ButtonBase,
   IconButton,
+  createTheme,
+  ThemeProvider,
+  useMediaQuery,
+  FormHelperText,
   FormControlLabel,
 } from '@mui/material';
 
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Iconify from 'src/components/iconify';
+import { RHFTextField } from 'src/components/hook-form';
 import FormProvider from 'src/components/hook-form/form-provider';
-import { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import {
+  PRIMARY_ACTION_SX,
+  SECONDARY_ACTION_SX,
+} from 'src/components/campaign/action-button-styles';
 
+import { EASE_OUT } from 'src/sections/campaign/create/components/motion';
+import SectionIn from 'src/sections/campaign/create/components/section-in';
+import ChipSelect from 'src/sections/campaign/create/components/chip-select';
 import LogisticRemarks from 'src/sections/campaign/create/stepsV2/logistic-remarks';
+import {
+  FIELD_HEIGHT,
+  singleLineSx,
+  helperTextSx,
+} from 'src/sections/campaign/create/components/field-styles';
+import {
+  BLUE,
+  cardSx,
+  titleSx,
+  ToggleCard,
+  cardIconSx,
+  descriptionSx,
+} from 'src/sections/campaign/create/components/option-card';
 
-// Form field component with consistent styling
-const FormField = ({ label, children, required = true }) => (
-	<Stack spacing={0.5}>
-		<FormLabel
-			required={required}
-			sx={{
-				fontWeight: 700,
-				color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-				fontSize: '0.875rem', // Smaller font size for labels
-				mb: 0.5,
-				'& .MuiFormLabel-asterisk': {
-					display: required ? 'inline-block' : 'none',
-					color: '#FF3500', // Change this to your desired color
-				},
-			}}
-		>
-			{label}
-		</FormLabel>
-		{children}
-	</Stack>
-);
+import FormField from './components/form-field';
+import { selectMenuProps } from './components/select-menu-props';
 
-FormField.propTypes = {
-	label: PropTypes.string.isRequired,
-	children: PropTypes.node.isRequired,
-	required: PropTypes.bool,
+const LOGISTICS_TYPES = {
+  PRODUCT_DELIVERY: {
+    title: 'Product Delivery',
+    description: 'Send products to creators by courier.',
+  },
+  RESERVATION: {
+    title: 'Reservation',
+    description: 'Creators book a time slot to visit your outlet.',
+  },
+};
+const TYPE_OPTIONS = Object.keys(LOGISTICS_TYPES);
+const typeTitle = (type) => LOGISTICS_TYPES[type]?.title ?? type;
+const typeDescription = (type) => LOGISTICS_TYPES[type]?.description;
+
+const SCHEDULING_OPTIONS = [
+  {
+    value: 'confirmation',
+    icon: 'eva:person-done-outline',
+    title: 'Ask for my confirmation',
+    description: 'I approve each time a creator asks to reschedule.',
+  },
+  {
+    value: 'auto',
+    icon: 'eva:flash-outline',
+    title: 'Auto-schedule',
+    description: 'Creators book their time slots with no approval needed.',
+  },
+];
+
+const LOCATION_COLUMNS = [
+  { key: 'name', title: 'Outlet', placeholder: 'e.g. Pavilion KL' },
+  { key: 'pic', title: 'PIC', optional: true, placeholder: 'e.g. Aisyah' },
+  {
+    key: 'contactNumber',
+    title: 'Contact number',
+    optional: true,
+    placeholder: 'e.g. 012-345 6789',
+    inputProps: { inputMode: 'tel' },
+  },
+];
+
+const BLUE_SOFT = 'rgba(19, 64, 255, 0.15)';
+const GREY = '#636366';
+const MUTED = '#919EAB';
+const BORDER = '#E0E0E0';
+const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+const intervalLabel = (hours) => (hours < 1 ? `${hours * 60} min` : `${hours} hr`);
+const isValidTime = (time) => time != null && !Number.isNaN(new Date(time).getTime());
+const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
+
+const labelSx = { fontWeight: 700, fontSize: '0.875rem', color: 'black' };
+const checkboxSx = { '&.Mui-checked': { color: BLUE } };
+const hoverSx = (styles) => ({
+  '@media (hover: hover) and (pointer: fine)': { '&:hover': styles },
+});
+
+const removeButtonSx = {
+  ...SECONDARY_ACTION_SX,
+  width: FIELD_HEIGHT,
+  minWidth: FIELD_HEIGHT,
+  height: FIELD_HEIGHT,
+  p: 0,
+  pb: '3px',
+  flexShrink: 0,
+  color: '#8E8E93',
+  transition: `${SECONDARY_ACTION_SX.transition}, color 140ms ease-out`,
+  '@media (hover: hover) and (pointer: fine)': {
+    '&:hover:not(:disabled)': { color: '#FF5630' },
+  },
+  '&.Mui-disabled': { ...SECONDARY_ACTION_SX['&.Mui-disabled'], opacity: 0.5 },
 };
 
-// This component is not used in this file but kept for consistency
+const addButtonSx = {
+  ...SECONDARY_ACTION_SX,
+  alignSelf: 'flex-start',
+  height: 36,
+  px: 1.5,
+  pt: '7px',
+  pb: '10px',
+  gap: 0.75,
+  fontSize: 14,
+  lineHeight: '18px',
+  color: '#3A3A3C',
+};
+
+const hiddenInputSx = {
+  position: 'absolute',
+  opacity: 0,
+  width: 1,
+  height: 1,
+  m: 0,
+  pointerEvents: 'none',
+};
+
+const pickerTheme = (outer) =>
+  createTheme(outer, {
+    palette: { primary: { main: BLUE } },
+    components: {
+      MuiMultiSectionDigitalClockSection: {
+        styleOverrides: {
+          root: { scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } },
+          item: {
+            '&.Mui-selected': {
+              backgroundColor: `${BLUE} !important`,
+              color: '#fff !important',
+              fontWeight: 700,
+              borderRadius: 14,
+            },
+          },
+        },
+      },
+    },
+  });
+
+const getDayStyles = ({ day, selectedSet, selectionStart, campaignInterval, currentMonth }) => {
+  const key = (date) => format(date, 'yyyy-MM-dd');
+  const isSelected = selectedSet.has(key(day));
+  const isPendingStart = selectionStart && isSameDay(day, selectionStart);
+  const isWithinCampaign = campaignInterval ? isWithinInterval(day, campaignInterval) : true;
+  const isPrevSelected = selectedSet.has(key(subDays(day, 1)));
+  const isNextSelected = selectedSet.has(key(addDays(day, 1)));
+  const isSingleDay = !isPrevSelected && !isNextSelected;
+
+  const base = {
+    width: '100%',
+    height: 40,
+    fontSize: 14,
+    fontFamily: 'inherit',
+    borderRadius: '50%',
+    position: 'relative',
+    zIndex: 1,
+    color: isSameMonth(day, currentMonth) ? '#212B36' : MUTED,
+    transition: 'background-color 120ms ease, color 120ms ease',
+    '&.Mui-focusVisible': { outline: `2px solid ${BLUE}`, outlineOffset: -2 },
+  };
+
+  if (!isWithinCampaign) {
+    return {
+      ...base,
+      opacity: 0.5,
+      cursor: 'default',
+      ...(isToday(day) && { border: `1.2px solid ${BLUE}`, color: BLUE }),
+    };
+  }
+
+  if (!isSelected) {
+    return {
+      ...base,
+      ...(isToday(day) && { border: `1.2px solid ${BLUE}`, color: BLUE }),
+      ...hoverSx({ bgcolor: '#F4F6F8' }),
+    };
+  }
+
+  if (isPendingStart && isSingleDay) {
+    return { ...base, bgcolor: BLUE_SOFT, color: BLUE, fontWeight: 700 };
+  }
+
+  if (isSingleDay) return { ...base, bgcolor: BLUE, color: 'white' };
+
+  if (!isPrevSelected || !isNextSelected) {
+    return {
+      ...base,
+      bgcolor: BLUE,
+      color: 'white',
+      '&::after': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        width: '50%',
+        [isPrevSelected ? 'left' : 'right']: 0,
+        bgcolor: BLUE_SOFT,
+        zIndex: -1,
+      },
+    };
+  }
+
+  return { ...base, borderRadius: 0, bgcolor: BLUE_SOFT, color: BLUE, fontWeight: 700 };
+};
+
+function PickMark({ selected }) {
+  return (
+    <Box
+      aria-hidden
+      sx={{
+        width: 18,
+        height: 18,
+        mt: '1px',
+        flexShrink: 0,
+        display: 'grid',
+        placeItems: 'center',
+        borderRadius: '50%',
+        border: '1.5px solid',
+        borderColor: selected ? BLUE : '#C4CDD5',
+        bgcolor: selected ? BLUE : '#FFFFFF',
+        color: '#FFFFFF',
+        transition: 'background-color 150ms ease, border-color 150ms ease',
+      }}
+    >
+      <Iconify
+        icon="eva:checkmark-fill"
+        width={12}
+        sx={{
+          opacity: selected ? 1 : 0,
+          transform: selected ? 'scale(1)' : 'scale(0.6)',
+          transition: `opacity 150ms ease, transform 200ms ${EASE_OUT}`,
+          '@media (prefers-reduced-motion: reduce)': { transform: 'none' },
+        }}
+      />
+    </Box>
+  );
+}
+
+PickMark.propTypes = { selected: PropTypes.bool };
+
+function RemoveButton({ label, disabled, onClick }) {
+  return (
+    <IconButton aria-label={label} disabled={disabled} onClick={onClick} sx={removeButtonSx}>
+      <Iconify icon="eva:trash-2-outline" width={20} />
+    </IconButton>
+  );
+}
+
+RemoveButton.propTypes = {
+  label: PropTypes.string,
+  disabled: PropTypes.bool,
+  onClick: PropTypes.func,
+};
+
+function AddButton({ children, onClick }) {
+  return (
+    <ButtonBase sx={addButtonSx} onClick={onClick}>
+      <Iconify icon="mingcute:add-line" width={16} sx={{ color: BLUE }} />
+      {children}
+    </ButtonBase>
+  );
+}
+
+AddButton.propTypes = { children: PropTypes.node, onClick: PropTypes.func };
+
+const EmptyState = ({ icon, title, children }) => (
+  <Stack spacing={1} alignItems="center" textAlign="center" sx={{ py: 4, px: 2 }}>
+    <Box
+      sx={{
+        width: 48,
+        height: 48,
+        borderRadius: '50%',
+        bgcolor: '#F4F6F8',
+        display: 'grid',
+        placeItems: 'center',
+        mb: 0.5,
+      }}
+    >
+      <Iconify icon={icon} width={24} color={GREY} />
+    </Box>
+    <Typography sx={{ fontWeight: 700, fontSize: 15 }}>{title}</Typography>
+    <Typography sx={{ fontSize: 13, color: GREY, maxWidth: 260 }}>{children}</Typography>
+  </Stack>
+);
+
+EmptyState.propTypes = {
+  icon: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node,
+};
 
 // Validation schema
 const UpdateLogisticsSchema = Yup.object().shape({
@@ -217,7 +483,6 @@ const UpdateLogistics = ({ campaign, campaignMutate, formId, onFormStateChange }
   const [allDay, setAllDay] = useState(false);
   const [intervalsChecked, setIntervalsChecked] = useState(true);
   const [interval, setInterval] = useState(1);
-  const [showIntervalDropdown, setShowIntervalDropdown] = useState(false);
   const [generatedSlots, setGeneratedSlots] = useState([]);
 
   const intervalOptions = [0.5, 1, 1.5, 2, 3, 4];
@@ -463,137 +728,6 @@ const UpdateLogistics = ({ campaign, campaignMutate, formId, onFormStateChange }
     setSelectionStart(null);
   };
 
-  const getDayStyles = (day) => {
-    const dateStr = format(day, 'yyyy-MM-dd');
-    const isSelected = selectedSet.has(dateStr);
-    const isPendingStart = selectionStart && isSameDay(day, selectionStart);
-    const isTodayDate = isToday(day);
-
-    const isWithinCampaign = campaignInterval ? isWithinInterval(day, campaignInterval) : true;
-    const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-
-    const prevDateStr = format(subDays(day, 1), 'yyyy-MM-dd');
-    const nextDateStr = format(addDays(day, 1), 'yyyy-MM-dd');
-
-    const isPrevSelected = selectedSet.has(prevDateStr);
-    const isNextSelected = selectedSet.has(nextDateStr);
-
-    const isVisualStart = !isPrevSelected;
-    const isVisualEnd = !isNextSelected;
-    const isSingleDay = isVisualStart && isVisualEnd;
-
-    const baseStyles = {
-      height: 40,
-      mx: 'auto',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      transition: '0.2s',
-      borderRadius: '50%',
-      position: 'relative',
-      zIndex: 1,
-      color: isCurrentMonth ? '#212B36' : '#919EAB',
-    };
-
-    if (!isSelected && !isPendingStart && isTodayDate) {
-      return {
-        ...baseStyles,
-        border: '1.2px solid #1340FF',
-        borderRadius: '50%',
-        color: '#1340FF',
-        // fontWeight: '700',
-        '&:hover': {
-          bgcolor: '#F4F6F8',
-        },
-      };
-    }
-
-    if (!isWithinCampaign) {
-      return {
-        ...baseStyles,
-        color: '#919EAB',
-        opacity: 0.5,
-        cursor: 'default',
-      };
-    }
-
-    if (isPendingStart && !selectedSet.has(prevDateStr) && !selectedSet.has(nextDateStr)) {
-      return {
-        ...baseStyles,
-        bgcolor: 'rgba(19, 64, 255, 0.15)',
-        color: '#1340FF',
-        borderRadius: '50%',
-        fontWeight: 700,
-      };
-    }
-
-    if (!isSelected) {
-      return {
-        ...baseStyles,
-        '&:hover': {
-          bgcolor: '#F4F6F8',
-        },
-      };
-    }
-
-    const selectedStyles = {
-      ...baseStyles,
-      bgcolor: isSingleDay ? '#1340FF' : 'rgba(19, 64, 255, 0.15)',
-      color: isSingleDay ? 'white' : '#1340FF',
-      fontWeight: isSingleDay ? 'normal' : 'bold',
-      borderRadius: 0,
-    };
-
-    if (isSingleDay) {
-      return {
-        ...selectedStyles,
-        borderRadius: '50%',
-      };
-    }
-
-    if (isVisualStart) {
-      return {
-        ...selectedStyles,
-        bgcolor: '#1340FF',
-        color: 'white',
-        borderRadius: '50%',
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          right: 0,
-          top: 0,
-          bottom: 0,
-          width: '50%',
-          bgcolor: 'rgba(19, 64, 255, 0.15)',
-          zIndex: -1,
-        },
-      };
-    }
-
-    if (isVisualEnd) {
-      return {
-        ...selectedStyles,
-        bgcolor: '#1340FF',
-        color: 'white',
-        borderRadius: '50%',
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: '50%',
-          bgcolor: 'rgba(19, 64, 255, 0.15)',
-          zIndex: -1,
-        },
-      };
-    }
-
-    // Middle segments
-    return selectedStyles;
-  };
-
   const formatDatesForDisplay = (dateStrings) => {
     if (!dateStrings || dateStrings.length === 0) return '';
 
@@ -663,64 +797,70 @@ const UpdateLogistics = ({ campaign, campaignMutate, formId, onFormStateChange }
     }
   };
 
-  let renderRightColumn;
+  const showHeaders = useMediaQuery((theme) => theme.breakpoints.up('sm'));
+  const timeOrderError =
+    isValidTime(startTime) &&
+    isValidTime(endTime) &&
+    !isBefore(new Date(startTime), new Date(endTime));
+  const pickedSlotCount = generatedSlots.filter((slot) => slot.isSelected).length;
 
-  if (allDay) {
-    renderRightColumn = (
-      <Stack spacing={1} alignItems="center" textAlign="center">
-        <Typography sx={{ fontSize: '48px' }}>👌</Typography>
-        <Typography variant="h6" fontWeight={700}>
-          All-Day Events
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Select dates and you’re good to go!
-        </Typography>
-      </Stack>
-    );
-  } else if (generatedSlots.length > 0) {
-    renderRightColumn = (
-      <Box sx={{ width: '100%', maxHeight: 280, overflowY: 'auto' }}>
+  const timePickerProps = (value, onChange, label) => ({
+    value: isValidTime(value) ? new Date(value) : null,
+    onChange,
+    slotProps: {
+      textField: {
+        fullWidth: true,
+        error: timeOrderError,
+        inputProps: { 'aria-label': label },
+        sx: { '& .MuiOutlinedInput-root': { height: FIELD_HEIGHT, borderRadius: 1.5 } },
+      },
+      openPickerButton: { sx: { color: BLUE } },
+    },
+  });
+
+  let slotsContent;
+  if (generatedSlots.length > 0) {
+    slotsContent = (
+      <Box sx={{ maxHeight: 280, overflowY: 'auto', p: '2px', m: '-2px' }}>
         <Grid container spacing={1.5}>
           {generatedSlots.map((slot, idx) => (
-            <Grid item xs={6} key={idx}>
-              <Box
+            <Grid item xs={6} key={slot.id}>
+              <ButtonBase
                 onClick={() => toggleSlot(idx)}
+                aria-pressed={slot.isSelected}
                 sx={{
-                  p: 1.5,
-                  textAlign: 'center',
+                  width: '100%',
+                  height: 44,
+                  gap: 0.75,
                   border: '1.5px solid',
                   borderRadius: 1.5,
-                  cursor: 'pointer',
-                  borderColor: slot.isSelected ? '#1340FF' : '#F4F6F8',
+                  fontFamily: 'inherit',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  borderColor: slot.isSelected ? BLUE : '#F4F6F8',
                   bgcolor: slot.isSelected ? 'rgba(19, 64, 255, 0.04)' : '#fff',
+                  color: slot.isSelected ? BLUE : MUTED,
+                  transition:
+                    'border-color 150ms ease, background-color 150ms ease, color 150ms ease',
+                  ...hoverSx({ borderColor: slot.isSelected ? BLUE : BORDER }),
+                  '&.Mui-focusVisible': { outline: `2px solid ${BLUE}`, outlineOffset: 2 },
                 }}
               >
-                <Typography
-                  sx={{
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: slot.isSelected ? '#1340FF' : '#919EAB',
-                  }}
-                >
-                  {slot.label}
-                </Typography>
-              </Box>
+                {slot.isSelected && <Iconify icon="eva:checkmark-fill" width={16} />}
+                {slot.label}
+              </ButtonBase>
             </Grid>
           ))}
         </Grid>
       </Box>
     );
   } else {
-    renderRightColumn = (
-      <Stack spacing={1} alignItems="center" textAlign="center">
-        <Typography sx={{ fontSize: '48px' }}>😘</Typography>
-        <Typography variant="h6" fontWeight={700}>
-          Add Time Slots
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Select a start/end time and interval.
-        </Typography>
-      </Stack>
+    slotsContent = (
+      <EmptyState icon="eva:clock-outline" title="No time slots yet">
+        {timeOrderError
+          ? 'Fix the times above to see the slots.'
+          : 'Pick a start time, an end time and a slot length.'}
+      </EmptyState>
     );
   }
 
@@ -740,788 +880,572 @@ const UpdateLogistics = ({ campaign, campaignMutate, formId, onFormStateChange }
           alignItems: 'start',
           width: '100%',
           maxWidth: logisticsType === 'RESERVATION' ? 1440 : 800,
+          ...helperTextSx,
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 3,
-            maxWidth: logisticsType === 'PRODUCT_DELIVERY' ? 600 : 800,
-          }}
-        >
-          {/* Logistics Type Selection */}
-          <Stack spacing={2} maxWidth={logisticsType === 'RESERVATION' ? 800 : 600}>
-            <FormField label="Logistics Type" required={false}>
-              <RHFSelect name="logisticsType" placeholder="Select logistics type">
-                <MenuItem value="">No Logistics</MenuItem>
-                <MenuItem value="PRODUCT_DELIVERY">Product Delivery</MenuItem>
-                <MenuItem value="RESERVATION">Reservation</MenuItem>
-              </RHFSelect>
+        <Stack spacing={3} sx={{ maxWidth: logisticsType === 'RESERVATION' ? 800 : 600 }}>
+          <Box sx={{ maxWidth: 600 }}>
+            <FormField
+              label="Logistics Type"
+              hint="Optional. Leave empty if creators need nothing."
+            >
+              <ChipSelect
+                single
+                clearable
+                name="logisticsType"
+                options={TYPE_OPTIONS}
+                getTitle={typeTitle}
+                getDescription={typeDescription}
+                placeholder="Select logistics type"
+              />
             </FormField>
-          </Stack>
+          </Box>
 
-        {/* Product Delivery Section */}
-        {logisticsType === 'PRODUCT_DELIVERY' && (
-          <Stack spacing={2}>
-            {productFields.map((field, index) => (
-              <Stack key={field.id} spacing={1}>
-                <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Typography
-                    sx={{
-                      fontWeight: 600,
-                      fontSize: '14px',
-                      color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                    }}
+          {logisticsType === 'PRODUCT_DELIVERY' && (
+            <SectionIn component={Stack} key="products" spacing={1.5}>
+              <FormField label="Products" required>
+                <Box>
+                  {productFields.map((field, index) => (
+                    <Stack key={field.id} direction="row" spacing={1} sx={{ pb: 1 }}>
+                      <RHFTextField
+                        fullWidth
+                        size="small"
+                        placeholder="Product name"
+                        name={`products.${index}.name`}
+                        sx={singleLineSx}
+                      />
+                      <RemoveButton
+                        label="Remove product"
+                        disabled={productFields.length === 1}
+                        onClick={() => removeProduct(index)}
+                      />
+                    </Stack>
+                  ))}
+                </Box>
+              </FormField>
+              <AddButton onClick={handleAddProduct}>Add product</AddButton>
+            </SectionIn>
+          )}
+
+          {logisticsType === 'RESERVATION' && (
+            <SectionIn component={Stack} key="reservation" spacing={3}>
+              <Stack spacing={1.5}>
+                <FormField label="Scheduling Option" required>
+                  <Stack
+                    role="radiogroup"
+                    aria-label="Scheduling option"
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={1.5}
                   >
-                    {index === 0 ? 'Product' : `Product ${index + 1}`}
-                  </Typography>
-                </Box>
+                    {SCHEDULING_OPTIONS.map((option) => {
+                      const selected = schedulingOption === option.value;
+                      return (
+                        <Box
+                          key={option.value}
+                          component="label"
+                          sx={{ ...cardSx(selected), flex: 1 }}
+                        >
+                          <Box
+                            component="input"
+                            type="radio"
+                            name="schedulingOption"
+                            value={option.value}
+                            checked={selected}
+                            onChange={() =>
+                              setValue('schedulingOption', option.value, { shouldDirty: true })
+                            }
+                            sx={hiddenInputSx}
+                          />
+                          <Iconify
+                            icon={option.icon}
+                            width={20}
+                            sx={{ mt: '1px', ...cardIconSx(selected) }}
+                          />
+                          <Box sx={{ flex: 1 }}>
+                            <Typography sx={titleSx(selected)}>{option.title}</Typography>
+                            <Typography sx={descriptionSx}>{option.description}</Typography>
+                          </Box>
+                          <PickMark selected={selected} />
+                        </Box>
+                      );
+                    })}
+                  </Stack>
+                </FormField>
 
-                <Stack direction="row" spacing={1} sx={{ display: 'flex', alignItems: 'center' }}>
-                  <RHFTextField
-                    fullWidth
-                    placeholder="Product Name"
-                    name={`products.${index}.name`}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 1,
-                      },
-                    }}
-                  />
-
-                  <IconButton
-                    onClick={() => removeProduct(index)}
-                    disabled={productFields.length === 1}
-                    sx={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: 1,
-                      border: '1px solid #E7E7E7',
-                      color: '#FF3030',
-                      boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                      '&:hover': { bgcolor: '#FFF5F5' },
-                    }}
-                  >
-                    <Iconify icon="eva:trash-2-outline" width={22} />
-                  </IconButton>
-                </Stack>
-              </Stack>
-            ))}
-
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-              <IconButton
-                onClick={handleAddProduct}
-                sx={{
-                  width: 38,
-                  height: 38,
-                  gap: '4px',
-                  opacity: 1,
-                  borderRadius: '8px',
-                  padding: '8px 12px 11px 12px',
-                  borderWidth: '1px',
-                  background: '#FFFFFF',
-                  border: '1px solid #E7E7E7',
-                  boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                  '&:hover': { bgcolor: '#f5f5f5' },
-                }}
-              >
-                <Iconify icon="eva:plus-fill" sx={{ color: '#1340FF' }} />
-              </IconButton>
-            </Box>
-          </Stack>
-        )}
-
-        {/* Reservation Section */}
-        {logisticsType === 'RESERVATION' && (
-          <>
-            <Stack spacing={1}>
-              <FormLabel
-                sx={{
-                  fontWeight: 600,
-                  color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                }}
-              >
-                Scheduling Option{' '}
-                <Typography component="span" color="error">
-                  *
-                </Typography>
-              </FormLabel>
-
-              <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-                <Box
-                  sx={{
-                    flex: 1,
-                    p: 2,
-                    borderRadius: 1,
-                    border: '1px solid',
-                    borderColor: schedulingOption === 'confirmation' ? '#3366FF' : '#E7E7E7',
-                    bgcolor: schedulingOption === 'confirmation' ? '#F0F7FF' : 'transparent',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setValue('schedulingOption', 'confirmation')}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                    <Radio
-                      checked={schedulingOption === 'confirmation'}
-                      sx={{
-                        p: 0,
-                        mr: 1,
-                        color: '#3366FF',
-                        '&.Mui-checked': {
-                          color: '#3366FF',
-                        },
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{
-                          fontWeight: 600,
-                          mb: 0.5,
-                          color: schedulingOption === 'confirmation' ? '#1340FF' : 'text.primary',
-                        }}
-                      >
-                        Ask for my confirmation
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontSize: '14px',
-                          color: schedulingOption === 'confirmation' ? '#1340FF' : 'text.secondary',
-                        }}
-                      >
-                        Prompt me for confirmation each time the creator requests a reschedule.
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-
-                <Box
-                  sx={{
-                    flex: 1,
-                    p: 2,
-                    borderRadius: 1,
-                    border: '1px solid',
-                    borderColor: schedulingOption === 'auto' ? '#3366FF' : '#E7E7E7',
-                    bgcolor: schedulingOption === 'auto' ? '#F0F7FF' : 'transparent',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setValue('schedulingOption', 'auto')}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                    <Radio
-                      checked={schedulingOption === 'auto'}
-                      sx={{
-                        p: 0,
-                        mr: 1,
-                        '&.Mui-checked': {
-                          color: '#3366FF',
-                        },
-                      }}
-                    />
-                    <Box>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{
-                          fontWeight: 600,
-                          mb: 0.5,
-                          color: schedulingOption === 'auto' ? '#1340FF' : 'text.primary',
-                        }}
-                      >
-                        Auto-Schedule
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontSize: '14px',
-                          color: schedulingOption === 'auto' ? '#1340FF' : 'text.secondary',
-                        }}
-                      >
-                        Allow creators to schedule their time slots without needing confirmation.
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </Box>
-            </Stack>
-
-            <Stack spacing={0}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  Allow multiple creators to book the same timeslot
-                </Typography>
-                <Switch
-                  checked={allowMultipleBookings}
-                  onChange={(e) =>
-                    setValue('allowMultipleBookings', e.target.checked, { shouldValidate: true })
+                <ToggleCard
+                  icon="eva:people-outline"
+                  title="Allow multiple creators per time slot"
+                  description={
+                    allowMultipleBookings
+                      ? 'Several creators can visit your outlet at the same time.'
+                      : 'Each time slot is for one creator only.'
                   }
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                      backgroundColor: '#1340FF',
-                    },
-                  }}
+                  checked={!!allowMultipleBookings}
+                  onChange={(checked) =>
+                    setValue('allowMultipleBookings', checked, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
                 />
-              </Stack>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                Enabling this option allows <strong>multiple</strong> creators to visit your outlet
-                at the same time. Leaving this option disabled restricts <strong>one</strong>{' '}
-                timeslot to <strong>one</strong> creator only.
-              </Typography>
-            </Stack>
-
-            <Stack spacing={1}>
-              <FormLabel
-                sx={{
-                  fontWeight: 600,
-                  color: (theme) => (theme.palette.mode === 'light' ? 'black' : 'white'),
-                }}
-              >
-                Location
-                <Typography component="span" color="error">
-                  *
-                </Typography>
-              </FormLabel>
-
-              <Stack direction="row" spacing={2} sx={{ px: 0.5 }}>
-                <Typography variant="caption" sx={{ flex: 1.5, color: '#636366', fontWeight: 500 }}>
-                  Outlet
-                </Typography>
-                <Typography variant="caption" sx={{ flex: 1.5, color: '#636366', fontWeight: 500 }}>
-                  PIC{' '}
-                  <Box component="span" sx={{ fontWeight: 400 }}>
-                    (Optional)
-                  </Box>
-                </Typography>
-                <Typography variant="caption" sx={{ flex: 1.5, color: '#636366', fontWeight: 500 }}>
-                  Contact Number{' '}
-                  <Box component="span" sx={{ fontWeight: 400 }}>
-                    (Optional)
-                  </Box>
-                </Typography>
-                <Box sx={{ width: 48 }} />
               </Stack>
 
               <Stack spacing={1.5}>
-                {locationFields.map((field, index) => (
-                  <Stack key={field.id} direction="row" spacing={2} alignItems="center">
-                    <RHFTextField
-                      name={`locations.${index}.name`}
-                      placeholder="Outlet"
-                      onChange={(e) => {
-                        setValue(`locations.${index}.name`, e.target.value, {
-                          shouldValidate: true,
-                        });
-                        trigger('locations');
-                      }}
-                      error={
-                        index === 0
-                          ? !!errors.locations && !Array.isArray(errors.locations)
-                          : !!errors?.locations?.[index]?.name
-                      }
-                      sx={{ flex: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-                    />
-                    <RHFTextField
-                      name={`locations.${index}.pic`}
-                      placeholder="PIC"
-                      sx={{ flex: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-                    />
-                    <RHFTextField
-                      name={`locations.${index}.contactNumber`}
-                      placeholder="Contact Number"
-                      sx={{ flex: 1.5, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-                    />
-
-                    <IconButton
-                      onClick={() => removeLocation(index)}
-                      disabled={locationFields.length === 1}
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 1,
-                        border: '1px solid #E7E7E7',
-                        color: '#FF3030',
-                        boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                        '&:hover': { bgcolor: '#FFF5F5' },
-                      }}
-                    >
-                      <Iconify icon="eva:trash-2-outline" width={22} />
-                    </IconButton>
+                <FormField label="Locations" required>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ display: { xs: 'none', sm: 'flex' }, pr: `${FIELD_HEIGHT + 8}px` }}
+                  >
+                    {LOCATION_COLUMNS.map((column) => (
+                      <Typography
+                        key={column.key}
+                        sx={{
+                          flex: 1,
+                          fontSize: 12,
+                          lineHeight: '16px',
+                          fontWeight: 600,
+                          color: GREY,
+                        }}
+                      >
+                        {column.title}
+                        {column.optional && (
+                          <Box component="span" sx={{ fontWeight: 400, color: '#8E8E93' }}>
+                            {' '}
+                            (optional)
+                          </Box>
+                        )}
+                      </Typography>
+                    ))}
                   </Stack>
-                ))}
+                  <Box>
+                    {locationFields.map((field, index) => (
+                      <Stack key={field.id} direction="row" spacing={1} sx={{ pb: 1 }}>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ flex: 1 }}>
+                          {LOCATION_COLUMNS.map((column) => (
+                            <RHFTextField
+                              key={column.key}
+                              size="small"
+                              name={`locations.${index}.${column.key}`}
+                              placeholder={
+                                showHeaders
+                                  ? column.placeholder
+                                  : `${column.title}${column.optional ? ' (optional)' : ''}`
+                              }
+                              inputProps={{ 'aria-label': column.title, ...column.inputProps }}
+                              {...(column.key === 'name' && {
+                                onChange: (e) => {
+                                  setValue(`locations.${index}.name`, e.target.value, {
+                                    shouldValidate: true,
+                                  });
+                                  trigger('locations');
+                                },
+                                error:
+                                  index === 0
+                                    ? !!errors.locations && !Array.isArray(errors.locations)
+                                    : !!errors?.locations?.[index]?.name,
+                              })}
+                              sx={{ flex: 1, ...singleLineSx }}
+                            />
+                          ))}
+                        </Stack>
+                        <RemoveButton
+                          label="Remove location"
+                          disabled={locationFields.length === 1}
+                          onClick={() => removeLocation(index)}
+                        />
+                      </Stack>
+                    ))}
+                  </Box>
+                  {errors.locations && !Array.isArray(errors.locations) && (
+                    <FormHelperText error sx={{ mt: '-2px !important' }}>
+                      {errors.locations.message}
+                    </FormHelperText>
+                  )}
+                </FormField>
+                <AddButton onClick={() => appendLocation({ name: '' })}>Add location</AddButton>
               </Stack>
 
-              {errors.locations && !Array.isArray(errors.locations) && (
-                <Typography variant="caption" color="error" sx={{ fontWeight: 400 }}>
-                  {errors.locations.message}
-                </Typography>
-              )}
-
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <IconButton
-                  onClick={() => appendLocation({ name: '' })}
-                  sx={{
-                    width: 38,
-                    height: 38,
-                    gap: '4px',
-                    opacity: 1,
-                    borderRadius: '8px',
-                    padding: '8px 12px 11px 12px',
-                    borderWidth: '1px',
-                    background: '#FFFFFF',
-                    border: '1px solid #E7E7E7',
-                    boxShadow: '0px -3px 0px 0px #E7E7E7 inset',
-                    '&:hover': { bgcolor: '#f5f5f5' },
-                  }}
-                >
-                  <Iconify icon="eva:plus-fill" sx={{ color: '#1340FF' }} />
-                </IconButton>
-              </Box>
-            </Stack>
-
-            <Box sx={{ maxWidth: 900, mx: 'auto', p: 2, mb: 10 }}>
-              <Stack alignItems="center" spacing={1} sx={{ mb: 4 }}>
+              <Box sx={{ maxWidth: 900, mx: 'auto', p: 2, mb: 10 }}>
                 <Typography
                   variant="body2"
                   textAlign="center"
-                  sx={{ color: '#636366', maxWidth: 500 }}
+                  sx={{ color: GREY, maxWidth: 500, mx: 'auto', mb: 4 }}
                 >
-                  Add options for creators to select their available time slots. Times are
-                  standardized to Malaysian time (UTC+08:00).
+                  Add the dates and times creators can book. All times are in Malaysian time
+                  (UTC+08:00).
                 </Typography>
-              </Stack>
 
-              <Box
-                sx={{
-                  border: '1px solid #E0E0E0',
-                  borderRadius: 2,
-                  display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  overflow: 'hidden',
-                  bgcolor: '#fff',
-                }}
-              >
                 <Box
                   sx={{
-                    p: 3,
-                    width: { xs: '100%', md: '45%' },
-                    borderRight: { md: '1px solid #E0E0E0' },
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: 2,
+                    display: 'flex',
+                    flexDirection: { xs: 'column', md: 'row' },
+                    overflow: 'hidden',
+                    bgcolor: '#fff',
                   }}
                 >
-                  <Typography sx={{ fontWeight: 600, fontSize: '18px', mb: 1 }}>
-                    Select Dates:
-                  </Typography>
-
-                  <Typography sx={{ fontSize: '14px', fontWeight: 500, mb: 2 }}>
-                    Between{' '}
-                    {campaignStartDate ? format(new Date(campaignStartDate), 'd MMMM yyyy') : '...'}{' '}
-                    to {campaignEndDate ? format(new Date(campaignEndDate), 'd MMMM yyyy') : '...'}
-                  </Typography>
-
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
-                    <Switch
-                      size="small"
-                      checked={allDay}
-                      onChange={(e) => setAllDay(e.target.checked)}
-                      sx={{ '& .Mui-checked': { color: '#1340FF' } }}
-                    />
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      All Day
+                  <Box
+                    sx={{
+                      p: 3,
+                      width: { xs: '100%', md: '45%' },
+                      borderRight: { md: `1px solid ${BORDER}` },
+                      borderBottom: { xs: `1px solid ${BORDER}`, md: 'none' },
+                    }}
+                  >
+                    <FormLabel sx={labelSx}>Dates</FormLabel>
+                    <Typography sx={{ fontSize: 13, color: GREY, mt: 0.5 }}>
+                      {campaignInterval
+                        ? `${format(campaignInterval.start, 'd MMM yyyy')} - ${format(campaignInterval.end, 'd MMM yyyy')}`
+                        : 'Set the campaign dates first.'}
                     </Typography>
-                  </Stack>
 
-                  <Box sx={{ borderRadius: '8px', bgcolor: '#1340FF', p: 1, mb: 3 }}>
-                    <Typography sx={{ fontSize: '12px', color: 'white', lineHeight: 1.5 }}>
-                      Click once to select the start date, then click again on the end date to
-                      include all days in between. <br />
-                      <strong>Double-click for a single day</strong>, and click a selected date to
-                      deselect it.
-                    </Typography>
-                  </Box>
+                    <Stack direction="row" spacing={0.75} sx={{ mt: 1.5, color: GREY }}>
+                      <Iconify
+                        icon="eva:info-outline"
+                        width={16}
+                        sx={{ flexShrink: 0, mt: '1px' }}
+                      />
+                      <Typography sx={{ fontSize: 12, lineHeight: '18px' }}>
+                        Click a start date, then an end date to pick the days between. Click a
+                        picked date to remove it.
+                      </Typography>
+                    </Stack>
 
-                  <Divider sx={{ mb: 3 }} />
-                  <Box sx={{ maxWidth: 300, mx: 'auto' }}>
+                    <Divider sx={{ my: 2.5 }} />
+
+                    <Box sx={{ maxWidth: 300, mx: 'auto' }}>
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        sx={{ mb: 2 }}
+                      >
+                        <IconButton
+                          aria-label="Previous month"
+                          onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                          size="small"
+                        >
+                          <Iconify icon="eva:arrow-ios-back-fill" />
+                        </IconButton>
+                        <Typography aria-live="polite" sx={{ fontWeight: 700 }}>
+                          {format(currentMonth, 'MMMM yyyy')}
+                        </Typography>
+                        <IconButton
+                          aria-label="Next month"
+                          onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                          size="small"
+                        >
+                          <Iconify icon="eva:arrow-ios-forward-fill" />
+                        </IconButton>
+                      </Stack>
+
+                      <Grid container columns={7}>
+                        {WEEKDAYS.map((d) => (
+                          <Grid item xs={1} key={d} sx={{ textAlign: 'center', mb: 1 }}>
+                            <Typography variant="caption" sx={{ color: MUTED, fontWeight: 600 }}>
+                              {d}
+                            </Typography>
+                          </Grid>
+                        ))}
+                        {calendarDays.map((day) => {
+                          const key = format(day, 'yyyy-MM-dd');
+                          return (
+                            <Grid item xs={1} key={key}>
+                              <ButtonBase
+                                aria-pressed={selectedSet.has(key)}
+                                aria-disabled={
+                                  !!campaignInterval && !isWithinInterval(day, campaignInterval)
+                                }
+                                aria-label={format(day, 'EEEE d MMMM yyyy')}
+                                onClick={() => handleDateClick(day)}
+                                sx={getDayStyles({
+                                  day,
+                                  selectedSet,
+                                  selectionStart,
+                                  campaignInterval,
+                                  currentMonth,
+                                })}
+                              >
+                                {format(day, 'd')}
+                              </ButtonBase>
+                            </Grid>
+                          );
+                        })}
+                      </Grid>
+                    </Box>
+
                     <Stack
                       direction="row"
                       justifyContent="space-between"
                       alignItems="center"
-                      sx={{ mb: 3 }}
+                      sx={{ mt: 2 }}
                     >
-                      <IconButton
-                        onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                        size="small"
-                      >
-                        <Iconify icon="eva:arrow-ios-back-fill" />
-                      </IconButton>
-                      <Typography sx={{ fontWeight: 700 }}>
-                        {format(currentMonth, 'MMM yyyy')}
-                      </Typography>
-                      <IconButton
-                        onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                        size="small"
-                      >
-                        <Iconify icon="eva:arrow-ios-forward-fill" />
-                      </IconButton>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: GREY }}>
+                          {selectedDates.length
+                            ? `${plural(selectedDates.length, 'day')} picked`
+                            : 'No days picked'}
+                        </Typography>
+                        {selectedDates.length > 0 && (
+                          <Button
+                            onClick={handleClear}
+                            size="small"
+                            sx={{
+                              minWidth: 0,
+                              px: 0.75,
+                              textTransform: 'none',
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: '#FF5630',
+                              ...hoverSx({ bgcolor: 'rgba(255, 86, 48, 0.08)' }),
+                            }}
+                          >
+                            Clear
+                          </Button>
+                        )}
+                      </Stack>
+
+                      <FormControlLabel
+                        disabled={!campaignInterval}
+                        control={
+                          <Checkbox
+                            checked={
+                              !!campaignInterval &&
+                              selectedDates.length > 0 &&
+                              selectedDates.length === eachDayOfInterval(campaignInterval).length
+                            }
+                            onChange={handleSelectAllDates}
+                            size="small"
+                            sx={checkboxSx}
+                          />
+                        }
+                        label={
+                          <Typography sx={{ fontSize: 13, fontWeight: 600 }}>All dates</Typography>
+                        }
+                        sx={{ mr: 0 }}
+                      />
+                    </Stack>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      p: 3,
+                      width: { xs: '100%', md: '55%' },
+                      display: 'flex',
+                      flexDirection: 'column',
+                      minHeight: { md: 500 },
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      spacing={2}
+                    >
+                      <Box>
+                        <FormLabel sx={labelSx}>Times</FormLabel>
+                        <Typography sx={{ fontSize: 13, color: GREY, mt: 0.5 }}>
+                          {allDay
+                            ? 'Creators can come at any time.'
+                            : 'Set the hours creators can book.'}
+                        </Typography>
+                      </Box>
+                      <FormControlLabel
+                        labelPlacement="start"
+                        label={
+                          <Typography sx={{ fontSize: 14, fontWeight: 600 }}>All day</Typography>
+                        }
+                        control={
+                          <Switch
+                            checked={allDay}
+                            onChange={(e) => setAllDay(e.target.checked)}
+                            sx={{
+                              '& .Mui-checked': { color: BLUE },
+                              '& .Mui-checked + .MuiSwitch-track': {
+                                bgcolor: `${BLUE} !important`,
+                              },
+                            }}
+                          />
+                        }
+                        sx={{ mr: 0, flexShrink: 0 }}
+                      />
                     </Stack>
 
-                    <Grid container columns={7}>
-                      {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((d) => (
-                        <Grid item xs={1} key={d} sx={{ textAlign: 'center', mb: 1 }}>
-                          <Typography variant="caption" sx={{ color: '#919EAB', fontWeight: 600 }}>
-                            {d}
-                          </Typography>
-                        </Grid>
-                      ))}
-                      {calendarDays.map((day, i) => (
-                        <Grid item xs={1} key={i}>
-                          <Box onClick={() => handleDateClick(day)} sx={getDayStyles(day)}>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 'inherit', color: 'inherit' }}
-                            >
-                              {format(day, 'd')}
-                            </Typography>
-                          </Box>
-                        </Grid>
-                      ))}
-                    </Grid>
-                  </Box>
-                  {/* RESET AND SELECT ALL BOX */}
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    sx={{ mt: 2 }}
-                  >
-                    <Button
-                      onClick={handleClear}
-                      size="small"
-                      sx={{
-                        fontSize: '14px',
-                        textTransform: 'none',
-                        fontWeight: 500,
-                        minWidth: 'auto',
-                        p: 0,
-                        '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' },
-                      }}
-                    >
-                      <Iconify
-                        icon="eva:trash-2-outline"
-                        color="#FF5630"
-                        width={20}
-                        sx={{ mr: 1 }}
-                      />{' '}
-                      Clear Dates
-                    </Button>
+                    <Divider sx={{ my: 2.5 }} />
 
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={
-                            campaignInterval &&
-                            selectedDates.length > 0 &&
-                            selectedDates.length === eachDayOfInterval(campaignInterval).length
+                    <Collapse in={allDay} timeout={200} easing={EASE_OUT} unmountOnExit>
+                      <EmptyState icon="eva:sun-outline" title="All day">
+                        The picked dates are open all day. Pick dates, then save.
+                      </EmptyState>
+                    </Collapse>
+
+                    <Collapse in={!allDay} timeout={200} easing={EASE_OUT}>
+                      <ThemeProvider theme={pickerTheme}>
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                          <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={{ xs: 1, sm: 1.5 }}
+                            alignItems={{ xs: 'stretch', sm: 'center' }}
+                          >
+                            <DesktopTimePicker
+                              {...timePickerProps(
+                                startTime,
+                                (value) => setStartTime(value?.getTime()),
+                                'Start time'
+                              )}
+                            />
+                            <Typography variant="body2" sx={{ color: GREY, textAlign: 'center' }}>
+                              to
+                            </Typography>
+                            <DesktopTimePicker
+                              {...timePickerProps(
+                                endTime,
+                                (value) => setEndTime(value?.getTime()),
+                                'End time'
+                              )}
+                            />
+                          </Stack>
+                        </LocalizationProvider>
+                      </ThemeProvider>
+                      {timeOrderError && (
+                        <FormHelperText error>
+                          End time must be after the start time.
+                        </FormHelperText>
+                      )}
+
+                      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mt: 2 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={intervalsChecked}
+                              onChange={(e) => setIntervalsChecked(e.target.checked)}
+                              size="small"
+                              sx={checkboxSx}
+                            />
                           }
-                          onChange={handleSelectAllDates}
-                          size="small"
+                          label={
+                            <Typography sx={{ fontSize: 14, fontWeight: 600 }}>
+                              Split into slots of
+                            </Typography>
+                          }
+                          sx={{ mr: 0 }}
                         />
-                      }
-                      label={
-                        <Typography sx={{ fontSize: '14px', fontWeight: 500 }}>
-                          Select All Dates
+                        <TextField
+                          select
+                          size="small"
+                          value={interval}
+                          disabled={!intervalsChecked}
+                          onChange={(e) => setInterval(e.target.value)}
+                          inputProps={{ 'aria-label': 'Slot length' }}
+                          SelectProps={{ MenuProps: selectMenuProps }}
+                          sx={{ width: 110, '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
+                        >
+                          {intervalOptions.map((opt) => (
+                            <MenuItem key={opt} value={opt} sx={{ fontSize: 14 }}>
+                              {intervalLabel(opt)}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Stack>
+
+                      <Divider sx={{ my: 2.5 }} />
+
+                      {generatedSlots.length > 0 && (
+                        <Typography sx={{ fontSize: 13, fontWeight: 600, color: GREY, mb: 1.5 }}>
+                          {pickedSlotCount} of {plural(generatedSlots.length, 'slot')} picked
                         </Typography>
-                      }
-                      // sx={{ mr: 0 }}
-                    />
+                      )}
+                      {slotsContent}
+                    </Collapse>
+
+                    <Box sx={{ flexGrow: 1 }} />
+
+                    {(allDay || generatedSlots.length > 0) && (
+                      <Stack direction="row" justifyContent="flex-end" sx={{ pt: 3 }}>
+                        <Button
+                          onClick={handleSaveRule}
+                          sx={{ ...PRIMARY_ACTION_SX, flexShrink: 0, px: 3 }}
+                        >
+                          Save slots
+                        </Button>
+                      </Stack>
+                    )}
                   </Box>
                 </Box>
 
                 <Box
+                  ref={bottomRef}
                   sx={{
-                    p: 3,
-                    width: { xs: '100%', md: '55%' },
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minHeight: 500,
+                    mt: 3,
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: 2,
+                    p: 2,
+                    bgcolor: '#fff',
                   }}
                 >
-                  <Typography sx={{ fontWeight: 600, fontSize: '18px', mb: 3 }}>
-                    Select Time Slots:
-                  </Typography>
-
-                  <ThemeProvider
-                    theme={createTheme({
-                      palette: {
-                        primary: { main: '#1340FF' },
-                      },
-                      components: {
-                        MuiIconButton: {
-                          styleOverrides: {
-                            root: {
-                              color: '#1340FF',
-                            },
-                          },
-                        },
-                        MuiMultiSectionDigitalClockSection: {
-                          styleOverrides: {
-                            root: {
-                              '&::-webkit-scrollbar': {
-                                display: 'none',
-                              },
-                              scrollbarWidth: 'none',
-                              msOverflowStyle: 'none',
-                            },
-                            item: {
-                              '&.Mui-selected': {
-                                backgroundColor: '#1340FF !important',
-                                color: '#fff !important',
-                                fontWeight: 'bold',
-                                borderRadius: 3.5,
-                              },
-                            },
-                          },
-                        },
-                      },
-                    })}
-                  >
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
-                      <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 3 }}>
-                        <DesktopTimePicker
-                          disabled={allDay}
-                          onChange={(value) => setStartTime(value?.getTime())}
-                          slotProps={{
-                            textField: {
-                              size: 'small',
-                              fullWidth: true,
-                              sx: {
-                                '& .MuiOutlinedInput-root': { borderRadius: 1.5 },
-                                ...(allDay && { bgcolor: '#F4F6F8' }),
-                              },
-                            },
-                            openPickerButton: {
-                              sx: { color: allDay ? 'text.disabled' : '#1340FF' },
-                            },
-                          }}
-                        />
-                        <Typography
-                          variant="body2"
-                          sx={{ color: allDay ? 'text.disabled' : '#636366' }}
-                        >
-                          to
-                        </Typography>
-                        <DesktopTimePicker
-                          disabled={allDay}
-                          onChange={(value) => setEndTime(value?.getTime())}
-                          slotProps={{
-                            textField: {
-                              size: 'small',
-                              fullWidth: true,
-                              sx: {
-                                '& .MuiOutlinedInput-root': { borderRadius: 1.5 },
-                                ...(allDay && { bgcolor: '#F4F6F8' }),
-                              },
-                            },
-                            openPickerButton: {
-                              sx: { color: allDay ? 'text.disabled' : '#1340FF' },
-                            },
-                          }}
-                        />
-                      </Stack>
-                    </LocalizationProvider>
-                  </ThemeProvider>
-
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    spacing={1}
-                    sx={{
-                      mb: 3,
-                      position: 'relative',
-                      opacity: allDay ? 0.6 : 1,
-                    }}
-                  >
-                    <Checkbox
-                      disabled={allDay}
-                      checked={intervalsChecked}
-                      onChange={(e) => {
-                        const isChecked = e.target.checked;
-                        setIntervalsChecked(isChecked);
-                        if (!isChecked) {
-                          setShowIntervalDropdown(false);
-                        }
-                      }}
-                      size="small"
-                      sx={{ p: 0, '&.Mui-disabled': { color: 'text.disabled' } }}
-                    />
-                    <Typography
-                      sx={{
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        ml: 1,
-                        color: allDay ? 'text.disabled' : 'inherit',
-                      }}
-                    >
-                      Intervals
-                    </Typography>
-
-                    {intervalsChecked && (
-                      <Button
-                        disabled={allDay}
-                        variant="outlined"
-                        size="small"
-                        onClick={() => !allDay && setShowIntervalDropdown(!showIntervalDropdown)}
-                        endIcon={
-                          <Iconify
-                            icon="eva:chevron-down-fill"
-                            color={allDay ? '#919EAB' : '#1340FF'}
-                          />
-                        }
-                        sx={{
-                          ml: 2,
-                          borderColor: '#E0E0E0',
-                          color: allDay ? 'text.disabled' : '#212B36',
-                          textTransform: 'none',
-                          px: 2,
-                          borderRadius: 1.5,
-                          '&.Mui-disabled': { borderColor: '#F4F6F8' },
-                        }}
-                      >
-                        {interval} hr
-                      </Button>
-                    )}
-
-                    {showIntervalDropdown && !allDay && (
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: '100%',
-                          left: 100,
-                          zIndex: 10,
-                          bgcolor: '#fff',
-                          boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                          borderRadius: 1,
-                          minWidth: 100,
-                          mt: 1,
-                        }}
-                      >
-                        {intervalOptions.map((opt) => (
-                          <MenuItem
-                            key={opt}
-                            onClick={() => {
-                              setInterval(opt);
-                              setShowIntervalDropdown(false);
-                            }}
-                            sx={{ fontSize: '14px', px: 2 }}
-                          >
-                            {opt} hr
-                          </MenuItem>
-                        ))}
-                      </Box>
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+                    <Iconify icon="eva:calendar-outline" width={18} color={BLUE} />
+                    <FormLabel sx={labelSx}>Saved reservation slots</FormLabel>
+                    {savedRules.length > 0 && (
+                      <Typography sx={{ fontSize: 13, fontWeight: 600, color: GREY }}>
+                        {savedRules.length}
+                      </Typography>
                     )}
                   </Stack>
-
-                  <Divider sx={{ mb: 3 }} />
-
-                  <Box
-                    sx={{
-                      flexGrow: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {renderRightColumn}
-                  </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2 }}>
-                    {(allDay || generatedSlots.length > 0) && (
-                      <Button
-                        onClick={handleSaveRule}
-                        sx={{
-                          mt: 2,
-                          alignSelf: 'flex-end',
-                          width: 'fit-content',
-                          px: 4,
-                          height: 48,
-                          bgcolor: '#3A3A3C',
-                          color: '#fff',
-                          borderRadius: '12px',
-                          fontWeight: 600,
-                          textTransform: 'none',
-                          boxShadow: '0px -3px 0px 0px #00000073 inset',
-                          '&:hover': { bgcolor: '#000' },
-                          '&.Mui-disabled': {
-                            bgcolor: '#F4F6F8',
-                            color: '#919EAB',
-                            boxShadow: 'none',
-                          },
-                        }}
-                      >
-                        {allDay ? 'Save All Day' : 'Save Time Slots'}
-                      </Button>
-                    )}
-                  </Box>
+                  <Divider />
+                  {savedRules.length === 0 ? (
+                    <Typography variant="body2" sx={{ color: MUTED, py: 3, textAlign: 'center' }}>
+                      Pick dates and times above, then press Save slots.
+                    </Typography>
+                  ) : (
+                    <Stack spacing={1} sx={{ pt: 1.5 }}>
+                      {savedRules.map((rule, index) => (
+                        <Stack
+                          key={index}
+                          direction="row"
+                          alignItems="center"
+                          justifyContent="space-between"
+                          spacing={2}
+                          sx={{ p: 1.5, bgcolor: '#F9FAFB', borderRadius: 1.5 }}
+                        >
+                          <Stack direction="row" spacing={1.5} sx={{ minWidth: 0 }}>
+                            <Iconify
+                              icon={rule.allDay ? 'eva:sun-outline' : 'eva:clock-outline'}
+                              color={BLUE}
+                              width={18}
+                              sx={{ mt: '2px', flexShrink: 0 }}
+                            />
+                            <Box sx={{ minWidth: 0 }}>
+                              <Typography sx={{ fontSize: 14, fontWeight: 600 }}>
+                                {formatDatesForDisplay(rule.dates)}
+                              </Typography>
+                              <Typography sx={{ fontSize: 14, color: GREY, mt: 0.5 }}>
+                                {rule.slots.map((slot) => slot.label).join(', ')}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                          <IconButton
+                            aria-label={`Remove slots for ${formatDatesForDisplay(rule.dates)}`}
+                            onClick={() => handleRemoveRule(index)}
+                            size="small"
+                            sx={{
+                              color: MUTED,
+                              ...hoverSx({ color: '#FF5630', bgcolor: 'rgba(255, 86, 48, 0.08)' }),
+                            }}
+                          >
+                            <Iconify icon="eva:trash-2-outline" width={20} />
+                          </IconButton>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  )}
                 </Box>
               </Box>
-
-              <Box
-                ref={bottomRef}
-                sx={{ mt: 3, border: '1px solid #E0E0E0', borderRadius: 2, p: 2, bgcolor: '#fff' }}
-              >
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-                  <Iconify icon="eva:calendar-outline" width={18} color="#1340FF" />
-                  <Typography
-                    variant="overline"
-                    sx={{ fontWeight: 800, color: '#212B36', mt: 0.5 }}
-                  >
-                    RESERVATION SLOTS
-                  </Typography>
-                </Stack>
-                <Divider />
-                {savedRules.length === 0 ? (
-                  <Typography variant="body2" sx={{ color: '#919EAB', py: 3, textAlign: 'center' }}>
-                    Saved time slots will show up here.
-                  </Typography>
-                ) : (
-                  <Stack spacing={1} sx={{ mt: 2 }}>
-                    {savedRules.map((rule, index) => (
-                      <Stack
-                        key={index}
-                        direction="row"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        sx={{ p: 1.5, bgcolor: '#F9FAFB', borderRadius: 1.5 }}
-                      >
-                        <Stack direction="row" spacing={2}>
-                          <Iconify icon="feather:edit" color="#1340FF" sx={{ mt: 0.5 }} />
-                          <Box>
-                            <Typography sx={{ fontSize: '14px', fontWeight: 600 }}>
-                              {formatDatesForDisplay(rule.dates)}
-                            </Typography>
-                            <Typography sx={{ fontSize: '14px', color: '#636366', mt: 0.5 }}>
-                              {rule.slots.map((slot, i) => (
-                                <span key={i}>
-                                  {slot.label}
-                                  {i < rule.slots.length - 1 ? ', ' : ''}
-                                </span>
-                              ))}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                        <IconButton onClick={() => handleRemoveRule(index)} size="small">
-                          <Iconify icon="eva:trash-2-outline" color="#FF5630" width={20} />
-                        </IconButton>
-                      </Stack>
-                    ))}
-                  </Stack>
-                )}
-              </Box>
-
-            </Box>
-          </>
-        )}
-
-        </Box>
+            </SectionIn>
+          )}
+        </Stack>
 
         {logisticsType === 'RESERVATION' && <LogisticRemarks align="left" topSpacing={0} />}
       </Box>

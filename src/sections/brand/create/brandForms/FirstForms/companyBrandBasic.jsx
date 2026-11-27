@@ -18,7 +18,6 @@ import StepLabel from '@mui/material/StepLabel';
 import Typography from '@mui/material/Typography';
 import {
   Stack,
-  Avatar,
   ListItemText,
   InputAdornment,
   LinearProgress,
@@ -33,6 +32,7 @@ import axiosInstance, { endpoints } from 'src/utils/axios';
 import { interestsLists } from 'src/contants/interestLists';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 import FormProvider, { RHFTextField, RHFAutocomplete } from 'src/components/hook-form';
 
 import CreateCompany from './create-company';
@@ -151,7 +151,7 @@ function CompanyBrandBasic() {
           renderOption={(props, option) => (
             <li {...props}>
               <Stack direction="row" alignItems="center" gap={2}>
-                <Avatar src={option?.logo}>{option?.name[0]}</Avatar>
+                <BrandLogoAvatar src={option?.logo}>{option?.name[0]}</BrandLogoAvatar>
 
                 <Typography variant="subtitle2">{option?.name}</Typography>
               </Stack>

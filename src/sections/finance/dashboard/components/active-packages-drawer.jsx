@@ -7,7 +7,6 @@ import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
 import Tabs from '@mui/material/Tabs';
 import Stack from '@mui/material/Stack';
-import Avatar from '@mui/material/Avatar';
 import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
@@ -17,6 +16,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import { CARD_BORDER, formatAmount, utilisationColor } from '../utils';
 
@@ -52,13 +52,13 @@ function PackageCard({ pkg }) {
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
-        <Avatar
+        <BrandLogoAvatar
           variant="rounded"
           src={pkg.logo || undefined}
           sx={{ width: 40, height: 40, bgcolor: '#F1F3F5', color: '#637381', borderRadius: 1.5 }}
         >
           <Iconify icon="mdi:office-building-outline" width={20} />
-        </Avatar>
+        </BrandLogoAvatar>
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 700 }} noWrap>
             {pkg.companyName}

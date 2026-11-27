@@ -21,44 +21,36 @@ import { createContrast } from './options/contrast';
 // ----------------------------------------------------------------------
 
 export default function ThemeProvider({ children }) {
-  const settings = useSettingsContext();
+  const { themeMode, themeDirection, themeColorPresets, themeContrast } = useSettingsContext();
 
-  const presets = createPresets(settings.themeColorPresets);
+  // A new theme re-renders every styled component, so build it only when a setting changes.
+  const theme = useMemo(() => {
+    const presets = createPresets(themeColorPresets);
+    const contrast = createContrast(themeContrast, themeMode);
 
-  const contrast = createContrast(settings.themeContrast, settings.themeMode);
-
-  const memoizedValue = useMemo(
-    () => ({
+    const next = createTheme({
       palette: {
-        ...palette(settings.themeMode),
+        ...palette(themeMode),
         ...presets.palette,
         ...contrast.palette,
       },
       customShadows: {
-        ...customShadows(settings.themeMode),
+        ...customShadows(themeMode),
         ...presets.customShadows,
       },
-      direction: settings.themeDirection,
-      shadows: shadows(settings.themeMode),
+      direction: themeDirection,
+      shadows: shadows(themeMode),
       shape: { borderRadius: 8 },
       typography,
-    }),
-    [
-      settings.themeMode,
-      settings.themeDirection,
-      presets.palette,
-      presets.customShadows,
-      contrast.palette,
-    ]
-  );
+    });
 
-  const theme = createTheme(memoizedValue);
-
-  theme.components = merge(componentsOverrides(theme), contrast.components);
+    next.components = merge(componentsOverrides(next), contrast.components);
+    return next;
+  }, [themeMode, themeDirection, themeColorPresets, themeContrast]);
 
   return (
     <MuiThemeProvider theme={theme}>
-      <RTL themeDirection={settings.themeDirection}>
+      <RTL themeDirection={themeDirection}>
         <CssBaseline />
         {children}
       </RTL>

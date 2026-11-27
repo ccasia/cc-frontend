@@ -5,7 +5,6 @@ import { useMemo, useState } from 'react';
 import {
   Box,
   Stack,
-  Avatar,
   Drawer,
   InputBase,
   IconButton,
@@ -14,6 +13,7 @@ import {
 } from '@mui/material';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -54,7 +54,7 @@ function CompanyRow({ company }) {
         <Stack direction="row" alignItems="stretch">
           <Stack sx={{ flex: 1, py: 1.75, pl: 2, pr: 1.5, minWidth: 0 }}>
             <Stack direction="row" alignItems="center" spacing={1.25}>
-              <Avatar
+              <BrandLogoAvatar
                 src={company.logo}
                 sx={{
                   width: 34,
@@ -67,7 +67,7 @@ function CompanyRow({ company }) {
                 }}
               >
                 {company.name?.[0]}
-              </Avatar>
+              </BrandLogoAvatar>
               <Stack sx={{ minWidth: 0, flex: 1 }}>
                 <Typography
                   sx={{

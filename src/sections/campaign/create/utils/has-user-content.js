@@ -64,6 +64,17 @@ export function diffUserContent(values, defaults) {
   });
 }
 
+/**
+ * Field names that changed since a loaded draft. Unlike diffUserContent, a field
+ * the user cleared counts too, because the baseline here is real work.
+ */
+export function diffFromBaseline(values, baseline) {
+  if (!values || !baseline) return [];
+  return Object.keys(baseline).filter(
+    (key) => stable(normalise(values[key])) !== stable(normalise(baseline[key]))
+  );
+}
+
 export default function hasUserContent(values, defaults) {
   return diffUserContent(values, defaults).length > 0;
 }

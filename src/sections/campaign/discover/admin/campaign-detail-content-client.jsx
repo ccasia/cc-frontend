@@ -8,12 +8,13 @@ import { Box, Link, Chip, Stack, Avatar, Divider, Typography, useMediaQuery } fr
 import { normalizeUrl } from 'src/utils/normalizeUrl';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
+import { HOST_API } from 'src/config-global';
 import { useAuthContext } from 'src/auth/hooks';
 
 import Iconify from 'src/components/iconify';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import CampaignDetailContentMobile from './campaign-detail-content-mobile';
-import { HOST_API } from 'src/config-global';
 
 const ChipStyle = {
   bgcolor: '#FFF',
@@ -252,7 +253,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
 
               <Box>
                 <Typography sx={SectionTitleStyle}>Campaign Info</Typography>
-                <Typography sx={SectionBodyStyle}>
+                <Typography sx={{ ...SectionBodyStyle, whiteSpace: 'pre-line' }}>
                   {campaign?.description || 'No campaign description available.'}
                 </Typography>
               </Box>
@@ -1324,7 +1325,7 @@ const CampaignDetailContentClient = ({ campaign }) => {
                   Client
                 </Typography>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Avatar
+                  <BrandLogoAvatar
                     src={campaign?.company?.logo ?? campaign?.brand?.logo}
                     alt={campaign?.company?.name ?? campaign?.brand?.name}
                     sx={{

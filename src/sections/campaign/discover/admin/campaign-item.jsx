@@ -1,10 +1,11 @@
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
 import toast from 'react-hot-toast';
-import React, { useState } from 'react';
+import { preload, useSWRConfig } from 'swr';
+import React, { memo, lazy, useRef, useState, Suspense } from 'react';
 
 import Stack from '@mui/material/Stack';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import {
   Box,
@@ -18,34 +19,75 @@ import {
   MenuItem,
   Typography,
   IconButton,
-  ListItemIcon,
-  ListItemText,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
-import { useResponsive } from 'src/hooks/use-responsive';
 
 import { formatText } from 'src/utils/format-test';
+import { fetcher, endpoints } from 'src/utils/axios';
 
 import { countries } from 'src/assets/data';
 import { useAuthContext } from 'src/auth/hooks';
 
-import Image from 'src/components/image';
 import Iconify from 'src/components/iconify';
+import { markPageEnter } from 'src/components/page-enter';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
-import CreateCampaignFormV2 from 'src/sections/campaign/create/form-v2';
+import { dialogEnterSx } from 'src/sections/campaign/create/components/motion';
 
-import { CampaignLog } from '../../manage/list/CampaignLog';
-import InitialActivateCampaignDialog from './initial-activate-campaign-dialog';
-import { alpha } from '@mui/system';
+import CampaignBanner from './components/campaign-banner';
+
+const CreateCampaignFormV2 = lazy(() => import('src/sections/campaign/create/form-v2'));
+const InitialActivateCampaignDialog = lazy(() => import('./initial-activate-campaign-dialog'));
+const CampaignLog = lazy(() =>
+  import('../../manage/list/CampaignLog').then((module) => ({ default: module.CampaignLog }))
+);
 
 // ----------------------------------------------------------------------
 
-export default function CampaignItem({
-  index,
+const loadDetailPage = () => import('src/pages/dashboard/campaign/admin/campaign-details');
+
+// Hovering a card loads the detail page code and the campaign, so opening it is near instant.
+const prefetchCampaign = (id, cache) => {
+  loadDetailPage();
+  const key = id && endpoints.campaign.getCampaignById(id);
+  if (key && !cache.get(key)?.data) preload(key, fetcher);
+};
+
+const HOVER_INTENT_MS = 100;
+
+const NO_IMAGE_SX = {
+  height: 1,
+  backgroundImage: 'repeating-linear-gradient(45deg, #FFFFFF 0 8px, var(--stripe-color) 8px 16px)',
+};
+
+const MENU_BUTTON_SX = {
+  ml: 1,
+  p: 0.5,
+  transition: 'background-color 150ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1)',
+  '@media (hover: hover) and (pointer: fine)': {
+    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+  },
+  '@media (prefers-reduced-motion: no-preference)': {
+    '&:active': { transform: 'scale(0.92)' },
+  },
+};
+
+const countryCache = new Map();
+// A name that is not in the list returns null instead of crashing the card.
+const findCountry = (name) => {
+  const key = name?.toLowerCase();
+  if (!key) return null;
+  if (!countryCache.has(key)) {
+    countryCache.set(key, countries.find((item) => item.label.toLowerCase().includes(key)) ?? null);
+  }
+  return countryCache.get(key);
+};
+
+function CampaignItem({
   campaign,
   onView,
   onEdit,
@@ -53,10 +95,13 @@ export default function CampaignItem({
   status,
   pitchStatus,
   showAdmins = false,
+  highlighted = false,
+  onHighlightEnd,
 }) {
   const theme = useTheme();
-  const smDown = useResponsive('down', 'sm');
   const { user } = useAuthContext();
+  const { cache } = useSWRConfig();
+  const hoverTimer = useRef(null);
 
   const isCopy = useBoolean();
 
@@ -64,9 +109,10 @@ export default function CampaignItem({
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
+  const [logMounted, setLogMounted] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [initialActivateDialogOpen, setInitialActivateDialogOpen] = useState(false);
-  const currentIndex = localStorage.getItem('lastOpenedIndex');
+  const [initialActivateMounted, setInitialActivateMounted] = useState(false);
 
   // Handle menu open
   const handleClick = (event) => {
@@ -81,77 +127,9 @@ export default function CampaignItem({
     setAnchorEl(null);
   };
 
-  // Handle open in new tab
-  const handleOpenInNewTab = (event) => {
-    event.stopPropagation();
-
-    const campaignName = campaign?.name || 'Campaign Details';
-
-    // Check if this campaign is already in campaignTabs
-    const tabExists = window.campaignTabs.some((tab) => tab.id === campaign.id);
-
-    if (tabExists) {
-      // If tab already exists, update the name to ensure it's current
-      window.campaignTabs = window.campaignTabs.map((tab) => {
-        if (tab.id === campaign.id) {
-          return { ...tab, name: campaignName };
-        }
-        return tab;
-      });
-      // If tab exists, close/remove it
-      window.campaignTabs = window.campaignTabs.filter((tab) => tab.id !== campaign.id);
-
-      // Remove from status tracking
-      if (window.campaignTabsStatus && window.campaignTabsStatus[campaign.id]) {
-        delete window.campaignTabsStatus[campaign.id];
-      }
-
-      // Save updated tabs to localStorage
-      try {
-        localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
-      } catch (error) {
-        console.error('Error saving campaign tabs to localStorage:', error);
-      }
-    } else {
-      // If tab doesn't exist yet, add it to campaignTabs
-      window.campaignTabs.push({
-        id: campaign.id,
-        name: campaignName,
-      });
-
-      // Update status tracking for tabs
-      if (typeof window !== 'undefined') {
-        if (!window.campaignTabsStatus) {
-          window.campaignTabsStatus = {};
-        }
-
-        window.campaignTabsStatus[campaign.id] = {
-          status: campaign.status,
-        };
-      }
-
-      // Save to localStorage
-      try {
-        localStorage.setItem('campaignTabs', JSON.stringify(window.campaignTabs));
-      } catch (error) {
-        console.error('Error saving campaign tabs to localStorage:', error);
-      }
-    }
-
-    // Navigate to the campaign detail page - commented out for now in case CC wants this feature
-    // router.push(paths.dashboard.campaign.adminCampaignDetail(campaign.id));
-
-    handleClose();
-  };
-
   const onCloseCampaignLog = (event) => {
     if (event) event.stopPropagation();
     setCampaignLogIsOpen(false);
-  };
-
-  const handleOpenActivateDialog = (event) => {
-    event.stopPropagation();
-    setActivateDialogOpen(true);
   };
 
   const handleCloseActivateDialog = () => {
@@ -229,36 +207,9 @@ export default function CampaignItem({
   const renderImages = (
     <Box sx={{ position: 'relative', height: 180, overflow: 'hidden' }}>
       {campaign?.campaignBrief?.images?.[0] ? (
-        <Image
-          alt={campaign?.name}
-          src={campaign?.campaignBrief?.images?.[0]}
-          sx={{
-            height: '100%',
-            width: '100%',
-            objectFit: 'cover',
-            objectPosition: 'center',
-          }}
-        />
+        <CampaignBanner alt={campaign?.name} src={campaign?.campaignBrief?.images?.[0]} />
       ) : (
-        <Box
-          sx={{
-            height: '100%',
-            width: '100%',
-            display: 'flex',
-            rotate: '45deg',
-            scale: 3,
-          }}
-        >
-          {Array.from({ length: 60 }).map((_, i) => (
-            <Box
-              sx={{
-                bgcolor: i % 2 === 0 ? 'white' : theme.palette.grey[100],
-                height: 1,
-                width: 8,
-              }}
-            />
-          ))}
-        </Box>
+        <Box sx={{ ...NO_IMAGE_SX, '--stripe-color': theme.palette.grey[100] }} />
       )}
       {status && (
         <Box
@@ -330,9 +281,8 @@ export default function CampaignItem({
                         <Stack direction="row" spacing={1} alignItems="center">
                           {campaign.campaignRequirement.countries.map((countryName, idx) => {
                             const countryCode =
-                              countries.find((item) =>
-                                item.label.toLowerCase().includes(countryName?.toLowerCase())
-                              )?.code || countryName.substring(0, 2).toUpperCase();
+                              findCountry(countryName)?.code ||
+                              countryName?.substring(0, 2).toUpperCase();
 
                             return (
                               <React.Fragment key={idx}>
@@ -362,15 +312,8 @@ export default function CampaignItem({
                                 width={15}
                               />
                               <Typography variant="caption">
-                                {
-                                  countries.find((item) =>
-                                    item.label
-                                      .toLowerCase()
-                                      .includes(
-                                        campaign?.campaignRequirement?.country?.toLowerCase()
-                                      )
-                                  ).label
-                                }
+                                {findCountry(campaign.campaignRequirement.country)?.label ??
+                                  campaign.campaignRequirement.country}
                               </Typography>
                             </Stack>
                           }
@@ -384,13 +327,8 @@ export default function CampaignItem({
                           }}
                         >
                           <Typography sx={{ fontWeight: 800 }} variant="subtitle2">
-                            {
-                              countries.find((item) =>
-                                item.label
-                                  .toLowerCase()
-                                  .includes(campaign?.campaignRequirement?.country?.toLowerCase())
-                              ).code
-                            }
+                            {findCountry(campaign.campaignRequirement.country)?.code ??
+                              campaign.campaignRequirement.country}
                           </Typography>
                         </Tooltip>
                       )
@@ -426,7 +364,7 @@ export default function CampaignItem({
 
   const renderTexts = (
     <Box sx={{ position: 'relative', px: 2, pt: 2 }}>
-      <Avatar
+      <BrandLogoAvatar
         src={campaign?.brand?.logo || campaign?.company?.logo}
         alt={campaign?.brand?.name || campaign?.company?.name}
         sx={{
@@ -518,12 +456,9 @@ export default function CampaignItem({
           {(!showAdmins || !campaign?.campaignAdmin?.length) && (
             <IconButton
               size="small"
+              aria-label="Campaign actions"
               onClick={handleClick}
-              sx={{
-                ml: 1,
-                p: 0.5,
-                '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
-              }}
+              sx={MENU_BUTTON_SX}
             >
               <MoreHorizIcon fontSize="small" />
             </IconButton>
@@ -591,12 +526,9 @@ export default function CampaignItem({
 
                 <IconButton
                   size="small"
+                  aria-label="Campaign actions"
                   onClick={handleClick}
-                  sx={{
-                    ml: 1,
-                    p: 0.5,
-                    '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
-                  }}
+                  sx={MENU_BUTTON_SX}
                 >
                   <MoreHorizIcon fontSize="small" />
                 </IconButton>
@@ -661,6 +593,7 @@ export default function CampaignItem({
           <MenuItem
             onClick={(event) => {
               event.stopPropagation();
+              setLogMounted(true);
               setCampaignLogIsOpen(true);
               handleClose();
             }}
@@ -683,18 +616,12 @@ export default function CampaignItem({
                   return;
                 }
 
-                alert(
-                  `Activate Campaign clicked! User: ${user?.name}, Role: ${
-                    user?.role
-                  }, Admin Mode: ${user?.admin?.mode}`
-                );
-
                 // Superadmin on a pending campaign only assigns an admin; the assigned admin runs the full setup.
                 if (canInitialActivate && campaign?.status === 'PENDING_CSM_REVIEW') {
-                  console.log('Opening InitialActivateDialog (admin assignment only)');
+                  setInitialActivateMounted(true);
                   setInitialActivateDialogOpen(true);
                 } else if (campaign?.status === 'PENDING_ADMIN_ACTIVATION') {
-                  console.log('Opening ActivateDialog (full setup)');
+                  // For admin/CSM on PENDING_ADMIN_ACTIVATION: use full activation dialog
                   setActivateDialogOpen(true);
                 }
                 handleClose();
@@ -739,26 +666,53 @@ export default function CampaignItem({
     <Card
       component={RouterLink}
       href={paths.dashboard.campaign.adminCampaignDetail(campaign?.id)}
+      onPointerEnter={() => {
+        hoverTimer.current = setTimeout(
+          () => prefetchCampaign(campaign?.id, cache),
+          HOVER_INTENT_MS
+        );
+      }}
+      onPointerLeave={() => clearTimeout(hoverTimer.current)}
+      onFocus={() => prefetchCampaign(campaign?.id, cache)}
       onClick={() => {
-        localStorage.setItem('lastOpenedIndex', String(index));
+        markPageEnter('forward', 'list');
+        localStorage.setItem('lastOpenedCampaignId', String(campaign?.id));
         localStorage.removeItem('lastScrollPosition');
+      }}
+      onAnimationEnd={(event) => {
+        if (event.animationName === 'lastOpenedFade') onHighlightEnd?.();
       }}
       sx={{
         overflow: 'hidden',
         textDecoration: 'none',
         cursor: 'pointer',
-        transition: 'all 0.3s',
+        transition: 'border-color 200ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1)',
         bgcolor: 'background.default',
         borderRadius: '15px',
         border: '1.2px solid',
-        borderColor: Number(currentIndex) === index ? '#1340ff' : theme.palette.divider,
+        borderColor: theme.palette.divider,
+        // The campaign the user just came back from: blue for a moment, then fades
+        ...(highlighted && {
+          '@keyframes lastOpenedFade': {
+            from: { borderColor: '#1340ff' },
+            to: { borderColor: theme.palette.divider },
+          },
+          animation: 'lastOpenedFade 600ms ease 1600ms backwards',
+        }),
         position: 'relative',
         pb: 1.5,
         mb: -0.5,
         maxHeight: 370,
-        '&:hover': {
-          borderColor: '#1340ff',
-          transform: 'translateY(-2px)',
+        // Pressing the card (not its menu button) sinks it slightly before navigating.
+        '@media (prefers-reduced-motion: no-preference)': {
+          '&:active:not(:has(button:active))': { transform: 'scale(0.99)' },
+        },
+        '@media (hover: hover) and (pointer: fine)': {
+          '&:hover': { borderColor: '#1340ff' },
+        },
+        '@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)': {
+          '&:hover': { transform: 'translateY(-2px)' },
+          '&:active:not(:has(button:active))': { transform: 'translateY(0) scale(0.99)' },
         },
       }}
     >
@@ -798,7 +752,15 @@ export default function CampaignItem({
           e.preventDefault();
         }}
       >
-        <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
+        {logMounted && (
+          <Suspense fallback={null}>
+            <CampaignLog
+              open={campaignLogIsOpen}
+              campaign={campaign}
+              onClose={onCloseCampaignLog}
+            />
+          </Suspense>
+        )}
         <Dialog
           fullWidth
           fullScreen
@@ -807,49 +769,55 @@ export default function CampaignItem({
               bgcolor: theme.palette.background.paper,
               borderRadius: 2,
               p: 4,
-              m: 2,
-              height: '97vh',
+              ...dialogEnterSx,
               overflow: 'hidden',
-              ...(smDown && {
-                height: 1,
-                m: 0,
-              }),
+              height: { xs: 1, sm: '97vh' },
+              m: { xs: 0, sm: 2 },
             },
           }}
           scroll="paper"
           open={activateDialogOpen}
         >
           {activateDialogOpen && (
-            <CreateCampaignFormV2
-              mode="activate"
-              campaignId={campaign?.id}
-              onClose={handleCloseActivateDialog}
-              onSuccess={() => {
-                // Trigger a revalidation of the campaigns data
-                if (window.swrMutate) {
-                  window.swrMutate();
-                }
-              }}
-            />
+            <Suspense fallback={null}>
+              <CreateCampaignFormV2
+                mode="activate"
+                campaignId={campaign?.id}
+                onClose={handleCloseActivateDialog}
+                onSuccess={() => {
+                  // Trigger a revalidation of the campaigns data
+                  if (window.swrMutate) {
+                    window.swrMutate();
+                  }
+                }}
+              />
+            </Suspense>
           )}
         </Dialog>
-        <InitialActivateCampaignDialog
-          open={initialActivateDialogOpen}
-          onClose={handleCloseInitialActivateDialog}
-          campaignId={campaign?.id}
-        />
+        {initialActivateMounted && (
+          <Suspense fallback={null}>
+            <InitialActivateCampaignDialog
+              open={initialActivateDialogOpen}
+              onClose={handleCloseInitialActivateDialog}
+              campaignId={campaign?.id}
+            />
+          </Suspense>
+        )}
       </Box>
     </Card>
   );
 }
 
 CampaignItem.propTypes = {
-  index: PropTypes.number,
   onDelete: PropTypes.func,
   onEdit: PropTypes.func,
   onView: PropTypes.func,
   campaign: PropTypes.object,
-  status: PropTypes.bool,
+  status: PropTypes.string,
   pitchStatus: PropTypes.string,
   showAdmins: PropTypes.bool,
+  highlighted: PropTypes.bool,
+  onHighlightEnd: PropTypes.func,
 };
+
+export default memo(CampaignItem);

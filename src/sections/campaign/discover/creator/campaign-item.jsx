@@ -7,7 +7,7 @@ import { enqueueSnackbar } from 'notistack';
 import { alpha, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { Bookmark, BookmarkBorder } from '@mui/icons-material';
-import { Box, Card, Chip, Avatar, Typography, CircularProgress } from '@mui/material';
+import { Box, Card, Chip, Typography, CircularProgress } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -17,6 +17,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import axiosInstance, { endpoints } from 'src/utils/axios';
 
 import Image from 'src/components/image';
+import BrandLogoAvatar from 'src/components/brand-logo-avatar';
 
 import CreatorForm from './creator-form';
 import CampaignModal from './campaign-modal';
@@ -121,7 +122,7 @@ export default function CampaignItem({ campaign, user, onOpenCreatorForm, mutate
 
   const renderCampaignInfo = (
     <Box sx={{ position: 'relative', pt: 2, px: 3, pb: 2.5 }}>
-      <Avatar
+      <BrandLogoAvatar
         src={campaign?.brand?.logo || campaign?.company?.logo}
         alt={campaign?.brand?.name || campaign?.company?.name}
         sx={{

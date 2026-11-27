@@ -11,7 +11,14 @@ import {
   secondaryObjectivesByPrimary,
 } from 'src/contants/campaign-objectives';
 
-import { RHFSelectV2, RHFTextField, RHFMultiSelect } from 'src/components/hook-form';
+import { RHFSelectV2, RHFTextField } from 'src/components/hook-form';
+
+import ChipSelect from 'src/sections/campaign/create/components/chip-select';
+
+// Options read "Brand Awareness (Introduce brands to new audiences)"
+const OBJECTIVE_PARTS = /^(.*?)\s*\((.*)\)$/;
+const objectiveTitle = (option) => option.match(OBJECTIVE_PARTS)?.[1] ?? option;
+const objectiveDescription = (option) => option.match(OBJECTIVE_PARTS)?.[2];
 
 // Form field component with consistent styling
 const FormField = ({ label, children, required = true }) => (
@@ -93,33 +100,15 @@ const CampaignObjective = () => {
       <Collapse in={Boolean(primaryObjective)}>
         {/* Secondary Campaign Objective */}
         <Box sx={{ mt: 2 }}>
-          <FormField label="Secondary Campaign Objective - Choose up to 2" required>
-            <RHFMultiSelect
+          <FormField label="Secondary Campaign Objective" required>
+            <ChipSelect
               name="secondaryObjectives"
-              placeholder="Select Secondary Campaign Objectives"
-              options={secondaryOptions.map((item) => ({
-                value: item,
-                label: item,
-              }))}
-              chip
-              disabled={secondaryOptions.length === 0}
-              sx={{
-                '& .MuiSelect-select': {
-                  whiteSpace: 'normal',
-                  minHeight: 'auto',
-                },
-                '& .MuiChip-root': {
-                  maxWidth: { xs: '100%', sm: 'none' },
-                  height: 'auto',
-                  '& .MuiChip-label': {
-                    whiteSpace: 'normal',
-                    overflow: 'visible',
-                    textOverflow: 'clip',
-                    fontSize: { xs: '0.75rem', sm: '0.8125rem' },
-                    py: 0.5,
-                  },
-                },
-              }}
+              options={secondaryOptions}
+              placeholder="Select up to 2 objectives"
+              noOptionsText="No matching objective"
+              max={2}
+              getTitle={objectiveTitle}
+              getDescription={objectiveDescription}
             />
           </FormField>
         </Box>

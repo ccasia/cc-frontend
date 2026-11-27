@@ -19,10 +19,10 @@ import useGetCreators from 'src/hooks/use-get-creators';
 import Iconify from 'src/components/iconify';
 import EmptyContent from 'src/components/empty-content';
 import { useSettingsContext } from 'src/components/settings';
-import { LoadingScreen } from 'src/components/loading-screen';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 
 import UserCardList from '../user-card-list';
+import UserCardListSkeleton from '../components/user-card-list-skeleton';
 
 // ----------------------------------------------------------------------
 
@@ -161,9 +161,9 @@ export default function UserCardsView() {
         </Paper>
       </Box>
 
-      {isLoading && <LoadingScreen />}
+      {isLoading && <UserCardListSkeleton />}
 
-      {!isLoading && filteredCreators?.length < 1 ? (
+      {!isLoading && filteredCreators?.length < 1 && (
         <Box>
           <EmptyContent
             filled
@@ -173,7 +173,9 @@ export default function UserCardsView() {
             }}
           />
         </Box>
-      ) : (
+      )}
+
+      {!isLoading && filteredCreators?.length > 0 && (
         <>
           <UserCardList creators={paginatedCreators} />
           

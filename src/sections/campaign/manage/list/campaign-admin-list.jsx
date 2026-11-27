@@ -20,6 +20,7 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete, showAdmins = false, 
   const popover = usePopover();
 
   const [campaignLogIsOpen, setCampaignLogIsOpen] = useState(false);
+  const [logMounted, setLogMounted] = useState(false);
   const onCloseCampaignLog = () => setCampaignLogIsOpen(false);
 
   const isDisabled = useMemo(
@@ -170,6 +171,7 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete, showAdmins = false, 
         <MenuItem
           onClick={() => {
             popover.onClose();
+            setLogMounted(true);
             setCampaignLogIsOpen(true);
           }}
         >
@@ -189,7 +191,9 @@ const CampaignList = ({ campaign, onView, onEdit, onDelete, showAdmins = false, 
           </MenuItem>
         )}
       </CustomPopover>
-      <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
+      {logMounted && (
+        <CampaignLog open={campaignLogIsOpen} campaign={campaign} onClose={onCloseCampaignLog} />
+      )}
     </>
   );
 };
