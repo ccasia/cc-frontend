@@ -42,7 +42,11 @@ import { useSocialInsights } from 'src/hooks/use-social-insights';
 import useGetCreatorById from 'src/hooks/useSWR/useGetCreatorById';
 import { usePostEngagementSnapshots } from 'src/hooks/use-post-engagement-snapshots';
 
-import { extractPostingSubmissions } from 'src/utils/extractPostingLinks';
+import {
+  manualPostKey,
+  submissionPostKey,
+  extractPostingSubmissions,
+} from 'src/utils/extractPostingLinks';
 import {
   formatNumber,
   getMetricValue,
@@ -355,8 +359,22 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
   // Fetch post engagement snapshots (Day 7, 15, 30 ER tracking)
   const { snapshots: postSnapshots } = usePostEngagementSnapshots(campaignId);
 
+  // Every post once, as Campaign Analytics counts them: a manual entry for a link that
+  // already has synced stats is dropped, so the post isn't counted twice.
+  const dedupedManualEntries = useMemo(() => {
+    const seen = new Set(
+      (insightsData || []).map((data) => submissionPostKey(data, data.submissionId))
+    );
+    return manualEntries.filter((entry) => {
+      const key = manualPostKey(entry);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [insightsData, manualEntries]);
+
   const manualInsightsData = useMemo(() => {
-    const transformed = manualEntries.map((entry) => ({
+    const transformed = dedupedManualEntries.map((entry) => ({
       id: entry.id,
       submissionId: entry.id,
       platform: entry.platform,
@@ -371,10 +389,10 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
       ],
     }));
     return transformed;
-  }, [manualEntries]);
+  }, [dedupedManualEntries]);
 
   const manualSubmissions = useMemo(() => {
-    const transformed = manualEntries.map((entry) => ({
+    const transformed = dedupedManualEntries.map((entry) => ({
       id: entry.id,
       platform: entry.platform,
       postingLink: entry.postUrl || null,
@@ -400,7 +418,7 @@ const PCRReportPage = ({ campaign, onBack, isClientView = false, onCampaignUpdat
       engagementRate: entry.engagementRate || 0,
     }));
     return transformed;
-  }, [manualEntries]);
+  }, [dedupedManualEntries]);
 
   const filteredInsightsData = useMemo(() => {
     const combined = [...(insightsData || []), ...manualInsightsData];

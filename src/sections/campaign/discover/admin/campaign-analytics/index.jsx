@@ -21,7 +21,11 @@ import { useSocialInsights } from 'src/hooks/use-social-insights';
 import { useGetManualCreatorEntries } from 'src/hooks/useSWR/useGetManualCreatorEntries';
 
 import axiosInstance from 'src/utils/axios';
-import { canonicalizePostUrl, extractPostingSubmissions } from 'src/utils/extractPostingLinks';
+import {
+  manualPostKey,
+  submissionPostKey,
+  extractPostingSubmissions,
+} from 'src/utils/extractPostingLinks';
 import {
   getMetricValue,
   calculateSummaryStats,
@@ -855,14 +859,6 @@ function getRefreshFailureMessage(failure) {
   return messages[failure.code] || failure.reason || 'Unknown error.';
 }
 
-// The same link from a submission and a manual entry is one post.
-function submissionPostKey({ platform, postUrl, user }, submissionId) {
-  const canonical = canonicalizePostUrl(postUrl);
-  return canonical
-    ? `url::${platform}::${canonical}`
-    : `submission::${platform}::${user}::${submissionId}`;
-}
-
 // One creator however many posts they have. A manual entry only carries a username, so it
 // can't be matched to the same creator's platform-synced posts.
 function countCreators(insights, manual) {
@@ -873,13 +869,6 @@ function countCreators(insights, manual) {
     creators.add(`manual::${name.replace(/^@/, '').toLowerCase()}`);
   });
   return creators.size;
-}
-
-function manualPostKey({ platform, postUrl, creatorUsername, id }) {
-  const canonical = canonicalizePostUrl(postUrl);
-  return canonical
-    ? `url::${platform}::${canonical}`
-    : `manual::${platform}::${(creatorUsername || id).toLowerCase()}`;
 }
 
 export default CampaignAnalysis;
