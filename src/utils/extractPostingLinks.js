@@ -30,6 +30,21 @@ export const canonicalizePostUrl = (url) => {
   }
 };
 
+// The same link from a submission and a manual entry is one post.
+export const submissionPostKey = ({ platform, postUrl, user }, submissionId) => {
+  const canonical = canonicalizePostUrl(postUrl);
+  return canonical
+    ? `url::${platform}::${canonical}`
+    : `submission::${platform}::${user}::${submissionId}`;
+};
+
+export const manualPostKey = ({ platform, postUrl, creatorUsername, id }) => {
+  const canonical = canonicalizePostUrl(postUrl);
+  return canonical
+    ? `url::${platform}::${canonical}`
+    : `manual::${platform}::${(creatorUsername || id).toLowerCase()}`;
+};
+
 export const extractPostingSubmissions = (submissions) => {
   if (!Array.isArray(submissions)) return [];
 
